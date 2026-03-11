@@ -77,6 +77,18 @@
       border-radius: 10px;
     }
 
+    .app-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+    .app-header-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
     .section {
       padding: 20px 24px;
       border-bottom: 1px solid var(--border);
@@ -599,7 +611,7 @@
       line-height: 1.5;
     }
 
-    .dialog-buttons { display: flex; gap: 10px; justify-content: center; }
+    .dialog-buttons { display: flex; gap: 10px; justify-content: flex-end; }
 
     /* Checkbox styling */
     input[type="checkbox"]:not(.filter-dropdown input) {
@@ -624,9 +636,13 @@
     <!-- LEFT PANEL -->
     <div class="left-panel">
 
+      <div class="app-header">
+        <span class="app-header-title">Convocatoria de Formaciones</span>
+      </div>
+
       <!-- 1. Datos -->
       <div class="section">
-        <div class="section-label">Datos</div>
+        <div class="section-label">1. Carga de datos</div>
         <div class="upload-zone" id="uploadZone">
           <div id="uploadPrompt" style="position: relative;">
             <div style="width: 40px; height: 40px; margin: 0 auto 10px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
@@ -654,7 +670,7 @@
 
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none;">
-        <div class="section-label">Filtros</div>
+        <div class="section-label">2. Selecciona asistentes</div>
         <div id="filterContainer"></div>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
@@ -666,7 +682,7 @@
 
       <!-- 3. Evento -->
       <div class="section" id="eventoSection" style="display:none;">
-        <div class="section-label">Evento</div>
+        <div class="section-label">3. Datos del evento</div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
           <div class="event-row">
