@@ -160,6 +160,7 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
+      table-layout: fixed;
     }
 
     .attendee-table th {
@@ -182,6 +183,9 @@
       font-size: 13px;
       border-bottom: 1px solid var(--border);
       transition: background var(--transition);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .attendee-table tr:hover td {
@@ -451,7 +455,7 @@
     }
 
     .row-no-email {
-      opacity: 0.45;
+      opacity: 0.6;
     }
 
     .empty-state {
@@ -744,11 +748,11 @@
         <table class="attendee-table" id="attendeeTable" style="display:none;">
           <thead>
             <tr>
-              <th style="width:30px;"><input type="checkbox" id="selectAll" checked></th>
-              <th>Empleado</th>
-              <th>Puesto</th>
-              <th>Ubicación</th>
-              <th>Email trabajo</th>
+              <th style="width:40px;"><input type="checkbox" id="selectAll" checked></th>
+              <th style="width:25%;">Empleado</th>
+              <th style="width:25%;">Puesto</th>
+              <th style="width:20%;">Ubicación</th>
+              <th style="width:30%;">Email trabajo</th>
             </tr>
           </thead>
           <tbody id="attendeeBody"></tbody>
@@ -1149,6 +1153,19 @@
             state.excludedNIFs.add(cb.dataset.nif);
           }
           updateCounts();
+        });
+      });
+
+      // Row click toggles checkbox
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', e => {
+          if (e.target.tagName === 'INPUT') return; // Don't double-toggle
+          const cb = row.querySelector('input[type="checkbox"]');
+          if (cb && !cb.disabled) {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+          }
         });
       });
 
