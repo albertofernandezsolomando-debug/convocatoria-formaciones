@@ -340,6 +340,29 @@
       height: 14px;
     }
 
+    .filter-search {
+      position: sticky;
+      top: 0;
+      background: var(--bg-panel);
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      z-index: 1;
+    }
+    .filter-search input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-input);
+    }
+    .filter-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     .input-field {
       width: 100%;
       padding: 8px 12px;
@@ -1092,6 +1115,7 @@
           '<div class="filter-select" data-key="' + esc(key) + '">' +
             '<button class="' + btnClass + '" type="button">' + esc(btnText) + '</button>' +
             '<div class="filter-dropdown">' +
+              '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off"></div>' +
               values.map(v =>
                 '<label>' +
                   '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
@@ -1111,7 +1135,12 @@
         btn.addEventListener('click', e => {
           e.stopPropagation();
           container.querySelectorAll('.filter-dropdown.open').forEach(d => {
-            if (d !== dropdown) d.classList.remove('open');
+            if (d !== dropdown) {
+              d.classList.remove('open');
+              const si = d.querySelector('.filter-search input');
+              if (si) { si.value = ''; }
+              d.querySelectorAll('label').forEach(l => l.style.display = '');
+            }
           });
           dropdown.classList.toggle('open');
         });
@@ -1126,6 +1155,19 @@
           renderFilters();
           renderTable();
         });
+
+        const searchInput = dropdown.querySelector('.filter-search input');
+        if (searchInput) {
+          searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            dropdown.querySelectorAll('label').forEach(label => {
+              const text = label.textContent.toLowerCase();
+              label.style.display = text.includes(query) ? '' : 'none';
+            });
+          });
+          // Prevent dropdown from closing when clicking search
+          searchInput.addEventListener('click', e => e.stopPropagation());
+        }
       });
 
       const chipsEl = document.getElementById('filterChips');
@@ -1136,7 +1178,12 @@
     }
 
     document.addEventListener('click', () => {
-      document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+      document.querySelectorAll('.filter-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        const si = d.querySelector('.filter-search input');
+        if (si) { si.value = ''; }
+        d.querySelectorAll('label').forEach(l => l.style.display = '');
+      });
     });
 
     document.getElementById('btnClearFilters').addEventListener('click', () => {
