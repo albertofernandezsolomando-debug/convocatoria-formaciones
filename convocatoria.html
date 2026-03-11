@@ -716,6 +716,7 @@
             </div>
             <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);" id="fileName"></div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="fileStats"></div>
+            <button class="link-btn link-add" id="btnChangeFile" style="margin-top:6px; font-size:11px;">Cambiar archivo</button>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
         </div>
@@ -791,9 +792,7 @@
 
       <!-- Attendee table -->
       <div class="attendee-table-wrap" id="tableWrap">
-        <div class="empty-state" id="emptyState">
-          Carga un Excel para empezar
-        </div>
+        <div class="empty-state" id="emptyState"></div>
         <table class="attendee-table" id="attendeeTable" style="display:none;">
           <thead>
             <tr>
@@ -1018,6 +1017,17 @@
       currentSessionIndex: 0,
     };
 
+    function getGreeting() {
+      const h = new Date().getHours();
+      if (h < 14) return 'Buenos días';
+      if (h < 21) return 'Buenas tardes';
+      return 'Buenas noches';
+    }
+
+    document.getElementById('emptyState').innerHTML =
+      '<span style="font-size:18px; color:var(--text-primary); font-weight:600;">' + getGreeting() + '</span>' +
+      '<span>Carga el organigrama Excel para empezar</span>';
+
     // ═══════════════════════════════════
     // FILE LOADING
     // ═══════════════════════════════════
@@ -1044,6 +1054,11 @@
     });
     fileInput.addEventListener('change', e => {
       if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    document.getElementById('btnChangeFile').addEventListener('click', e => {
+      e.stopPropagation(); // Don't trigger uploadZone click
+      fileInput.click();
     });
 
     function handleFile(file) {
