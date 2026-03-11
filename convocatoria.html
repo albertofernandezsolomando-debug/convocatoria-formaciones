@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convocatoria de Formaciones</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    /* --- CSS custom properties --- */
+    :root {
+      --bg-primary: #f5f6fa;
+      --bg-panel: #ffffff;
+      --bg-input: #f0f1f5;
+      --text-primary: #1a1a2e;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --border: #e5e7eb;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* --- Left panel --- */
+    .left-panel {
+      width: 360px;
+      min-width: 360px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* --- Right panel --- */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .summary-bar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .attendee-count {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .attendee-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .attendee-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .attendee-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-panel);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border);
+    }
+
+    .attendee-table td {
+      padding: 8px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .attendee-table tr:hover {
+      background: var(--bg-primary);
+    }
+
+    .action-bar {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* --- Shared components --- */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .upload-zone.loaded {
+      border-style: solid;
+      border-color: var(--success);
+      background: #f0fdf4;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      width: 100px;
+      flex-shrink: 0;
+    }
+
+    .filter-select {
+      flex: 1;
+      position: relative;
+    }
+
+    .filter-select-btn {
+      width: 100%;
+      padding: 6px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    .filter-select-btn.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .filter-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .filter-dropdown.open { display: block; }
+
+    .filter-dropdown label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filter-dropdown label:hover { background: var(--bg-primary); }
+
+    .input-field {
+      width: 100%;
+      padding: 6px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input-field.error { border-color: var(--danger); }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-primary:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+    }
+
+    .btn-secondary:hover { background: var(--border); }
+
+    .link-btn {
+      background: none;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .link-add { color: var(--accent); }
+    .link-clear { color: var(--danger); }
+
+    .chip {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--bg-input);
+      color: var(--text-secondary);
+    }
+
+    .warning-text {
+      font-size: 12px;
+      color: var(--warning);
+    }
+
+    .row-no-email {
+      opacity: 0.5;
+    }
+
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .event-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .radio-group label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .series-config {
+      display: none;
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--bg-primary);
+      border-radius: 6px;
+    }
+
+    .series-config.visible { display: block; }
+
+    .session-tabs {
+      display: none;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .session-tabs.visible { display: flex; }
+
+    .session-tab {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: none;
+    }
+
+    .session-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Dialog overlay for series confirmation */
+    .dialog-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dialog-overlay.visible {
+      display: flex;
+    }
+
+    .dialog-box {
+      background: var(--bg-panel);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .dialog-box h3 { margin-bottom: 12px; }
+    .dialog-box p { margin-bottom: 16px; color: var(--text-secondary); }
+    .dialog-buttons { display: flex; gap: 8px; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <!-- 1. Datos -->
+      <div class="section">
+        <div class="section-label">1. Datos</div>
+        <div class="upload-zone" id="uploadZone">
+          <div id="uploadPrompt">
+            <div style="font-size: 24px; margin-bottom: 6px;">📄</div>
+            <div style="font-size: 13px; color: var(--text-secondary);">
+              Arrastra tu Excel aquí o <strong style="color: var(--accent);">haz clic para seleccionar</strong>
+            </div>
+          </div>
+          <div id="uploadInfo" style="display:none;">
+            <div style="font-size: 24px; margin-bottom: 6px;">📄</div>
+            <div style="font-size: 13px; font-weight: 600;" id="fileName"></div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="fileStats"></div>
+          </div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
+        </div>
+      </div>
+
+      <!-- 2. Filtros -->
+      <div class="section" id="filtrosSection" style="display:none;">
+        <div class="section-label">2. Filtros</div>
+        <div id="filterContainer"></div>
+        <div style="margin-top: 8px; display: flex; gap: 8px;">
+          <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
+          <span style="color: var(--text-muted);">|</span>
+          <button class="link-btn link-clear" id="btnClearFilters">Limpiar filtros</button>
+        </div>
+        <input type="file" id="externalFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+      </div>
+
+      <!-- 3. Evento -->
+      <div class="section" id="eventoSection" style="display:none;">
+        <div class="section-label">3. Evento</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
+          <div class="event-row">
+            <input class="input-field" type="date" id="eventDate" style="flex:1;">
+            <input class="input-field" type="time" id="eventStart" style="width:80px;" value="10:00">
+            <input class="input-field" type="time" id="eventEnd" style="width:80px;" value="12:00">
+          </div>
+          <div class="radio-group">
+            <label><input type="radio" name="eventType" value="presencial" checked> Presencial</label>
+            <label><input type="radio" name="eventType" value="teams"> Teams</label>
+          </div>
+          <input class="input-field" type="text" id="eventLocation" placeholder="Ubicación (sala, dirección...)">
+          <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="seriesCheck"> Serie de sesiones
+          </label>
+          <div class="series-config" id="seriesConfig">
+            <div class="radio-group" style="margin-bottom: 8px;">
+              <label><input type="radio" name="seriesMode" value="repeat" checked> Repetir</label>
+              <label><input type="radio" name="seriesMode" value="manual"> Fechas manuales</label>
+            </div>
+            <div id="seriesRepeatConfig">
+              <div class="event-row">
+                <span style="font-size: 12px; color: var(--text-secondary);">Cada</span>
+                <span style="font-size: 12px; color: var(--text-secondary);">semana</span>
+                <span style="font-size: 12px; color: var(--text-secondary);">×</span>
+                <input class="input-field" type="number" id="seriesCount" value="2" min="2" max="12" style="width: 60px;">
+              </div>
+            </div>
+            <div id="seriesManualConfig" style="display:none;">
+              <div id="manualDates"></div>
+              <button class="link-btn link-add" id="btnAddDate" style="margin-top:6px;">+ Añadir fecha</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- Summary bar -->
+      <div class="summary-bar" id="summaryBar" style="display:none;">
+        <div>
+          <span class="attendee-count" id="attendeeCount">0</span>
+          <span style="font-size: 13px; color: var(--text-secondary);" id="attendeeTotal"> de 0 empleados</span>
+        </div>
+        <div id="filterChips"></div>
+      </div>
+
+      <!-- Session tabs (series mode only) -->
+      <div class="session-tabs" id="sessionTabs"></div>
+
+      <!-- Attendee table -->
+      <div class="attendee-table-wrap" id="tableWrap">
+        <div class="empty-state" id="emptyState">
+          Carga un Excel para empezar
+        </div>
+        <table class="attendee-table" id="attendeeTable" style="display:none;">
+          <thead>
+            <tr>
+              <th style="width:30px;"><input type="checkbox" id="selectAll" checked></th>
+              <th>Empleado</th>
+              <th>Puesto</th>
+              <th>Ubicación</th>
+              <th>Email trabajo</th>
+            </tr>
+          </thead>
+          <tbody id="attendeeBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar" id="actionBar" style="display:none;">
+        <div class="warning-text" id="noEmailWarning"></div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">📋 Copiar emails</button>
+          <button class="btn btn-primary" id="btnOpenOutlook" disabled>📅 Abrir en Outlook</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Series dialog -->
+  <div class="dialog-overlay" id="seriesDialog">
+    <div class="dialog-box">
+      <h3 id="dialogTitle">Sesión 1 de 3</h3>
+      <p id="dialogBody">Se ha abierto la invitación en Outlook. Cuando hayas enviado, pulsa "Siguiente".</p>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" id="dialogCancel">Cancelar</button>
+        <button class="btn btn-primary" id="dialogNext">Siguiente sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════
+    // PURE LOGIC FUNCTIONS
+    // ═══════════════════════════════════
+
+    const RELEVANT_COLUMNS = [
+      'Empresa', 'Departamento', 'Área', 'Ubicación', 'Puesto',
+      'Categoría Mercer', 'Depende de', 'Email trabajo', 'Empleado',
+      'NIF', 'Alta/Baja'
+    ];
+
+    const FILTER_KEYS = [
+      'Empresa', 'Departamento', 'Área', 'Ubicación', 'Puesto',
+      'Categoría Mercer', 'Depende de'
+    ];
+
+    function parseOrgSheet(workbook) {
+      const errors = [];
+      const sheetName = workbook.SheetNames.find(n => n === 'ORGANIGRAMA');
+      if (!sheetName) {
+        errors.push('No se ha encontrado la hoja ORGANIGRAMA. ¿Estás usando el fichero correcto?');
+        return { employees: [], errors };
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX_sheetToJSON(sheet);
+      if (rows.length === 0) {
+        errors.push('La hoja ORGANIGRAMA está vacía.');
+        return { employees: [], errors };
+      }
+
+      const headers = Object.keys(rows[0]);
+      const missing = RELEVANT_COLUMNS.filter(c => !headers.includes(c));
+      if (missing.length > 0) {
+        errors.push('Faltan columnas: ' + missing.join(', '));
+      }
+
+      const employees = rows
+        .filter(row => {
+          const ab = row['Alta/Baja'];
+          return ab === 1 || ab === '1';
+        })
+        .map(row => {
+          const emp = {};
+          RELEVANT_COLUMNS.forEach(col => {
+            emp[col] = row[col] != null ? String(row[col]).trim() : '';
+          });
+          return emp;
+        });
+
+      if (employees.length === 0) {
+        errors.push('No hay empleados activos (Alta/Baja = 1).');
+      }
+
+      return { employees, errors };
+    }
+
+    function XLSX_sheetToJSON(sheet) {
+      return XLSX.utils.sheet_to_json(sheet);
+    }
+
+    function filterEmployees(employees, activeFilters) {
+      return employees.filter(emp => {
+        return FILTER_KEYS.every(key => {
+          const selected = activeFilters[key];
+          if (!selected || selected.length === 0) return true;
+          return selected.includes(emp[key]);
+        });
+      });
+    }
+
+    function getFilterOptions(employees, activeFilters) {
+      const options = {};
+      FILTER_KEYS.forEach(key => {
+        const otherFilters = {};
+        FILTER_KEYS.forEach(k => {
+          if (k !== key && activeFilters[k] && activeFilters[k].length > 0) {
+            otherFilters[k] = activeFilters[k];
+          }
+        });
+        const subset = filterEmployees(employees, otherFilters);
+        const values = [...new Set(subset.map(e => e[key]).filter(v => v !== ''))];
+        values.sort((a, b) => a.localeCompare(b, 'es'));
+        options[key] = values;
+      });
+      return options;
+    }
+
+    function buildDeepLink(event, attendees) {
+      const startdt = event.date + 'T' + event.startTime + ':00';
+      const enddt = event.date + 'T' + event.endTime + ':00';
+
+      const params = new URLSearchParams();
+      params.set('subject', event.title);
+      params.set('startdt', startdt);
+      params.set('enddt', enddt);
+      if (event.location && !event.isTeams) {
+        params.set('location', event.location);
+      }
+      if (event.body) {
+        params.set('body', event.body);
+      }
+
+      const baseUrl = 'https://outlook.office.com/calendar/0/deeplink/compose?' + params.toString();
+      const emailStr = attendees.join(';');
+      const fullUrl = baseUrl + '&to=' + encodeURIComponent(emailStr);
+
+      const useFallback = fullUrl.length > 2000;
+
+      return {
+        url: useFallback ? baseUrl : fullUrl,
+        urlWithoutAttendees: baseUrl,
+        useFallback,
+        emailString: emailStr
+      };
+    }
+
+    function generateSeriesDates(startDate, repeatEvery, count) {
+      const dates = [];
+      const start = new Date(startDate + 'T00:00:00');
+      const increment = repeatEvery === 'week' ? 7 : 1;
+      for (let i = 0; i < Math.min(count, 12); i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i * increment);
+        dates.push(d.toISOString().slice(0, 10));
+      }
+      return dates;
+    }
+
+    function splitByEmail(employees) {
+      const valid = [];
+      const noEmail = [];
+      employees.forEach(emp => {
+        if (emp['Email trabajo'] && emp['Email trabajo'].includes('@')) {
+          valid.push(emp);
+        } else {
+          noEmail.push(emp);
+        }
+      });
+      return { valid, noEmail };
+    }
+
+    // Helper to escape HTML entities (prevents XSS from crafted Excel values)
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ═══════════════════════════════════
+    // APPLICATION STATE
+    // ═══════════════════════════════════
+
+    const state = {
+      employees: [],
+      externalEmployees: [],
+      activeFilters: {},
+      excludedNIFs: new Set(),
+      seriesDates: [],
+      currentSessionIndex: 0,
+    };
+
+    // ═══════════════════════════════════
+    // FILE LOADING
+    // ═══════════════════════════════════
+
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const uploadInfo = document.getElementById('uploadInfo');
+    const fileNameEl = document.getElementById('fileName');
+    const fileStats = document.getElementById('fileStats');
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', e => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const result = parseOrgSheet(workbook);
+
+        if (result.errors.length > 0) {
+          alert(result.errors.join('\n'));
+          if (result.employees.length === 0) return;
+        }
+
+        state.employees = result.employees;
+        state.activeFilters = {};
+        state.excludedNIFs = new Set();
+
+        uploadZone.classList.add('loaded');
+        uploadPrompt.style.display = 'none';
+        uploadInfo.style.display = 'block';
+        fileNameEl.textContent = file.name;
+        fileStats.textContent = state.employees.length + ' empleados activos · hoja ORGANIGRAMA';
+
+        try { localStorage.setItem('lastFile', file.name); } catch(e) {}
+
+        document.getElementById('filtrosSection').style.display = '';
+        document.getElementById('eventoSection').style.display = '';
+        document.getElementById('summaryBar').style.display = '';
+        document.getElementById('actionBar').style.display = '';
+
+        renderFilters();
+        renderTable();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Check localStorage for last filename
+    try {
+      const lastFile = localStorage.getItem('lastFile');
+      if (lastFile) {
+        document.querySelector('#uploadPrompt div:last-child').innerHTML =
+          'Arrastra tu Excel aquí o <strong style="color: var(--accent);">haz clic para seleccionar</strong>' +
+          '<br><span style="font-size:11px; color: var(--text-muted);">Último: ' + lastFile + '</span>';
+      }
+    } catch(e) {}
+
+    // ═══════════════════════════════════
+    // FILTER RENDERING
+    // ═══════════════════════════════════
+
+    function renderFilters() {
+      const container = document.getElementById('filterContainer');
+      const allEmployees = [...state.employees, ...state.externalEmployees];
+      const options = getFilterOptions(allEmployees, state.activeFilters);
+
+      // Note: innerHTML is used with esc() to safely render filter options.
+      // All user-sourced data from Excel is sanitized through esc() before insertion.
+      container.innerHTML = FILTER_KEYS.map(key => {
+        const selected = state.activeFilters[key] || [];
+        const values = options[key];
+        const btnText = selected.length > 0
+          ? selected.join(', ')
+          : 'Todos';
+        const btnClass = selected.length > 0 ? 'filter-select-btn active' : 'filter-select-btn';
+
+        return '<div class="filter-row">' +
+          '<span class="filter-label">' + esc(key) + '</span>' +
+          '<div class="filter-select" data-key="' + esc(key) + '">' +
+            '<button class="' + btnClass + '" type="button">' + esc(btnText) + '</button>' +
+            '<div class="filter-dropdown">' +
+              values.map(v =>
+                '<label>' +
+                  '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
+                  esc(v) +
+                '</label>'
+              ).join('') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      container.querySelectorAll('.filter-select').forEach(sel => {
+        const key = sel.dataset.key;
+        const btn = sel.querySelector('.filter-select-btn');
+        const dropdown = sel.querySelector('.filter-dropdown');
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          container.querySelectorAll('.filter-dropdown.open').forEach(d => {
+            if (d !== dropdown) d.classList.remove('open');
+          });
+          dropdown.classList.toggle('open');
+        });
+
+        dropdown.addEventListener('change', e => {
+          const checked = [...dropdown.querySelectorAll('input:checked')].map(cb => cb.value);
+          if (checked.length > 0) {
+            state.activeFilters[key] = checked;
+          } else {
+            delete state.activeFilters[key];
+          }
+          renderFilters();
+          renderTable();
+        });
+      });
+
+      const chipsEl = document.getElementById('filterChips');
+      const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
+      chipsEl.innerHTML = activeKeys.map(k =>
+        state.activeFilters[k].map(v => '<span class="chip">' + esc(v) + '</span>').join(' ')
+      ).join(' ');
+    }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
+    document.getElementById('btnClearFilters').addEventListener('click', () => {
+      state.activeFilters = {};
+      renderFilters();
+      renderTable();
+    });
+
+    // ═══════════════════════════════════
+    // ATTENDEE TABLE
+    // ═══════════════════════════════════
+
+    function renderTable() {
+      const allEmployees = [...state.employees, ...state.externalEmployees];
+      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const { valid, noEmail } = splitByEmail(filtered);
+
+      valid.sort((a, b) => a.Empleado.localeCompare(b.Empleado, 'es'));
+      noEmail.sort((a, b) => a.Empleado.localeCompare(b.Empleado, 'es'));
+      const allSorted = [...valid, ...noEmail];
+
+      const tbody = document.getElementById('attendeeBody');
+      const table = document.getElementById('attendeeTable');
+      const emptyState = document.getElementById('emptyState');
+
+      if (allSorted.length === 0) {
+        table.style.display = 'none';
+        emptyState.style.display = '';
+        emptyState.textContent = 'Ningún empleado coincide con estos filtros.';
+      } else {
+        table.style.display = '';
+        emptyState.style.display = 'none';
+      }
+
+      // Note: innerHTML is used here with escaped values (via esc()) to safely render
+      // the dynamic table. All user-sourced data from Excel is sanitized through esc()
+      // before insertion, preventing XSS from crafted spreadsheet values.
+      tbody.innerHTML = allSorted.map(emp => {
+        const hasEmail = emp['Email trabajo'] && emp['Email trabajo'].includes('@');
+        const isExcluded = state.excludedNIFs.has(emp.NIF);
+        const isExternal = emp._source === 'external';
+        const rowClass = !hasEmail ? 'row-no-email' : '';
+        const sourceBadge = isExternal ? ' <span class="chip" style="background:#dbeafe;">ext</span>' : '';
+
+        return '<tr class="' + rowClass + '">' +
+          '<td>' +
+            '<input type="checkbox"' +
+            ' data-nif="' + esc(emp.NIF) + '"' +
+            (hasEmail && !isExcluded ? ' checked' : '') +
+            (!hasEmail ? ' disabled' : '') + '>' +
+          '</td>' +
+          '<td>' + esc(emp.Empleado) + sourceBadge + '</td>' +
+          '<td style="color: var(--text-secondary);">' + esc(emp.Puesto) + '</td>' +
+          '<td style="color: var(--text-secondary);">' + esc(emp['Ubicación']) + '</td>' +
+          '<td style="color: ' + (hasEmail ? 'var(--accent)' : 'var(--danger)') + ';">' +
+            (hasEmail ? esc(emp['Email trabajo']) : '⚠ Sin email') +
+          '</td>' +
+        '</tr>';
+      }).join('');
+
+      tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            state.excludedNIFs.delete(cb.dataset.nif);
+          } else {
+            state.excludedNIFs.add(cb.dataset.nif);
+          }
+          updateCounts();
+        });
+      });
+
+      document.getElementById('selectAll').checked =
+        valid.filter(e => !state.excludedNIFs.has(e.NIF)).length === valid.length;
+
+      updateCounts();
+    }
+
+    function getSelectedAttendees() {
+      const allEmployees = [...state.employees, ...state.externalEmployees];
+      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const { valid } = splitByEmail(filtered);
+      return valid.filter(emp => !state.excludedNIFs.has(emp.NIF));
+    }
+
+    function updateCounts() {
+      const allEmployees = [...state.employees, ...state.externalEmployees];
+      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const { valid, noEmail } = splitByEmail(filtered);
+      const selected = valid.filter(emp => !state.excludedNIFs.has(emp.NIF));
+
+      const totalActive = allEmployees.length;
+      document.getElementById('attendeeCount').textContent = selected.length;
+      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' empleados';
+
+      const warningEl = document.getElementById('noEmailWarning');
+      if (noEmail.length > 0) {
+        warningEl.textContent = '⚠️ ' + noEmail.length + ' empleado' + (noEmail.length > 1 ? 's' : '') + ' sin Email trabajo — excluidos';
+      } else {
+        warningEl.textContent = '';
+      }
+
+      const btnOutlook = document.getElementById('btnOpenOutlook');
+      const btnCopy = document.getElementById('btnCopyEmails');
+      const title = document.getElementById('eventTitle').value.trim();
+      const date = document.getElementById('eventDate').value;
+      btnOutlook.disabled = selected.length === 0 || !title || !date;
+
+      if (selected.length > 50) {
+        btnCopy.style.display = '';
+        btnOutlook.textContent = '📅 Abrir evento (sin asistentes)';
+      } else {
+        btnCopy.style.display = 'none';
+        btnOutlook.textContent = '📅 Abrir en Outlook';
+      }
+    }
+
+    document.getElementById('selectAll').addEventListener('change', e => {
+      const checked = e.target.checked;
+      const allEmployees = [...state.employees, ...state.externalEmployees];
+      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const { valid } = splitByEmail(filtered);
+
+      valid.forEach(emp => {
+        if (checked) {
+          state.excludedNIFs.delete(emp.NIF);
+        } else {
+          state.excludedNIFs.add(emp.NIF);
+        }
+      });
+
+      renderTable();
+    });
+
+    // ═══════════════════════════════════
+    // EVENT CONFIGURATION
+    // ═══════════════════════════════════
+
+    document.querySelectorAll('input[name="eventType"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+        const locationInput = document.getElementById('eventLocation');
+        locationInput.disabled = isTeams;
+        if (isTeams) {
+          locationInput.value = '';
+          locationInput.placeholder = 'Se generará enlace de Teams en Outlook';
+        } else {
+          locationInput.placeholder = 'Ubicación (sala, dirección...)';
+        }
+      });
+    });
+
+    document.getElementById('seriesCheck').addEventListener('change', e => {
+      document.getElementById('seriesConfig').classList.toggle('visible', e.target.checked);
+      updateSeriesTabs();
+    });
+
+    document.querySelectorAll('input[name="seriesMode"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isRepeat = document.querySelector('input[name="seriesMode"]:checked').value === 'repeat';
+        document.getElementById('seriesRepeatConfig').style.display = isRepeat ? '' : 'none';
+        document.getElementById('seriesManualConfig').style.display = isRepeat ? 'none' : '';
+        updateSeriesTabs();
+      });
+    });
+
+    document.getElementById('btnAddDate').addEventListener('click', () => {
+      const container = document.getElementById('manualDates');
+      if (container.children.length >= 12) return;
+      const div = document.createElement('div');
+      div.className = 'event-row';
+      div.innerHTML = '<input class="input-field" type="date" style="flex:1;"> <button class="link-btn link-clear" onclick="this.parentElement.remove(); updateSeriesTabs();">×</button>';
+      container.appendChild(div);
+      div.querySelector('input').addEventListener('change', updateSeriesTabs);
+    });
+
+    document.getElementById('seriesCount').addEventListener('input', updateSeriesTabs);
+    document.getElementById('eventDate').addEventListener('change', () => {
+      document.getElementById('eventDate').classList.remove('error');
+      updateSeriesTabs();
+      updateCounts();
+    });
+    document.getElementById('eventTitle').addEventListener('input', () => {
+      document.getElementById('eventTitle').classList.remove('error');
+      updateCounts();
+    });
+
+    function updateSeriesTabs() {
+      const tabsEl = document.getElementById('sessionTabs');
+      const isSeries = document.getElementById('seriesCheck').checked;
+      const startDate = document.getElementById('eventDate').value;
+
+      if (!isSeries || !startDate) {
+        tabsEl.classList.remove('visible');
+        state.seriesDates = startDate ? [startDate] : [];
+        return;
+      }
+
+      const seriesMode = document.querySelector('input[name="seriesMode"]:checked').value;
+
+      if (seriesMode === 'repeat') {
+        const count = parseInt(document.getElementById('seriesCount').value) || 2;
+        state.seriesDates = generateSeriesDates(startDate, 'week', count);
+      } else {
+        const manualInputs = document.querySelectorAll('#manualDates input[type="date"]');
+        const manualDates = [...manualInputs].map(i => i.value).filter(Boolean);
+        state.seriesDates = [startDate, ...manualDates].sort();
+      }
+
+      tabsEl.classList.add('visible');
+      tabsEl.innerHTML = state.seriesDates.map((d, i) => {
+        const label = new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        const active = i === state.currentSessionIndex ? 'active' : '';
+        return '<button class="session-tab ' + active + '" data-index="' + i + '">' + label + '</button>';
+      }).join('');
+
+      tabsEl.querySelectorAll('.session-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          state.currentSessionIndex = parseInt(tab.dataset.index);
+          updateSeriesTabs();
+        });
+      });
+    }
+
+    // ═══════════════════════════════════
+    // DEEP LINK AND ACTIONS
+    // ═══════════════════════════════════
+
+    function getCurrentEvent() {
+      const isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+      return {
+        title: document.getElementById('eventTitle').value.trim(),
+        date: document.getElementById('eventDate').value,
+        startTime: document.getElementById('eventStart').value,
+        endTime: document.getElementById('eventEnd').value,
+        location: document.getElementById('eventLocation').value.trim(),
+        isTeams: isTeams,
+        body: isTeams ? 'Se enviará el enlace de Teams una vez creado el evento en Outlook.' : ''
+      };
+    }
+
+    function validateEvent() {
+      const event = getCurrentEvent();
+      let valid = true;
+
+      const titleEl = document.getElementById('eventTitle');
+      const dateEl = document.getElementById('eventDate');
+
+      titleEl.classList.toggle('error', !event.title);
+      dateEl.classList.toggle('error', !event.date);
+
+      if (!event.title || !event.date) valid = false;
+      return valid;
+    }
+
+    document.getElementById('btnOpenOutlook').addEventListener('click', () => {
+      if (!validateEvent()) return;
+
+      const event = getCurrentEvent();
+      const selected = getSelectedAttendees();
+      const emails = selected.map(e => e['Email trabajo']);
+
+      if (state.seriesDates.length > 1) {
+        openSeriesSequentially(event, emails);
+        return;
+      }
+
+      const result = buildDeepLink(event, emails);
+      window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+    });
+
+    // Clipboard helper (works on file:// protocol where navigator.clipboard may fail)
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return Promise.resolve();
+    }
+
+    document.getElementById('btnCopyEmails').addEventListener('click', () => {
+      const selected = getSelectedAttendees();
+      const emails = selected.map(e => e['Email trabajo']).join(';');
+      copyToClipboard(emails).then(() => {
+        const btn = document.getElementById('btnCopyEmails');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copiados (' + selected.length + ')';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+      });
+    });
+
+    function openSeriesSequentially(baseEvent, emails) {
+      const total = state.seriesDates.length;
+      let index = 0;
+
+      function openSession(i) {
+        const event = { ...baseEvent, date: state.seriesDates[i] };
+        const result = buildDeepLink(event, emails);
+
+        if (result.useFallback && i === 0) {
+          copyToClipboard(result.emailString);
+          alert(
+            'Se han copiado ' + emails.length + ' emails al portapapeles.\n' +
+            'Cada sesión se abrirá SIN asistentes. Pega los emails en el campo "Para".'
+          );
+        }
+
+        window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+      }
+
+      function proceed() {
+        openSession(index);
+
+        if (index < total - 1) {
+          const dateLabel = new Date(state.seriesDates[index] + 'T00:00:00')
+            .toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+          const dialog = document.getElementById('seriesDialog');
+          document.getElementById('dialogTitle').textContent =
+            'Sesión ' + (index + 1) + ' de ' + total + ' abierta';
+          document.getElementById('dialogBody').textContent =
+            'Se ha abierto la invitación del ' + dateLabel +
+            ' en Outlook. Cuando la hayas enviado, pulsa "Siguiente".';
+          document.getElementById('dialogNext').textContent =
+            index === total - 2 ? 'Abrir última sesión' : 'Siguiente sesión';
+          dialog.classList.add('visible');
+        } else {
+          document.getElementById('seriesDialog').classList.remove('visible');
+        }
+
+        index++;
+      }
+
+      proceed();
+
+      document.getElementById('dialogNext').onclick = proceed;
+      document.getElementById('dialogCancel').onclick = () => {
+        document.getElementById('seriesDialog').classList.remove('visible');
+      };
+    }
+
+    // ═══════════════════════════════════
+    // EXTERNAL LIST SUPPORT
+    // ═══════════════════════════════════
+
+    document.getElementById('btnAddExternal').addEventListener('click', () => {
+      document.getElementById('externalFileInput').click();
+    });
+
+    document.getElementById('externalFileInput').addEventListener('change', e => {
+      if (!e.target.files.length) return;
+      const file = e.target.files[0];
+      const isCSV = file.name.toLowerCase().endsWith('.csv');
+      const reader = new FileReader();
+
+      reader.onload = evt => {
+        let workbook;
+        if (isCSV) {
+          workbook = XLSX.read(evt.target.result, { type: 'string' });
+        } else {
+          const data = new Uint8Array(evt.target.result);
+          workbook = XLSX.read(data, { type: 'array' });
+        }
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        if (rows.length === 0) {
+          alert('El fichero externo está vacío.');
+          return;
+        }
+
+        const headers = Object.keys(rows[0]);
+        if (!headers.includes('NIF')) {
+          alert('El fichero externo necesita una columna "NIF" para poder cruzar datos.');
+          return;
+        }
+
+        const existingNIFs = new Set(state.employees.map(e => e.NIF));
+
+        const externalEmps = rows
+          .filter(row => row.NIF && !existingNIFs.has(String(row.NIF).trim()))
+          .map(row => {
+            const emp = {};
+            RELEVANT_COLUMNS.forEach(col => {
+              emp[col] = row[col] != null ? String(row[col]).trim() : '';
+            });
+            emp._source = 'external';
+            return emp;
+          });
+
+        state.externalEmployees = externalEmps;
+
+        const btn = document.getElementById('btnAddExternal');
+        btn.textContent = '✓ ' + externalEmps.length + ' externos añadidos';
+        btn.style.color = 'var(--success)';
+
+        renderFilters();
+        renderTable();
+      };
+
+      if (isCSV) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  </script>
+</body>
+</html>
