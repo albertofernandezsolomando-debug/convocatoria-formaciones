@@ -4,64 +4,120 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Convocatoria de Formaciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
-    /* --- CSS custom properties --- */
+    /* --- Design: Corporate-refined with warmth --- */
     :root {
-      --bg-primary: #f5f6fa;
+      --bg-primary: #f8f7f4;
       --bg-panel: #ffffff;
-      --bg-input: #f0f1f5;
-      --text-primary: #1a1a2e;
-      --text-secondary: #6b7280;
-      --text-muted: #9ca3af;
-      --accent: #2563eb;
-      --accent-hover: #1d4ed8;
-      --border: #e5e7eb;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --success: #22c55e;
-      --radius: 8px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --bg-input: #f3f2ee;
+      --bg-warm: #faf9f6;
+      --text-primary: #1c1917;
+      --text-secondary: #57534e;
+      --text-muted: #a8a29e;
+      --accent: #b45309;
+      --accent-hover: #92400e;
+      --accent-light: #fef3c7;
+      --accent-subtle: #fffbeb;
+      --border: #e7e5e4;
+      --border-strong: #d6d3d1;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px rgba(28,25,23,0.04);
+      --shadow: 0 2px 8px rgba(28,25,23,0.06), 0 1px 2px rgba(28,25,23,0.04);
+      --shadow-lg: 0 8px 32px rgba(28,25,23,0.10), 0 2px 8px rgba(28,25,23,0.06);
+      --shadow-glow: 0 0 0 3px rgba(180,83,9,0.12);
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: var(--font-body);
       background: var(--bg-primary);
       color: var(--text-primary);
       height: 100vh;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Subtle texture on body */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(180,83,9,0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(120,53,15,0.02) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .app {
       display: flex;
       height: 100vh;
+      position: relative;
+      z-index: 1;
     }
 
     /* --- Left panel --- */
     .left-panel {
-      width: 360px;
-      min-width: 360px;
+      width: 380px;
+      min-width: 380px;
       background: var(--bg-panel);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      box-shadow: 2px 0 12px rgba(28,25,23,0.03);
+    }
+
+    /* Custom scrollbar for left panel */
+    .left-panel::-webkit-scrollbar { width: 5px; }
+    .left-panel::-webkit-scrollbar-track { background: transparent; }
+    .left-panel::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 10px;
     }
 
     .section {
-      padding: 16px 20px;
+      padding: 20px 24px;
       border-bottom: 1px solid var(--border);
     }
 
     .section-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-      margin-bottom: 10px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 2px;
     }
 
     /* --- Right panel --- */
@@ -70,21 +126,25 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background: var(--bg-warm);
     }
 
     .summary-bar {
-      padding: 12px 20px;
+      padding: 16px 28px;
       border-bottom: 1px solid var(--border);
       background: var(--bg-panel);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
 
     .attendee-count {
-      font-size: 24px;
-      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 400;
       color: var(--accent);
+      line-height: 1;
     }
 
     .attendee-table-wrap {
@@ -92,74 +152,112 @@
       overflow-y: auto;
     }
 
+    /* Custom scrollbar for table */
+    .attendee-table-wrap::-webkit-scrollbar { width: 6px; }
+    .attendee-table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .attendee-table-wrap::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 10px;
+    }
+
     .attendee-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
     }
 
     .attendee-table th {
       position: sticky;
       top: 0;
       background: var(--bg-panel);
-      padding: 8px 12px;
+      padding: 10px 16px;
       text-align: left;
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       border-bottom: 2px solid var(--border);
+      z-index: 10;
     }
 
     .attendee-table td {
-      padding: 8px 12px;
+      padding: 10px 16px;
       font-size: 13px;
       border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
     }
 
-    .attendee-table tr:hover {
-      background: var(--bg-primary);
+    .attendee-table tr:hover td {
+      background: var(--accent-subtle);
+    }
+
+    .attendee-table tr.row-no-email:hover td {
+      background: var(--bg-input);
     }
 
     .action-bar {
-      padding: 12px 20px;
+      padding: 16px 28px;
       border-top: 1px solid var(--border);
       background: var(--bg-panel);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 -2px 8px rgba(28,25,23,0.03);
     }
 
     /* --- Shared components --- */
     .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
+      border: 2px dashed var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-subtle) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .upload-zone:hover::before,
+    .upload-zone.dragover::before {
+      opacity: 1;
     }
 
     .upload-zone:hover, .upload-zone.dragover {
       border-color: var(--accent);
-      background: #eff6ff;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
     }
 
     .upload-zone.loaded {
       border-style: solid;
       border-color: var(--success);
-      background: #f0fdf4;
+      background: var(--success-light);
     }
+
+    .upload-zone.loaded::before { display: none; }
 
     .filter-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 10px;
+      margin-bottom: 8px;
     }
 
     .filter-label {
       font-size: 12px;
+      font-weight: 500;
       color: var(--text-secondary);
-      width: 100px;
+      width: 105px;
       flex-shrink: 0;
     }
 
@@ -170,35 +268,52 @@
 
     .filter-select-btn {
       width: 100%;
-      padding: 6px 10px;
+      padding: 7px 12px;
       background: var(--bg-input);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-size: 12px;
+      font-family: var(--font-body);
       text-align: left;
       cursor: pointer;
       color: var(--text-secondary);
+      transition: all var(--transition);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .filter-select-btn:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-warm);
     }
 
     .filter-select-btn.active {
       color: var(--accent);
       border-color: var(--accent);
-      background: #eff6ff;
+      background: var(--accent-subtle);
+      font-weight: 500;
     }
 
     .filter-dropdown {
       display: none;
       position: absolute;
-      top: 100%;
+      top: calc(100% + 4px);
       left: 0;
       right: 0;
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      max-height: 200px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 220px;
       overflow-y: auto;
       z-index: 100;
+      animation: dropdownIn 0.15s ease-out;
+    }
+
+    @keyframes dropdownIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .filter-dropdown.open { display: block; }
@@ -206,68 +321,117 @@
     .filter-dropdown label {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
+      gap: 8px;
+      padding: 8px 12px;
       font-size: 12px;
       cursor: pointer;
+      transition: background var(--transition);
     }
 
-    .filter-dropdown label:hover { background: var(--bg-primary); }
+    .filter-dropdown label:hover { background: var(--accent-subtle); }
+
+    .filter-dropdown label:first-child { margin-top: 4px; }
+    .filter-dropdown label:last-child { margin-bottom: 4px; }
+
+    .filter-dropdown input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+    }
 
     .input-field {
       width: 100%;
-      padding: 6px 10px;
+      padding: 8px 12px;
       background: var(--bg-input);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-size: 13px;
-      font-family: inherit;
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      transition: all var(--transition);
+    }
+
+    .input-field:hover {
+      border-color: var(--border-strong);
     }
 
     .input-field:focus {
       outline: none;
       border-color: var(--accent);
+      box-shadow: var(--shadow-glow);
+      background: var(--bg-panel);
     }
 
-    .input-field.error { border-color: var(--danger); }
+    .input-field.error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
 
     .btn {
-      padding: 8px 16px;
+      padding: 10px 20px;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius);
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
+      font-family: var(--font-body);
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .btn-primary {
       background: var(--accent);
       color: white;
+      box-shadow: 0 1px 3px rgba(180,83,9,0.3);
     }
 
-    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(180,83,9,0.25);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
 
     .btn-primary:disabled {
       background: var(--border);
       color: var(--text-muted);
       cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
     }
 
     .btn-secondary {
       background: var(--bg-input);
       color: var(--text-secondary);
+      border: 1px solid var(--border);
     }
 
-    .btn-secondary:hover { background: var(--border); }
+    .btn-secondary:hover {
+      background: var(--bg-panel);
+      border-color: var(--border-strong);
+    }
 
     .link-btn {
       background: none;
       border: none;
       font-size: 12px;
+      font-family: var(--font-body);
+      font-weight: 500;
       cursor: pointer;
-      padding: 0;
+      padding: 2px 0;
+      transition: opacity var(--transition);
     }
+
+    .link-btn:hover { opacity: 0.7; }
 
     .link-add { color: var(--accent); }
     .link-clear { color: var(--danger); }
@@ -275,28 +439,47 @@
     .chip {
       display: inline-block;
       font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      background: var(--bg-input);
-      color: var(--text-secondary);
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--accent-light);
+      color: var(--accent);
+      margin: 1px 2px;
     }
 
     .warning-text {
       font-size: 12px;
+      font-weight: 500;
       color: var(--warning);
     }
 
     .row-no-email {
-      opacity: 0.5;
+      opacity: 0.45;
     }
 
     .empty-state {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100%;
       color: var(--text-muted);
-      font-size: 14px;
+      font-size: 15px;
+      gap: 8px;
+    }
+
+    .empty-state::before {
+      content: '';
+      display: block;
+      width: 48px;
+      height: 48px;
+      background: var(--bg-input);
+      border-radius: 50%;
+      margin-bottom: 4px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a8a29e' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z'/%3E%3C/svg%3E");
+      background-size: 24px;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
     .event-row {
@@ -308,53 +491,74 @@
 
     .radio-group {
       display: flex;
-      gap: 12px;
+      gap: 16px;
     }
 
     .radio-group label {
       font-size: 12px;
+      font-weight: 500;
       color: var(--text-secondary);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    .radio-group label:hover {
+      color: var(--text-primary);
+    }
+
+    .radio-group input[type="radio"] {
+      accent-color: var(--accent);
     }
 
     .series-config {
       display: none;
-      margin-top: 8px;
-      padding: 8px;
+      margin-top: 10px;
+      padding: 12px;
       background: var(--bg-primary);
-      border-radius: 6px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
     }
 
     .series-config.visible { display: block; }
 
     .session-tabs {
       display: none;
-      padding: 8px 20px;
+      padding: 10px 28px;
       border-bottom: 1px solid var(--border);
       background: var(--bg-panel);
-      gap: 4px;
+      gap: 6px;
       overflow-x: auto;
     }
 
     .session-tabs.visible { display: flex; }
 
     .session-tab {
-      padding: 4px 12px;
-      border-radius: 4px;
+      padding: 6px 14px;
+      border-radius: 20px;
       font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font-body);
       cursor: pointer;
       white-space: nowrap;
       background: var(--bg-input);
       color: var(--text-secondary);
-      border: none;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+    }
+
+    .session-tab:hover {
+      background: var(--accent-subtle);
+      color: var(--accent);
     }
 
     .session-tab.active {
       background: var(--accent);
       color: white;
+      border-color: var(--accent);
+      box-shadow: 0 2px 6px rgba(180,83,9,0.25);
     }
 
     /* Dialog overlay for series confirmation */
@@ -362,7 +566,9 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.4);
+      background: rgba(28,25,23,0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -370,20 +576,62 @@
 
     .dialog-overlay.visible {
       display: flex;
+      animation: overlayIn 0.2s ease-out;
+    }
+
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .dialog-box {
       background: var(--bg-panel);
-      border-radius: var(--radius);
-      padding: 24px;
-      max-width: 400px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
       text-align: center;
+      animation: dialogIn 0.25s ease-out;
     }
 
-    .dialog-box h3 { margin-bottom: 12px; }
-    .dialog-box p { margin-bottom: 16px; color: var(--text-secondary); }
-    .dialog-buttons { display: flex; gap: 8px; justify-content: center; }
+    @keyframes dialogIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .dialog-box h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 10px;
+    }
+
+    .dialog-box p {
+      margin-bottom: 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .dialog-buttons { display: flex; gap: 10px; justify-content: center; }
+
+    /* Checkbox styling */
+    input[type="checkbox"]:not(.filter-dropdown input) {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+    }
+
+    /* Subtle fade-in for sections */
+    .section, .summary-bar, .action-bar {
+      animation: fadeUp 0.3s ease-out both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -393,18 +641,27 @@
 
       <!-- 1. Datos -->
       <div class="section">
-        <div class="section-label">1. Datos</div>
+        <div class="section-label">Datos</div>
         <div class="upload-zone" id="uploadZone">
-          <div id="uploadPrompt">
-            <div style="font-size: 24px; margin-bottom: 6px;">📄</div>
-            <div style="font-size: 13px; color: var(--text-secondary);">
-              Arrastra tu Excel aquí o <strong style="color: var(--accent);">haz clic para seleccionar</strong>
+          <div id="uploadPrompt" style="position: relative;">
+            <div style="width: 40px; height: 40px; margin: 0 auto 10px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
             </div>
+            <div style="font-size: 13px; color: var(--text-secondary);">
+              Arrastra tu Excel aquí o <strong style="color: var(--accent); cursor: pointer;">selecciona un archivo</strong>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">.xlsx, .xls</div>
           </div>
-          <div id="uploadInfo" style="display:none;">
-            <div style="font-size: 24px; margin-bottom: 6px;">📄</div>
-            <div style="font-size: 13px; font-weight: 600;" id="fileName"></div>
-            <div style="font-size: 11px; color: var(--text-muted);" id="fileStats"></div>
+          <div id="uploadInfo" style="display:none; position: relative;">
+            <div style="width: 40px; height: 40px; margin: 0 auto 10px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--success);">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);" id="fileName"></div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="fileStats"></div>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
         </div>
@@ -412,11 +669,11 @@
 
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none;">
-        <div class="section-label">2. Filtros</div>
+        <div class="section-label">Filtros</div>
         <div id="filterContainer"></div>
-        <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
-          <span style="color: var(--text-muted);">|</span>
+          <span style="color: var(--border-strong); font-size: 11px;">|</span>
           <button class="link-btn link-clear" id="btnClearFilters">Limpiar filtros</button>
         </div>
         <input type="file" id="externalFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
@@ -424,7 +681,7 @@
 
       <!-- 3. Evento -->
       <div class="section" id="eventoSection" style="display:none;">
-        <div class="section-label">3. Evento</div>
+        <div class="section-label">Evento</div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
           <div class="event-row">
@@ -468,11 +725,11 @@
 
       <!-- Summary bar -->
       <div class="summary-bar" id="summaryBar" style="display:none;">
-        <div>
+        <div style="display: flex; align-items: baseline; gap: 6px;">
           <span class="attendee-count" id="attendeeCount">0</span>
-          <span style="font-size: 13px; color: var(--text-secondary);" id="attendeeTotal"> de 0 empleados</span>
+          <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;" id="attendeeTotal">de 0 empleados</span>
         </div>
-        <div id="filterChips"></div>
+        <div id="filterChips" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;"></div>
       </div>
 
       <!-- Session tabs (series mode only) -->
@@ -500,9 +757,9 @@
       <!-- Action bar -->
       <div class="action-bar" id="actionBar" style="display:none;">
         <div class="warning-text" id="noEmailWarning"></div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">📋 Copiar emails</button>
-          <button class="btn btn-primary" id="btnOpenOutlook" disabled>📅 Abrir en Outlook</button>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">Copiar emails</button>
+          <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
       </div>
 
@@ -932,10 +1189,10 @@
 
       if (selected.length > 50) {
         btnCopy.style.display = '';
-        btnOutlook.textContent = '📅 Abrir evento (sin asistentes)';
+        btnOutlook.textContent = 'Abrir evento (sin asistentes)';
       } else {
         btnCopy.style.display = 'none';
-        btnOutlook.textContent = '📅 Abrir en Outlook';
+        btnOutlook.textContent = 'Abrir en Outlook';
       }
     }
 
