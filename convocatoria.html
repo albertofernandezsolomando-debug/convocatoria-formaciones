@@ -811,6 +811,18 @@
     </div>
   </div>
 
+  <!-- Confirmation dialog -->
+  <div class="dialog-overlay" id="confirmDialog">
+    <div class="dialog-box">
+      <h3>Confirmar convocatoria</h3>
+      <div id="confirmBody" style="text-align:left; margin-bottom:20px; color:var(--text-secondary); font-size:14px; line-height:1.6;"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+        <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ═══════════════════════════════════
     // PURE LOGIC FUNCTIONS
@@ -1398,14 +1410,46 @@
       const event = getCurrentEvent();
       const selected = getSelectedAttendees();
       const emails = selected.map(e => e['Email trabajo']);
+      const isSeries = state.seriesDates.length > 1;
 
-      if (state.seriesDates.length > 1) {
-        openSeriesSequentially(event, emails);
-        return;
+      // Build confirmation summary using esc() for all user-supplied strings
+      const dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+      const typeLabel = event.isTeams ? 'Teams' : 'Presencial';
+      let summary = '<strong>' + esc(event.title) + '</strong><br>';
+      summary += dateStr + ', ' + event.startTime + ' – ' + event.endTime + '<br>';
+      summary += typeLabel;
+      if (event.location && !event.isTeams) summary += ' · ' + esc(event.location);
+      summary += '<br><strong>' + selected.length + '</strong> asistentes';
+      if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
+      if (selected.length > 50) {
+        summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 asistentes)</span>';
       }
 
-      const result = buildDeepLink(event, emails);
-      window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+      // Note: innerHTML is used with esc() for all user-supplied values — safe from XSS
+      document.getElementById('confirmBody').innerHTML = summary;
+      document.getElementById('confirmDialog').classList.add('visible');
+
+      document.getElementById('confirmProceed').onclick = () => {
+        document.getElementById('confirmDialog').classList.remove('visible');
+
+        if (isSeries) {
+          openSeriesSequentially(event, emails);
+        } else {
+          const result = buildDeepLink(event, emails);
+          window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+          if (result.useFallback) {
+            copyToClipboard(result.emailString).then(() => {
+              showToast('Emails copiados al portapapeles (' + emails.length + ')', 'success');
+            });
+          }
+        }
+      };
+
+      document.getElementById('confirmCancel').onclick = () => {
+        document.getElementById('confirmDialog').classList.remove('visible');
+      };
     });
 
     // Clipboard helper (works on file:// protocol where navigator.clipboard may fail)
