@@ -1085,6 +1085,36 @@
         }
 
         state.employees = result.employees;
+
+        // Data quality report
+        const qualityIssues = [];
+        const nifs = state.employees.map(e => e.NIF);
+        const emptyNifs = nifs.filter(n => !n || n === '').length;
+        const nifCounts = {};
+        nifs.forEach(n => { if (n) nifCounts[n] = (nifCounts[n] || 0) + 1; });
+        const dupNifs = Object.entries(nifCounts).filter(([k,v]) => v > 1);
+
+        const emails = state.employees.map(e => e['Email trabajo']);
+        const emptyEmails = emails.filter(e => !e || e === '').length;
+        const invalidEmails = state.employees.filter(e => {
+          const email = e['Email trabajo'];
+          return email && email !== '' && !isValidEmail(email);
+        });
+
+        if (dupNifs.length > 0) {
+          showToast(dupNifs.length + ' NIF' + (dupNifs.length > 1 ? 's' : '') + ' duplicado' + (dupNifs.length > 1 ? 's' : '') + ' detectado' + (dupNifs.length > 1 ? 's' : ''), 'warning', 6000);
+        }
+        if (emptyNifs > 0) {
+          showToast(emptyNifs + ' empleado' + (emptyNifs > 1 ? 's' : '') + ' sin NIF', 'warning', 5000);
+        }
+        if (invalidEmails.length > 0) {
+          showToast(invalidEmails.length + ' email' + (invalidEmails.length > 1 ? 's' : '') + ' con formato incorrecto', 'warning', 6000);
+        }
+
+        // Always show summary toast
+        showToast(state.employees.length + ' empleados activos' +
+          (emptyEmails > 0 ? ' · ' + emptyEmails + ' sin email' : ''), 'info', 4000);
+
         state.activeFilters = {};
         state.excludedNIFs = new Set();
         state.externalEmployees = [];
