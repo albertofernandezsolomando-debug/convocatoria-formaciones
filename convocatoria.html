@@ -887,10 +887,16 @@
           const ab = row['Alta/Baja'];
           return ab === 1 || ab === '1';
         })
-        .map(row => {
+        .map((row, idx) => {
           const emp = {};
           RELEVANT_COLUMNS.forEach(col => {
             emp[col] = row[col] != null ? String(row[col]).trim() : '';
+          });
+          // BUG-01: synthetic unique key so duplicate/empty NIFs don't break selection
+          emp._id = String(idx);
+          // BUG-02: normalize filter fields (trim + collapse spaces) to avoid ghost duplicates
+          FILTER_KEYS.forEach(col => {
+            emp[col] = emp[col].replace(/\s+/g, ' ').trim();
           });
           return emp;
         });
@@ -952,7 +958,7 @@
       const emailStr = attendees.join(';');
       const fullUrl = baseUrl + '&to=' + encodeURIComponent(emailStr);
 
-      const useFallback = fullUrl.length > 2000;
+      const useFallback = new Blob([fullUrl]).size > 1800;
 
       return {
         url: useFallback ? baseUrl : fullUrl,
@@ -974,11 +980,16 @@
       return dates;
     }
 
+    // BUG-03: strict email validation — rejects "user@", "@domain.com", "a@@b.com", etc.
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
     function splitByEmail(employees) {
       const valid = [];
       const noEmail = [];
       employees.forEach(emp => {
-        if (emp['Email trabajo'] && emp['Email trabajo'].includes('@')) {
+        if (isValidEmail(emp['Email trabajo'])) {
           valid.push(emp);
         } else {
           noEmail.push(emp);
@@ -1076,6 +1087,10 @@
         state.employees = result.employees;
         state.activeFilters = {};
         state.excludedNIFs = new Set();
+        state.externalEmployees = [];
+        const extBtn = document.getElementById('btnAddExternal');
+        extBtn.textContent = '+ Añadir lista externa';
+        extBtn.style.color = '';
 
         uploadZone.classList.add('loaded');
         uploadPrompt.style.display = 'none';
@@ -1237,8 +1252,8 @@
       // the dynamic table. All user-sourced data from Excel is sanitized through esc()
       // before insertion, preventing XSS from crafted spreadsheet values.
       tbody.innerHTML = allSorted.map(emp => {
-        const hasEmail = emp['Email trabajo'] && emp['Email trabajo'].includes('@');
-        const isExcluded = state.excludedNIFs.has(emp.NIF);
+        const hasEmail = isValidEmail(emp['Email trabajo']);
+        const isExcluded = state.excludedNIFs.has(emp._id);
         const isExternal = emp._source === 'external';
         const rowClass = !hasEmail ? 'row-no-email' : '';
         const sourceBadge = isExternal ? ' <span class="chip" style="background:#dbeafe;">ext</span>' : '';
@@ -1246,7 +1261,7 @@
         return '<tr class="' + rowClass + '">' +
           '<td>' +
             '<input type="checkbox"' +
-            ' data-nif="' + esc(emp.NIF) + '"' +
+            ' data-id="' + esc(emp._id) + '"' +
             (hasEmail && !isExcluded ? ' checked' : '') +
             (!hasEmail ? ' disabled' : '') + '>' +
           '</td>' +
@@ -1262,9 +1277,9 @@
       tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.addEventListener('change', () => {
           if (cb.checked) {
-            state.excludedNIFs.delete(cb.dataset.nif);
+            state.excludedNIFs.delete(cb.dataset.id);
           } else {
-            state.excludedNIFs.add(cb.dataset.nif);
+            state.excludedNIFs.add(cb.dataset.id);
           }
           updateCounts();
         });
@@ -1284,7 +1299,7 @@
       });
 
       document.getElementById('selectAll').checked =
-        valid.filter(e => !state.excludedNIFs.has(e.NIF)).length === valid.length;
+        valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
 
       updateCounts();
     }
@@ -1293,14 +1308,14 @@
       const allEmployees = [...state.employees, ...state.externalEmployees];
       const filtered = filterEmployees(allEmployees, state.activeFilters);
       const { valid } = splitByEmail(filtered);
-      return valid.filter(emp => !state.excludedNIFs.has(emp.NIF));
+      return valid.filter(emp => !state.excludedNIFs.has(emp._id));
     }
 
     function updateCounts() {
       const allEmployees = [...state.employees, ...state.externalEmployees];
       const filtered = filterEmployees(allEmployees, state.activeFilters);
       const { valid, noEmail } = splitByEmail(filtered);
-      const selected = valid.filter(emp => !state.excludedNIFs.has(emp.NIF));
+      const selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
 
       const totalActive = allEmployees.length;
       document.getElementById('attendeeCount').textContent = selected.length;
@@ -1336,9 +1351,9 @@
 
       valid.forEach(emp => {
         if (checked) {
-          state.excludedNIFs.delete(emp.NIF);
+          state.excludedNIFs.delete(emp._id);
         } else {
-          state.excludedNIFs.add(emp.NIF);
+          state.excludedNIFs.add(emp._id);
         }
       });
 
@@ -1627,12 +1642,13 @@
 
         const externalEmps = rows
           .filter(row => row.NIF && !existingNIFs.has(String(row.NIF).trim()))
-          .map(row => {
+          .map((row, idx) => {
             const emp = {};
             RELEVANT_COLUMNS.forEach(col => {
               emp[col] = row[col] != null ? String(row[col]).trim() : '';
             });
             emp._source = 'external';
+            emp._id = 'ext-' + idx;
             return emp;
           });
 
