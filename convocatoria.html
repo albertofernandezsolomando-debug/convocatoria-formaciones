@@ -1072,6 +1072,75 @@
     });
 
     // ═══════════════════════════════════
+    // FUNDAE CATALOG DATA LAYER
+    // ═══════════════════════════════════
+
+    function getCatalog(key) {
+      try { return JSON.parse(localStorage.getItem('fundae_' + key) || '[]'); }
+      catch(e) { return []; }
+    }
+
+    function saveCatalog(key, data) {
+      try { localStorage.setItem('fundae_' + key, JSON.stringify(data)); }
+      catch(e) { showToast('Error al guardar catálogo: almacenamiento lleno', 'error'); }
+    }
+
+    function upsertCatalogRecord(key, pkField, record) {
+      const data = getCatalog(key);
+      const idx = data.findIndex(r => r[pkField] === record[pkField]);
+      if (idx >= 0) data[idx] = record;
+      else data.push(record);
+      saveCatalog(key, data);
+      return data;
+    }
+
+    function deleteCatalogRecord(key, pkField, pkValue) {
+      const data = getCatalog(key).filter(r => r[pkField] !== pkValue);
+      saveCatalog(key, data);
+      return data;
+    }
+
+    function getLinkedRecords(proveedorCIF) {
+      const centros = getCatalog('centros').filter(c => c.cifProveedor === proveedorCIF);
+      const tutores = getCatalog('tutores').filter(t => t.cifProveedor === proveedorCIF);
+      return { centros, tutores };
+    }
+
+    function exportCatalogsJSON() {
+      const data = {
+        proveedores: getCatalog('proveedores'),
+        centros: getCatalog('centros'),
+        tutores: getCatalog('tutores'),
+        acciones: getCatalog('acciones')
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'fundae_catalogos_backup.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('Backup de catálogos descargado', 'success');
+    }
+
+    function importCatalogsJSON(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.proveedores) saveCatalog('proveedores', data.proveedores);
+          if (data.centros) saveCatalog('centros', data.centros);
+          if (data.tutores) saveCatalog('tutores', data.tutores);
+          if (data.acciones) saveCatalog('acciones', data.acciones);
+          showToast('Catálogos importados correctamente', 'success');
+          if (typeof renderCatalogList === 'function') renderCatalogList();
+        } catch(err) {
+          showToast('Error al importar: archivo JSON inválido', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ═══════════════════════════════════
     // HISTORY STORAGE
     // ═══════════════════════════════════
 
