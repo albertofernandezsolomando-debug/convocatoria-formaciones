@@ -4006,6 +4006,242 @@
       this.value = '';
     });
 
+    // ─── XML helper getters ───
+
+    function getXmlAccion() {
+      return getCatalog('acciones').find(a => a.codigo === document.getElementById('xmlAccionSelect').value);
+    }
+
+    function getXmlCentro() {
+      return getCatalog('centros').find(c => c.documento === document.getElementById('xmlCentroSelect').value);
+    }
+
+    function getXmlTutor() {
+      return getCatalog('tutores').find(t => t.documento === document.getElementById('xmlTutorSelect').value);
+    }
+
+    // ─── 1. genXmlAccionFormativa ───
+
+    function genXmlAccionFormativa() {
+      const accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
+      if (!accion.codigo || !accion.nombre) { showToast('La acción debe tener código y nombre', 'error'); return; }
+      if (!accion.modalidad) { showToast('La acción no tiene modalidad definida', 'error'); return; }
+      if (!accion.objetivos) { showToast('La acción no tiene objetivos definidos', 'error'); return; }
+      if (!accion.contenidos) { showToast('La acción no tiene contenidos definidos', 'error'); return; }
+
+      const e = v => esc(String(v || ''));
+      const mod = accion.modalidad;
+      const horasPr = accion.horasPresenciales || '0';
+      const horasTe = accion.horasTeleformacion || '0';
+
+      let modalidadXml = '';
+      if (mod === 'Presencial') {
+        modalidadXml = '    <modalidadPresencial><horasPr>' + e(horasPr) + '</horasPr></modalidadPresencial>';
+      } else if (mod === 'Teleformación') {
+        modalidadXml = '    <modalidadTeleformacion>' +
+          (Number(horasPr) > 0 ? '<horasPr>' + e(horasPr) + '</horasPr>' : '') +
+          '<horasTe>' + e(horasTe) + '</horasTe></modalidadTeleformacion>';
+      } else if (mod === 'Mixta') {
+        modalidadXml = '    <modalidadMixta><horasPr>' + e(horasPr) + '</horasPr><horasTe>' + e(horasTe) + '</horasTe></modalidadMixta>';
+      }
+
+      // Unique CIFs from participants
+      const informaRLT = document.getElementById('xmlInformaRLT').value || 'S';
+      const cifSet = new Set();
+      xmlState.participantes.forEach(p => { if (p.cifEmpresa) cifSet.add(p.cifEmpresa); });
+      const empXml = Array.from(cifSet).map(cif =>
+        '    <empParticipantes>\n' +
+        '      <cif>' + e(cif) + '</cif>\n' +
+        '      <infRLT><informaRLT>' + e(informaRLT) + '</informaRLT></infRLT>\n' +
+        '    </empParticipantes>'
+      ).join('\n');
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<AccionesFormativas>\n' +
+        '  <AccionFormativa>\n' +
+        '    <codAccion>' + e(accion.codigo) + '</codAccion>\n' +
+        '    <nombreAccion>' + e(accion.nombre) + '</nombreAccion>\n' +
+        '    <codGrupoAccion>' + e(accion.codigoGrupo) + '</codGrupoAccion>\n' +
+        (accion.areaProfesional ? '    <codAreaProfesional>' + e(accion.areaProfesional) + '</codAreaProfesional>\n' : '') +
+        modalidadXml + '\n' +
+        '    <objetivos>' + e(accion.objetivos) + '</objetivos>\n' +
+        '    <contenidos>' + e(accion.contenidos) + '</contenidos>\n' +
+        empXml + '\n' +
+        '  </AccionFormativa>\n' +
+        '</AccionesFormativas>';
+
+      downloadXML(xml, 'AccionFormativa_' + accion.codigo + '.xml');
+      showToast('XML Acción Formativa generado', 'success');
+    }
+
+    // ─── 2. genXmlInicioGrupo ───
+
+    function genXmlInicioGrupo() {
+      const accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
+
+      const idGrupo = document.getElementById('xmlIdGrupo').value;
+      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
+
+      const mod = accion.modalidad;
+      const isPresencial = mod === 'Presencial' || mod === 'Mixta';
+      const isTele = mod === 'Teleformación' || mod === 'Mixta';
+
+      const centro = getXmlCentro();
+      if (isPresencial && !centro) { showToast('Selecciona un centro de impartición para modalidad presencial/mixta', 'warning'); return; }
+
+      const tutor = getXmlTutor();
+      if (isTele && !tutor) { showToast('Selecciona un tutor para modalidad teleformación/mixta', 'warning'); return; }
+
+      const fechaInicio = document.getElementById('xmlFechaInicio').value;
+      const fechaFin = document.getElementById('xmlFechaFin').value;
+      const horaInicio = document.getElementById('xmlHoraInicio').value;
+      const horaFin = document.getElementById('xmlHoraFin').value;
+
+      if (!fechaInicio || !fechaFin) { showToast('Indica fechas de inicio y fin', 'warning'); return; }
+      if (isPresencial && (!horaInicio || !horaFin)) { showToast('Indica horario de inicio y fin para presencial', 'warning'); return; }
+      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
+
+      const e = v => esc(String(v || ''));
+
+      // Jornada presencial
+      let jornadaXml = '';
+      if (isPresencial && centro) {
+        jornadaXml = '    <jornadaPresencial>\n' +
+          '      <lugarImparticion>\n' +
+          '        <tipoDocumento>' + e(centro.tipoDocumento) + '</tipoDocumento>\n' +
+          '        <documento>' + e(centro.documento) + '</documento>\n' +
+          '        <nombreCentro>' + e(centro.nombre) + '</nombreCentro>\n' +
+          '        <direccion>' + e(centro.direccion) + '</direccion>\n' +
+          '        <codigoPostal>' + e(centro.cp) + '</codigoPostal>\n' +
+          '        <localidad>' + e(centro.localidad) + '</localidad>\n' +
+          '        <provincia>' + e(centro.provincia) + '</provincia>\n' +
+          '      </lugarImparticion>\n' +
+          '      <horario>\n' +
+          '        <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
+          '        <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
+          '        <horaInicio>' + e(horaInicio) + '</horaInicio>\n' +
+          '        <horaFin>' + e(horaFin) + '</horaFin>\n' +
+          '      </horario>\n' +
+          '    </jornadaPresencial>\n';
+      }
+
+      // Distancia/teleformación
+      let teleXml = '';
+      if (isTele && tutor) {
+        const tutorTipoMap = { 'NIF': '10', 'DNI': '10', 'NIE': '60', 'Pasaporte': '70' };
+        const tutorTipoCode = tutorTipoMap[tutor.tipoDocumento] || '10';
+        const totalHours = Number(accion.horasTeleformacion || 0) + Number(accion.horasPresenciales || 0);
+        const numHoras = tutor.horasDedicacion || String(totalHours);
+
+        teleXml = '    <distanciaTeleformacion>\n' +
+          '      <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
+          '      <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
+          '      <Tutor>\n' +
+          '        <numeroHoras>' + e(numHoras) + '</numeroHoras>\n' +
+          '        <tipoDocumento>' + e(tutorTipoCode) + '</tipoDocumento>\n' +
+          '        <documento>' + e(tutor.documento) + '</documento>\n' +
+          '        <nombre>' + e(tutor.nombre) + '</nombre>\n' +
+          '        <apellido1>' + e(tutor.apellido1) + '</apellido1>\n' +
+          (tutor.apellido2 ? '        <apellido2>' + e(tutor.apellido2) + '</apellido2>\n' : '') +
+          '        <telefono>' + e(tutor.telefono) + '</telefono>\n' +
+          '        <correoElectronico>' + e(tutor.email) + '</correoElectronico>\n' +
+          '        <tutoria>\n' +
+          '          <tipoTutoria><tutorias>1</tutorias></tipoTutoria>\n' +
+          '          <descripcion>Correo electrónico</descripcion>\n' +
+          '        </tutoria>\n' +
+          '      </Tutor>\n' +
+          '    </distanciaTeleformacion>\n';
+      }
+
+      // Aula virtual (Teams detection from current event)
+      let aulaVirtualXml = '';
+      const isTeamsEl = document.querySelector('input[name="eventType"]:checked');
+      if (isTeamsEl && isTeamsEl.value === 'teams') {
+        aulaVirtualXml = '    <aulaVirtual>S</aulaVirtual>\n';
+      }
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<grupos>\n' +
+        '  <grupo>\n' +
+        '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
+        '    <idGrupo>' + e(idGrupo) + '</idGrupo>\n' +
+        '    <nParticipantes>' + e(String(xmlState.participantes.length)) + '</nParticipantes>\n' +
+        jornadaXml +
+        teleXml +
+        aulaVirtualXml +
+        '  </grupo>\n' +
+        '</grupos>';
+
+      downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + idGrupo + '.xml');
+      showToast('XML Inicio de Grupo generado', 'success');
+    }
+
+    // ─── 3. genXmlFinalizacion ───
+
+    function genXmlFinalizacion() {
+      const accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
+
+      const idGrupo = document.getElementById('xmlIdGrupo').value;
+      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
+
+      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
+
+      // Validate all participants have categoriaProfesional and nivelEstudios
+      const missing = xmlState.participantes.filter(p => !p.categoriaProfesional || !p.nivelEstudios);
+      if (missing.length > 0) {
+        showToast(missing.length + ' participante' + (missing.length > 1 ? 's' : '') + ' sin categoría profesional o nivel de estudios', 'error');
+        return;
+      }
+
+      const e = v => esc(String(v || ''));
+
+      const participantesXml = xmlState.participantes.map(p =>
+        '      <participante>\n' +
+        '        <nif>' + e(p.nif) + '</nif>\n' +
+        '        <N_TIPO_DOCUMENTO>' + e(String(detectTipoDocumento(p.nif))) + '</N_TIPO_DOCUMENTO>\n' +
+        '        <email>' + e(p.email) + '</email>\n' +
+        '        <telefono>' + e(p.telefono) + '</telefono>\n' +
+        '        <categoriaprofesional>' + e(p.categoriaProfesional) + '</categoriaprofesional>\n' +
+        '        <nivelestudios>' + e(p.nivelEstudios) + '</nivelestudios>\n' +
+        '        <DiplomaAcreditativo>' + e(p.diploma) + '</DiplomaAcreditativo>\n' +
+        '      </participante>'
+      ).join('\n');
+
+      const costesDirectos = document.getElementById('xmlCostesDirectos').value || '0';
+      const costesIndirectos = document.getElementById('xmlCostesIndirectos').value || '0';
+      const costesSalariales = document.getElementById('xmlCostesSalariales').value || '0';
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<grupos>\n' +
+        '  <grupo>\n' +
+        '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
+        '    <idGrupo>' + e(idGrupo) + '</idGrupo>\n' +
+        '    <participantes>\n' +
+        participantesXml + '\n' +
+        '    </participantes>\n' +
+        '    <costes>\n' +
+        '      <coste>\n' +
+        '        <directos>' + e(costesDirectos) + '</directos>\n' +
+        '        <indirectos>' + e(costesIndirectos) + '</indirectos>\n' +
+        '        <salariales>' + e(costesSalariales) + '</salariales>\n' +
+        '      </coste>\n' +
+        '    </costes>\n' +
+        '  </grupo>\n' +
+        '</grupos>';
+
+      downloadXML(xml, 'Finalizacion_' + accion.codigo + '_G' + idGrupo + '.xml');
+      showToast('XML Finalización de Grupo generado', 'success');
+    }
+
+    // ─── Wire up XML generation buttons ───
+
+    document.getElementById('btnGenXmlAccion').addEventListener('click', genXmlAccionFormativa);
+    document.getElementById('btnGenXmlInicio').addEventListener('click', genXmlInicioGrupo);
+    document.getElementById('btnGenXmlFin').addEventListener('click', genXmlFinalizacion);
+
     // ═══════════════════════════════════
     // SESSION PROTECTION
     // ═══════════════════════════════════
