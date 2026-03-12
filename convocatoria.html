@@ -1129,6 +1129,10 @@
         fileStats.textContent = state.employees.length + ' empleados activos · hoja ORGANIGRAMA';
 
         try { localStorage.setItem('lastFile', file.name); } catch(e) {}
+        try {
+          localStorage.setItem('convocatoria_employees', JSON.stringify(state.employees));
+          localStorage.setItem('convocatoria_fileName', file.name);
+        } catch(e) {}
 
         document.getElementById('filtrosSection').style.display = '';
         document.getElementById('eventoSection').style.display = '';
@@ -1150,6 +1154,34 @@
           '<br><span style="font-size:11px; color: var(--text-muted);">Último: ' + lastFile + '</span>';
       }
     } catch(e) {}
+
+    // ═══════════════════════════════════
+    // AUTOSAVE STATE
+    // ═══════════════════════════════════
+
+    let saveTimeout;
+    function saveState() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        try {
+          const snapshot = {
+            activeFilters: state.activeFilters,
+            excludedNIFs: [...state.excludedNIFs],
+            eventConfig: {
+              title: document.getElementById('eventTitle').value,
+              date: document.getElementById('eventDate').value,
+              startTime: document.getElementById('eventStart').value,
+              endTime: document.getElementById('eventEnd').value,
+              location: document.getElementById('eventLocation').value,
+              isTeams: document.querySelector('input[name="eventType"]:checked')?.value === 'teams',
+              isSeries: document.getElementById('seriesCheck').checked,
+            },
+            timestamp: Date.now()
+          };
+          localStorage.setItem('convocatoria_state', JSON.stringify(snapshot));
+        } catch(e) {}
+      }, 500);
+    }
 
     // ═══════════════════════════════════
     // FILTER RENDERING
@@ -1235,6 +1267,8 @@
       chipsEl.innerHTML = activeKeys.map(k =>
         state.activeFilters[k].map(v => '<span class="chip">' + esc(v) + '</span>').join(' ')
       ).join(' ');
+
+      saveState();
     }
 
     document.addEventListener('click', () => {
@@ -1332,6 +1366,7 @@
         valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
 
       updateCounts();
+      saveState();
     }
 
     function getSelectedAttendees() {
@@ -1371,6 +1406,8 @@
         btnCopy.style.display = 'none';
         btnOutlook.textContent = 'Abrir en Outlook';
       }
+
+      saveState();
     }
 
     document.getElementById('selectAll').addEventListener('change', e => {
@@ -1405,12 +1442,14 @@
         } else {
           locationInput.placeholder = 'Ubicación (sala, dirección...)';
         }
+        saveState();
       });
     });
 
     document.getElementById('seriesCheck').addEventListener('change', e => {
       document.getElementById('seriesConfig').classList.toggle('visible', e.target.checked);
       updateSeriesTabs();
+      saveState();
     });
 
     document.querySelectorAll('input[name="seriesMode"]').forEach(radio => {
@@ -1442,6 +1481,9 @@
       document.getElementById('eventTitle').classList.remove('error');
       updateCounts();
     });
+    document.getElementById('eventStart').addEventListener('change', saveState);
+    document.getElementById('eventEnd').addEventListener('change', saveState);
+    document.getElementById('eventLocation').addEventListener('input', saveState);
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
@@ -1696,6 +1738,83 @@
         reader.readAsText(file);
       } else {
         reader.readAsArrayBuffer(file);
+      }
+    });
+
+    // ═══════════════════════════════════
+    // RESTORE PREVIOUS SESSION
+    // ═══════════════════════════════════
+
+    try {
+      const savedEmployees = localStorage.getItem('convocatoria_employees');
+      const savedFileName = localStorage.getItem('convocatoria_fileName');
+      const savedState = localStorage.getItem('convocatoria_state');
+
+      if (savedEmployees) {
+        const employees = JSON.parse(savedEmployees);
+        if (employees.length > 0) {
+          // Show restore option in upload zone
+          const restoreDiv = document.createElement('div');
+          restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:12px; color:var(--accent); text-align:center;';
+          restoreDiv.innerHTML = '<strong>Usar organigrama anterior</strong><br>' +
+            employees.length + ' empleados · ' + (savedFileName || 'fichero anterior');
+          restoreDiv.addEventListener('click', e => {
+            e.stopPropagation();
+            state.employees = employees;
+
+            // Restore state if available
+            if (savedState) {
+              const snapshot = JSON.parse(savedState);
+              state.activeFilters = snapshot.activeFilters || {};
+              state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
+
+              // Restore event config
+              if (snapshot.eventConfig) {
+                const ec = snapshot.eventConfig;
+                document.getElementById('eventTitle').value = ec.title || '';
+                document.getElementById('eventDate').value = ec.date || '';
+                document.getElementById('eventStart').value = ec.startTime || '10:00';
+                document.getElementById('eventEnd').value = ec.endTime || '12:00';
+                document.getElementById('eventLocation').value = ec.location || '';
+                if (ec.isTeams) {
+                  document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+                }
+                if (ec.isSeries) {
+                  document.getElementById('seriesCheck').checked = true;
+                  document.getElementById('seriesConfig').classList.add('visible');
+                }
+              }
+            }
+
+            // Update UI
+            uploadZone.classList.add('loaded');
+            uploadPrompt.style.display = 'none';
+            uploadInfo.style.display = 'block';
+            fileNameEl.textContent = savedFileName || 'Organigrama (sesión anterior)';
+            fileStats.textContent = state.employees.length + ' empleados activos · sesión restaurada';
+
+            document.getElementById('filtrosSection').style.display = '';
+            document.getElementById('eventoSection').style.display = '';
+            document.getElementById('summaryBar').style.display = '';
+            document.getElementById('actionBar').style.display = '';
+
+            renderFilters();
+            renderTable();
+            showToast('Sesión anterior restaurada', 'success');
+          });
+          uploadZone.appendChild(restoreDiv);
+        }
+      }
+    } catch(e) {}
+
+    // ═══════════════════════════════════
+    // SESSION PROTECTION
+    // ═══════════════════════════════════
+
+    window.addEventListener('beforeunload', e => {
+      if (state.employees.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
       }
     });
   </script>
