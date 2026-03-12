@@ -948,6 +948,7 @@
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
           <span style="color: var(--border-strong); font-size: 11px;">|</span>
           <button class="link-btn link-clear" id="btnClearFilters">Limpiar filtros</button>
+          <button class="link-btn link-add" id="btnLoadFromAccion" style="font-size:11px; margin-left:8px;">Cargar desde Acción Formativa</button>
         </div>
         <input type="file" id="externalFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
       </div>
@@ -2669,6 +2670,61 @@
       state.activeFilters = {};
       renderFilters();
       renderTable();
+    });
+
+    document.getElementById('btnLoadFromAccion').addEventListener('click', function() {
+      const acciones = getCatalog('acciones');
+      if (acciones.length === 0) {
+        showToast('No hay acciones formativas en el catálogo', 'warning');
+        return;
+      }
+
+      // Build a dialog-overlay + dialog-box modal (NEVER prompt/confirm)
+      const overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3>Cargar desde Acción Formativa</h3>' +
+        '<p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">Selecciona una acción para pre-seleccionar sus participantes vinculados.</p>' +
+        '<select class="input-field" id="loadAccionSelect" style="font-size:13px; margin-bottom:16px;">' +
+        '<option value="">-- Seleccionar acción --</option>' +
+        acciones.map(a => '<option value="' + esc(a.codigo) + '">' + esc(a.nombre || a.codigo) + ' (' + (a.participantes || []).length + ' participantes)</option>').join('') +
+        '</select>' +
+        '<div class="dialog-buttons">' +
+        '<button class="btn btn-secondary" id="loadAccionCancel">Cancelar</button>' +
+        '<button class="btn btn-primary" id="loadAccionConfirm">Cargar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('loadAccionCancel').addEventListener('click', () => overlay.remove());
+      document.getElementById('loadAccionConfirm').addEventListener('click', () => {
+        const codigo = document.getElementById('loadAccionSelect').value;
+        if (!codigo) {
+          showToast('Selecciona una acción', 'warning');
+          return;
+        }
+        const accion = acciones.find(a => a.codigo === codigo);
+        const nifs = accion.participantes || [];
+        if (nifs.length === 0) {
+          showToast('La acción no tiene participantes vinculados', 'warning');
+          overlay.remove();
+          return;
+        }
+
+        // Clear all filters
+        state.activeFilters = {};
+        // Set excludedNIFs to exclude everyone NOT in the nif list
+        const nifSet = new Set(nifs);
+        state.excludedNIFs = new Set(
+          state.employees.filter(emp => !nifSet.has(emp.NIF)).map(emp => emp._id)
+        );
+
+        renderFilters();
+        renderTable();
+        overlay.remove();
+
+        const matched = state.employees.filter(emp => nifSet.has(emp.NIF)).length;
+        showToast(matched + ' participantes de "' + (accion.nombre || accion.codigo) + '" seleccionados', 'success');
+      });
     });
 
     // ═══════════════════════════════════
