@@ -489,6 +489,36 @@
       margin: 1px 2px;
     }
 
+    .preset-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--radius-lg);
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .preset-chip:hover {
+      background: var(--accent-subtle);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .preset-chip .preset-delete {
+      font-size: 13px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity var(--transition);
+      color: var(--danger);
+    }
+    .preset-chip:hover .preset-delete {
+      opacity: 1;
+    }
+
     .warning-text {
       font-size: 12px;
       font-weight: 500;
@@ -743,6 +773,11 @@
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none; position:relative; z-index:10;">
         <div class="section-label">2. Selecciona asistentes</div>
+        <div id="presetBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+          <span style="font-size:11px; color:var(--text-muted);">Presets:</span>
+          <div id="presetList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+          <button class="link-btn link-add" id="btnSavePreset" style="font-size:11px;">+ Guardar filtro actual</button>
+        </div>
         <div id="filterContainer"></div>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
@@ -1317,7 +1352,69 @@
       ).join(' ');
 
       saveState();
+      renderPresets();
     }
+
+    // FILTER PRESETS
+    function getPresets() {
+      try {
+        return JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function savePresets(presets) {
+      try { localStorage.setItem('convocatoria_presets', JSON.stringify(presets)); } catch(e) {}
+    }
+
+    function renderPresets() {
+      const presets = getPresets();
+      const list = document.getElementById('presetList');
+      if (!list) return;
+      list.innerHTML = presets.map((p, i) =>
+        '<span class="preset-chip" data-index="' + i + '">' +
+          esc(p.name) +
+          ' <span class="preset-delete" data-delete="' + i + '">&times;</span>' +
+        '</span>'
+      ).join('');
+
+      list.querySelectorAll('.preset-chip').forEach(chip => {
+        chip.addEventListener('click', e => {
+          if (e.target.classList.contains('preset-delete')) {
+            // Delete preset
+            const idx = parseInt(e.target.dataset.delete);
+            const presets = getPresets();
+            presets.splice(idx, 1);
+            savePresets(presets);
+            renderPresets();
+            return;
+          }
+          // Load preset
+          const idx = parseInt(chip.dataset.index);
+          const presets = getPresets();
+          if (presets[idx]) {
+            state.activeFilters = JSON.parse(JSON.stringify(presets[idx].filters));
+            renderFilters();
+            renderTable();
+            showToast('Preset "' + presets[idx].name + '" cargado', 'info');
+          }
+        });
+      });
+    }
+
+    document.getElementById('btnSavePreset').addEventListener('click', () => {
+      const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
+      if (activeKeys.length === 0) {
+        showToast('No hay filtros activos para guardar', 'warning');
+        return;
+      }
+      const name = prompt('Nombre del preset:');
+      if (!name || !name.trim()) return;
+      const presets = getPresets();
+      presets.push({ name: name.trim(), filters: JSON.parse(JSON.stringify(state.activeFilters)) });
+      savePresets(presets);
+      renderPresets();
+      showToast('Preset "' + name.trim() + '" guardado', 'success');
+    });
 
     document.addEventListener('click', () => {
       document.querySelectorAll('.filter-dropdown.open').forEach(d => {
