@@ -1322,6 +1322,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
     });
 
@@ -3835,6 +3836,175 @@
       const daySet = new Set(dates.map(d => map[new Date(d + 'T12:00:00').getDay()]));
       return 'LMXJVSD'.split('').filter(d => daySet.has(d)).join('');
     }
+
+    // ═══════════════════════════════════
+    // TAB 3: XML GENERATION LOGIC
+    // ═══════════════════════════════════
+
+    const xmlState = { participantes: [] };
+
+    function refreshXmlSelects() {
+      // Populate acción select
+      const acciones = getCatalog('acciones');
+      const accionSel = document.getElementById('xmlAccionSelect');
+      const currentVal = accionSel.value;
+      accionSel.innerHTML = '<option value="">-- Seleccionar acción --</option>' +
+        acciones.map(a => '<option value="' + esc(a.codigo) + '">' + esc(a.nombre || a.codigo) + '</option>').join('');
+      if (currentVal) accionSel.value = currentVal;
+
+      // Populate centro select
+      const centros = getCatalog('centros');
+      const centroSel = document.getElementById('xmlCentroSelect');
+      const curCentro = centroSel.value;
+      centroSel.innerHTML = '<option value="">-- Seleccionar centro --</option>' +
+        centros.map(c => '<option value="' + esc(c.documento) + '">' + esc(c.nombre || c.documento) + '</option>').join('');
+      if (curCentro) centroSel.value = curCentro;
+
+      // Populate tutor select
+      const tutores = getCatalog('tutores');
+      const tutorSel = document.getElementById('xmlTutorSelect');
+      const curTutor = tutorSel.value;
+      tutorSel.innerHTML = '<option value="">-- Seleccionar tutor --</option>' +
+        tutores.map(t => '<option value="' + esc(t.documento) + '">' + esc([t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ') || t.documento) + '</option>').join('');
+      if (curTutor) tutorSel.value = curTutor;
+    }
+
+    document.getElementById('xmlAccionSelect').addEventListener('change', function() {
+      const codigo = this.value;
+      if (!codigo) {
+        xmlState.participantes = [];
+        renderXmlParticipants();
+        document.getElementById('xmlAccionInfo').textContent = '';
+        return;
+      }
+
+      const accion = getCatalog('acciones').find(a => a.codigo === codigo);
+      if (!accion) return;
+
+      // Show info
+      document.getElementById('xmlAccionInfo').textContent =
+        (accion.modalidad || '') + ' · ' + (accion.horasPresenciales || 0) + 'h pres. / ' + (accion.horasTeleformacion || 0) + 'h tele.';
+
+      // Pre-select linked centro/tutor
+      if (accion.centroVinculado) document.getElementById('xmlCentroSelect').value = accion.centroVinculado;
+      if (accion.tutorVinculado) document.getElementById('xmlTutorSelect').value = accion.tutorVinculado;
+
+      // Build participant rows from linked NIFs
+      const nifs = accion.participantes || [];
+      xmlState.participantes = nifs.map(nif => buildParticipantRow(nif));
+      renderXmlParticipants();
+    });
+
+    function buildParticipantRow(nif) {
+      const emp = state.employees.find(e => e.NIF === nif);
+
+      // Use Empleado for display, _f_Nombre/_f_Apellidos for XML
+      const row = {
+        nif: nif,
+        empleado: emp ? (emp.Empleado || '') : nif,
+        tipoDocumento: detectTipoDocumento(nif),
+        email: emp ? (emp['Email trabajo'] || '') : '',
+        telefono: emp ? (emp['_f_Móvil trabajo (largo)'] || emp['_f_Teléfono personal'] || '') : '',
+        categoriaProfesional: emp ? mapCategoriaProfesional(emp['_f_' + COL_CATEGORIA_PROF]) : '',
+        nivelEstudios: emp ? mapNivelEstudios(emp['_f_' + COL_NIVEL_ESTUDIOS]) : '',
+        grupoCotizacion: emp ? (emp['_f_Grupo Cotización'] || '') : '',
+        diploma: 'N',
+        costeHora: emp ? (emp['_f_Coste Salarial Hora'] || '') : '',
+        discapacidad: emp ? (emp['_f_DiscapacidadContrib'] === 'true' || emp['_f_DiscapacidadContrib'] === 'Sí' ? true : false) : false,
+        // For XML generation
+        nombre: emp ? (emp['_f_Nombre'] || '') : '',
+        apellidos: emp ? (emp['_f_Apellidos'] || '') : '',
+        cifEmpresa: emp ? (emp['_f_CIF'] || '') : '',
+        nss: emp ? (emp['_f_Numero Seguridad Social'] || '') : '',
+        sexo: emp ? (emp['_f_Sexo'] || '') : '',
+      };
+      return row;
+    }
+
+    function renderXmlParticipants() {
+      const tbody = document.getElementById('xmlParticipantBody');
+      const emptyMsg = document.getElementById('xmlEmptyParticipants');
+      const countEl = document.getElementById('xmlParticipantCount');
+
+      countEl.textContent = xmlState.participantes.length;
+
+      if (xmlState.participantes.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg.style.display = '';
+        return;
+      }
+      emptyMsg.style.display = 'none';
+
+      tbody.innerHTML = xmlState.participantes.map((p, idx) => {
+        const missingCat = !p.categoriaProfesional;
+        const missingNivel = !p.nivelEstudios;
+        return '<tr style="border-bottom:1px solid var(--border);">' +
+          '<td style="padding:6px;"><button class="link-btn link-clear" data-remove-idx="' + idx + '" style="font-size:11px; color:var(--danger);">&times;</button></td>' +
+          '<td style="padding:6px; font-size:12px;">' + esc(p.empleado) + '</td>' +
+          '<td style="padding:6px; font-size:12px;">' + esc(p.nif) + '</td>' +
+          '<td style="padding:6px;"><select class="input-field" data-field="tipoDocumento" data-idx="' + idx + '" style="font-size:11px; padding:3px 6px;">' +
+            '<option value="10"' + (p.tipoDocumento == 10 ? ' selected' : '') + '>NIF</option>' +
+            '<option value="60"' + (p.tipoDocumento == 60 ? ' selected' : '') + '>NIE</option>' +
+          '</select></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:11px; padding:3px 6px; width:140px;"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:11px; padding:3px 6px; width:100px;"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingCat ? ' background:rgba(220,38,38,0.1); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingNivel ? ' background:rgba(220,38,38,0.1); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:11px; padding:3px 6px; width:40px;"></td>' +
+          '<td style="padding:6px;"><select class="input-field" data-field="diploma" data-idx="' + idx + '" style="font-size:11px; padding:3px 6px;">' +
+            '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
+            '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
+          '</select></td>' +
+          '<td style="padding:6px; font-size:11px; color:var(--text-muted);">' + esc(p.costeHora) + '</td>' +
+          '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + '></td>' +
+        '</tr>';
+      }).join('');
+
+      // Bind inline edit handlers
+      tbody.querySelectorAll('input[data-field], select[data-field]').forEach(el => {
+        el.addEventListener('change', function() {
+          const idx = parseInt(this.dataset.idx);
+          const field = this.dataset.field;
+          if (field === 'discapacidad') {
+            xmlState.participantes[idx][field] = this.checked;
+          } else {
+            xmlState.participantes[idx][field] = this.value;
+          }
+        });
+      });
+
+      // Bind remove buttons
+      tbody.querySelectorAll('[data-remove-idx]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          xmlState.participantes.splice(parseInt(this.dataset.removeIdx), 1);
+          renderXmlParticipants();
+        });
+      });
+    }
+
+    // Add participant button - reuses showParticipantPicker from Task 8
+    document.getElementById('btnXmlAddParticipant').addEventListener('click', function() {
+      if (!state.employees || state.employees.length === 0) {
+        showToast('Carga el organigrama primero en la pestaña Convocatoria', 'warning');
+        return;
+      }
+      const currentNIFs = xmlState.participantes.map(p => p.nif);
+      showParticipantPicker(currentNIFs, function(selectedNIFs) {
+        // Preserve existing edits for participants that remain
+        const existing = {};
+        xmlState.participantes.forEach(p => { existing[p.nif] = p; });
+        xmlState.participantes = selectedNIFs.map(nif => existing[nif] || buildParticipantRow(nif));
+        renderXmlParticipants();
+      });
+    });
+
+    // Mass diploma
+    document.getElementById('xmlMassDiploma').addEventListener('change', function() {
+      if (!this.value) return;
+      xmlState.participantes.forEach(p => { p.diploma = this.value; });
+      renderXmlParticipants();
+      this.value = '';
+    });
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
