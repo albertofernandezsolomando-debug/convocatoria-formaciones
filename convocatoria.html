@@ -1306,16 +1306,413 @@
       if (this.files[0]) { importCatalogsJSON(this.files[0]); this.value = ''; }
     });
 
-    // Placeholder for renderCatalogForm (implemented in Task 6)
     function renderCatalogForm() {
       const panel = document.getElementById('catalogFormPanel');
+      const key = catalogState.activeCatalog;
+      const cfg = CATALOG_CONFIG[key];
+
       if (!catalogState.selectedPK) {
-        panel.innerHTML = '<div id="catalogEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">Selecciona un registro del catálogo</div>';
+        panel.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">Selecciona un registro del catálogo</div>';
         return;
       }
-      // Full form rendering added in Task 6
-      panel.innerHTML = '<div style="padding:20px; color:var(--text-muted); font-size:13px;">Formulario para ' + esc(catalogState.selectedPK) + ' (próximo paso)</div>';
+
+      const data = getCatalog(key);
+      const record = data.find(r => r[cfg.pk] === catalogState.selectedPK);
+      if (!record) {
+        catalogState.selectedPK = null;
+        renderCatalogList();
+        panel.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">Registro no encontrado</div>';
+        return;
+      }
+
+      panel.innerHTML = getCatalogFormHtml(key, record, false);
+      bindCatalogFormEvents(key, record);
     }
+
+    function getCatalogFormHtml(key, record, isNew) {
+      const cfg = CATALOG_CONFIG[key];
+      const v = field => esc(String(record[field] || ''));
+      const proveedores = getCatalog('proveedores');
+      const centros = getCatalog('centros');
+      const tutores = getCatalog('tutores');
+
+      function field(label, id, value, opts) {
+        opts = opts || {};
+        const disabled = opts.disabled ? ' disabled' : '';
+        const type = opts.type || 'text';
+        const max = opts.maxlength ? ' maxlength="' + opts.maxlength + '"' : '';
+        const placeholder = opts.placeholder ? ' placeholder="' + esc(opts.placeholder) + '"' : '';
+        return '<div style="margin-bottom:10px;">' +
+          '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">' + esc(label) + '</label>' +
+          '<input class="input-field" type="' + type + '" id="cf_' + id + '" value="' + value + '"' + disabled + max + placeholder + ' style="font-size:13px;">' +
+          '</div>';
+      }
+
+      function select(label, id, value, options) {
+        let html = '<div style="margin-bottom:10px;">' +
+          '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">' + esc(label) + '</label>' +
+          '<select class="input-field" id="cf_' + id + '" style="font-size:13px;">' +
+          '<option value="">-- Seleccionar --</option>';
+        options.forEach(function(o) {
+          const sel = (o.value === value) ? ' selected' : '';
+          html += '<option value="' + esc(o.value) + '"' + sel + '>' + esc(o.label) + '</option>';
+        });
+        html += '</select></div>';
+        return html;
+      }
+
+      function textarea(label, id, value) {
+        return '<div style="margin-bottom:10px;">' +
+          '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">' + esc(label) + '</label>' +
+          '<textarea class="input-field" id="cf_' + id + '" rows="3" style="font-size:13px; resize:vertical;">' + value + '</textarea>' +
+          '</div>';
+      }
+
+      const proveedorOpts = proveedores.map(function(p) {
+        return { value: p.cif, label: p.razonSocial ? p.razonSocial + ' (' + p.cif + ')' : p.cif };
+      });
+
+      const centroOpts = centros.map(function(c) {
+        return { value: c.documento, label: c.nombre ? c.nombre + ' (' + c.documento + ')' : c.documento };
+      });
+
+      const tutorOpts = tutores.map(function(t) {
+        const name = [t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ');
+        return { value: t.documento, label: name ? name + ' (' + t.documento + ')' : t.documento };
+      });
+
+      const pkDisabled = !isNew;
+      let title = isNew ? 'Nuevo registro' : esc(cfg.title(record));
+      let body = '';
+
+      if (key === 'proveedores') {
+        title = isNew ? 'Nuevo proveedor' : esc(cfg.title(record));
+        body = field('CIF', 'cif', v('cif'), { disabled: pkDisabled }) +
+          field('Razón social', 'razonSocial', v('razonSocial')) +
+          field('Dirección', 'direccion', v('direccion')) +
+          field('Código postal', 'cp', v('cp')) +
+          field('Localidad', 'localidad', v('localidad')) +
+          field('Provincia', 'provincia', v('provincia')) +
+          field('Teléfono contacto', 'telefono', v('telefono')) +
+          field('Email contacto', 'email', v('email'), { type: 'email' }) +
+          field('Responsable formación', 'responsable', v('responsable'));
+      } else if (key === 'centros') {
+        title = isNew ? 'Nuevo centro' : esc(cfg.title(record));
+        body = select('Tipo documento centro', 'tipoDocumento', record.tipoDocumento || '', [
+            { value: 'CIF', label: 'CIF' }, { value: 'NIF', label: 'NIF' }
+          ]) +
+          field('Documento centro', 'documento', v('documento'), { disabled: pkDisabled }) +
+          field('Nombre centro', 'nombre', v('nombre')) +
+          field('Dirección', 'direccion', v('direccion')) +
+          field('Código postal', 'cp', v('cp')) +
+          field('Localidad', 'localidad', v('localidad')) +
+          field('Provincia', 'provincia', v('provincia')) +
+          select('CIF proveedor vinculado', 'cifProveedor', record.cifProveedor || '', proveedorOpts);
+      } else if (key === 'tutores') {
+        title = isNew ? 'Nuevo tutor' : esc(cfg.title(record));
+        body = select('Tipo documento tutor', 'tipoDocumento', record.tipoDocumento || '', [
+            { value: 'NIF', label: 'NIF' }, { value: 'NIE', label: 'NIE' }, { value: 'Pasaporte', label: 'Pasaporte' }
+          ]) +
+          field('Documento tutor', 'documento', v('documento'), { disabled: pkDisabled }) +
+          field('Nombre', 'nombre', v('nombre')) +
+          field('Apellido 1', 'apellido1', v('apellido1')) +
+          field('Apellido 2', 'apellido2', v('apellido2')) +
+          field('Teléfono', 'telefono', v('telefono')) +
+          field('Email', 'email', v('email'), { type: 'email' }) +
+          field('Horas dedicación', 'horasDedicacion', v('horasDedicacion'), { type: 'number' }) +
+          select('CIF proveedor vinculado', 'cifProveedor', record.cifProveedor || '', proveedorOpts);
+      } else if (key === 'acciones') {
+        title = isNew ? 'Nueva acción formativa' : esc(cfg.title(record));
+        const modalidad = record.modalidad || '';
+        const showPresencial = modalidad === 'Presencial' || modalidad === 'Mixta';
+        const showTeleformacion = modalidad === 'Teleformación' || modalidad === 'Mixta';
+        const showPlataforma = modalidad === 'Teleformación' || modalidad === 'Mixta';
+
+        const areaOpts = FUNDAE_AREAS.map(function(a) {
+          return { value: a[0], label: a[0] + ' - ' + a[1] };
+        });
+
+        body = field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
+          field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
+          field('Código grupo acción', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
+          select('Área profesional', 'areaProfesional', record.areaProfesional || '', areaOpts) +
+          select('Modalidad', 'modalidad', modalidad, [
+            { value: 'Presencial', label: 'Presencial' },
+            { value: 'Teleformación', label: 'Teleformación' },
+            { value: 'Mixta', label: 'Mixta' }
+          ]) +
+          '<div id="cf_horasPresencialesWrap" style="' + (showPresencial ? '' : 'display:none;') + '">' +
+            field('Horas presenciales', 'horasPresenciales', v('horasPresenciales'), { type: 'number' }) +
+          '</div>' +
+          '<div id="cf_horasTeleformacionWrap" style="' + (showTeleformacion ? '' : 'display:none;') + '">' +
+            field('Horas teleformación', 'horasTeleformacion', v('horasTeleformacion'), { type: 'number' }) +
+          '</div>' +
+          select('Nivel formación', 'nivelFormacion', String(record.nivelFormacion || ''), [
+            { value: '0', label: 'Básico' }, { value: '1', label: 'Superior' }
+          ]) +
+          textarea('Objetivos', 'objetivos', v('objetivos')) +
+          textarea('Contenidos', 'contenidos', v('contenidos')) +
+          '<div id="cf_plataformaWrap" style="' + (showPlataforma ? '' : 'display:none;') + '">' +
+            '<div style="margin-bottom:10px;">' +
+              '<div onclick="toggleFundaeSub(\'cf_plataformaInner\')" style="cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); user-select:none; padding:6px 0;">&#9660; Plataforma teleformación</div>' +
+              '<div id="cf_plataformaInner">' +
+                field('CIF plataforma', 'plataformaCif', v('plataformaCif')) +
+                field('Razón social plataforma', 'plataformaRazonSocial', v('plataformaRazonSocial')) +
+                field('URI plataforma', 'plataformaUri', v('plataformaUri')) +
+                field('Usuario plataforma', 'plataformaUsuario', v('plataformaUsuario')) +
+                field('Password plataforma', 'plataformaPassword', v('plataformaPassword')) +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts);
+      }
+
+      return '<div style="padding:20px; overflow-y:auto; flex:1;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">' +
+          '<h3 style="margin:0; font-size:15px; font-weight:600; color:var(--text-primary);">' + title + '</h3>' +
+        '</div>' +
+        body +
+        '<div style="display:flex; gap:10px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">' +
+          '<button class="btn btn-primary" id="btnSaveCatalog" style="font-size:12px;">Guardar</button>' +
+          (isNew ? '' : '<button class="btn btn-secondary" id="btnDeleteCatalog" style="font-size:12px; color:var(--danger); border-color:var(--danger);">Eliminar</button>') +
+        '</div>' +
+      '</div>';
+    }
+
+    function toggleFundaeSub(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+    }
+
+    function bindCatalogFormEvents(key, record) {
+      const saveBtn = document.getElementById('btnSaveCatalog');
+      if (saveBtn) saveBtn.addEventListener('click', function() { saveCatalogForm(key); });
+
+      const deleteBtn = document.getElementById('btnDeleteCatalog');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', function() {
+          const cfg = CATALOG_CONFIG[key];
+          const pkValue = record[cfg.pk];
+
+          if (key === 'proveedores') {
+            const linked = getLinkedRecords(pkValue);
+            if (linked.centros.length > 0 || linked.tutores.length > 0) {
+              const parts = [];
+              if (linked.centros.length > 0) parts.push(linked.centros.length + ' centro(s)');
+              if (linked.tutores.length > 0) parts.push(linked.tutores.length + ' tutor(es)');
+              showCatalogConfirm(
+                'Proveedor vinculado',
+                'Este proveedor tiene ' + parts.join(' y ') + ' vinculados. Si lo eliminas, esos registros perderán la referencia al proveedor. ¿Continuar?',
+                function() {
+                  deleteCatalogRecord(key, cfg.pk, pkValue);
+                  catalogState.selectedPK = null;
+                  renderCatalogList();
+                  renderCatalogForm();
+                  showToast('Proveedor eliminado', 'success');
+                }
+              );
+              return;
+            }
+          }
+
+          showCatalogConfirm(
+            'Eliminar registro',
+            '¿Estás seguro de que quieres eliminar este registro?',
+            function() {
+              deleteCatalogRecord(key, cfg.pk, pkValue);
+              catalogState.selectedPK = null;
+              renderCatalogList();
+              renderCatalogForm();
+              showToast('Registro eliminado', 'success');
+            }
+          );
+        });
+      }
+
+      // Modalidad change handler for acciones
+      if (key === 'acciones') {
+        const modalidadSelect = document.getElementById('cf_modalidad');
+        if (modalidadSelect) {
+          modalidadSelect.addEventListener('change', function() {
+            const val = this.value;
+            const showP = val === 'Presencial' || val === 'Mixta';
+            const showT = val === 'Teleformación' || val === 'Mixta';
+            const showPlat = val === 'Teleformación' || val === 'Mixta';
+            document.getElementById('cf_horasPresencialesWrap').style.display = showP ? '' : 'none';
+            document.getElementById('cf_horasTeleformacionWrap').style.display = showT ? '' : 'none';
+            document.getElementById('cf_plataformaWrap').style.display = showPlat ? '' : 'none';
+          });
+        }
+      }
+    }
+
+    function saveCatalogForm(key) {
+      const cfg = CATALOG_CONFIG[key];
+      const errors = [];
+      const errorFields = [];
+
+      // Clear previous errors
+      document.querySelectorAll('#catalogFormPanel .input-field.error').forEach(function(el) {
+        el.classList.remove('error');
+      });
+
+      function val(id) {
+        const el = document.getElementById('cf_' + id);
+        return el ? el.value.trim() : '';
+      }
+
+      function markError(id, msg) {
+        const el = document.getElementById('cf_' + id);
+        if (el) el.classList.add('error');
+        if (errors.indexOf(msg) === -1) errors.push(msg);
+        errorFields.push(id);
+      }
+
+      let record = {};
+
+      if (key === 'proveedores') {
+        record.cif = val('cif');
+        record.razonSocial = val('razonSocial');
+        record.direccion = val('direccion');
+        record.cp = val('cp');
+        record.localidad = val('localidad');
+        record.provincia = val('provincia');
+        record.telefono = val('telefono');
+        record.email = val('email');
+        record.responsable = val('responsable');
+
+        if (!record.cif) markError('cif', 'El CIF es obligatorio');
+        else if (!/^[A-Za-z]\d{7}[A-Za-z0-9]$/.test(record.cif)) markError('cif', 'Formato de CIF no válido (Ej: B12345678)');
+      } else if (key === 'centros') {
+        record.tipoDocumento = val('tipoDocumento');
+        record.documento = val('documento');
+        record.nombre = val('nombre');
+        record.direccion = val('direccion');
+        record.cp = val('cp');
+        record.localidad = val('localidad');
+        record.provincia = val('provincia');
+        record.cifProveedor = val('cifProveedor');
+
+        if (!record.documento) markError('documento', 'El documento del centro es obligatorio');
+      } else if (key === 'tutores') {
+        record.tipoDocumento = val('tipoDocumento');
+        record.documento = val('documento');
+        record.nombre = val('nombre');
+        record.apellido1 = val('apellido1');
+        record.apellido2 = val('apellido2');
+        record.telefono = val('telefono');
+        record.email = val('email');
+        record.horasDedicacion = val('horasDedicacion');
+        record.cifProveedor = val('cifProveedor');
+
+        if (!record.documento) markError('documento', 'El documento del tutor es obligatorio');
+        if (record.horasDedicacion && (isNaN(Number(record.horasDedicacion)) || Number(record.horasDedicacion) <= 0)) {
+          markError('horasDedicacion', 'Las horas de dedicación deben ser un número mayor que 0');
+        }
+      } else if (key === 'acciones') {
+        record.codigo = val('codigo');
+        record.nombre = val('nombre');
+        record.codigoGrupo = val('codigoGrupo');
+        record.areaProfesional = val('areaProfesional');
+        record.modalidad = val('modalidad');
+        record.horasPresenciales = val('horasPresenciales');
+        record.horasTeleformacion = val('horasTeleformacion');
+        record.nivelFormacion = val('nivelFormacion');
+        record.objetivos = val('objetivos');
+        record.contenidos = val('contenidos');
+        record.plataformaCif = val('plataformaCif');
+        record.plataformaRazonSocial = val('plataformaRazonSocial');
+        record.plataformaUri = val('plataformaUri');
+        record.plataformaUsuario = val('plataformaUsuario');
+        record.plataformaPassword = val('plataformaPassword');
+        record.centroVinculado = val('centroVinculado');
+        record.tutorVinculado = val('tutorVinculado');
+
+        if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
+        else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
+
+        if (record.nombre && record.nombre.length > 255) markError('nombre', 'El nombre no puede superar 255 caracteres');
+
+        if (record.codigoGrupo && !/^\d{3}-\d{2}$/.test(record.codigoGrupo)) markError('codigoGrupo', 'El código de grupo debe tener formato NNN-NN');
+
+        const mod = record.modalidad;
+        if ((mod === 'Presencial' || mod === 'Mixta') && record.horasPresenciales) {
+          if (isNaN(Number(record.horasPresenciales)) || Number(record.horasPresenciales) <= 0) {
+            markError('horasPresenciales', 'Las horas presenciales deben ser un número mayor que 0');
+          }
+        }
+        if ((mod === 'Teleformación' || mod === 'Mixta') && record.horasTeleformacion) {
+          if (isNaN(Number(record.horasTeleformacion)) || Number(record.horasTeleformacion) <= 0) {
+            markError('horasTeleformacion', 'Las horas de teleformación deben ser un número mayor que 0');
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        showToast(errors[0], 'error');
+        const firstEl = document.getElementById('cf_' + errorFields[0]);
+        if (firstEl) firstEl.focus();
+        return;
+      }
+
+      upsertCatalogRecord(key, cfg.pk, record);
+      catalogState.selectedPK = record[cfg.pk];
+      renderCatalogList();
+      renderCatalogForm();
+      showToast('Registro guardado', 'success');
+    }
+
+    function showCatalogConfirm(title, message, onConfirm) {
+      const existing = document.getElementById('catalogConfirmOverlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'catalogConfirmOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML =
+        '<div class="dialog-box">' +
+          '<h3>' + esc(title) + '</h3>' +
+          '<p style="text-align:left;">' + esc(message) + '</p>' +
+          '<div class="dialog-buttons">' +
+            '<button class="btn btn-secondary" id="catalogConfirmCancel">Cancelar</button>' +
+            '<button class="btn btn-primary" id="catalogConfirmOk" style="background:var(--danger);">Eliminar</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('catalogConfirmCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('catalogConfirmOk').addEventListener('click', function() {
+        overlay.remove();
+        onConfirm();
+      });
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+      });
+    }
+
+    // "Nuevo" button handler
+    document.getElementById('btnNewCatalog').addEventListener('click', function() {
+      const key = catalogState.activeCatalog;
+      const cfg = CATALOG_CONFIG[key];
+      const emptyRecord = {};
+      catalogState.selectedPK = null;
+      renderCatalogList();
+      const panel = document.getElementById('catalogFormPanel');
+      panel.innerHTML = getCatalogFormHtml(key, emptyRecord, true);
+      bindCatalogFormEvents(key, emptyRecord);
+
+      // For new records, override save to set selectedPK after creation
+      const saveBtn = document.getElementById('btnSaveCatalog');
+      if (saveBtn) {
+        // Remove existing listener by cloning
+        const newBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+        newBtn.addEventListener('click', function() {
+          saveCatalogForm(key);
+        });
+      }
+    });
 
     // Initialize catalog list on tab switch
 
