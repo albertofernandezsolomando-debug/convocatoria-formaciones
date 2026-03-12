@@ -838,6 +838,54 @@
         </div>
       </div>
 
+      <!-- 4. FUNDAE -->
+      <div class="section" id="fundaeSection" style="display:none;">
+        <div class="section-label" id="fundaeToggle" style="cursor:pointer;">
+          4. Datos FUNDAE (opcional)
+          <span id="fundaeArrow" style="font-size:10px; margin-left:4px;">▶</span>
+        </div>
+        <div id="fundaeFields" style="display:none;">
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+            <input class="input-field" type="text" id="fundaeCIF" placeholder="CIF empresa bonificada (ej: B12345678)">
+            <div class="event-row">
+              <input class="input-field" type="number" id="fundaeCodigoAccion" placeholder="Cód. acción" style="width:100px;" max="99999">
+              <select class="input-field" id="fundaeModalidad" style="flex:1;">
+                <option value="">Modalidad FUNDAE...</option>
+                <option value="Presencial">Presencial</option>
+                <option value="Teleformacion">Teleformación</option>
+                <option value="Mixta">Mixta</option>
+              </select>
+            </div>
+            <div class="event-row">
+              <input class="input-field" type="number" id="fundaeHoras" placeholder="Horas totales" style="width:100px;">
+              <input class="input-field" type="text" id="fundaeEspecialidad" placeholder="Código especialidad" style="flex:1;">
+            </div>
+            <input class="input-field" type="text" id="fundaeCentro" placeholder="Centro de formación (nombre y dirección)">
+            <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-top:8px;">Formador/a</div>
+            <div class="event-row">
+              <input class="input-field" type="text" id="fundaeFormadorNIF" placeholder="NIF formador" style="width:120px;">
+              <input class="input-field" type="text" id="fundaeFormadorNombre" placeholder="Nombre" style="flex:1;">
+              <input class="input-field" type="text" id="fundaeFormadorApellidos" placeholder="Apellidos" style="flex:1;">
+            </div>
+            <div class="event-row">
+              <input class="input-field" type="tel" id="fundaeFormadorTel" placeholder="Teléfono" style="width:120px;">
+              <input class="input-field" type="email" id="fundaeFormadorEmail" placeholder="Email formador" style="flex:1;">
+            </div>
+            <div class="event-row">
+              <input class="input-field" type="number" id="fundaeCosteAlumno" placeholder="€/alumno·hora" style="width:120px;" step="0.01">
+              <label style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; flex:1;">
+                <input type="checkbox" id="fundaeRLPT"> Informada RLPT
+              </label>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+              <button class="btn btn-secondary" id="btnXmlAccion" style="font-size:11px; padding:6px 12px;">XML Acción Formativa</button>
+              <button class="btn btn-secondary" id="btnXmlInicio" style="font-size:11px; padding:6px 12px;">XML Inicio Grupo</button>
+              <button class="btn btn-secondary" id="btnXmlFin" style="font-size:11px; padding:6px 12px;">XML Finalización</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- RIGHT PANEL -->
@@ -1302,6 +1350,7 @@
 
         document.getElementById('filtrosSection').style.display = '';
         document.getElementById('eventoSection').style.display = '';
+        document.getElementById('fundaeSection').style.display = '';
         document.getElementById('summaryBar').style.display = '';
         document.getElementById('actionBar').style.display = '';
         document.getElementById('tableSearch').style.display = '';
@@ -1344,6 +1393,7 @@
               isTeams: document.querySelector('input[name="eventType"]:checked')?.value === 'teams',
               isSeries: document.getElementById('seriesCheck').checked,
             },
+            fundae: getFundaeData(),
             timestamp: Date.now()
           };
           localStorage.setItem('convocatoria_state', JSON.stringify(snapshot));
@@ -2276,6 +2326,24 @@
                   document.getElementById('seriesConfig').classList.add('visible');
                 }
               }
+
+              // Restore FUNDAE data
+              if (snapshot.fundae) {
+                const fd = snapshot.fundae;
+                document.getElementById('fundaeCIF').value = fd.cif || '';
+                document.getElementById('fundaeCodigoAccion').value = fd.codigoAccion || '';
+                document.getElementById('fundaeModalidad').value = fd.modalidad || '';
+                document.getElementById('fundaeHoras').value = fd.horas || '';
+                document.getElementById('fundaeEspecialidad').value = fd.especialidad || '';
+                document.getElementById('fundaeCentro').value = fd.centro || '';
+                document.getElementById('fundaeFormadorNIF').value = fd.formador?.nif || '';
+                document.getElementById('fundaeFormadorNombre').value = fd.formador?.nombre || '';
+                document.getElementById('fundaeFormadorApellidos').value = fd.formador?.apellidos || '';
+                document.getElementById('fundaeFormadorTel').value = fd.formador?.telefono || '';
+                document.getElementById('fundaeFormadorEmail').value = fd.formador?.email || '';
+                document.getElementById('fundaeCosteAlumno').value = fd.costeAlumno || '';
+                document.getElementById('fundaeRLPT').checked = fd.rlpt || false;
+              }
             }
 
             // Update UI
@@ -2287,6 +2355,7 @@
 
             document.getElementById('filtrosSection').style.display = '';
             document.getElementById('eventoSection').style.display = '';
+            document.getElementById('fundaeSection').style.display = '';
             document.getElementById('summaryBar').style.display = '';
             document.getElementById('actionBar').style.display = '';
             document.getElementById('tableSearch').style.display = '';
@@ -2397,6 +2466,169 @@
         });
       });
     }
+
+    // ═══════════════════════════════════
+    // FUNDAE XML EXPORT
+    // ═══════════════════════════════════
+
+    document.getElementById('fundaeToggle').addEventListener('click', () => {
+      const fields = document.getElementById('fundaeFields');
+      const arrow = document.getElementById('fundaeArrow');
+      const visible = fields.style.display !== 'none';
+      fields.style.display = visible ? 'none' : '';
+      arrow.textContent = visible ? '▶' : '▼';
+    });
+
+    function getFundaeData() {
+      return {
+        cif: document.getElementById('fundaeCIF').value.trim(),
+        codigoAccion: document.getElementById('fundaeCodigoAccion').value.trim(),
+        modalidad: document.getElementById('fundaeModalidad').value,
+        horas: document.getElementById('fundaeHoras').value.trim(),
+        especialidad: document.getElementById('fundaeEspecialidad').value.trim(),
+        centro: document.getElementById('fundaeCentro').value.trim(),
+        formador: {
+          nif: document.getElementById('fundaeFormadorNIF').value.trim(),
+          nombre: document.getElementById('fundaeFormadorNombre').value.trim(),
+          apellidos: document.getElementById('fundaeFormadorApellidos').value.trim(),
+          telefono: document.getElementById('fundaeFormadorTel').value.trim(),
+          email: document.getElementById('fundaeFormadorEmail').value.trim(),
+        },
+        costeAlumno: document.getElementById('fundaeCosteAlumno').value.trim(),
+        rlpt: document.getElementById('fundaeRLPT').checked,
+      };
+    }
+
+    // Save state on FUNDAE field changes
+    ['fundaeCIF','fundaeCodigoAccion','fundaeModalidad','fundaeHoras','fundaeEspecialidad',
+     'fundaeCentro','fundaeFormadorNIF','fundaeFormadorNombre','fundaeFormadorApellidos',
+     'fundaeFormadorTel','fundaeFormadorEmail','fundaeCosteAlumno','fundaeRLPT'].forEach(id => {
+      const el = document.getElementById(id);
+      const evt = (el.type === 'checkbox') ? 'change' : 'input';
+      el.addEventListener(evt, saveState);
+    });
+
+    function downloadXML(content, filename) {
+      const blob = new Blob([content], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function generateAccionFormativaXML() {
+      const f = getFundaeData();
+      const ev = getCurrentEvent();
+      const selected = getSelectedAttendees();
+
+      if (!f.cif || !f.codigoAccion || !ev.title) {
+        showToast('Rellena al menos: CIF, código de acción y título', 'error');
+        return;
+      }
+
+      const costePrevisto = f.costeAlumno && f.horas ?
+        (parseFloat(f.costeAlumno) * parseFloat(f.horas) * selected.length).toFixed(2) : '0.00';
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<AccionesFormativas xmlns="urn:fundae:bonificada">\n' +
+        '  <AccionFormativa>\n' +
+        '    <CodigoAccion>' + esc(f.codigoAccion) + '</CodigoAccion>\n' +
+        '    <Denominacion>' + esc(ev.title) + '</Denominacion>\n' +
+        '    <Modalidad>' + esc(f.modalidad || 'Presencial') + '</Modalidad>\n' +
+        '    <NumeroHoras>' + esc(f.horas || '0') + '</NumeroHoras>\n' +
+        '    <AreaProfesional>' + esc(f.especialidad) + '</AreaProfesional>\n' +
+        '    <CIFEmpresaBonificada>' + esc(f.cif) + '</CIFEmpresaBonificada>\n' +
+        '    <InformadaRLPT>' + (f.rlpt ? 'S' : 'N') + '</InformadaRLPT>\n' +
+        '    <CostePrevisto>' + costePrevisto + '</CostePrevisto>\n' +
+        '    <NumeroParticipantes>' + selected.length + '</NumeroParticipantes>\n' +
+        '    <Objetivos>' + esc(ev.body || '') + '</Objetivos>\n' +
+        '  </AccionFormativa>\n' +
+        '</AccionesFormativas>';
+
+      downloadXML(xml, 'FUNDAE_AccionFormativa_' + f.codigoAccion + '.xml');
+      showToast('XML Acción Formativa descargado', 'success');
+    }
+
+    function generateInicioGrupoXML() {
+      const f = getFundaeData();
+      const ev = getCurrentEvent();
+      const selected = getSelectedAttendees();
+
+      if (!f.cif || !f.codigoAccion || !ev.date) {
+        showToast('Rellena al menos: CIF, código de acción y fecha', 'error');
+        return;
+      }
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<InicioGrupos xmlns="urn:fundae:bonificada">\n' +
+        '  <Grupo>\n' +
+        '    <CodigoAccion>' + esc(f.codigoAccion) + '</CodigoAccion>\n' +
+        '    <CIFEmpresaBonificada>' + esc(f.cif) + '</CIFEmpresaBonificada>\n' +
+        '    <NumeroParticipantes>' + selected.length + '</NumeroParticipantes>\n' +
+        '    <FechaInicio>' + ev.date + '</FechaInicio>\n' +
+        '    <FechaFin>' + (state.seriesDates.length > 1 ? state.seriesDates[state.seriesDates.length - 1] : ev.date) + '</FechaFin>\n' +
+        '    <HoraInicio>' + ev.startTime + '</HoraInicio>\n' +
+        '    <HoraFin>' + ev.endTime + '</HoraFin>\n' +
+        '    <LugarImparticion>' + esc(ev.isTeams ? 'Aula Virtual' : (ev.location || '')) + '</LugarImparticion>\n' +
+        '    <CentroFormacion>' + esc(f.centro) + '</CentroFormacion>\n' +
+        '    <Formador>\n' +
+        '      <NIF>' + esc(f.formador.nif) + '</NIF>\n' +
+        '      <Nombre>' + esc(f.formador.nombre) + '</Nombre>\n' +
+        '      <Apellidos>' + esc(f.formador.apellidos) + '</Apellidos>\n' +
+        '      <Telefono>' + esc(f.formador.telefono) + '</Telefono>\n' +
+        '      <Email>' + esc(f.formador.email) + '</Email>\n' +
+        '      <HorasImparticion>' + esc(f.horas || '0') + '</HorasImparticion>\n' +
+        '    </Formador>\n' +
+        '  </Grupo>\n' +
+        '</InicioGrupos>';
+
+      downloadXML(xml, 'FUNDAE_InicioGrupo_' + f.codigoAccion + '_' + ev.date + '.xml');
+      showToast('XML Inicio de Grupo descargado', 'success');
+    }
+
+    function generateFinalizacionXML() {
+      const f = getFundaeData();
+      const ev = getCurrentEvent();
+      const selected = getSelectedAttendees();
+
+      if (!f.cif || !f.codigoAccion) {
+        showToast('Rellena al menos: CIF y código de acción', 'error');
+        return;
+      }
+
+      const costePrevisto = f.costeAlumno && f.horas ?
+        (parseFloat(f.costeAlumno) * parseFloat(f.horas) * selected.length).toFixed(2) : '0.00';
+
+      // Per 2026 rules: only NIF required for participants
+      const participantesXML = selected.map(emp =>
+        '    <Participante>\n' +
+        '      <DocumentoIdentidad>' + esc(emp.NIF) + '</DocumentoIdentidad>\n' +
+        '    </Participante>'
+      ).join('\n');
+
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<FinalizacionGrupos xmlns="urn:fundae:bonificada">\n' +
+        '  <Grupo>\n' +
+        '    <CodigoAccion>' + esc(f.codigoAccion) + '</CodigoAccion>\n' +
+        '    <CIFEmpresaBonificada>' + esc(f.cif) + '</CIFEmpresaBonificada>\n' +
+        '    <FechaInicio>' + ev.date + '</FechaInicio>\n' +
+        '    <FechaFin>' + (state.seriesDates.length > 1 ? state.seriesDates[state.seriesDates.length - 1] : ev.date) + '</FechaFin>\n' +
+        '    <CosteTotal>' + costePrevisto + '</CosteTotal>\n' +
+        '    <Participantes>\n' +
+        participantesXML + '\n' +
+        '    </Participantes>\n' +
+        '  </Grupo>\n' +
+        '</FinalizacionGrupos>';
+
+      downloadXML(xml, 'FUNDAE_Finalizacion_' + f.codigoAccion + '_' + ev.date + '.xml');
+      showToast('XML Finalización descargado', 'success');
+    }
+
+    document.getElementById('btnXmlAccion').addEventListener('click', generateAccionFormativaXML);
+    document.getElementById('btnXmlInicio').addEventListener('click', generateInicioGrupoXML);
+    document.getElementById('btnXmlFin').addEventListener('click', generateFinalizacionXML);
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
