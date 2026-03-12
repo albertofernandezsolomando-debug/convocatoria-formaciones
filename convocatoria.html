@@ -1104,11 +1104,170 @@
         <div class="app-header">
           <span class="app-header-title">Generar XML FUNDAE</span>
         </div>
-        <div style="padding:16px; color:var(--text-muted); font-size:13px;">Selecciona una acción formativa</div>
+
+        <div style="padding:16px; overflow-y:auto; flex:1;">
+          <!-- Acción formativa -->
+          <div style="margin-bottom:16px;">
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Acción formativa</label>
+            <select class="input-field" id="xmlAccionSelect" style="font-size:13px;">
+              <option value="">-- Seleccionar acción --</option>
+            </select>
+            <div id="xmlAccionInfo" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+          </div>
+
+          <!-- Grupo datos -->
+          <div style="margin-bottom:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Datos del grupo</div>
+
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">ID Grupo</label>
+              <input class="input-field" type="text" id="xmlIdGrupo" style="font-size:13px;" placeholder="Ej: 1">
+            </div>
+
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Descripción</label>
+              <input class="input-field" type="text" id="xmlDescripcion" style="font-size:13px;">
+            </div>
+
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Responsable</label>
+              <input class="input-field" type="text" id="xmlResponsable" style="font-size:13px;">
+            </div>
+
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Teléfono contacto</label>
+              <input class="input-field" type="text" id="xmlTelefono" style="font-size:13px;">
+            </div>
+
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Informa RLT</label>
+              <select class="input-field" id="xmlInformaRLT" style="font-size:13px;">
+                <option value="S">Sí</option>
+                <option value="N">No</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Centro -->
+          <div style="margin-bottom:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Centro de impartición</div>
+            <select class="input-field" id="xmlCentroSelect" style="font-size:13px;">
+              <option value="">-- Seleccionar centro --</option>
+            </select>
+          </div>
+
+          <!-- Tutor -->
+          <div style="margin-bottom:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Tutor</div>
+            <select class="input-field" id="xmlTutorSelect" style="font-size:13px;">
+              <option value="">-- Seleccionar tutor --</option>
+            </select>
+          </div>
+
+          <!-- Calendario -->
+          <div style="margin-bottom:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Calendario</div>
+
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Fecha inicio</label>
+                <input class="input-field" type="date" id="xmlFechaInicio" style="font-size:13px;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Fecha fin</label>
+                <input class="input-field" type="date" id="xmlFechaFin" style="font-size:13px;">
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Hora inicio</label>
+                <input class="input-field" type="time" id="xmlHoraInicio" style="font-size:13px;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Hora fin</label>
+                <input class="input-field" type="time" id="xmlHoraFin" style="font-size:13px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Costes -->
+          <div style="margin-bottom:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Costes del grupo</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Costes totales para el XML &lt;costes&gt;</div>
+
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Directos (€)</label>
+                <input class="input-field" type="number" id="xmlCostesDirectos" style="font-size:13px;" step="0.01" value="0">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Indirectos (€)</label>
+                <input class="input-field" type="number" id="xmlCostesIndirectos" style="font-size:13px;" step="0.01" value="0">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Salariales (€)</label>
+                <input class="input-field" type="number" id="xmlCostesSalariales" style="font-size:13px;" step="0.01" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- XML buttons -->
+          <div style="border-top:1px solid var(--border); padding-top:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Generar XML</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="btn btn-primary" id="btnGenXmlAccion" style="font-size:12px;">Acción Formativa (AAFF)</button>
+              <button class="btn btn-secondary" id="btnGenXmlInicio" style="font-size:12px;">Inicio de Grupo</button>
+              <button class="btn btn-secondary" id="btnGenXmlFin" style="font-size:12px;">Finalización de Grupo</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="right-panel" id="xmlParticipantPanel">
-        <div id="xmlEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">
-          Selecciona una acción para ver participantes
+        <div style="display:flex; flex-direction:column; height:100%;">
+          <!-- Summary bar -->
+          <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0;">
+            <span style="font-size:13px; font-weight:600; color:var(--text-primary);">Participantes</span>
+            <span id="xmlParticipantCount" style="font-size:12px; color:var(--text-muted);">0</span>
+            <div style="flex:1;"></div>
+            <button class="btn btn-secondary" id="btnXmlAddParticipant" style="font-size:12px;">+ Añadir</button>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted);">Diploma masivo:</label>
+              <select class="input-field" id="xmlMassDiploma" style="font-size:12px; width:60px;">
+                <option value="">--</option>
+                <option value="S">S</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table container with horizontal scroll -->
+          <div style="flex:1; overflow:auto;">
+            <table style="width:100%; min-width:1200px; border-collapse:collapse; font-size:12px;">
+              <thead>
+                <tr style="border-bottom:2px solid var(--border); position:sticky; top:0; background:var(--bg-panel);">
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px; width:30px;"></th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Empleado</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">NIF</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Tipo Doc</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Email</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Teléfono</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Cat. Prof.</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Nivel Est.</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Grupo Cot.</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Diploma</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Coste/h</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Discap.</th>
+                </tr>
+              </thead>
+              <tbody id="xmlParticipantBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Empty state -->
+          <div id="xmlEmptyParticipants" style="display:flex; align-items:center; justify-content:center; flex:1; color:var(--text-muted); font-size:13px;">
+            Selecciona una acción formativa para ver participantes
+          </div>
         </div>
       </div>
     </div>
