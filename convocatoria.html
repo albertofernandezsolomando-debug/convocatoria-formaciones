@@ -1235,6 +1235,97 @@
     }
 
     // ═══════════════════════════════════
+    // CATALOG EXCEL IMPORT/EXPORT
+    // ═══════════════════════════════════
+
+    const CATALOG_TEMPLATE_HEADERS = {
+      proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Teléfono', 'Email', 'Responsable'],
+      centros: ['Tipo documento', 'Documento', 'Nombre', 'Dirección', 'CP', 'Localidad', 'Provincia', 'CIF proveedor'],
+      tutores: ['Tipo documento', 'Documento', 'Nombre', 'Apellido 1', 'Apellido 2', 'Teléfono', 'Email', 'Horas dedicación', 'CIF proveedor'],
+      acciones: ['Código', 'Nombre', 'Código grupo', 'Área profesional', 'Modalidad', 'Horas presenciales', 'Horas teleformación', 'Nivel formación', 'Objetivos', 'Contenidos']
+    };
+
+    const CATALOG_FIELD_MAP = {
+      proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'telefono', 'email', 'responsable'],
+      centros: ['tipoDocumento', 'documento', 'nombre', 'direccion', 'cp', 'localidad', 'provincia', 'cifProveedor'],
+      tutores: ['tipoDocumento', 'documento', 'nombre', 'apellido1', 'apellido2', 'telefono', 'email', 'horasDedicacion', 'cifProveedor'],
+      acciones: ['codigo', 'nombre', 'codigoGrupo', 'areaProfesional', 'modalidad', 'horasPresenciales', 'horasTeleformacion', 'nivelFormacion', 'objetivos', 'contenidos']
+    };
+
+    function downloadCatalogTemplate() {
+      const key = catalogState.activeCatalog;
+      const headers = CATALOG_TEMPLATE_HEADERS[key];
+      const ws = XLSX.utils.aoa_to_sheet([headers]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+      XLSX.writeFile(wb, 'plantilla_' + key + '.xlsx');
+      showToast('Plantilla descargada', 'success');
+    }
+
+    function importCatalogExcel(file) {
+      const key = catalogState.activeCatalog;
+      const cfg = CATALOG_CONFIG[key];
+      const fields = CATALOG_FIELD_MAP[key];
+      const headers = CATALOG_TEMPLATE_HEADERS[key];
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+          if (rows.length < 2) {
+            showToast('El archivo no contiene datos', 'warning');
+            return;
+          }
+
+          // Skip header row
+          const dataRows = rows.slice(1);
+          let imported = 0;
+          const errors = [];
+
+          dataRows.forEach((row, idx) => {
+            const rowNum = idx + 2; // 1-indexed, +1 for header
+            const record = {};
+            let rowHasError = false;
+
+            // Map columns to fields
+            fields.forEach((field, colIdx) => {
+              record[field] = row[colIdx] != null ? String(row[colIdx]).trim() : '';
+            });
+
+            // Validate PK is non-empty
+            const pkValue = record[cfg.pk];
+            if (!pkValue) {
+              errors.push('Fila ' + rowNum + ': ' + headers[fields.indexOf(cfg.pk)] + ' vacío');
+              rowHasError = true;
+            }
+
+            // Row-level atomicity: reject entire row if any error
+            if (!rowHasError) {
+              upsertCatalogRecord(key, cfg.pk, record);
+              imported++;
+            }
+          });
+
+          renderCatalogList();
+
+          if (errors.length > 0) {
+            showToast(imported + ' importados, ' + errors.length + ' errores', imported > 0 ? 'warning' : 'error');
+            // Show error details in a dialog
+            showCatalogConfirm('Errores de importación', errors.join('\n'), function() {});
+          } else {
+            showToast(imported + ' registros importados', 'success');
+          }
+        } catch(err) {
+          showToast('Error al leer archivo Excel', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ═══════════════════════════════════
     // FUNDAE CATALOG UI
     // ═══════════════════════════════════
 
@@ -1304,6 +1395,13 @@
     document.getElementById('btnImportJSON').addEventListener('click', () => document.getElementById('catalogJsonInput').click());
     document.getElementById('catalogJsonInput').addEventListener('change', function() {
       if (this.files[0]) { importCatalogsJSON(this.files[0]); this.value = ''; }
+    });
+
+    // Excel template download and import
+    document.getElementById('btnDownloadTemplate').addEventListener('click', downloadCatalogTemplate);
+    document.getElementById('btnImportExcel').addEventListener('click', () => document.getElementById('catalogExcelInput').click());
+    document.getElementById('catalogExcelInput').addEventListener('change', function() {
+      if (this.files[0]) { importCatalogExcel(this.files[0]); this.value = ''; }
     });
 
     function renderCatalogForm() {
