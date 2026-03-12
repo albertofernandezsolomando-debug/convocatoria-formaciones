@@ -81,6 +81,16 @@
       padding: 16px 24px;
       border-bottom: 1px solid var(--border);
       background: var(--bg-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-item {
+      transition: background var(--transition);
+    }
+    .history-item:hover {
+      background: var(--accent-subtle);
     }
     .app-header-title {
       font-size: 15px;
@@ -739,6 +749,7 @@
 
       <div class="app-header">
         <span class="app-header-title">Convocatoria de Formaciones</span>
+        <button class="link-btn link-add" id="btnHistory" style="font-size:11px;">Historial</button>
       </div>
 
       <!-- 1. Datos -->
@@ -905,7 +916,51 @@
     </div>
   </div>
 
+  <!-- History panel -->
+  <div class="dialog-overlay" id="historyPanel">
+    <div class="dialog-box" style="max-width:600px; max-height:80vh; overflow-y:auto; text-align:left;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">Historial de convocatorias</h3>
+        <button class="link-btn link-clear" id="historyClose">&times;</button>
+      </div>
+      <input class="input-field" type="text" id="historySearch" placeholder="Buscar por título..." style="margin-bottom:12px; font-size:12px;">
+      <div id="historyList"></div>
+      <div id="historyEmpty" style="text-align:center; color:var(--text-muted); padding:20px; font-size:13px;">No hay convocatorias en el historial</div>
+    </div>
+  </div>
+
   <script>
+    // ═══════════════════════════════════
+    // HISTORY STORAGE
+    // ═══════════════════════════════════
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem('convocatoria_history') || '[]'); } catch(e) { return []; }
+    }
+    function saveHistory(history) {
+      try { localStorage.setItem('convocatoria_history', JSON.stringify(history)); } catch(e) {}
+    }
+    function logToHistory(event, attendeeCount, emails, filters) {
+      const history = getHistory();
+      history.unshift({
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        title: event.title,
+        eventDate: event.date,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        isTeams: event.isTeams,
+        location: event.location,
+        body: event.body,
+        attendeeCount: attendeeCount,
+        emails: emails,
+        filters: JSON.parse(JSON.stringify(filters))
+      });
+      // Keep last 50 entries
+      if (history.length > 50) history.length = 50;
+      saveHistory(history);
+    }
+
     // ═══════════════════════════════════
     // PURE LOGIC FUNCTIONS
     // ═══════════════════════════════════
@@ -1774,8 +1829,21 @@
       document.getElementById('confirmProceed').onclick = () => {
         document.getElementById('confirmDialog').classList.remove('visible');
 
+        // Duplicate detection
+        const history = getHistory();
+        const duplicate = history.find(h =>
+          h.title === event.title && h.eventDate === event.date
+        );
+        if (duplicate) {
+          const dupDate = new Date(duplicate.timestamp).toLocaleDateString('es-ES');
+          if (!confirm('Ya enviaste "' + event.title + '" para el ' + event.date + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + '). ¿Continuar?')) {
+            return;
+          }
+        }
+
         if (isSeries) {
           openSeriesSequentially(event, emails);
+          logToHistory(event, selected.length, emails, state.activeFilters);
         } else {
           const result = buildDeepLink(event, emails);
           window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
@@ -1784,6 +1852,7 @@
               showToast('Emails copiados al portapapeles (' + emails.length + ')', 'success');
             });
           }
+          logToHistory(event, selected.length, emails, state.activeFilters);
         }
       };
 
@@ -2039,6 +2108,92 @@
         row.style.display = text.includes(query) ? '' : 'none';
       });
     });
+
+    // ═══════════════════════════════════
+    // HISTORY PANEL
+    // ═══════════════════════════════════
+
+    document.getElementById('btnHistory').addEventListener('click', () => {
+      renderHistory();
+      document.getElementById('historyPanel').classList.add('visible');
+    });
+    document.getElementById('historyClose').addEventListener('click', () => {
+      document.getElementById('historyPanel').classList.remove('visible');
+    });
+
+    document.getElementById('historySearch').addEventListener('input', () => {
+      const query = document.getElementById('historySearch').value.toLowerCase();
+      document.querySelectorAll('.history-item').forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(query) ? '' : 'none';
+      });
+    });
+
+    function renderHistory() {
+      const history = getHistory();
+      const list = document.getElementById('historyList');
+      const empty = document.getElementById('historyEmpty');
+
+      if (history.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+
+      list.innerHTML = history.map((h, i) => {
+        const date = new Date(h.timestamp).toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+        const eventDate = h.eventDate || '';
+        const type = h.isTeams ? 'Teams' : 'Presencial';
+        const filterSummary = Object.entries(h.filters || {})
+          .filter(([k,v]) => v && v.length > 0)
+          .map(([k,v]) => k + ': ' + v.join(', '))
+          .join(' · ') || 'Sin filtros';
+
+        return '<div class="history-item" style="padding:12px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:start;">' +
+            '<div>' +
+              '<div style="font-weight:600; font-size:13px;">' + esc(h.title) + '</div>' +
+              '<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">' +
+                eventDate + ' · ' + (h.startTime||'') + '–' + (h.endTime||'') + ' · ' + type +
+              '</div>' +
+              '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' +
+                h.attendeeCount + ' asistentes · ' + esc(filterSummary) +
+              '</div>' +
+              '<div style="font-size:10px; color:var(--text-muted); margin-top:4px;">Enviado: ' + date + '</div>' +
+            '</div>' +
+            '<button class="link-btn link-add" data-repeat="' + i + '" style="font-size:11px; white-space:nowrap;">Repetir</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      list.querySelectorAll('[data-repeat]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.repeat);
+          const h = history[idx];
+
+          // Restore filters
+          state.activeFilters = JSON.parse(JSON.stringify(h.filters || {}));
+
+          // Restore event config (except date)
+          document.getElementById('eventTitle').value = h.title || '';
+          // Don't restore date — user should set a new date
+          document.getElementById('eventStart').value = h.startTime || '10:00';
+          document.getElementById('eventEnd').value = h.endTime || '12:00';
+          document.getElementById('eventLocation').value = h.location || '';
+          if (h.body) document.getElementById('eventBody').value = h.body;
+          if (h.isTeams) {
+            document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+          } else {
+            document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+          }
+
+          renderFilters();
+          renderTable();
+          document.getElementById('historyPanel').classList.remove('visible');
+          showToast('Configuración de "' + h.title + '" restaurada. Ajusta la fecha.', 'info', 5000);
+        });
+      });
+    }
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
