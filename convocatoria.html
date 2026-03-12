@@ -56,7 +56,7 @@
 
     .app {
       display: flex;
-      height: 100vh;
+      flex: 1;
     }
 
     /* --- Left panel --- */
@@ -193,14 +193,10 @@
     }
 
     .tab-content.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Tab 2 and 3 panels need scroll */
-    .catalog-left, .catalog-right,
-    .xml-left, .xml-right {
-      overflow-y: auto;
-    }
 
     /* --- Right panel --- */
     .right-panel {
