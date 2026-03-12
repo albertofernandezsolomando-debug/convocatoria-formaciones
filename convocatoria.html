@@ -50,6 +50,8 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: 'cv11' 1, 'ss01' 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .app {
@@ -144,6 +146,60 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+
+    /* --- Tab navigation --- */
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      background: var(--bg-panel);
+      padding: 0 24px;
+      gap: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--accent-subtle);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Tab 2 and 3 panels need scroll */
+    .catalog-left, .catalog-right,
+    .xml-left, .xml-right {
+      overflow-y: auto;
     }
 
     /* --- Right panel --- */
@@ -763,6 +819,12 @@
   </style>
 </head>
 <body>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="tabConvocatoria">Convocatoria</button>
+    <button class="tab-btn" data-tab="tabCatalogos">Catálogos FUNDAE</button>
+    <button class="tab-btn" data-tab="tabXml">Generar XML FUNDAE</button>
+  </div>
+  <div class="tab-content active" id="tabConvocatoria">
   <div class="app">
     <!-- LEFT PANEL -->
     <div class="left-panel">
@@ -1066,6 +1128,41 @@
 
     </div>
   </div>
+  </div>
+
+  <!-- Tab 2: Catálogos FUNDAE -->
+  <div class="tab-content" id="tabCatalogos">
+    <div class="app">
+      <div class="left-panel" id="catalogListPanel" style="overflow-y:auto;">
+        <div class="app-header">
+          <span class="app-header-title">Catálogos FUNDAE</span>
+        </div>
+        <div style="padding:16px; color:var(--text-muted); font-size:13px;">Catálogo vacío</div>
+      </div>
+      <div class="right-panel" id="catalogFormPanel">
+        <div id="catalogEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">
+          Selecciona un registro del catálogo
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Generar XML FUNDAE -->
+  <div class="tab-content" id="tabXml">
+    <div class="app">
+      <div class="left-panel" id="xmlConfigPanel" style="overflow-y:auto;">
+        <div class="app-header">
+          <span class="app-header-title">Generar XML FUNDAE</span>
+        </div>
+        <div style="padding:16px; color:var(--text-muted); font-size:13px;">Selecciona una acción formativa</div>
+      </div>
+      <div class="right-panel" id="xmlParticipantPanel">
+        <div id="xmlEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">
+          Selecciona una acción para ver participantes
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
 
@@ -1107,6 +1204,18 @@
   </div>
 
   <script>
+    // ═══════════════════════════════════
+    // TAB NAVIGATION
+    // ═══════════════════════════════════
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
     // ═══════════════════════════════════
     // HISTORY STORAGE
     // ═══════════════════════════════════
