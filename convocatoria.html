@@ -852,6 +852,20 @@
         <div id="filterChips" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;"></div>
       </div>
 
+      <!-- Queue bar -->
+      <div id="queueBar" style="display:none; padding:12px 28px; border-bottom:1px solid var(--border); background:var(--accent-subtle);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:13px; font-weight:600; color:var(--accent);">
+            Cola de convocatorias (<span id="queueCount">0</span>)
+          </span>
+          <div style="display:flex; gap:8px;">
+            <button class="link-btn link-clear" id="btnClearQueue">Vaciar cola</button>
+            <button class="btn btn-primary" id="btnLaunchQueue" style="font-size:12px; padding:6px 14px;">Lanzar cola</button>
+          </div>
+        </div>
+        <div id="queueList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
       <!-- Session tabs (series mode only) -->
       <div class="session-tabs" id="sessionTabs"></div>
 
@@ -883,6 +897,7 @@
         <div style="display: flex; gap: 10px;">
           <button class="btn btn-secondary" id="btnExport">Exportar</button>
           <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">Copiar emails</button>
+          <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
       </div>
@@ -1165,7 +1180,19 @@
       currentSessionIndex: 0,
       sortColumn: 'Empleado',
       sortDirection: 'asc',
+      queue: [],
     };
+
+    // ═══════════════════════════════════
+    // QUEUE PERSISTENCE
+    // ═══════════════════════════════════
+
+    function saveQueue() {
+      try { localStorage.setItem('convocatoria_queue', JSON.stringify(state.queue)); } catch(e) {}
+    }
+    function loadQueue() {
+      try { state.queue = JSON.parse(localStorage.getItem('convocatoria_queue') || '[]'); } catch(e) { state.queue = []; }
+    }
 
     function getGreeting() {
       const h = new Date().getHours();
@@ -1763,6 +1790,78 @@
     }
 
     // ═══════════════════════════════════
+    // QUEUE
+    // ═══════════════════════════════════
+
+    function renderQueue() {
+      const bar = document.getElementById('queueBar');
+      const list = document.getElementById('queueList');
+      const count = document.getElementById('queueCount');
+
+      if (state.queue.length === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+
+      bar.style.display = '';
+      count.textContent = state.queue.length;
+
+      list.innerHTML = state.queue.map((item, i) => {
+        const type = item.event.isTeams ? 'Teams' : 'Presencial';
+        const series = item.seriesDates ? ' · ' + item.seriesDates.length + ' sesiones' : '';
+        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg-panel); border-radius:var(--radius-sm); border:1px solid var(--border); font-size:12px;">' +
+          '<div>' +
+            '<strong>' + esc(item.event.title) + '</strong>' +
+            '<span style="color:var(--text-muted);"> · ' + item.event.date + ' · ' + item.attendeeCount + ' asist. · ' + type + series + '</span>' +
+          '</div>' +
+          '<div style="display:flex; gap:6px;">' +
+            '<button class="link-btn link-add" data-edit-queue="' + i + '" style="font-size:11px;">Editar</button>' +
+            '<button class="link-btn link-clear" data-remove-queue="' + i + '" style="font-size:11px;">&times;</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      // Remove handlers
+      list.querySelectorAll('[data-remove-queue]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.queue.splice(parseInt(btn.dataset.removeQueue), 1);
+          saveQueue();
+          renderQueue();
+        });
+      });
+
+      // Edit handlers — load queue item back into form
+      list.querySelectorAll('[data-edit-queue]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.editQueue);
+          const item = state.queue[idx];
+
+          // Restore filters and event config
+          state.activeFilters = JSON.parse(JSON.stringify(item.filters));
+          document.getElementById('eventTitle').value = item.event.title;
+          document.getElementById('eventDate').value = item.event.date;
+          document.getElementById('eventStart').value = item.event.startTime;
+          document.getElementById('eventEnd').value = item.event.endTime;
+          document.getElementById('eventLocation').value = item.event.location || '';
+          if (item.event.body) document.getElementById('eventBody').value = item.event.body;
+          if (item.event.isTeams) {
+            document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+          } else {
+            document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+          }
+
+          // Remove from queue (will be re-added if user wants)
+          state.queue.splice(idx, 1);
+          saveQueue();
+          renderQueue();
+          renderFilters();
+          renderTable();
+          showToast('Editando convocatoria. Añade de nuevo a la cola cuando termines.', 'info', 5000);
+        });
+      });
+    }
+
+    // ═══════════════════════════════════
     // DEEP LINK AND ACTIONS
     // ═══════════════════════════════════
 
@@ -1886,6 +1985,110 @@
         btn.textContent = '✓ Copiados (' + selected.length + ')';
         setTimeout(() => { btn.textContent = original; }, 2000);
       });
+    });
+
+    document.getElementById('btnAddToQueue').addEventListener('click', () => {
+      if (!validateEvent()) return;
+
+      const event = getCurrentEvent();
+      const selected = getSelectedAttendees();
+      const emails = selected.map(e => e['Email trabajo']);
+
+      if (selected.length === 0) {
+        showToast('No hay asistentes seleccionados', 'warning');
+        return;
+      }
+
+      state.queue.push({
+        id: Date.now(),
+        event: event,
+        attendeeCount: selected.length,
+        emails: emails,
+        filters: JSON.parse(JSON.stringify(state.activeFilters)),
+        seriesDates: state.seriesDates.length > 1 ? [...state.seriesDates] : null
+      });
+
+      saveQueue();
+      renderQueue();
+      showToast('Convocatoria añadida a la cola (' + state.queue.length + ' en cola)', 'success');
+    });
+
+    document.getElementById('btnClearQueue').addEventListener('click', () => {
+      if (state.queue.length === 0) return;
+      state.queue = [];
+      saveQueue();
+      renderQueue();
+      showToast('Cola vaciada', 'info');
+    });
+
+    document.getElementById('btnLaunchQueue').addEventListener('click', () => {
+      if (state.queue.length === 0) return;
+
+      const total = state.queue.length;
+      let index = 0;
+
+      function launchNext() {
+        if (index >= state.queue.length) {
+          // All done
+          state.queue = [];
+          saveQueue();
+          renderQueue();
+          showToast('¡Cola completa! ' + total + ' convocatorias enviadas', 'success', 6000);
+          return;
+        }
+
+        const item = state.queue[index];
+        const event = item.event;
+        const emails = item.emails;
+        const result = buildDeepLink(event, emails);
+
+        // Handle >50 fallback
+        if (result.useFallback && index === 0) {
+          copyToClipboard(result.emailString).then(() => {
+            showToast('Emails copiados al portapapeles para la primera convocatoria', 'warning', 6000);
+          });
+        }
+
+        window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+
+        // Log to history
+        logToHistory(event, item.attendeeCount, emails, item.filters);
+
+        index++;
+
+        if (index < state.queue.length) {
+          // Show series-style dialog for next
+          const dialog = document.getElementById('seriesDialog');
+          document.getElementById('dialogTitle').textContent =
+            'Convocatoria ' + index + ' de ' + total + ' abierta';
+          document.getElementById('dialogBody').textContent =
+            '"' + event.title + '" enviada. Cuando hayas terminado, pulsa "Siguiente".';
+          document.getElementById('dialogNext').textContent =
+            index === total - 1 ? 'Abrir última convocatoria' : 'Siguiente convocatoria';
+          dialog.classList.add('visible');
+
+          document.getElementById('dialogNext').onclick = () => {
+            dialog.classList.remove('visible');
+            launchNext();
+          };
+          document.getElementById('dialogCancel').onclick = () => {
+            dialog.classList.remove('visible');
+            // Keep remaining items in queue
+            state.queue = state.queue.slice(index);
+            saveQueue();
+            renderQueue();
+            showToast((total - index) + ' convocatorias pendientes en la cola', 'info');
+          };
+        } else {
+          // Last one — clean up
+          state.queue = [];
+          saveQueue();
+          renderQueue();
+          showToast('¡Cola completa! ' + total + ' convocatorias enviadas', 'success', 6000);
+        }
+      }
+
+      launchNext();
     });
 
     document.getElementById('btnExport').addEventListener('click', () => {
@@ -2205,6 +2408,13 @@
         e.returnValue = '';
       }
     });
+
+    // ═══════════════════════════════════
+    // INIT QUEUE
+    // ═══════════════════════════════════
+
+    loadQueue();
+    renderQueue();
   </script>
 </body>
 </html>
