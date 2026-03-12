@@ -84,7 +84,7 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - Español para texto visible al usuario, inglés para código/variables
 - `FILTER_KEYS` y `RELEVANT_COLUMNS` definen las columnas del Excel esperadas
 - Los filtros normalizan espacios (`trim` + collapse) al parsear
-- `localStorage` keys: `convocatoria_state`, `convocatoria_employees`, `convocatoria_fileName`, `convocatoria_presets`, `convocatoria_history`, `convocatoria_queue`
+- `localStorage` keys: `convocatoria_state`, `convocatoria_employees`, `convocatoria_fileName`, `convocatoria_presets`, `convocatoria_history`, `convocatoria_queue`, `convocatoria_settings`
 
 ## Layout
 
@@ -93,6 +93,14 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - Secciones del panel izquierdo numeradas: "1. Carga de datos", "2. Selecciona asistentes", "3. Datos del evento"
 - Action bar fijada al fondo del panel derecho
 - Queue bar encima de la tabla cuando hay items en cola
+
+## Encuestas de satisfacción (Power Automate)
+
+- `sendSurveyEmail(event, emails)` — envía payload JSON al webhook de PA
+- `buildSurveyPayload(event, emails, formsUrl)` — `to` es array de strings (NO string con `;`)
+- PA schema: `to` como `array` de strings → `join(triggerBody()?['to'],';')` en el campo To del email
+- Se invoca desde: envío directo (`btnOpenOutlook`), series, y cola (`btnLaunchQueue`)
+- **Decisión pendiente**: en series, actualmente se envía UNA sola encuesta al confirmar (todos los asistentes, `scheduledTime` de la última sesión). Preguntar al usuario si prefiere que cada sesión de la serie envíe su propia encuesta con su propia `scheduledTime`.
 
 ## Lo que NO hacer
 

@@ -57,6 +57,7 @@
     .app {
       display: flex;
       flex: 1;
+      min-height: 0;
     }
 
     /* --- Left panel --- */
@@ -86,6 +87,72 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    .settings-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 16px;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      transition: color var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+    }
+    .settings-btn:hover {
+      color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    .dialog-box-wide {
+      max-width: 540px;
+    }
+    .dialog-box-wide .input-field {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .dialog-box-wide label {
+      display: block;
+      margin-top: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .instructions-content {
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .instructions-content ol {
+      padding-left: 20px;
+      margin: 12px 0;
+    }
+    .instructions-content li {
+      margin-bottom: 10px;
+    }
+    .instructions-content pre {
+      background: var(--bg-input);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      overflow-x: auto;
+      position: relative;
+    }
+    .instructions-content .copy-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
     }
 
     .history-item {
@@ -190,6 +257,7 @@
     .tab-content {
       display: none;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
     }
 
@@ -903,7 +971,10 @@
 
       <div class="app-header">
         <span class="app-header-title">Convocatoria de Formaciones</span>
-        <button class="link-btn link-add" id="btnHistory" style="font-size:11px;">Historial</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="settings-btn" id="btnSettings" title="Ajustes">&#9881;</button>
+          <button class="link-btn link-add" id="btnHistory" style="font-size:13px; padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
+        </div>
       </div>
 
       <!-- 1. Datos -->
@@ -990,6 +1061,16 @@
               <button class="link-btn link-add" id="btnAddDate" style="margin-top:6px;">+ Añadir fecha</button>
             </div>
           </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="filter-label" style="font-size:11px; color:var(--text-muted);">Formador/a</label>
+          <input type="text" class="input-field" id="eventFormador" placeholder="Nombre del formador/a">
+        </div>
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:var(--text-secondary);">
+            <input type="checkbox" id="surveyCheck" checked style="accent-color:var(--accent);">
+            Enviar encuesta de satisfacción al finalizar
+          </label>
         </div>
       </div>
 
@@ -1287,6 +1368,54 @@
     </div>
   </div>
 
+  <!-- Settings dialog -->
+  <div class="dialog-overlay" id="settingsDialog">
+    <div class="dialog-box dialog-box-wide">
+      <h3>Ajustes</h3>
+      <label for="settingsWebhookUrl">URL webhook Power Automate</label>
+      <input type="url" class="input-field" id="settingsWebhookUrl" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/...">
+      <label for="settingsFormsUrl">URL formulario Microsoft Forms</label>
+      <input type="url" class="input-field" id="settingsFormsUrl" placeholder="https://forms.office.com/Pages/ResponsePage.aspx?id=...">
+      <div style="margin-top:14px;">
+        <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
+      </div>
+      <div class="dialog-buttons" style="margin-top:20px;">
+        <button class="btn btn-secondary" id="settingsCancel">Cancelar</button>
+        <button class="btn btn-primary" id="settingsSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions dialog -->
+  <div class="dialog-overlay" id="instructionsDialog">
+    <div class="dialog-box dialog-box-wide">
+      <h3>Configurar flujo de Power Automate</h3>
+      <div class="instructions-content">
+        <ol>
+          <li>Abre <strong>Power Automate</strong> (make.powerautomate.com) e inicia sesión con tu cuenta corporativa.</li>
+          <li>Crea un nuevo flujo: <strong>Flujo de nube automatizado → En blanco</strong>.</li>
+          <li>Añade el trigger <strong>«Cuando se recibe una solicitud HTTP»</strong>. En el campo «Esquema JSON del cuerpo de la solicitud», pega el siguiente esquema:
+            <pre id="jsonSchemaBlock"><button class="copy-btn" id="btnCopySchema">Copiar</button>{
+  "type": "object",
+  "properties": {
+    "to": { "type": "array", "items": { "type": "string" } },
+    "subject": { "type": "string" },
+    "body": { "type": "string" },
+    "scheduledTime": { "type": "string" }
+  }
+}</pre>
+          </li>
+          <li>Añade la acción <strong>«Retrasar hasta»</strong>. En el campo «Marca de tiempo», selecciona el campo dinámico <code>scheduledTime</code>.</li>
+          <li>Añade la acción <strong>«Enviar un correo electrónico (V2)»</strong>. En «Para», selecciona <code>to</code>. En «Asunto», selecciona <code>subject</code>. En «Cuerpo», selecciona <code>body</code> y activa la vista HTML.</li>
+          <li>Guarda el flujo. Copia la <strong>URL del trigger HTTP</strong> que aparece en el paso 1 del flujo y pégala en el campo «URL webhook» de la pantalla de Ajustes.</li>
+        </ol>
+      </div>
+      <div class="dialog-buttons">
+        <button class="btn btn-primary" id="instructionsClose">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Confirmation dialog -->
   <div class="dialog-overlay" id="confirmDialog">
     <div class="dialog-box">
@@ -1322,6 +1451,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'tabCatalogos') renderCatalogList();
         if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
     });
@@ -1355,10 +1485,29 @@
       return data;
     }
 
-    function getLinkedRecords(proveedorCIF) {
-      const centros = getCatalog('centros').filter(c => c.cifProveedor === proveedorCIF);
-      const tutores = getCatalog('tutores').filter(t => t.cifProveedor === proveedorCIF);
-      return { centros, tutores };
+    function getLinkedAcciones(type, documento) {
+      return getCatalog('acciones').filter(function(a) {
+        if (type === 'centros') return a.centroVinculado === documento;
+        if (type === 'tutores') return a.tutorVinculado === documento;
+        return false;
+      });
+    }
+
+    function renderLinkedAccionesHtml(type, documento) {
+      var linked = getLinkedAcciones(type, documento);
+      var html = '<div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">' +
+        '<label style="display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Acciones formativas vinculadas</label>';
+      if (!documento || linked.length === 0) {
+        html += '<div style="font-size:12px; color:var(--text-muted); font-style:italic;">Ninguna acción formativa vinculada</div>';
+      } else {
+        html += '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
+        for (var i = 0; i < linked.length; i++) {
+          html += '<span class="chip">' + esc(linked[i].codigo + ' - ' + linked[i].nombre) + '</span>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
     }
 
     function exportCatalogsJSON() {
@@ -1401,15 +1550,15 @@
 
     const CATALOG_TEMPLATE_HEADERS = {
       proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Teléfono', 'Email', 'Responsable'],
-      centros: ['Tipo documento', 'Documento', 'Nombre', 'Dirección', 'CP', 'Localidad', 'Provincia', 'CIF proveedor'],
-      tutores: ['Tipo documento', 'Documento', 'Nombre', 'Apellido 1', 'Apellido 2', 'Teléfono', 'Email', 'Horas dedicación', 'CIF proveedor'],
+      centros: ['Tipo documento', 'Documento', 'Nombre', 'Dirección', 'CP', 'Localidad', 'Provincia'],
+      tutores: ['Tipo documento', 'Documento', 'Nombre', 'Apellido 1', 'Apellido 2', 'Teléfono', 'Email', 'Horas dedicación'],
       acciones: ['Código', 'Nombre', 'Código grupo', 'Área profesional', 'Modalidad', 'Horas presenciales', 'Horas teleformación', 'Nivel formación', 'Objetivos', 'Contenidos']
     };
 
     const CATALOG_FIELD_MAP = {
       proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'telefono', 'email', 'responsable'],
-      centros: ['tipoDocumento', 'documento', 'nombre', 'direccion', 'cp', 'localidad', 'provincia', 'cifProveedor'],
-      tutores: ['tipoDocumento', 'documento', 'nombre', 'apellido1', 'apellido2', 'telefono', 'email', 'horasDedicacion', 'cifProveedor'],
+      centros: ['tipoDocumento', 'documento', 'nombre', 'direccion', 'cp', 'localidad', 'provincia'],
+      tutores: ['tipoDocumento', 'documento', 'nombre', 'apellido1', 'apellido2', 'telefono', 'email', 'horasDedicacion'],
       acciones: ['codigo', 'nombre', 'codigoGrupo', 'areaProfesional', 'modalidad', 'horasPresenciales', 'horasTeleformacion', 'nivelFormacion', 'objetivos', 'contenidos']
     };
 
@@ -1666,7 +1815,7 @@
           field('Código postal', 'cp', v('cp')) +
           field('Localidad', 'localidad', v('localidad')) +
           field('Provincia', 'provincia', v('provincia')) +
-          select('CIF proveedor vinculado', 'cifProveedor', record.cifProveedor || '', proveedorOpts);
+          renderLinkedAccionesHtml('centros', record.documento);
       } else if (key === 'tutores') {
         title = isNew ? 'Nuevo tutor' : esc(cfg.title(record));
         body = select('Tipo documento tutor', 'tipoDocumento', record.tipoDocumento || '', [
@@ -1679,7 +1828,7 @@
           field('Teléfono', 'telefono', v('telefono')) +
           field('Email', 'email', v('email'), { type: 'email' }) +
           field('Horas dedicación', 'horasDedicacion', v('horasDedicacion'), { type: 'number' }) +
-          select('CIF proveedor vinculado', 'cifProveedor', record.cifProveedor || '', proveedorOpts);
+          renderLinkedAccionesHtml('tutores', record.documento);
       } else if (key === 'acciones') {
         title = isNew ? 'Nueva acción formativa' : esc(cfg.title(record));
         const modalidad = record.modalidad || '';
@@ -1765,21 +1914,25 @@
           const cfg = CATALOG_CONFIG[key];
           const pkValue = record[cfg.pk];
 
-          if (key === 'proveedores') {
-            const linked = getLinkedRecords(pkValue);
-            if (linked.centros.length > 0 || linked.tutores.length > 0) {
-              const parts = [];
-              if (linked.centros.length > 0) parts.push(linked.centros.length + ' centro(s)');
-              if (linked.tutores.length > 0) parts.push(linked.tutores.length + ' tutor(es)');
+          if (key === 'centros' || key === 'tutores') {
+            var linkedAcc = getLinkedAcciones(key, pkValue);
+            if (linkedAcc.length > 0) {
+              var label = key === 'centros' ? 'centro' : 'tutor';
               showCatalogConfirm(
-                'Proveedor vinculado',
-                'Este proveedor tiene ' + parts.join(' y ') + ' vinculados. Si lo eliminas, esos registros perderán la referencia al proveedor. ¿Continuar?',
+                label.charAt(0).toUpperCase() + label.slice(1) + ' vinculado',
+                'Este ' + label + ' está referenciado por ' + linkedAcc.length + ' acción(es) formativa(s). Si lo eliminas, esas acciones perderán la referencia. ¿Continuar?',
                 function() {
                   deleteCatalogRecord(key, cfg.pk, pkValue);
+                  var field = key === 'centros' ? 'centroVinculado' : 'tutorVinculado';
+                  var acciones = getCatalog('acciones');
+                  for (var i = 0; i < acciones.length; i++) {
+                    if (acciones[i][field] === pkValue) acciones[i][field] = '';
+                  }
+                  saveCatalog('acciones', acciones);
                   catalogState.selectedPK = null;
                   renderCatalogList();
                   renderCatalogForm();
-                  showToast('Proveedor eliminado', 'success');
+                  showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' eliminado', 'success');
                 }
               );
               return;
@@ -2083,7 +2236,6 @@
         record.cp = val('cp');
         record.localidad = val('localidad');
         record.provincia = val('provincia');
-        record.cifProveedor = val('cifProveedor');
 
         if (!record.documento) markError('documento', 'El documento del centro es obligatorio');
       } else if (key === 'tutores') {
@@ -2095,7 +2247,6 @@
         record.telefono = val('telefono');
         record.email = val('email');
         record.horasDedicacion = val('horasDedicacion');
-        record.cifProveedor = val('cifProveedor');
 
         if (!record.documento) markError('documento', 'El documento del tutor es obligatorio');
         if (record.horasDedicacion && (isNaN(Number(record.horasDedicacion)) || Number(record.horasDedicacion) <= 0)) {
@@ -2510,6 +2661,106 @@
       try { state.queue = JSON.parse(localStorage.getItem('convocatoria_queue') || '[]'); } catch(e) { state.queue = []; }
     }
 
+    // ═══════════════════════════════════
+    // SETTINGS PERSISTENCE
+    // ═══════════════════════════════════
+
+    function loadSettings() {
+      try {
+        return JSON.parse(localStorage.getItem('convocatoria_settings') || '{}');
+      } catch(e) { return {}; }
+    }
+
+    function saveSettings(settings) {
+      try {
+        localStorage.setItem('convocatoria_settings', JSON.stringify(settings));
+      } catch(e) {
+        showToast('Error al guardar ajustes', 'error');
+      }
+    }
+
+    // ═══════════════════════════════════
+    // SURVEY EMAIL
+    // ═══════════════════════════════════
+
+    function buildSurveyEmailBody(event, formsUrl) {
+      const eventName = esc(event.title || 'la formación');
+      const formador = esc(event.formador || '');
+      const dateObj = event.date ? new Date(event.date) : null;
+      const dateStr = dateObj
+        ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+
+      const surveyLink = formsUrl +
+        (formsUrl.includes('?') ? '&' : '?') +
+        'accion=' + encodeURIComponent(event.title || '') +
+        '&fecha=' + encodeURIComponent(dateStr) +
+        '&formador=' + encodeURIComponent(event.formador || '');
+
+      return '<div style="font-family:Calibri,Arial,sans-serif; font-size:14px; color:#0f172a; line-height:1.6;">' +
+        '<p>Hola,</p>' +
+        '<p>Has participado en la formación <strong>' + eventName + '</strong>' +
+        (formador ? ', impartida por <strong>' + formador + '</strong>' : '') +
+        (dateStr ? ' el <strong>' + esc(dateStr) + '</strong>' : '') + '.</p>' +
+        '<p>Nos gustaría conocer tu valoración. Son solo 6 preguntas (menos de 2 minutos):</p>' +
+        '<p style="text-align:center; margin:24px 0;">' +
+        '<a href="' + esc(surveyLink) + '" style="background:#4F46E5; color:white; padding:12px 28px; ' +
+        'border-radius:8px; text-decoration:none; font-weight:600;">Completar encuesta</a></p>' +
+        '<p>Gracias por tu tiempo.</p>' +
+        '</div>';
+    }
+
+    function buildSurveyPayload(event, emails, formsUrl) {
+      const subject = 'Tu opinión sobre la formación \u00AB' + (event.title || 'reciente') + '\u00BB';
+      const body = buildSurveyEmailBody(event, formsUrl);
+      const scheduledTime = new Date(event.date + 'T' + event.endTime + ':00').toISOString();
+
+      return {
+        to: emails,
+        subject: subject,
+        body: body,
+        scheduledTime: scheduledTime
+      };
+    }
+
+    function sendSurveyEmail(event, emails) {
+      if (!event.date || !event.endTime) {
+        showToast('Completa la fecha y hora de fin del evento para programar la encuesta', 'warning', 6000);
+        return;
+      }
+
+      const settings = loadSettings();
+      if (!settings.webhookUrl || !settings.formsUrl) {
+        showToast('Configura el webhook y el formulario en Ajustes (⚙) para enviar encuestas', 'warning', 6000);
+        return;
+      }
+
+      const payload = buildSurveyPayload(event, emails, settings.formsUrl);
+      const endTime = event.endTime || '??:??';
+
+      fetch(settings.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(r) {
+        if (r.ok || r.status === 202) {
+          showToast('Encuesta programada para las ' + endTime, 'success');
+        } else {
+          showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
+        }
+      }).catch(function(err) {
+        fetch(settings.webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload)
+        }).then(function() {
+          showToast('Encuesta enviada a Power Automate (sin confirmación)', 'success');
+        }).catch(function() {
+          showToast('No se pudo conectar con Power Automate. Verifica la URL del webhook', 'error', 6000);
+        });
+      });
+    }
+
     function getGreeting() {
       const h = new Date().getHours();
       if (h < 14) return 'Buenos días';
@@ -2659,6 +2910,8 @@
               body: document.getElementById('eventBody').value,
               isTeams: document.querySelector('input[name="eventType"]:checked')?.value === 'teams',
               isSeries: document.getElementById('seriesCheck').checked,
+              sendSurvey: document.getElementById('surveyCheck').checked,
+              formador: document.getElementById('eventFormador').value,
             },
             timestamp: Date.now()
           };
@@ -2721,6 +2974,9 @@
           dropdown.classList.toggle('open');
         });
 
+        // Prevent clicks inside dropdown from closing it via document handler
+        dropdown.addEventListener('click', e => e.stopPropagation());
+
         dropdown.addEventListener('change', e => {
           const checked = [...dropdown.querySelectorAll('input:checked')].map(cb => cb.value);
           if (checked.length > 0) {
@@ -2728,8 +2984,25 @@
           } else {
             delete state.activeFilters[key];
           }
+          // Save which dropdown is open + search query to restore after re-render
+          const searchVal = dropdown.querySelector('.filter-search input')?.value || '';
           renderFilters();
           renderTable();
+          // Re-open the same dropdown after re-render
+          const newSel = container.querySelector('.filter-select[data-key="' + key + '"]');
+          if (newSel) {
+            const newDd = newSel.querySelector('.filter-dropdown');
+            if (newDd) {
+              newDd.classList.add('open');
+              if (searchVal) {
+                const newSearch = newDd.querySelector('.filter-search input');
+                if (newSearch) {
+                  newSearch.value = searchVal;
+                  newSearch.dispatchEvent(new Event('input'));
+                }
+              }
+            }
+          }
         });
 
         const searchInput = dropdown.querySelector('.filter-search input');
@@ -2741,8 +3014,6 @@
               label.style.display = text.includes(query) ? '' : 'none';
             });
           });
-          // Prevent dropdown from closing when clicking search
-          searchInput.addEventListener('click', e => e.stopPropagation());
         }
       });
 
@@ -3122,6 +3393,8 @@
     document.getElementById('eventEnd').addEventListener('change', saveState);
     document.getElementById('eventLocation').addEventListener('input', saveState);
     document.getElementById('eventBody').addEventListener('input', saveState);
+    document.getElementById('eventFormador').addEventListener('input', saveState);
+    document.getElementById('surveyCheck').addEventListener('change', saveState);
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
@@ -3245,6 +3518,7 @@
         endTime: document.getElementById('eventEnd').value,
         location: document.getElementById('eventLocation').value.trim(),
         isTeams: isTeams,
+        formador: document.getElementById('eventFormador').value.trim(),
         body: (() => {
           let b = document.getElementById('eventBody').value.trim();
           if (isTeams) {
@@ -3323,6 +3597,11 @@
             });
           }
           logToHistory(event, selected.length, emails, state.activeFilters);
+        }
+
+        // Send survey if enabled
+        if (document.getElementById('surveyCheck').checked) {
+          sendSurveyEmail(event, emails);
         }
       };
 
@@ -3424,6 +3703,11 @@
 
         // Log to history
         logToHistory(event, item.attendeeCount, emails, item.filters);
+
+        // Send survey if enabled
+        if (document.getElementById('surveyCheck').checked) {
+          sendSurveyEmail(event, emails);
+        }
 
         index++;
 
@@ -3551,53 +3835,65 @@
       const reader = new FileReader();
 
       reader.onload = evt => {
-        let workbook;
-        if (isCSV) {
-          workbook = XLSX.read(evt.target.result, { type: 'string' });
-        } else {
-          const data = new Uint8Array(evt.target.result);
-          workbook = XLSX.read(data, { type: 'array' });
-        }
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet);
+        try {
+          let workbook;
+          if (isCSV) {
+            workbook = XLSX.read(evt.target.result, { type: 'string' });
+          } else {
+            const data = new Uint8Array(evt.target.result);
+            workbook = XLSX.read(data, { type: 'array' });
+          }
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
 
-        if (rows.length === 0) {
-          showToast('El fichero externo está vacío.', 'error');
-          return;
-        }
+          if (rows.length === 0) {
+            showToast('El fichero externo está vacío.', 'error');
+            return;
+          }
 
-        const headers = Object.keys(rows[0]);
-        if (!headers.includes('NIF')) {
-          showToast('El fichero externo necesita una columna "NIF" para poder cruzar datos.', 'error');
-          return;
-        }
+          const headers = Object.keys(rows[0]);
+          if (!headers.includes('NIF')) {
+            showToast('El fichero externo necesita una columna "NIF" para poder cruzar datos.', 'error');
+            return;
+          }
 
-        const existingNIFs = new Set(state.employees.map(e => e.NIF));
+          const existingNIFs = new Set(state.employees.map(emp => emp.NIF));
 
-        const externalEmps = rows
-          .filter(row => row.NIF && !existingNIFs.has(String(row.NIF).trim()))
-          .map((row, idx) => {
-            const emp = {};
-            RELEVANT_COLUMNS.forEach(col => {
-              emp[col] = row[col] != null ? String(row[col]).trim() : '';
+          const externalEmps = rows
+            .filter(row => row.NIF && !existingNIFs.has(String(row.NIF).trim()))
+            .map((row, idx) => {
+              const emp = {};
+              RELEVANT_COLUMNS.forEach(col => {
+                emp[col] = row[col] != null ? String(row[col]).trim() : '';
+              });
+              FUNDAE_COLUMNS.forEach(col => {
+                if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
+              });
+              emp._source = 'external';
+              emp._id = 'ext-' + idx;
+              return emp;
             });
-            FUNDAE_COLUMNS.forEach(col => {
-              if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
-            });
-            emp._source = 'external';
-            emp._id = 'ext-' + idx;
-            return emp;
-          });
 
-        state.externalEmployees = externalEmps;
+          state.externalEmployees = externalEmps;
 
-        const btn = document.getElementById('btnAddExternal');
-        btn.textContent = '✓ ' + externalEmps.length + ' externos añadidos';
-        btn.style.color = 'var(--success)';
+          const btn = document.getElementById('btnAddExternal');
+          btn.textContent = '✓ ' + externalEmps.length + ' externos añadidos';
+          btn.style.color = 'var(--success)';
 
-        renderFilters();
-        renderTable();
+          renderFilters();
+          renderTable();
+          showToast(externalEmps.length + ' empleados externos importados', 'success');
+        } catch (err) {
+          showToast('Error al leer el fichero: ' + err.message, 'error');
+        }
       };
+
+      reader.onerror = () => {
+        showToast('Error al leer el fichero', 'error');
+      };
+
+      // Reset input so the same file can be re-selected
+      e.target.value = '';
 
       if (isCSV) {
         reader.readAsText(file);
@@ -3649,6 +3945,13 @@
                   document.getElementById('seriesCheck').checked = true;
                   document.getElementById('seriesConfig').classList.add('visible');
                 }
+                // Restore formador
+                document.getElementById('eventFormador').value = ec.formador || '';
+                // Restore survey checkbox (default true if field missing — migration)
+                const surveyCheck = document.getElementById('surveyCheck');
+                if (surveyCheck) {
+                  surveyCheck.checked = ec.sendSurvey !== undefined ? ec.sendSurvey : true;
+                }
               }
 
             }
@@ -3684,6 +3987,59 @@
       document.querySelectorAll('#attendeeBody tr').forEach(row => {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+
+    // ═══════════════════════════════════
+    // SETTINGS DIALOG
+    // ═══════════════════════════════════
+
+    document.getElementById('btnSettings').addEventListener('click', () => {
+      const settings = loadSettings();
+      document.getElementById('settingsWebhookUrl').value = settings.webhookUrl || '';
+      document.getElementById('settingsFormsUrl').value = settings.formsUrl || '';
+      document.getElementById('settingsDialog').classList.add('visible');
+    });
+
+    document.getElementById('settingsCancel').addEventListener('click', () => {
+      document.getElementById('settingsDialog').classList.remove('visible');
+    });
+
+    document.getElementById('settingsSave').addEventListener('click', () => {
+      const webhookUrl = document.getElementById('settingsWebhookUrl').value.trim();
+      const formsUrl = document.getElementById('settingsFormsUrl').value.trim();
+
+      // Both URLs are optional (allow clearing), but if provided must be https
+      if (webhookUrl && !webhookUrl.startsWith('https://')) {
+        showToast('La URL del webhook debe empezar por https://', 'warning');
+        return;
+      }
+      if (formsUrl && !formsUrl.startsWith('https://')) {
+        showToast('La URL del formulario debe empezar por https://', 'warning');
+        return;
+      }
+      // Warn if only one is set (both needed for survey to work)
+      if ((webhookUrl && !formsUrl) || (!webhookUrl && formsUrl)) {
+        showToast('Ambas URLs son necesarias para enviar encuestas', 'warning');
+      }
+
+      saveSettings({ webhookUrl, formsUrl });
+      document.getElementById('settingsDialog').classList.remove('visible');
+      showToast('Ajustes guardados', 'success');
+    });
+
+    document.getElementById('btnShowInstructions').addEventListener('click', () => {
+      document.getElementById('instructionsDialog').classList.add('visible');
+    });
+
+    document.getElementById('instructionsClose').addEventListener('click', () => {
+      document.getElementById('instructionsDialog').classList.remove('visible');
+    });
+
+    document.getElementById('btnCopySchema').addEventListener('click', () => {
+      const schema = '{\n  "type": "object",\n  "properties": {\n    "to": { "type": "array", "items": { "type": "string" } },\n    "subject": { "type": "string" },\n    "body": { "type": "string" },\n    "scheduledTime": { "type": "string" }\n  }\n}';
+      copyToClipboard(schema).then(() => {
+        showToast('Esquema copiado al portapapeles', 'success');
       });
     });
 
@@ -3945,6 +4301,7 @@
           '<td style="padding:6px;"><select class="input-field" data-field="tipoDocumento" data-idx="' + idx + '" style="font-size:11px; padding:3px 6px;">' +
             '<option value="10"' + (p.tipoDocumento == 10 ? ' selected' : '') + '>NIF</option>' +
             '<option value="60"' + (p.tipoDocumento == 60 ? ' selected' : '') + '>NIE</option>' +
+            '<option value="20"' + (p.tipoDocumento == 20 ? ' selected' : '') + '>Pasaporte</option>' +
           '</select></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:11px; padding:3px 6px; width:140px;"></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:11px; padding:3px 6px; width:100px;"></td>' +
@@ -4046,6 +4403,22 @@
         modalidadXml = '    <modalidadMixta><horasPr>' + e(horasPr) + '</horasPr><horasTe>' + e(horasTe) + '</horasTe></modalidadMixta>';
       }
 
+      // Plataforma fields (teleformación/mixta) — XSD requires after modalidad choice
+      let plataformaXml = '';
+      if (mod === 'Teleformación' || mod === 'Mixta') {
+        if (accion.plataformaCif) plataformaXml += '    <cifPlataforma>' + e(accion.plataformaCif) + '</cifPlataforma>\n';
+        if (accion.plataformaRazonSocial) plataformaXml += '    <razonSocialPlataforma>' + e(accion.plataformaRazonSocial) + '</razonSocialPlataforma>\n';
+        if (accion.plataformaUri) plataformaXml += '    <uri>' + e(accion.plataformaUri) + '</uri>\n';
+        if (accion.plataformaUsuario) plataformaXml += '    <usuario>' + e(accion.plataformaUsuario) + '</usuario>\n';
+        if (accion.plataformaPassword) plataformaXml += '    <password>' + e(accion.plataformaPassword) + '</password>\n';
+      }
+
+      // nivelFormacion (boolean: 0=Básico, 1=Superior)
+      let nivelXml = '';
+      if (accion.nivelFormacion !== undefined && accion.nivelFormacion !== '') {
+        nivelXml = '    <nivelFormacion>' + e(accion.nivelFormacion) + '</nivelFormacion>\n';
+      }
+
       // Unique CIFs from participants
       const informaRLT = document.getElementById('xmlInformaRLT').value || 'S';
       const cifSet = new Set();
@@ -4065,6 +4438,8 @@
         '    <codGrupoAccion>' + e(accion.codigoGrupo) + '</codGrupoAccion>\n' +
         (accion.areaProfesional ? '    <codAreaProfesional>' + e(accion.areaProfesional) + '</codAreaProfesional>\n' : '') +
         modalidadXml + '\n' +
+        plataformaXml +
+        nivelXml +
         '    <objetivos>' + e(accion.objetivos) + '</objetivos>\n' +
         '    <contenidos>' + e(accion.contenidos) + '</contenidos>\n' +
         empXml + '\n' +
@@ -4084,6 +4459,15 @@
       const idGrupo = document.getElementById('xmlIdGrupo').value;
       if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
 
+      const descripcion = document.getElementById('xmlDescripcion').value;
+      if (!descripcion) { showToast('Indica la descripción del grupo', 'warning'); return; }
+
+      const responsable = document.getElementById('xmlResponsable').value;
+      if (!responsable) { showToast('Indica el responsable', 'warning'); return; }
+
+      const telefonoContacto = document.getElementById('xmlTelefono').value;
+      if (!telefonoContacto) { showToast('Indica el teléfono de contacto', 'warning'); return; }
+
       const mod = accion.modalidad;
       const isPresencial = mod === 'Presencial' || mod === 'Mixta';
       const isTele = mod === 'Teleformación' || mod === 'Mixta';
@@ -4092,7 +4476,7 @@
       if (isPresencial && !centro) { showToast('Selecciona un centro de impartición para modalidad presencial/mixta', 'warning'); return; }
 
       const tutor = getXmlTutor();
-      if (isTele && !tutor) { showToast('Selecciona un tutor para modalidad teleformación/mixta', 'warning'); return; }
+      if (!tutor) { showToast('Selecciona un tutor', 'warning'); return; }
 
       const fechaInicio = document.getElementById('xmlFechaInicio').value;
       const fechaFin = document.getElementById('xmlFechaFin').value;
@@ -4105,48 +4489,86 @@
 
       const e = v => esc(String(v || ''));
 
-      // Jornada presencial
-      let jornadaXml = '';
-      if (isPresencial && centro) {
-        jornadaXml = '    <jornadaPresencial>\n' +
-          '      <lugarImparticion>\n' +
-          '        <tipoDocumento>' + e(centro.tipoDocumento) + '</tipoDocumento>\n' +
-          '        <documento>' + e(centro.documento) + '</documento>\n' +
-          '        <nombreCentro>' + e(centro.nombre) + '</nombreCentro>\n' +
-          '        <direccion>' + e(centro.direccion) + '</direccion>\n' +
-          '        <codigoPostal>' + e(centro.cp) + '</codigoPostal>\n' +
-          '        <localidad>' + e(centro.localidad) + '</localidad>\n' +
-          '        <provincia>' + e(centro.provincia) + '</provincia>\n' +
-          '      </lugarImparticion>\n' +
-          '      <horario>\n' +
-          '        <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
-          '        <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
-          '        <horaInicio>' + e(horaInicio) + '</horaInicio>\n' +
-          '        <horaFin>' + e(horaFin) + '</horaFin>\n' +
-          '      </horario>\n' +
-          '    </jornadaPresencial>\n';
+      // Mappings for document types → XSD codes
+      const centroTipoDocMap = { 'CIF': '90', 'NIF': '10', 'NIE': '60', 'Pasaporte': '20' };
+      const tutorTipoDocMap = { 'NIF': '10', 'DNI': '10', 'NIE': '60', 'Pasaporte': '20' };
+      const tutorTipoCode = tutorTipoDocMap[tutor.tipoDocumento] || '10';
+
+      // Compute dias (LMXJVSD) from date range
+      const diasMap = ['D','L','M','X','J','V','S'];
+      const daySet = new Set();
+      let dd = new Date(fechaInicio + 'T12:00:00');
+      const lastDate = new Date((fechaFin || fechaInicio) + 'T12:00:00');
+      while (dd <= lastDate && daySet.size < 7) {
+        daySet.add(diasMap[dd.getDay()]);
+        dd = new Date(dd.getTime() + 86400000);
       }
+      const dias = 'LMXJVSD'.split('').filter(c => daySet.has(c)).join('') || 'LMXJV';
 
-      // Distancia/teleformación
-      let teleXml = '';
-      if (isTele && tutor) {
-        const tutorTipoMap = { 'NIF': '10', 'DNI': '10', 'NIE': '60', 'Pasaporte': '70' };
-        const tutorTipoCode = tutorTipoMap[tutor.tipoDocumento] || '10';
-        const totalHours = Number(accion.horasTeleformacion || 0) + Number(accion.horasPresenciales || 0);
-        const numHoras = tutor.horasDedicacion || String(totalHours);
-
-        teleXml = '    <distanciaTeleformacion>\n' +
-          '      <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
-          '      <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
-          '      <Tutor>\n' +
-          '        <numeroHoras>' + e(numHoras) + '</numeroHoras>\n' +
+      // Build tutor XML helper
+      function buildTutorXml(numHoras) {
+        return '        <numeroHoras>' + e(numHoras) + '</numeroHoras>\n' +
           '        <tipoDocumento>' + e(tutorTipoCode) + '</tipoDocumento>\n' +
           '        <documento>' + e(tutor.documento) + '</documento>\n' +
           '        <nombre>' + e(tutor.nombre) + '</nombre>\n' +
           '        <apellido1>' + e(tutor.apellido1) + '</apellido1>\n' +
           (tutor.apellido2 ? '        <apellido2>' + e(tutor.apellido2) + '</apellido2>\n' : '') +
           '        <telefono>' + e(tutor.telefono) + '</telefono>\n' +
-          '        <correoElectronico>' + e(tutor.email) + '</correoElectronico>\n' +
+          '        <correoElectronico>' + e(tutor.email) + '</correoElectronico>\n';
+      }
+
+      // Jornada presencial (XSD: centro + lugarImparticion + horario + calendario + Tutor)
+      let jornadaXml = '';
+      if (isPresencial && centro) {
+        const centroTipoCode = centroTipoDocMap[centro.tipoDocumento] || '90';
+        const horasPr = String(Number(accion.horasPresenciales || 0));
+        const horasTutorPr = tutor.horasDedicacion || horasPr || '1';
+
+        jornadaXml = '    <jornadaPresencial>\n' +
+          '      <centro>\n' +
+          '        <tipoDocumentoCentro>' + e(centroTipoCode) + '</tipoDocumentoCentro>\n' +
+          '        <documentoCentro>' + e(centro.documento) + '</documentoCentro>\n' +
+          '        <nombreCentro>' + e(centro.nombre) + '</nombreCentro>\n' +
+          '        <direccionDetallada>' + e(centro.direccion) + '</direccionDetallada>\n' +
+          '        <codPostal>' + e(centro.cp) + '</codPostal>\n' +
+          '        <localidad>' + e(centro.localidad) + '</localidad>\n' +
+          '      </centro>\n' +
+          '      <lugarImparticion>\n' +
+          '        <nombreCentro>' + e(centro.nombre) + '</nombreCentro>\n' +
+          '        <direccionDetallada>' + e(centro.direccion) + '</direccionDetallada>\n' +
+          '        <codPostal>' + e(centro.cp) + '</codPostal>\n' +
+          '        <localidad>' + e(centro.localidad) + '</localidad>\n' +
+          '      </lugarImparticion>\n' +
+          '      <horario>\n' +
+          '        <horaTotales>' + e(horasPr) + '</horaTotales>\n' +
+          (horaInicio ? '        <horaInicioTramo1>' + e(horaInicio) + '</horaInicioTramo1>\n' : '') +
+          (horaFin ? '        <horaFinTramo1>' + e(horaFin) + '</horaFinTramo1>\n' : '') +
+          '        <dias>' + e(dias) + '</dias>\n' +
+          '      </horario>\n' +
+          '      <calendario>\n' +
+          '        <fecha_imparticion>' + e(toFundaeDate(fechaInicio)) + '</fecha_imparticion>\n' +
+          (horaInicio ? '        <horario_inicio_tramo1>' + e(horaInicio) + '</horario_inicio_tramo1>\n' : '') +
+          (horaFin ? '        <horario_fin_tramo1>' + e(horaFin) + '</horario_fin_tramo1>\n' : '') +
+          '      </calendario>\n' +
+          '      <Tutor>\n' +
+          buildTutorXml(horasTutorPr) +
+          '      </Tutor>\n' +
+          '    </jornadaPresencial>\n';
+      }
+
+      // Distancia/teleformación (XSD: asistenciaTeleformacion? + horario + Tutor_Teleformacion)
+      let teleXml = '';
+      if (isTele) {
+        const horasTe = String(Number(accion.horasTeleformacion || 0));
+        const horasTutorTe = tutor.horasDedicacion || horasTe || '1';
+
+        teleXml = '    <distanciaTeleformacion>\n' +
+          '      <horario>\n' +
+          '        <horaTotales>' + e(horasTe) + '</horaTotales>\n' +
+          '        <dias>' + e(dias) + '</dias>\n' +
+          '      </horario>\n' +
+          '      <Tutor>\n' +
+          buildTutorXml(horasTutorTe) +
           '        <tutoria>\n' +
           '          <tipoTutoria><tutorias>1</tutorias></tipoTutoria>\n' +
           '          <descripcion>Correo electrónico</descripcion>\n' +
@@ -4155,11 +4577,13 @@
           '    </distanciaTeleformacion>\n';
       }
 
-      // Aula virtual (Teams detection from current event)
+      // Aula virtual (XSD: t_aula_virtual complex type with medio, conexion, etc.)
       let aulaVirtualXml = '';
       const isTeamsEl = document.querySelector('input[name="eventType"]:checked');
       if (isTeamsEl && isTeamsEl.value === 'teams') {
-        aulaVirtualXml = '    <aulaVirtual>S</aulaVirtual>\n';
+        aulaVirtualXml = '    <aulaVirtual>\n' +
+          '      <medio>Microsoft Teams</medio>\n' +
+          '    </aulaVirtual>\n';
       }
 
       const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
@@ -4167,7 +4591,12 @@
         '  <grupo>\n' +
         '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
         '    <idGrupo>' + e(idGrupo) + '</idGrupo>\n' +
-        '    <nParticipantes>' + e(String(xmlState.participantes.length)) + '</nParticipantes>\n' +
+        '    <descripcion>' + e(descripcion) + '</descripcion>\n' +
+        '    <NumeroParticipante>' + e(String(xmlState.participantes.length)) + '</NumeroParticipante>\n' +
+        '    <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
+        '    <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
+        '    <responsable>' + e(responsable) + '</responsable>\n' +
+        '    <telefonoContacto>' + e(telefonoContacto) + '</telefonoContacto>\n' +
         jornadaXml +
         teleXml +
         aulaVirtualXml +
@@ -4201,7 +4630,7 @@
       const participantesXml = xmlState.participantes.map(p =>
         '      <participante>\n' +
         '        <nif>' + e(p.nif) + '</nif>\n' +
-        '        <N_TIPO_DOCUMENTO>' + e(String(detectTipoDocumento(p.nif))) + '</N_TIPO_DOCUMENTO>\n' +
+        '        <N_TIPO_DOCUMENTO>' + e(String(p.tipoDocumento)) + '</N_TIPO_DOCUMENTO>\n' +
         '        <email>' + e(p.email) + '</email>\n' +
         '        <telefono>' + e(p.telefono) + '</telefono>\n' +
         '        <categoriaprofesional>' + e(p.categoriaProfesional) + '</categoriaprofesional>\n' +
