@@ -1117,6 +1117,53 @@
       'Categoría Mercer', 'Depende de'
     ];
 
+    const FUNDAE_COLUMNS = [
+      'Móvil trabajo (largo)', 'Teléfono personal',
+      'Nombre', 'Apellidos',
+      'Numero Seguridad Social', 'Sexo',
+      'DiscapacidadContrib',
+      'Categoría profesional',
+      'Titulación',
+      'Grupo Cotización',
+      'Coste Salarial Hora', 'Coste aproximado SS',
+      'CIF'
+    ];
+
+    const COL_NIVEL_ESTUDIOS = 'Categoría profesional';
+    const COL_CATEGORIA_PROF = 'Titulación';
+
+    const MAP_CATEGORIA_PROF = {
+      'Directivo': 1, 'Mando Intermedio': 2, 'Técnico': 3,
+      'Trabajador Cualificado': 4, 'Trabajador NO cualificado': 5,
+    };
+
+    const MAP_NIVEL_ESTUDIOS = {
+      'Menos que primaria': 1,
+      'Educación primaria': 2,
+      'Primera etapa de educación secundaria (ESO, EGB)': 3,
+      'Segunda etapa de Educación Secundaria (Bachillerato, FP de grado medio, BUP, FPI y FPII)': 4,
+      'Educación postsecundaria no superior (Certificados de Profesionalidad nivel 3)': 5,
+      'Técnico Superior / FP grado superior y equivalentes': 6,
+      'E. Universitarios 1º Ciclo (Diplomatura y grados)': 7,
+      'E. Universitarios 2º Ciclo (Licenciatura, Máster)': 8,
+      'E. Universitarios 3º Ciclo (Doctorado)': 9,
+      'Otras titulaciones': 10,
+    };
+
+    function mapCategoriaProfesional(val) {
+      return val ? (MAP_CATEGORIA_PROF[val.trim()] || '') : '';
+    }
+
+    function mapNivelEstudios(val) {
+      return val ? (MAP_NIVEL_ESTUDIOS[val.trim()] || '') : '';
+    }
+
+    function detectTipoDocumento(nif) {
+      if (!nif) return 10;
+      const first = nif.trim().charAt(0).toUpperCase();
+      return (first === 'X' || first === 'Y' || first === 'Z') ? 60 : 10;
+    }
+
     function parseOrgSheet(workbook) {
       const errors = [];
       const sheetName = workbook.SheetNames.find(n => n === 'ORGANIGRAMA');
@@ -1147,6 +1194,9 @@
           const emp = {};
           RELEVANT_COLUMNS.forEach(col => {
             emp[col] = row[col] != null ? String(row[col]).trim() : '';
+          });
+          FUNDAE_COLUMNS.forEach(col => {
+            if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
           });
           // BUG-01: synthetic unique key so duplicate/empty NIFs don't break selection
           emp._id = String(idx);
@@ -2335,6 +2385,9 @@
             const emp = {};
             RELEVANT_COLUMNS.forEach(col => {
               emp[col] = row[col] != null ? String(row[col]).trim() : '';
+            });
+            FUNDAE_COLUMNS.forEach(col => {
+              if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
             });
             emp._source = 'external';
             emp._id = 'ext-' + idx;
