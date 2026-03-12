@@ -196,6 +196,24 @@
       background: var(--bg-input);
     }
 
+    .attendee-table th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color var(--transition);
+    }
+    .attendee-table th.sortable:hover {
+      color: var(--accent);
+    }
+    .sort-arrow {
+      font-size: 10px;
+      margin-left: 4px;
+      opacity: 0.4;
+    }
+    .sort-arrow.active {
+      opacity: 1;
+      color: var(--accent);
+    }
+
     .action-bar {
       padding: 16px 28px;
       border-top: 1px solid var(--border);
@@ -790,6 +808,11 @@
       <!-- Session tabs (series mode only) -->
       <div class="session-tabs" id="sessionTabs"></div>
 
+      <!-- Table search -->
+      <div id="tableSearch" style="display:none; padding:8px 28px; border-bottom:1px solid var(--border); background:var(--bg-panel);">
+        <input class="input-field" type="text" id="tableSearchInput" placeholder="Buscar empleado, puesto o email..." style="font-size:12px;">
+      </div>
+
       <!-- Attendee table -->
       <div class="attendee-table-wrap" id="tableWrap">
         <div class="empty-state" id="emptyState"></div>
@@ -797,10 +820,10 @@
           <thead>
             <tr>
               <th style="width:40px;"><input type="checkbox" id="selectAll" checked></th>
-              <th style="width:25%;">Empleado</th>
-              <th style="width:25%;">Puesto</th>
-              <th style="width:20%;">Ubicación</th>
-              <th style="width:30%;">Email trabajo</th>
+              <th style="width:25%;" class="sortable" data-sort="Empleado">Empleado <span class="sort-arrow active">▲</span></th>
+              <th style="width:25%;" class="sortable" data-sort="Puesto">Puesto <span class="sort-arrow">▲</span></th>
+              <th style="width:20%;" class="sortable" data-sort="Ubicación">Ubicación <span class="sort-arrow">▲</span></th>
+              <th style="width:30%;" class="sortable" data-sort="Email trabajo">Email <span class="sort-arrow">▲</span></th>
             </tr>
           </thead>
           <tbody id="attendeeBody"></tbody>
@@ -939,6 +962,28 @@
       return options;
     }
 
+    function getFilterOptionsWithCounts(employees, activeFilters) {
+      const result = {};
+      FILTER_KEYS.forEach(key => {
+        const otherFilters = {};
+        FILTER_KEYS.forEach(k => {
+          if (k !== key && activeFilters[k] && activeFilters[k].length > 0) {
+            otherFilters[k] = activeFilters[k];
+          }
+        });
+        const subset = filterEmployees(employees, otherFilters);
+        const counts = {};
+        subset.forEach(e => {
+          const v = e[key];
+          if (v !== '') counts[v] = (counts[v] || 0) + 1;
+        });
+        result[key] = Object.entries(counts)
+          .map(([value, count]) => ({ value, count }))
+          .sort((a, b) => a.value.localeCompare(b.value, 'es'));
+      });
+      return result;
+    }
+
     function buildDeepLink(event, attendees) {
       const startdt = event.date + 'T' + event.startTime + ':00';
       const enddt = event.date + 'T' + event.endTime + ':00';
@@ -1026,6 +1071,8 @@
       excludedNIFs: new Set(),
       seriesDates: [],
       currentSessionIndex: 0,
+      sortColumn: 'Empleado',
+      sortDirection: 'asc',
     };
 
     function getGreeting() {
@@ -1138,6 +1185,7 @@
         document.getElementById('eventoSection').style.display = '';
         document.getElementById('summaryBar').style.display = '';
         document.getElementById('actionBar').style.display = '';
+        document.getElementById('tableSearch').style.display = '';
 
         renderFilters();
         renderTable();
@@ -1190,13 +1238,13 @@
     function renderFilters() {
       const container = document.getElementById('filterContainer');
       const allEmployees = [...state.employees, ...state.externalEmployees];
-      const options = getFilterOptions(allEmployees, state.activeFilters);
+      const optionsWithCounts = getFilterOptionsWithCounts(allEmployees, state.activeFilters);
 
       // Note: innerHTML is used with esc() to safely render filter options.
       // All user-sourced data from Excel is sanitized through esc() before insertion.
       container.innerHTML = FILTER_KEYS.map(key => {
         const selected = state.activeFilters[key] || [];
-        const values = options[key];
+        const items = optionsWithCounts[key];
         const btnText = selected.length > 0
           ? selected.join(', ')
           : 'Todos';
@@ -1208,10 +1256,10 @@
             '<button class="' + btnClass + '" type="button">' + esc(btnText) + '</button>' +
             '<div class="filter-dropdown">' +
               '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off"></div>' +
-              values.map(v =>
+              items.map(({ value: v, count }) =>
                 '<label>' +
                   '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
-                  esc(v) +
+                  esc(v) + ' <span style="color:var(--text-muted);font-size:11px;">(' + count + ')</span>' +
                 '</label>'
               ).join('') +
             '</div>' +
@@ -1295,8 +1343,18 @@
       const filtered = filterEmployees(allEmployees, state.activeFilters);
       const { valid, noEmail } = splitByEmail(filtered);
 
-      valid.sort((a, b) => a.Empleado.localeCompare(b.Empleado, 'es'));
-      noEmail.sort((a, b) => a.Empleado.localeCompare(b.Empleado, 'es'));
+      const sortCol = state.sortColumn;
+      const dir = state.sortDirection === 'asc' ? 1 : -1;
+      valid.sort((a, b) => {
+        const va = (sortCol === 'Email trabajo' ? a['Email trabajo'] : a[sortCol]) || '';
+        const vb = (sortCol === 'Email trabajo' ? b['Email trabajo'] : b[sortCol]) || '';
+        return dir * va.localeCompare(vb, 'es');
+      });
+      noEmail.sort((a, b) => {
+        const va = a[sortCol] || '';
+        const vb = b[sortCol] || '';
+        return dir * va.localeCompare(vb, 'es');
+      });
       const allSorted = [...valid, ...noEmail];
 
       const tbody = document.getElementById('attendeeBody');
@@ -1364,6 +1422,32 @@
 
       document.getElementById('selectAll').checked =
         valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
+
+      // Update sort arrow indicators
+      document.querySelectorAll('.sort-arrow').forEach(arrow => {
+        const th = arrow.parentElement;
+        if (th.dataset.sort === state.sortColumn) {
+          arrow.classList.add('active');
+          arrow.textContent = state.sortDirection === 'asc' ? '▲' : '▼';
+        } else {
+          arrow.classList.remove('active');
+          arrow.textContent = '▲';
+        }
+      });
+
+      // Attach click handlers to sortable headers
+      document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.sort;
+          if (state.sortColumn === col) {
+            state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.sortColumn = col;
+            state.sortDirection = 'asc';
+          }
+          renderTable();
+        });
+      });
 
       updateCounts();
       saveState();
@@ -1797,6 +1881,7 @@
             document.getElementById('eventoSection').style.display = '';
             document.getElementById('summaryBar').style.display = '';
             document.getElementById('actionBar').style.display = '';
+            document.getElementById('tableSearch').style.display = '';
 
             renderFilters();
             renderTable();
@@ -1806,6 +1891,18 @@
         }
       }
     } catch(e) {}
+
+    // ═══════════════════════════════════
+    // TABLE SEARCH
+    // ═══════════════════════════════════
+
+    document.getElementById('tableSearchInput').addEventListener('input', () => {
+      const query = document.getElementById('tableSearchInput').value.toLowerCase();
+      document.querySelectorAll('#attendeeBody tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
