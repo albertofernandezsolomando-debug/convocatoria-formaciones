@@ -1563,7 +1563,18 @@
             '</div>' +
           '</div>' +
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts);
+          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+          '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
+            '<div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">' +
+              'Participantes vinculados' +
+              ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);" id="cfParticipantCount"></span>' +
+            '</div>' +
+            '<div id="cfParticipantWarning" style="display:none; font-size:11px; color:var(--warning); margin-bottom:8px;">' +
+              '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
+            '</div>' +
+            '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
+            '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
+          '</div>';
       }
 
       return '<div style="padding:20px; overflow-y:auto; flex:1;">' +
@@ -1642,7 +1653,228 @@
             document.getElementById('cf_plataformaWrap').style.display = showPlat ? '' : 'none';
           });
         }
+
+        // Participant linking
+        renderAccionParticipants(record);
       }
+    }
+
+    function renderAccionParticipants(record) {
+      const warningEl = document.getElementById('cfParticipantWarning');
+      const listEl = document.getElementById('cfParticipantList');
+      const countEl = document.getElementById('cfParticipantCount');
+      const assignBtn = document.getElementById('btnAssignParticipants');
+      if (!warningEl || !listEl || !countEl || !assignBtn) return;
+
+      if (!state.employees || state.employees.length === 0) {
+        warningEl.style.display = '';
+        assignBtn.disabled = true;
+        assignBtn.style.opacity = '0.5';
+        assignBtn.style.cursor = 'not-allowed';
+        listEl.innerHTML = '';
+        countEl.textContent = '';
+        return;
+      }
+
+      warningEl.style.display = 'none';
+      assignBtn.disabled = false;
+      assignBtn.style.opacity = '';
+      assignBtn.style.cursor = '';
+
+      var participantes = record.participantes || [];
+      countEl.textContent = participantes.length > 0 ? '(' + participantes.length + ')' : '';
+
+      if (participantes.length === 0) {
+        listEl.innerHTML = '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">Sin participantes asignados</div>';
+      } else {
+        var html = '';
+        participantes.forEach(function(nif) {
+          var emp = state.employees.find(function(e) { return e.NIF === nif; });
+          if (emp) {
+            html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">' +
+              '<span style="font-size:12px; color:var(--text-primary);">' + esc(emp.Empleado) + ' <span style="color:var(--text-muted);">(' + esc(nif) + ')</span></span>' +
+              '<button class="btn btn-secondary cfRemoveParticipant" data-nif="' + esc(nif) + '" style="font-size:10px; padding:2px 6px; color:var(--danger); border-color:var(--danger);">\u2715</button>' +
+            '</div>';
+          } else {
+            html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">' +
+              '<span style="font-size:12px; color:var(--warning);">\u26A0 ' + esc(nif) + ' <span style="color:var(--text-muted);">(no encontrado en organigrama)</span></span>' +
+              '<button class="btn btn-secondary cfRemoveParticipant" data-nif="' + esc(nif) + '" style="font-size:10px; padding:2px 6px; color:var(--danger); border-color:var(--danger);">\u2715</button>' +
+            '</div>';
+          }
+        });
+        listEl.innerHTML = html;
+      }
+
+      // Bind remove buttons
+      listEl.querySelectorAll('.cfRemoveParticipant').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var nifToRemove = this.getAttribute('data-nif');
+          record.participantes = (record.participantes || []).filter(function(n) { return n !== nifToRemove; });
+          var cfg = CATALOG_CONFIG['acciones'];
+          upsertCatalogRecord('acciones', cfg.pk, record);
+          renderAccionParticipants(record);
+        });
+      });
+
+      // Bind assign button
+      var newBtn = assignBtn.cloneNode(true);
+      assignBtn.parentNode.replaceChild(newBtn, assignBtn);
+      newBtn.addEventListener('click', function() {
+        showParticipantPicker(record.participantes || [], function(selectedNIFs) {
+          record.participantes = selectedNIFs;
+          var cfg = CATALOG_CONFIG['acciones'];
+          upsertCatalogRecord('acciones', cfg.pk, record);
+          renderAccionParticipants(record);
+        });
+      });
+    }
+
+    function showParticipantPicker(currentNIFs, onSave) {
+      var existing = document.getElementById('participantPickerOverlay');
+      if (existing) existing.remove();
+
+      var employees = state.employees || [];
+
+      // Collect unique values for quick filters
+      var empresas = [], departamentos = [], areas = [];
+      var empresaSet = {}, depSet = {}, areaSet = {};
+      employees.forEach(function(e) {
+        if (e.Empresa && !empresaSet[e.Empresa]) { empresas.push(e.Empresa); empresaSet[e.Empresa] = true; }
+        if (e.Departamento && !depSet[e.Departamento]) { departamentos.push(e.Departamento); depSet[e.Departamento] = true; }
+        if (e['Área'] && !areaSet[e['Área']]) { areas.push(e['Área']); areaSet[e['Área']] = true; }
+      });
+      empresas.sort(); departamentos.sort(); areas.sort();
+
+      function buildFilterSelect(id, label, options) {
+        var h = '<select id="' + id + '" class="input-field" style="font-size:11px; padding:4px 6px; flex:1; min-width:0;">' +
+          '<option value="">' + esc(label) + '</option>';
+        options.forEach(function(o) {
+          h += '<option value="' + esc(o) + '">' + esc(o) + '</option>';
+        });
+        h += '</select>';
+        return h;
+      }
+
+      var overlay = document.createElement('div');
+      overlay.id = 'participantPickerOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML =
+        '<div class="dialog-box" style="max-width:600px; width:95%; max-height:80vh; display:flex; flex-direction:column; text-align:left; padding:24px;">' +
+          '<h3 style="margin:0 0 12px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Asignar participantes</h3>' +
+          '<input class="input-field" type="text" id="ppSearch" placeholder="Buscar por nombre o NIF..." style="font-size:12px; margin-bottom:8px;">' +
+          '<div style="display:flex; gap:6px; margin-bottom:10px;">' +
+            buildFilterSelect('ppEmpresa', 'Empresa', empresas) +
+            buildFilterSelect('ppDepartamento', 'Departamento', departamentos) +
+            buildFilterSelect('ppArea', '\u00C1rea', areas) +
+          '</div>' +
+          '<div style="display:flex; gap:12px; margin-bottom:8px;">' +
+            '<a href="#" id="ppSelectAll" style="font-size:11px; color:var(--accent); text-decoration:none;">Seleccionar todos</a>' +
+            '<a href="#" id="ppDeselectAll" style="font-size:11px; color:var(--accent); text-decoration:none;">Deseleccionar todos</a>' +
+            '<span id="ppSelectedCount" style="font-size:11px; color:var(--text-muted); margin-left:auto;"></span>' +
+          '</div>' +
+          '<div id="ppEmployeeList" style="flex:1; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius-sm); min-height:150px; max-height:40vh;"></div>' +
+          '<div style="display:flex; gap:10px; margin-top:12px; justify-content:flex-end;">' +
+            '<button class="btn btn-secondary" id="ppCancel" style="font-size:12px;">Cancelar</button>' +
+            '<button class="btn btn-primary" id="ppSave" style="font-size:12px;">Guardar</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      var selectedSet = {};
+      (currentNIFs || []).forEach(function(nif) { selectedSet[nif] = true; });
+
+      function getFilteredEmployees() {
+        var search = (document.getElementById('ppSearch').value || '').toLowerCase().trim();
+        var empresa = document.getElementById('ppEmpresa').value;
+        var departamento = document.getElementById('ppDepartamento').value;
+        var area = document.getElementById('ppArea').value;
+
+        return employees.filter(function(e) {
+          if (search) {
+            var name = (e.Empleado || '').toLowerCase();
+            var nif = (e.NIF || '').toLowerCase();
+            if (name.indexOf(search) === -1 && nif.indexOf(search) === -1) return false;
+          }
+          if (empresa && e.Empresa !== empresa) return false;
+          if (departamento && e.Departamento !== departamento) return false;
+          if (area && e['Área'] !== area) return false;
+          return true;
+        });
+      }
+
+      function updateCount() {
+        var count = Object.keys(selectedSet).filter(function(k) { return selectedSet[k]; }).length;
+        var el = document.getElementById('ppSelectedCount');
+        if (el) el.textContent = count + ' seleccionado' + (count !== 1 ? 's' : '');
+      }
+
+      function renderList() {
+        var filtered = getFilteredEmployees();
+        var listEl = document.getElementById('ppEmployeeList');
+        if (!listEl) return;
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:12px;">No se encontraron empleados</div>';
+          return;
+        }
+
+        var html = '';
+        filtered.forEach(function(e) {
+          var checked = selectedSet[e.NIF] ? ' checked' : '';
+          html += '<label style="display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; border-bottom:1px solid var(--border); font-size:12px;" ' +
+            'onmouseover="this.style.background=\'var(--accent-subtle)\'" onmouseout="this.style.background=\'\'">' +
+            '<input type="checkbox" class="ppCheck" data-nif="' + esc(e.NIF) + '"' + checked + ' style="margin:0; flex-shrink:0;">' +
+            '<span style="color:var(--text-primary);">' + esc(e.Empleado) + '</span>' +
+            '<span style="color:var(--text-muted); margin-left:auto; flex-shrink:0;">' + esc(e.NIF) + '</span>' +
+          '</label>';
+        });
+        listEl.innerHTML = html;
+
+        // Bind checkboxes
+        listEl.querySelectorAll('.ppCheck').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            var nif = this.getAttribute('data-nif');
+            if (this.checked) selectedSet[nif] = true;
+            else delete selectedSet[nif];
+            updateCount();
+          });
+        });
+      }
+
+      renderList();
+      updateCount();
+
+      // Bind search and filter events
+      document.getElementById('ppSearch').addEventListener('input', renderList);
+      document.getElementById('ppEmpresa').addEventListener('change', renderList);
+      document.getElementById('ppDepartamento').addEventListener('change', renderList);
+      document.getElementById('ppArea').addEventListener('change', renderList);
+
+      // Select all / Deselect all (only visible/filtered employees)
+      document.getElementById('ppSelectAll').addEventListener('click', function(e) {
+        e.preventDefault();
+        getFilteredEmployees().forEach(function(emp) { selectedSet[emp.NIF] = true; });
+        renderList();
+        updateCount();
+      });
+
+      document.getElementById('ppDeselectAll').addEventListener('click', function(e) {
+        e.preventDefault();
+        getFilteredEmployees().forEach(function(emp) { delete selectedSet[emp.NIF]; });
+        renderList();
+        updateCount();
+      });
+
+      // Cancel
+      document.getElementById('ppCancel').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+      // Save
+      document.getElementById('ppSave').addEventListener('click', function() {
+        var result = Object.keys(selectedSet).filter(function(k) { return selectedSet[k]; });
+        overlay.remove();
+        onSave(result);
+      });
     }
 
     function saveCatalogForm(key) {
@@ -1726,6 +1958,10 @@
         record.plataformaPassword = val('plataformaPassword');
         record.centroVinculado = val('centroVinculado');
         record.tutorVinculado = val('tutorVinculado');
+
+        // Preserve participantes from existing record (managed by picker, not form inputs)
+        var existingAccion = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
+        record.participantes = existingAccion ? (existingAccion.participantes || []) : [];
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
