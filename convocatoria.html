@@ -198,6 +198,81 @@
       flex-direction: column;
     }
 
+    /* --- Catalog sub-tabs and list --- */
+    .catalog-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px;
+      flex-wrap: wrap;
+    }
+
+    .catalog-tab {
+      padding: 6px 14px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .catalog-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .catalog-tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .catalog-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+
+    .catalog-list-item {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .catalog-list-item:hover {
+      background: var(--accent-subtle);
+    }
+
+    .catalog-list-item.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+    }
+
+    .catalog-list-item .item-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .catalog-list-item .item-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .catalog-bottom-bar {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
 
     /* --- Right panel --- */
     .right-panel {
@@ -992,7 +1067,26 @@
         <div class="app-header">
           <span class="app-header-title">Catálogos FUNDAE</span>
         </div>
-        <div style="padding:16px; color:var(--text-muted); font-size:13px;">Catálogo vacío</div>
+        <div class="catalog-tabs">
+          <button class="catalog-tab active" data-catalog="proveedores">Proveedores</button>
+          <button class="catalog-tab" data-catalog="centros">Centros</button>
+          <button class="catalog-tab" data-catalog="tutores">Tutores</button>
+          <button class="catalog-tab" data-catalog="acciones">Acciones</button>
+        </div>
+        <div style="padding: 0 16px 8px;">
+          <input class="input-field" type="text" id="catalogSearch" placeholder="Buscar..." style="font-size:12px;">
+        </div>
+        <div class="catalog-list" id="catalogList"></div>
+        <div class="catalog-bottom-bar">
+          <button class="btn btn-primary" id="btnNewCatalog" style="font-size:12px;">+ Nuevo</button>
+          <button class="btn btn-secondary" id="btnImportExcel" style="font-size:12px;">Importar Excel</button>
+          <button class="btn btn-secondary" id="btnDownloadTemplate" style="font-size:12px;">Plantilla</button>
+          <input type="file" id="catalogExcelInput" accept=".xlsx,.xls" style="display:none;">
+          <div style="flex:1;"></div>
+          <button class="link-btn link-add" id="btnExportJSON" style="font-size:11px;">Exportar JSON</button>
+          <button class="link-btn link-add" id="btnImportJSON" style="font-size:11px;">Importar JSON</button>
+          <input type="file" id="catalogJsonInput" accept=".json" style="display:none;">
+        </div>
       </div>
       <div class="right-panel" id="catalogFormPanel">
         <div id="catalogEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">
@@ -1139,6 +1233,91 @@
       };
       reader.readAsText(file);
     }
+
+    // ═══════════════════════════════════
+    // FUNDAE CATALOG UI
+    // ═══════════════════════════════════
+
+    const CATALOG_CONFIG = {
+      proveedores: { pk: 'cif', title: r => r.razonSocial || r.cif, subtitle: r => r.cif },
+      centros: { pk: 'documento', title: r => r.nombre || r.documento, subtitle: r => r.documento },
+      tutores: { pk: 'documento', title: r => [r.nombre, r.apellido1, r.apellido2].filter(Boolean).join(' ') || r.documento, subtitle: r => r.documento },
+      acciones: { pk: 'codigo', title: r => r.nombre || r.codigo, subtitle: r => 'Código: ' + r.codigo },
+    };
+
+    const catalogState = { activeCatalog: 'proveedores', selectedPK: null };
+
+    function renderCatalogList() {
+      const key = catalogState.activeCatalog;
+      const cfg = CATALOG_CONFIG[key];
+      const data = getCatalog(key);
+      const search = (document.getElementById('catalogSearch').value || '').toLowerCase();
+      const container = document.getElementById('catalogList');
+
+      const filtered = data.filter(r => {
+        const title = cfg.title(r) || '';
+        const subtitle = cfg.subtitle(r) || '';
+        return title.toLowerCase().includes(search) || subtitle.toLowerCase().includes(search);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Catálogo vacío</div>';
+      } else {
+        container.innerHTML = filtered.map(r => {
+          const pk = r[cfg.pk];
+          const isActive = pk === catalogState.selectedPK;
+          return '<div class="catalog-list-item' + (isActive ? ' active' : '') + '" data-pk="' + esc(pk) + '">' +
+            '<div class="item-title">' + esc(cfg.title(r)) + '</div>' +
+            '<div class="item-subtitle">' + esc(cfg.subtitle(r)) + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // Click handler for list items
+      container.querySelectorAll('.catalog-list-item').forEach(item => {
+        item.addEventListener('click', () => {
+          catalogState.selectedPK = item.dataset.pk;
+          renderCatalogList();
+          renderCatalogForm();
+        });
+      });
+    }
+
+    // Sub-tab switching
+    document.querySelectorAll('.catalog-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.catalog-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        catalogState.activeCatalog = btn.dataset.catalog;
+        catalogState.selectedPK = null;
+        document.getElementById('catalogSearch').value = '';
+        renderCatalogList();
+        renderCatalogForm();
+      });
+    });
+
+    // Search filter
+    document.getElementById('catalogSearch').addEventListener('input', renderCatalogList);
+
+    // JSON export/import
+    document.getElementById('btnExportJSON').addEventListener('click', exportCatalogsJSON);
+    document.getElementById('btnImportJSON').addEventListener('click', () => document.getElementById('catalogJsonInput').click());
+    document.getElementById('catalogJsonInput').addEventListener('change', function() {
+      if (this.files[0]) { importCatalogsJSON(this.files[0]); this.value = ''; }
+    });
+
+    // Placeholder for renderCatalogForm (implemented in Task 6)
+    function renderCatalogForm() {
+      const panel = document.getElementById('catalogFormPanel');
+      if (!catalogState.selectedPK) {
+        panel.innerHTML = '<div id="catalogEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">Selecciona un registro del catálogo</div>';
+        return;
+      }
+      // Full form rendering added in Task 6
+      panel.innerHTML = '<div style="padding:20px; color:var(--text-muted); font-size:13px;">Formulario para ' + esc(catalogState.selectedPK) + ' (próximo paso)</div>';
+    }
+
+    // Initialize catalog list on tab switch
 
     // ═══════════════════════════════════
     // HISTORY STORAGE
