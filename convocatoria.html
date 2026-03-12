@@ -802,6 +802,7 @@
             <label><input type="radio" name="eventType" value="teams"> Teams</label>
           </div>
           <input class="input-field" type="text" id="eventLocation" placeholder="Ubicación (sala, dirección...)">
+          <textarea class="input-field" id="eventBody" rows="3" placeholder="Instrucciones adicionales (opcional)" style="resize:vertical;"></textarea>
           <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
             <input type="checkbox" id="seriesCheck"> Serie de sesiones
           </label>
@@ -869,6 +870,7 @@
       <div class="action-bar" id="actionBar" style="display:none;">
         <div class="warning-text" id="noEmailWarning"></div>
         <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" id="btnExport">Exportar</button>
           <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">Copiar emails</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
@@ -1256,6 +1258,7 @@
               startTime: document.getElementById('eventStart').value,
               endTime: document.getElementById('eventEnd').value,
               location: document.getElementById('eventLocation').value,
+              body: document.getElementById('eventBody').value,
               isTeams: document.querySelector('input[name="eventType"]:checked')?.value === 'teams',
               isSeries: document.getElementById('seriesCheck').checked,
             },
@@ -1665,6 +1668,7 @@
     document.getElementById('eventStart').addEventListener('change', saveState);
     document.getElementById('eventEnd').addEventListener('change', saveState);
     document.getElementById('eventLocation').addEventListener('input', saveState);
+    document.getElementById('eventBody').addEventListener('input', saveState);
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
@@ -1716,7 +1720,13 @@
         endTime: document.getElementById('eventEnd').value,
         location: document.getElementById('eventLocation').value.trim(),
         isTeams: isTeams,
-        body: isTeams ? 'Se enviará el enlace de Teams una vez creado el evento en Outlook.' : ''
+        body: (() => {
+          let b = document.getElementById('eventBody').value.trim();
+          if (isTeams) {
+            b = (b ? b + '\n\n' : '') + 'Se enviará el enlace de Teams una vez creado el evento en Outlook.';
+          }
+          return b;
+        })()
       };
     }
 
@@ -1807,6 +1817,34 @@
         btn.textContent = '✓ Copiados (' + selected.length + ')';
         setTimeout(() => { btn.textContent = original; }, 2000);
       });
+    });
+
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const selected = getSelectedAttendees();
+      if (selected.length === 0) {
+        showToast('No hay asistentes seleccionados', 'warning');
+        return;
+      }
+
+      const data = selected.map(emp => ({
+        'Empleado': emp.Empleado,
+        'Puesto': emp.Puesto,
+        'Departamento': emp.Departamento || '',
+        'Empresa': emp.Empresa || '',
+        'Ubicación': emp['Ubicación'] || '',
+        'Email': emp['Email trabajo'] || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Asistentes');
+
+      const title = document.getElementById('eventTitle').value.trim() || 'convocatoria';
+      const date = document.getElementById('eventDate').value || 'sin-fecha';
+      const filename = title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_') + '_' + date + '_asistentes.xlsx';
+
+      XLSX.writeFile(wb, filename);
+      showToast('Exportados ' + selected.length + ' asistentes', 'success');
     });
 
     function openSeriesSequentially(baseEvent, emails) {
@@ -1957,6 +1995,7 @@
                 document.getElementById('eventStart').value = ec.startTime || '10:00';
                 document.getElementById('eventEnd').value = ec.endTime || '12:00';
                 document.getElementById('eventLocation').value = ec.location || '';
+                document.getElementById('eventBody').value = ec.body || '';
                 if (ec.isTeams) {
                   document.querySelector('input[name="eventType"][value="teams"]').checked = true;
                 }
