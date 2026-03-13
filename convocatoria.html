@@ -2262,6 +2262,12 @@
         <div class="dash-alerts-body" id="dashAlertsBody" style="display:none;"></div>
       </div>
 
+      <!-- Plazos FUNDAE -->
+      <div class="dash-card" id="dashPlazosFundae" style="display:none; margin-bottom:16px;">
+        <div class="dash-card-title">Plazos FUNDAE</div>
+        <div id="dashPlazosList"></div>
+      </div>
+
       <!-- Charts row 1: Credit + Estado donut -->
       <div class="dash-chart-row">
         <div class="dash-card">
@@ -3945,6 +3951,8 @@
         record.notas = existingAccion ? (existingAccion.notas || []) : [];
         record.asistencia = existingAccion ? (existingAccion.asistencia || { sesiones: [], registro: {} }) : { sesiones: [], registro: {} };
         record.confirmaciones = existingAccion ? (existingAccion.confirmaciones || {}) : {};
+        record.comunicacionInicioEnviada = existingAccion ? (existingAccion.comunicacionInicioEnviada || false) : false;
+        record.comunicacionFinEnviada = existingAccion ? (existingAccion.comunicacionFinEnviada || false) : false;
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
@@ -8343,6 +8351,121 @@
       });
 
       updateAlertCount();
+
+      // --- Plazos FUNDAE timeline ---
+      var plazosContainer = document.getElementById('dashPlazosFundae');
+      var plazosList = document.getElementById('dashPlazosList');
+      var plazosItems = [];
+
+      function addBusinessDays(date, days) {
+        var d = new Date(date);
+        var added = 0;
+        while (added < Math.abs(days)) {
+          d.setDate(d.getDate() + (days > 0 ? 1 : -1));
+          var dow = d.getDay();
+          if (dow !== 0 && dow !== 6) added++;
+        }
+        return d;
+      }
+
+      bonificables.forEach(function(a) {
+        if (!a.fechaInicio) return;
+        var actionLabel = (a.codigo || '') + ' — ' + (a.nombre || '');
+        var fi = new Date(a.fechaInicio + 'T00:00:00');
+        var deadlineInicio = addBusinessDays(fi, -5);
+        var daysToInicio = Math.ceil((deadlineInicio - today) / 86400000);
+        var inicioSent = a.comunicacionInicioEnviada === true;
+        plazosItems.push({
+          accion: actionLabel,
+          codigo: a.codigo,
+          tipo: 'inicio',
+          deadline: deadlineInicio,
+          daysRemaining: daysToInicio,
+          sent: inicioSent
+        });
+
+        if (a.fechaFin) {
+          var ff = new Date(a.fechaFin + 'T00:00:00');
+          var deadlineFin = addBusinessDays(ff, 5);
+          var daysToFin = Math.ceil((deadlineFin - today) / 86400000);
+          var finSent = a.comunicacionFinEnviada === true;
+          plazosItems.push({
+            accion: actionLabel,
+            codigo: a.codigo,
+            tipo: 'fin',
+            deadline: deadlineFin,
+            daysRemaining: daysToFin,
+            sent: finSent
+          });
+        }
+      });
+
+      // Sort by deadline, unsent first
+      plazosItems.sort(function(a, b) {
+        if (a.sent !== b.sent) return a.sent ? 1 : -1;
+        return a.deadline - b.deadline;
+      });
+
+      // Only show items within a 30-day window past or 60 days future
+      var relevantPlazos = plazosItems.filter(function(p) {
+        return p.daysRemaining >= -30 && p.daysRemaining <= 60;
+      });
+
+      if (relevantPlazos.length > 0) {
+        plazosContainer.style.display = '';
+        var plazosHtml = '';
+        relevantPlazos.forEach(function(p) {
+          var tipoLabel = p.tipo === 'inicio' ? 'Comunicación de inicio' : 'Comunicación de finalización';
+          var dateStr = p.deadline.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+          var statusColor = p.sent ? 'var(--success)' : (p.daysRemaining < 0 ? 'var(--danger)' : (p.daysRemaining <= 5 ? 'var(--warning)' : 'var(--text-secondary)'));
+          var statusLabel = p.sent ? 'Enviada' : (p.daysRemaining < 0 ? 'Vencido hace ' + Math.abs(p.daysRemaining) + 'd' : p.daysRemaining + ' días');
+          plazosHtml += '<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;">' +
+            '<div style="flex:1; min-width:0;">' +
+              '<div style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.accion) + '</div>' +
+              '<div style="color:var(--text-muted); font-size:11px;">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
+            '</div>' +
+            '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
+            (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Marcar enviada</button>') +
+            '<button class="btn btn-secondary btnPlazoXml" data-codigo="' + esc(p.codigo) + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Generar XML</button>' +
+          '</div>';
+        });
+        plazosList.innerHTML = plazosHtml;
+
+        // Bind mark buttons
+        plazosList.querySelectorAll('.btnPlazoMarcar').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var codigo = btn.getAttribute('data-codigo');
+            var tipo = btn.getAttribute('data-tipo');
+            var allAcciones = getCatalog('acciones');
+            var acc = allAcciones.find(function(a) { return a.codigo === codigo; });
+            if (acc) {
+              if (tipo === 'inicio') acc.comunicacionInicioEnviada = true;
+              else acc.comunicacionFinEnviada = true;
+              upsertCatalogRecord('acciones', 'codigo', acc);
+              renderDashboard();
+              showToast('Comunicación de ' + tipo + ' marcada como enviada', 'success');
+            }
+          });
+        });
+
+        // Bind XML buttons
+        plazosList.querySelectorAll('.btnPlazoXml').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var codigo = btn.getAttribute('data-codigo');
+            // Switch to XML tab with this action preselected
+            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+            var xmlBtn = document.querySelector('.tab-btn[data-tab="tabXml"]');
+            if (xmlBtn) xmlBtn.classList.add('active');
+            document.getElementById('tabXml').classList.add('active');
+            refreshXmlSelects();
+            document.getElementById('xmlAccionSelect').value = codigo;
+            document.getElementById('xmlAccionSelect').dispatchEvent(new Event('change'));
+          });
+        });
+      } else {
+        plazosContainer.style.display = 'none';
+      }
 
       // --- Credit chart (two-tone SVG bars) ---
       var empresasSorted = EMPRESAS_GRUPO.slice().sort(function(a, b) { return b.credito - a.credito; });
