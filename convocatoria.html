@@ -1448,6 +1448,12 @@
       <!-- 3. Evento -->
       <div class="section" id="eventoSection" style="display:none;">
         <div class="section-label">3. Datos del evento</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <select class="input-field" id="templateSelect" style="flex:1; font-size:12px;">
+            <option value="">Selecciona plantilla...</option>
+          </select>
+          <button class="link-btn link-add" id="btnSaveTemplate" style="font-size:12px; white-space:nowrap;">Guardar como plantilla</button>
+        </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
           <div class="event-row">
@@ -1881,6 +1887,10 @@
           </div>
         </div>
         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
+      </div>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Plantillas guardadas</div>
+        <div id="settingsTemplatesList"></div>
       </div>
       <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
@@ -3653,6 +3663,162 @@
     }
 
     // ═══════════════════════════════════
+    // CONVOCATORIA TEMPLATES
+    // ═══════════════════════════════════
+
+    function getTemplates() {
+      try {
+        return JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveTemplates(templates) {
+      try {
+        localStorage.setItem('convocatoria_templates', JSON.stringify(templates));
+      } catch(e) {
+        showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
+      }
+    }
+
+    function populateTemplateSelect() {
+      const select = document.getElementById('templateSelect');
+      if (!select) return;
+      const templates = getTemplates();
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Selecciona plantilla...</option>';
+      templates.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = String(t.id);
+        opt.textContent = t.name;
+        select.appendChild(opt);
+      });
+      // Restore selection if still valid
+      if (currentVal && templates.some(t => String(t.id) === currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    function loadTemplate(templateId) {
+      const templates = getTemplates();
+      const tpl = templates.find(t => String(t.id) === String(templateId));
+      if (!tpl || !tpl.event) return;
+
+      const ev = tpl.event;
+      document.getElementById('eventTitle').value = ev.title || '';
+      document.getElementById('eventTitle').classList.remove('error');
+      document.getElementById('eventLocation').value = ev.location || '';
+      document.getElementById('eventBody').value = ev.body || '';
+      document.getElementById('eventFormador').value = ev.formador || '';
+
+      if (ev.isTeams) {
+        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+      } else {
+        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+      }
+
+      saveState();
+      showToast('Plantilla «' + tpl.name + '» cargada', 'success');
+    }
+
+    function showSaveTemplateDialog() {
+      var existing = document.getElementById('templateSaveOverlay');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'templateSaveOverlay';
+      overlay.className = 'dialog-overlay visible';
+
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar como plantilla</h3>' +
+        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre de la plantilla</label>' +
+        '<input type="text" class="input-field" id="templateNameInput" placeholder="Ej: PRL Obligatoria" style="width:100%;">' +
+        '<div class="dialog-buttons" style="margin-top:16px;">' +
+          '<button class="link-btn link-clear" id="templateSaveCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="templateSaveConfirm">Guardar</button>' +
+        '</div>' +
+      '</div>';
+
+      document.body.appendChild(overlay);
+
+      var nameInput = document.getElementById('templateNameInput');
+      nameInput.focus();
+
+      function doSave() {
+        var name = nameInput.value.trim();
+        if (!name) {
+          showToast('Introduce un nombre para la plantilla', 'warning');
+          return;
+        }
+        var templates = getTemplates();
+        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+        templates.push({
+          id: Date.now(),
+          name: name,
+          event: {
+            title: document.getElementById('eventTitle').value,
+            isTeams: isTeams,
+            location: document.getElementById('eventLocation').value,
+            body: document.getElementById('eventBody').value,
+            formador: document.getElementById('eventFormador').value
+          }
+        });
+        saveTemplates(templates);
+        populateTemplateSelect();
+        renderSettingsTemplates();
+        overlay.remove();
+        showToast('Plantilla «' + name + '» guardada', 'success');
+      }
+
+      document.getElementById('templateSaveConfirm').addEventListener('click', doSave);
+      nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doSave();
+      });
+      document.getElementById('templateSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+
+    function renderSettingsTemplates() {
+      var container = document.getElementById('settingsTemplatesList');
+      if (!container) return;
+      var templates = getTemplates();
+      if (templates.length === 0) {
+        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">No hay plantillas guardadas.</div>';
+        return;
+      }
+      container.innerHTML = templates.map(function(t) {
+        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:12px; color:var(--text-primary);">' + esc(t.name) + '</span>' +
+          '<button class="link-btn link-clear" data-delete-template="' + t.id + '" style="font-size:11px;" title="Eliminar plantilla">&times;</button>' +
+        '</div>';
+      }).join('');
+
+      container.querySelectorAll('[data-delete-template]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = parseInt(this.getAttribute('data-delete-template'), 10);
+          var templates = getTemplates();
+          var tpl = templates.find(function(t) { return t.id === id; });
+          var name = tpl ? tpl.name : '';
+          templates = templates.filter(function(t) { return t.id !== id; });
+          saveTemplates(templates);
+          populateTemplateSelect();
+          renderSettingsTemplates();
+          showToast('Plantilla «' + name + '» eliminada', 'success');
+        });
+      });
+    }
+
+    function substituteTemplateVars(bodyText, event) {
+      if (!bodyText) return bodyText;
+      return bodyText
+        .replace(/\{titulo\}/g, event.title || '')
+        .replace(/\{fecha\}/g, event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '')
+        .replace(/\{hora_inicio\}/g, event.startTime || '')
+        .replace(/\{hora_fin\}/g, event.endTime || '')
+        .replace(/\{formador\}/g, event.formador || '')
+        .replace(/\{ubicacion\}/g, event.location || '');
+    }
+
+    // ═══════════════════════════════════
     // SURVEY EMAIL
     // ═══════════════════════════════════
 
@@ -4542,6 +4708,17 @@
     document.getElementById('eventFormador').addEventListener('input', saveState);
     document.getElementById('surveyCheck').addEventListener('change', saveState);
 
+    // Template select and save
+    document.getElementById('templateSelect').addEventListener('change', function() {
+      if (this.value) {
+        loadTemplate(this.value);
+      }
+    });
+    document.getElementById('btnSaveTemplate').addEventListener('click', showSaveTemplateDialog);
+
+    // Populate template dropdown on init
+    populateTemplateSelect();
+
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
       const isSeries = document.getElementById('seriesCheck').checked;
@@ -4657,7 +4834,7 @@
 
     function getCurrentEvent() {
       const isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-      return {
+      const event = {
         title: document.getElementById('eventTitle').value.trim(),
         date: document.getElementById('eventDate').value,
         startTime: document.getElementById('eventStart').value,
@@ -4665,14 +4842,16 @@
         location: document.getElementById('eventLocation').value.trim(),
         isTeams: isTeams,
         formador: document.getElementById('eventFormador').value.trim(),
-        body: (() => {
-          let b = document.getElementById('eventBody').value.trim();
-          if (isTeams) {
-            b = (b ? b + '\n\n' : '') + 'Se enviará el enlace de Teams una vez creado el evento en Outlook.';
-          }
-          return b;
-        })()
+        body: ''
       };
+      let b = document.getElementById('eventBody').value.trim();
+      // Substitute template variables at send time
+      b = substituteTemplateVars(b, event);
+      if (isTeams) {
+        b = (b ? b + '\n\n' : '') + 'Se enviará el enlace de Teams una vez creado el evento en Outlook.';
+      }
+      event.body = b;
+      return event;
     }
 
     function checkFundaeReadiness(eventTitle) {
@@ -5266,6 +5445,7 @@
       document.getElementById('settingsFormsQuestionId').value = settings.formsQuestionId || '';
       document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
+      renderSettingsTemplates();
       document.getElementById('settingsDialog').classList.add('visible');
     });
 
