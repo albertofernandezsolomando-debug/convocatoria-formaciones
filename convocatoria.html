@@ -1225,15 +1225,38 @@
       color: var(--text-secondary);
       font-weight: 600;
     }
-    .cal-timeline-wrap {
+    .cal-split-top {
       flex: 1;
       overflow: auto;
       position: relative;
+      min-height: 80px;
     }
-    .cal-timeline-inner {
+    .cal-split-bottom {
+      flex: 1;
+      overflow: auto;
+      min-height: 60px;
+    }
+    .cal-divider {
+      flex-shrink: 0;
+      height: 7px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: row-resize;
       display: flex;
-      flex-direction: column;
-      min-height: 100%;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .cal-divider:hover, .cal-divider.active {
+      background: var(--accent-subtle);
+    }
+    .cal-divider-grip {
+      width: 32px;
+      height: 3px;
+      border-radius: var(--radius-lg);
+      background: var(--border-strong);
     }
     .cal-time-header {
       display: flex;
@@ -1400,16 +1423,12 @@
       border-radius: 2px;
       flex-shrink: 0;
     }
-    .cal-list {
-      flex: 1;
-      border-top: 2px solid var(--border);
-    }
-    .cal-list table {
+    .cal-split-bottom table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
     }
-    .cal-list th {
+    .cal-split-bottom th {
       background: var(--bg-primary);
       font-size: 10px;
       font-weight: 600;
@@ -1423,16 +1442,16 @@
       top: 0;
       z-index: 5;
     }
-    .cal-list td {
+    .cal-split-bottom td {
       padding: 7px 12px;
       border-bottom: 1px solid var(--bg-primary);
       color: var(--text-secondary);
     }
-    .cal-list tr.cal-list-row { cursor: pointer; }
-    .cal-list tr.cal-list-row:hover td {
+    .cal-split-bottom tr.cal-list-row { cursor: pointer; }
+    .cal-split-bottom tr.cal-list-row:hover td {
       background: var(--accent-subtle);
     }
-    .cal-list tr.cal-list-row.selected td {
+    .cal-split-bottom tr.cal-list-row.selected td {
       background: var(--accent-light);
     }
     .cal-list-name {
@@ -2181,7 +2200,9 @@
         </div>
         <div class="cal-summary" id="calSummary"></div>
       </div>
-      <div class="cal-timeline-wrap" id="calTimelineWrap"></div>
+      <div class="cal-split-top" id="calSplitTop"></div>
+      <div class="cal-divider" id="calDivider"><span class="cal-divider-grip"></span></div>
+      <div class="cal-split-bottom" id="calSplitBottom"></div>
       <div class="cal-detail" id="calDetail" style="display:none;"></div>
       <div class="cal-legend" id="calLegend"></div>
     </div>
@@ -8084,6 +8105,46 @@
         renderCalendarTab();
       });
 
+      // Drag-to-resize divider
+      var divider = document.getElementById('calDivider');
+      var splitTop = document.getElementById('calSplitTop');
+      var splitBottom = document.getElementById('calSplitBottom');
+
+      divider.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        var startY = e.clientY;
+        var startTopH = splitTop.offsetHeight;
+        var startBottomH = splitBottom.offsetHeight;
+        divider.classList.add('active');
+        document.body.style.cursor = 'row-resize';
+
+        function onMove(ev) {
+          var delta = ev.clientY - startY;
+          var newTop = Math.max(80, startTopH + delta);
+          var newBottom = Math.max(60, startBottomH - delta);
+          splitTop.style.flex = 'none';
+          splitBottom.style.flex = 'none';
+          splitTop.style.height = newTop + 'px';
+          splitBottom.style.height = newBottom + 'px';
+        }
+        function onUp() {
+          divider.classList.remove('active');
+          document.body.style.cursor = '';
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+
+      // Double-click to reset to 50/50
+      divider.addEventListener('dblclick', function() {
+        splitTop.style.flex = '1';
+        splitTop.style.height = '';
+        splitBottom.style.flex = '1';
+        splitBottom.style.height = '';
+      });
+
       var empInput = document.getElementById('calEmployeeSearch');
       var empClear = document.getElementById('calEmployeeClear');
 
@@ -8138,7 +8199,8 @@
       initCalendarTab();
 
       var acciones = getCatalog('acciones');
-      var container = document.getElementById('calTimelineWrap');
+      var topPane = document.getElementById('calSplitTop');
+      var bottomPane = document.getElementById('calSplitBottom');
       var detailPanel = document.getElementById('calDetail');
       var summaryEl = document.getElementById('calSummary');
       var legendEl = document.getElementById('calLegend');
@@ -8275,10 +8337,11 @@
 
       // Empty state
       if (visible.length === 0) {
-        container.innerHTML = '<div class="cal-empty">' +
+        topPane.innerHTML = '<div class="cal-empty">' +
           '<div class="cal-empty-text">No hay formaciones en este per\u00edodo</div>' +
           '<div class="cal-empty-sub">Usa las flechas para navegar o cambia el zoom</div>' +
         '</div>';
+        bottomPane.innerHTML = '';
         detailPanel.style.display = 'none';
         return;
       }
@@ -8404,23 +8467,23 @@
       });
 
       html += '</div>'; // cal-rows
+      topPane.innerHTML = html;
 
-      // List table below timeline
+      // List table in bottom pane
       var formatShort = function(raw) {
         if (!raw) return '\u2014';
         var d = new Date(raw);
         return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
       };
 
-      html += '<div class="cal-list">';
-      html += '<table><thead><tr>' +
+      var listHtml = '<table><thead><tr>' +
         '<th>Acci\u00f3n</th><th>Estado</th><th>Inicio</th><th>Fin</th>' +
         '<th>Modalidad</th><th>Horas</th><th>Participantes</th><th>Departamento</th>' +
       '</tr></thead><tbody>';
       visible.forEach(function(item) {
         var color = CAL_ESTADO_COLORS[item.estado] || '#94a3b8';
         var isSel = calState.selectedCodigo === item.codigo;
-        html += '<tr class="cal-list-row' + (isSel ? ' selected' : '') + '" data-codigo="' + esc(item.codigo) + '">' +
+        listHtml += '<tr class="cal-list-row' + (isSel ? ' selected' : '') + '" data-codigo="' + esc(item.codigo) + '">' +
           '<td class="cal-list-name">' + esc(item.nombre) + '</td>' +
           '<td><span class="cal-list-dot" style="background:' + color + ';"></span>' + esc(item.estado || '\u2014') + '</td>' +
           '<td>' + formatShort(item.rawInicio) + '</td>' +
@@ -8431,34 +8494,32 @@
           '<td>' + esc(item.departamento || '\u2014') + '</td>' +
         '</tr>';
       });
-      html += '</tbody></table></div>';
+      listHtml += '</tbody></table>';
+      bottomPane.innerHTML = listHtml;
 
-      html += '</div>'; // cal-timeline-inner
-      container.innerHTML = html;
-
-      // Bind bar clicks
+      // Bind clicks (cross-pane selection)
       function selectAction(codigo) {
         calState.selectedCodigo = codigo;
-        container.querySelectorAll('.cal-bar').forEach(function(b) { b.classList.remove('selected'); });
-        container.querySelectorAll('.cal-list-row').forEach(function(r) { r.classList.remove('selected'); });
-        var bar = container.querySelector('.cal-bar[data-codigo="' + codigo + '"]');
+        topPane.querySelectorAll('.cal-bar').forEach(function(b) { b.classList.remove('selected'); });
+        bottomPane.querySelectorAll('.cal-list-row').forEach(function(r) { r.classList.remove('selected'); });
+        var bar = topPane.querySelector('.cal-bar[data-codigo="' + codigo + '"]');
         if (bar) bar.classList.add('selected');
-        var row = container.querySelector('.cal-list-row[data-codigo="' + codigo + '"]');
+        var row = bottomPane.querySelector('.cal-list-row[data-codigo="' + codigo + '"]');
         if (row) row.classList.add('selected');
         var item = visible.find(function(p) { return p.codigo === codigo; });
         if (item) showCalDetail(item);
       }
 
-      container.querySelectorAll('.cal-bar').forEach(function(bar) {
+      topPane.querySelectorAll('.cal-bar').forEach(function(bar) {
         bar.addEventListener('click', function() {
           selectAction(bar.dataset.codigo);
         });
       });
 
-      container.querySelectorAll('.cal-list-row').forEach(function(row) {
+      bottomPane.querySelectorAll('.cal-list-row').forEach(function(row) {
         row.addEventListener('click', function() {
           selectAction(row.dataset.codigo);
-          var bar = container.querySelector('.cal-bar[data-codigo="' + row.dataset.codigo + '"]');
+          var bar = topPane.querySelector('.cal-bar[data-codigo="' + row.dataset.codigo + '"]');
           if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
       });
