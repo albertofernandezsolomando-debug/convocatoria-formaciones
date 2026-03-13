@@ -9560,6 +9560,13 @@
         summary.appendChild(el);
       });
       container.appendChild(summary);
+
+      // Totals footer
+      var avgHoursPerAction = totalCount > 0 ? (totalHours / totalCount).toFixed(1) : '0';
+      var footerRow = document.createElement('div');
+      footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:10px; color:var(--text-muted);';
+      footerRow.innerHTML = '<span>' + totalCount + ' acciones en total</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
+      container.appendChild(footerRow);
     }
 
     // ═══════════════════════════════════
