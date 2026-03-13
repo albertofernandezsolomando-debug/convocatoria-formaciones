@@ -3773,6 +3773,139 @@
       fileInput.click();
     });
 
+    function checkOrphanParticipants() {
+      var acciones = getCatalog('acciones');
+      if (!acciones || acciones.length === 0) return;
+      if (!state.employees || state.employees.length === 0) return;
+
+      var nifSet = new Set(state.employees.map(function(e) { return e.NIF; }));
+      var orphanData = [];
+
+      acciones.forEach(function(a) {
+        var participantes = a.participantes || [];
+        if (participantes.length === 0) return;
+        var orphanNifs = participantes.filter(function(nif) { return !nifSet.has(nif); });
+        if (orphanNifs.length > 0) {
+          orphanData.push({ accionCode: a.codigo, accionName: a.nombre || '', orphanNifs: orphanNifs });
+        }
+      });
+
+      if (orphanData.length === 0) return;
+
+      var totalOrphans = orphanData.reduce(function(sum, d) { return sum + d.orphanNifs.length; }, 0);
+
+      // Build clickable toast
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast toast-warning';
+      toast.style.cursor = 'pointer';
+      toast.textContent = totalOrphans + ' participante' + (totalOrphans > 1 ? 's' : '') + ' de acciones formativas no encontrado' + (totalOrphans > 1 ? 's' : '') + ' en el organigrama';
+      toast.addEventListener('click', function() { showOrphanDialog(); });
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.animation = 'toastOut 0.3s ease-in forwards';
+        toast.addEventListener('animationend', function() { toast.remove(); });
+      }, 8000);
+    }
+
+    function showOrphanDialog() {
+      var existing = document.getElementById('orphanParticipantsOverlay');
+      if (existing) existing.remove();
+
+      var acciones = getCatalog('acciones');
+      var nifSet = new Set(state.employees.map(function(e) { return e.NIF; }));
+      var orphanData = [];
+
+      acciones.forEach(function(a) {
+        var participantes = a.participantes || [];
+        if (participantes.length === 0) return;
+        var orphanNifs = participantes.filter(function(nif) { return !nifSet.has(nif); });
+        if (orphanNifs.length > 0) {
+          orphanData.push({ accionCode: a.codigo, accionName: a.nombre || '', orphanNifs: orphanNifs });
+        }
+      });
+
+      if (orphanData.length === 0) {
+        showToast('No hay participantes huérfanos', 'success');
+        return;
+      }
+
+      var overlay = document.createElement('div');
+      overlay.id = 'orphanParticipantsOverlay';
+      overlay.className = 'dialog-overlay visible';
+
+      var html = '<div class="dialog-box" style="max-width:560px; max-height:75vh; display:flex; flex-direction:column; text-align:left;">' +
+        '<h3 style="margin:0 0 16px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Participantes no encontrados en organigrama</h3>' +
+        '<div id="orphanDialogContent" style="overflow-y:auto; flex:1; margin-bottom:16px;">';
+
+      orphanData.forEach(function(d) {
+        html += '<div style="margin-bottom:14px;">' +
+          '<div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">' + esc(d.accionCode) + (d.accionName ? ' — ' + esc(d.accionName) : '') + '</div>' +
+          '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">';
+        d.orphanNifs.forEach(function(nif) {
+          html += '<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:var(--danger-light); border-radius:var(--radius-lg); font-size:12px; color:var(--danger); font-family:var(--font-body);">' +
+            esc(nif) +
+            '<button class="link-btn link-clear orphan-remove-single" data-codigo="' + esc(d.accionCode) + '" data-nif="' + esc(nif) + '" style="font-size:11px; color:var(--danger); padding:0 2px; margin:0; line-height:1;" title="Eliminar de esta acción">&times;</button>' +
+          '</span>';
+        });
+        html += '</div></div>';
+      });
+
+      html += '</div>' +
+        '<div class="dialog-buttons" style="flex-wrap:wrap; gap:8px;">' +
+        '<button class="btn btn-secondary" id="orphanRemoveAll" style="color:var(--danger);">Eliminar todos los huérfanos</button>' +
+        '<button class="btn btn-secondary" id="orphanClose">Cerrar</button>' +
+        '</div></div>';
+
+      overlay.innerHTML = html;
+      document.body.appendChild(overlay);
+
+      // Close handlers
+      document.getElementById('orphanClose').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+      // Single remove handlers
+      overlay.querySelectorAll('.orphan-remove-single').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var codigo = this.getAttribute('data-codigo');
+          var nif = this.getAttribute('data-nif');
+          var allAcciones = getCatalog('acciones');
+          var accion = allAcciones.find(function(a) { return a.codigo === codigo; });
+          if (accion) {
+            accion.participantes = (accion.participantes || []).filter(function(n) { return n !== nif; });
+            var cfg = CATALOG_CONFIG['acciones'];
+            upsertCatalogRecord('acciones', cfg.pk, accion);
+          }
+          // Re-render dialog
+          overlay.remove();
+          showOrphanDialog();
+        });
+      });
+
+      // Bulk remove handler
+      document.getElementById('orphanRemoveAll').addEventListener('click', function() {
+        var allAcciones = getCatalog('acciones');
+        var employeeNifSet = new Set(state.employees.map(function(e) { return e.NIF; }));
+        var removedCount = 0;
+
+        allAcciones.forEach(function(a) {
+          var participantes = a.participantes || [];
+          if (participantes.length === 0) return;
+          var cleaned = participantes.filter(function(nif) { return employeeNifSet.has(nif); });
+          if (cleaned.length !== participantes.length) {
+            removedCount += participantes.length - cleaned.length;
+            a.participantes = cleaned;
+            var cfg = CATALOG_CONFIG['acciones'];
+            upsertCatalogRecord('acciones', cfg.pk, a);
+          }
+        });
+
+        overlay.remove();
+        showToast(removedCount + ' participante' + (removedCount > 1 ? 's' : '') + ' huérfano' + (removedCount > 1 ? 's' : '') + ' eliminado' + (removedCount > 1 ? 's' : ''), 'success');
+      });
+    }
+
     function handleFile(file) {
       const reader = new FileReader();
       reader.onload = e => {
@@ -3843,6 +3976,7 @@
 
         renderFilters();
         renderTable();
+        checkOrphanParticipants();
       };
       reader.readAsArrayBuffer(file);
     }
@@ -5007,6 +5141,7 @@
 
             renderFilters();
             renderTable();
+            checkOrphanParticipants();
             showToast('Sesión anterior restaurada', 'success');
           });
           uploadZone.appendChild(restoreDiv);
