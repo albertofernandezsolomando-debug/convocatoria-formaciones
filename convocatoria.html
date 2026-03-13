@@ -5555,16 +5555,167 @@
       return getCatalog('tutores').find(t => t.documento === document.getElementById('xmlTutorSelect').value);
     }
 
+    // ─── XML Pre-validation ───
+
+    function validateXmlData(type, accion, grupo, participantes) {
+      var errors = [];
+      var warnings = [];
+      var validAreas = FUNDAE_AREAS.map(function(a) { return a[0]; });
+      var validCifs = EMPRESAS_GRUPO.map(function(e) { return e.cif; });
+      var nifRegex = /^[0-9]{8}[A-Z]$/;
+      var nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
+
+      // All types: accion.codigo and accion.nombre required
+      if (!accion || !accion.codigo) errors.push({ field: 'Codigo accion', message: 'El codigo de accion es obligatorio' });
+      if (!accion || !accion.nombre) errors.push({ field: 'Nombre accion', message: 'El nombre de accion es obligatorio' });
+
+      if (accion) {
+        // Hours vs modalidad coherence
+        var mod = accion.modalidad || '';
+        if (mod === 'Presencial' && !(Number(accion.horasPresenciales) > 0)) {
+          errors.push({ field: 'Horas presenciales', message: 'La modalidad Presencial requiere horasPresenciales > 0' });
+        }
+        if (mod === 'Teleformacion' || mod === 'Teleformación') {
+          if (!(Number(accion.horasTeleformacion) > 0)) {
+            errors.push({ field: 'Horas teleformacion', message: 'La modalidad Teleformacion requiere horasTeleformacion > 0' });
+          }
+        }
+        if (mod === 'Mixta') {
+          if (!(Number(accion.horasPresenciales) > 0)) errors.push({ field: 'Horas presenciales', message: 'La modalidad Mixta requiere horasPresenciales > 0' });
+          if (!(Number(accion.horasTeleformacion) > 0)) errors.push({ field: 'Horas teleformacion', message: 'La modalidad Mixta requiere horasTeleformacion > 0' });
+        }
+
+        // Area profesional
+        if (accion.areaProfesional && validAreas.indexOf(accion.areaProfesional) === -1) {
+          errors.push({ field: 'Area profesional', message: 'El area profesional "' + accion.areaProfesional + '" no es valida en FUNDAE' });
+        }
+
+        // Date coherence (grupo level)
+        if (grupo && grupo.fechaInicio && grupo.fechaFin) {
+          if (grupo.fechaInicio > grupo.fechaFin) {
+            errors.push({ field: 'Fechas', message: 'La fecha de inicio (' + grupo.fechaInicio + ') es posterior a la fecha de fin (' + grupo.fechaFin + ')' });
+          }
+        }
+
+        // Attendance check
+        var asistencia = accion.asistencia;
+        if (asistencia && asistencia.sesiones && asistencia.sesiones.length > 0 && asistencia.registro) {
+          var totalSesiones = asistencia.sesiones.length;
+          participantes.forEach(function(p) {
+            var reg = asistencia.registro[p.nif];
+            if (reg && totalSesiones > 0) {
+              var attended = reg.filter(function(v) { return v === true; }).length;
+              var pct = (attended / totalSesiones) * 100;
+              if (pct < 75) {
+                warnings.push({ field: 'Asistencia', message: 'Asistencia del ' + Math.round(pct) + '% (inferior al 75% requerido)', participantNif: p.nif });
+              }
+            }
+          });
+        }
+      }
+
+      // Participant-level validations
+      participantes.forEach(function(p) {
+        var nif = (p.nif || '').trim();
+
+        // NIF/NIE format
+        if (nif && !nifRegex.test(nif) && !nieRegex.test(nif)) {
+          errors.push({ field: 'NIF/NIE', message: 'Formato de documento invalido: "' + nif + '"', participantNif: nif });
+        }
+
+        // Tipo documento coherence
+        if (nif) {
+          var firstChar = nif.charAt(0).toUpperCase();
+          var isNie = (firstChar === 'X' || firstChar === 'Y' || firstChar === 'Z');
+          var tipoDoc = String(p.tipoDocumento);
+          if (isNie && tipoDoc !== '60') {
+            warnings.push({ field: 'Tipo documento', message: 'El NIF empieza por ' + firstChar + ' (NIE) pero el tipo documento no es NIE (60)', participantNif: nif });
+          } else if (!isNie && tipoDoc === '60') {
+            warnings.push({ field: 'Tipo documento', message: 'El NIF no empieza por X/Y/Z pero el tipo documento es NIE (60)', participantNif: nif });
+          }
+        }
+
+        // CIF empresa
+        if (p.cifEmpresa && validCifs.indexOf(p.cifEmpresa) === -1) {
+          warnings.push({ field: 'CIF empresa', message: 'El CIF "' + p.cifEmpresa + '" no esta en EMPRESAS_GRUPO', participantNif: nif });
+        }
+
+        // Finalizacion-specific: required fields per participant
+        if (type === 'finalizacion') {
+          if (!p.categoriaProfesional) errors.push({ field: 'Categoria profesional', message: 'Falta la categoria profesional', participantNif: nif });
+          if (!p.nivelEstudios) errors.push({ field: 'Nivel estudios', message: 'Falta el nivel de estudios', participantNif: nif });
+          if (!p.grupoCotizacion) errors.push({ field: 'Grupo cotizacion', message: 'Falta el grupo de cotizacion', participantNif: nif });
+        }
+      });
+
+      return { errors: errors, warnings: warnings };
+    }
+
+    function showValidationDialog(errors, warnings, onContinue) {
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+
+      var hasErrors = errors.length > 0;
+      var hasWarnings = warnings.length > 0;
+
+      var title = 'Validacion XML';
+      var subtitle = hasErrors
+        ? 'Corrige los errores para generar el XML'
+        : 'Hay avisos pero puedes continuar';
+
+      function buildEntryHtml(entry, borderColor, textColor) {
+        var html = '<div style="border-left:3px solid ' + borderColor + '; padding:6px 10px; margin-bottom:6px; font-size:12px; color:' + textColor + ';">';
+        html += '<strong>' + esc(entry.field) + '</strong>: ' + esc(entry.message);
+        if (entry.participantNif) {
+          html += ' <span style="color:var(--text-muted); font-size:11px;">(' + esc(entry.participantNif) + ')</span>';
+        }
+        html += '</div>';
+        return html;
+      }
+
+      var bodyHtml = '';
+      if (hasErrors) {
+        bodyHtml += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:var(--danger); margin-bottom:6px;">Errores (' + errors.length + ')</div>';
+        bodyHtml += errors.map(function(e) { return buildEntryHtml(e, 'var(--danger)', 'var(--danger)'); }).join('');
+        bodyHtml += '</div>';
+      }
+      if (hasWarnings) {
+        bodyHtml += '<div style="margin-bottom:12px;"><div style="font-size:12px; font-weight:600; color:var(--warning); margin-bottom:6px;">Avisos (' + warnings.length + ')</div>';
+        bodyHtml += warnings.map(function(w) { return buildEntryHtml(w, 'var(--warning)', 'var(--warning)'); }).join('');
+        bodyHtml += '</div>';
+      }
+
+      var buttonsHtml = '';
+      if (hasErrors) {
+        buttonsHtml = '<button class="btn btn-secondary" id="xmlValClose">Cerrar</button>';
+      } else {
+        buttonsHtml = '<button class="btn btn-secondary" id="xmlValCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="xmlValContinue">Generar igualmente</button>';
+      }
+
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:560px; width:95%; max-height:80vh; display:flex; flex-direction:column; text-align:left; padding:24px;">' +
+        '<h3 style="margin-bottom:8px;">' + esc(title) + '</h3>' +
+        '<p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">' + esc(subtitle) + '</p>' +
+        '<div style="overflow-y:auto; flex:1; margin-bottom:16px;">' + bodyHtml + '</div>' +
+        '<div class="dialog-buttons">' + buttonsHtml + '</div>' +
+        '</div>';
+
+      document.body.appendChild(overlay);
+
+      if (hasErrors) {
+        document.getElementById('xmlValClose').addEventListener('click', function() { overlay.remove(); });
+      } else {
+        document.getElementById('xmlValCancel').addEventListener('click', function() { overlay.remove(); });
+        document.getElementById('xmlValContinue').addEventListener('click', function() {
+          overlay.remove();
+          if (typeof onContinue === 'function') onContinue();
+        });
+      }
+    }
+
     // ─── 1. genXmlAccionFormativa ───
 
-    function genXmlAccionFormativa() {
-      const accion = getXmlAccion();
-      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
-      if (!accion.codigo || !accion.nombre) { showToast('La acción debe tener código y nombre', 'error'); return; }
-      if (!accion.modalidad) { showToast('La acción no tiene modalidad definida', 'error'); return; }
-      if (!accion.objetivos) { showToast('La acción no tiene objetivos definidos', 'error'); return; }
-      if (!accion.contenidos) { showToast('La acción no tiene contenidos definidos', 'error'); return; }
-
+    function doGenXmlAccionFormativa(accion) {
       const e = v => esc(String(v || ''));
       const mod = accion.modalidad;
       const horasPr = accion.horasPresenciales || '0';
@@ -5625,47 +5776,41 @@
         '</AccionesFormativas>';
 
       downloadXML(xml, 'AccionFormativa_' + accion.codigo + '.xml');
-      showToast('XML Acción Formativa generado', 'success');
+      showToast('XML Accion Formativa generado', 'success');
+    }
+
+    function genXmlAccionFormativa() {
+      const accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
+      if (!accion.modalidad) { showToast('La accion no tiene modalidad definida', 'error'); return; }
+      if (!accion.objetivos) { showToast('La accion no tiene objetivos definidos', 'error'); return; }
+      if (!accion.contenidos) { showToast('La accion no tiene contenidos definidos', 'error'); return; }
+
+      var result = validateXmlData('accionFormativa', accion, null, xmlState.participantes);
+      if (result.errors.length > 0) {
+        showValidationDialog(result.errors, result.warnings);
+        return;
+      }
+      if (result.warnings.length > 0) {
+        showValidationDialog(result.errors, result.warnings, function() { doGenXmlAccionFormativa(accion); });
+        return;
+      }
+      doGenXmlAccionFormativa(accion);
     }
 
     // ─── 2. genXmlInicioGrupo ───
 
-    function genXmlInicioGrupo() {
-      const accion = getXmlAccion();
-      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
-
-      const idGrupo = document.getElementById('xmlIdGrupo').value;
-      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
-
-      const descripcion = document.getElementById('xmlDescripcion').value;
-      if (!descripcion) { showToast('Indica la descripción del grupo', 'warning'); return; }
-
-      const responsable = document.getElementById('xmlResponsable').value;
-      if (!responsable) { showToast('Indica el responsable', 'warning'); return; }
-
-      const telefonoContacto = document.getElementById('xmlTelefono').value;
-      if (!telefonoContacto) { showToast('Indica el teléfono de contacto', 'warning'); return; }
-
+    function doGenXmlInicioGrupo(accion, grupoData) {
+      const e = v => esc(String(v || ''));
       const mod = accion.modalidad;
       const isPresencial = mod === 'Presencial' || mod === 'Mixta';
       const isTele = mod === 'Teleformación' || mod === 'Mixta';
-
-      const centro = getXmlCentro();
-      if (isPresencial && !centro) { showToast('Selecciona un centro de impartición para modalidad presencial/mixta', 'warning'); return; }
-
-      const tutor = getXmlTutor();
-      if (!tutor) { showToast('Selecciona un tutor', 'warning'); return; }
-
-      const fechaInicio = document.getElementById('xmlFechaInicio').value;
-      const fechaFin = document.getElementById('xmlFechaFin').value;
-      const horaInicio = document.getElementById('xmlHoraInicio').value;
-      const horaFin = document.getElementById('xmlHoraFin').value;
-
-      if (!fechaInicio || !fechaFin) { showToast('Indica fechas de inicio y fin', 'warning'); return; }
-      if (isPresencial && (!horaInicio || !horaFin)) { showToast('Indica horario de inicio y fin para presencial', 'warning'); return; }
-      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
-
-      const e = v => esc(String(v || ''));
+      const centro = grupoData.centro;
+      const tutor = grupoData.tutor;
+      const fechaInicio = grupoData.fechaInicio;
+      const fechaFin = grupoData.fechaFin;
+      const horaInicio = grupoData.horaInicio;
+      const horaFin = grupoData.horaFin;
 
       // Mappings for document types → XSD codes
       const centroTipoDocMap = { 'CIF': '90', 'NIF': '10', 'NIE': '60', 'Pasaporte': '20' };
@@ -5768,41 +5913,86 @@
         '<grupos>\n' +
         '  <grupo>\n' +
         '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
-        '    <idGrupo>' + e(idGrupo) + '</idGrupo>\n' +
-        '    <descripcion>' + e(descripcion) + '</descripcion>\n' +
+        '    <idGrupo>' + e(grupoData.idGrupo) + '</idGrupo>\n' +
+        '    <descripcion>' + e(grupoData.descripcion) + '</descripcion>\n' +
         '    <NumeroParticipante>' + e(String(xmlState.participantes.length)) + '</NumeroParticipante>\n' +
         '    <fechaInicio>' + e(toFundaeDate(fechaInicio)) + '</fechaInicio>\n' +
         '    <fechaFin>' + e(toFundaeDate(fechaFin)) + '</fechaFin>\n' +
-        '    <responsable>' + e(responsable) + '</responsable>\n' +
-        '    <telefonoContacto>' + e(telefonoContacto) + '</telefonoContacto>\n' +
+        '    <responsable>' + e(grupoData.responsable) + '</responsable>\n' +
+        '    <telefonoContacto>' + e(grupoData.telefonoContacto) + '</telefonoContacto>\n' +
         jornadaXml +
         teleXml +
         aulaVirtualXml +
         '  </grupo>\n' +
         '</grupos>';
 
-      downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + idGrupo + '.xml');
+      downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + grupoData.idGrupo + '.xml');
       showToast('XML Inicio de Grupo generado', 'success');
     }
 
-    // ─── 3. genXmlFinalizacion ───
-
-    function genXmlFinalizacion() {
+    function genXmlInicioGrupo() {
       const accion = getXmlAccion();
-      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
+      if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
 
       const idGrupo = document.getElementById('xmlIdGrupo').value;
       if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
 
+      const descripcion = document.getElementById('xmlDescripcion').value;
+      if (!descripcion) { showToast('Indica la descripcion del grupo', 'warning'); return; }
+
+      const responsable = document.getElementById('xmlResponsable').value;
+      if (!responsable) { showToast('Indica el responsable', 'warning'); return; }
+
+      const telefonoContacto = document.getElementById('xmlTelefono').value;
+      if (!telefonoContacto) { showToast('Indica el telefono de contacto', 'warning'); return; }
+
+      const mod = accion.modalidad;
+      const isPresencial = mod === 'Presencial' || mod === 'Mixta';
+      const isTele = mod === 'Teleformación' || mod === 'Mixta';
+
+      const centro = getXmlCentro();
+      if (isPresencial && !centro) { showToast('Selecciona un centro de imparticion para modalidad presencial/mixta', 'warning'); return; }
+
+      const tutor = getXmlTutor();
+      if (!tutor) { showToast('Selecciona un tutor', 'warning'); return; }
+
+      const fechaInicio = document.getElementById('xmlFechaInicio').value;
+      const fechaFin = document.getElementById('xmlFechaFin').value;
+      const horaInicio = document.getElementById('xmlHoraInicio').value;
+      const horaFin = document.getElementById('xmlHoraFin').value;
+
+      if (!fechaInicio || !fechaFin) { showToast('Indica fechas de inicio y fin', 'warning'); return; }
+      if (isPresencial && (!horaInicio || !horaFin)) { showToast('Indica horario de inicio y fin para presencial', 'warning'); return; }
       if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
 
-      // Validate all participants have categoriaProfesional and nivelEstudios
-      const missing = xmlState.participantes.filter(p => !p.categoriaProfesional || !p.nivelEstudios);
-      if (missing.length > 0) {
-        showToast(missing.length + ' participante' + (missing.length > 1 ? 's' : '') + ' sin categoría profesional o nivel de estudios', 'error');
+      var grupoData = {
+        idGrupo: idGrupo,
+        descripcion: descripcion,
+        responsable: responsable,
+        telefonoContacto: telefonoContacto,
+        centro: centro,
+        tutor: tutor,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+        horaInicio: horaInicio,
+        horaFin: horaFin
+      };
+
+      var result = validateXmlData('inicioGrupo', accion, grupoData, xmlState.participantes);
+      if (result.errors.length > 0) {
+        showValidationDialog(result.errors, result.warnings);
         return;
       }
+      if (result.warnings.length > 0) {
+        showValidationDialog(result.errors, result.warnings, function() { doGenXmlInicioGrupo(accion, grupoData); });
+        return;
+      }
+      doGenXmlInicioGrupo(accion, grupoData);
+    }
 
+    // ─── 3. genXmlFinalizacion ───
+
+    function doGenXmlFinalizacion(accion, idGrupo) {
       const e = v => esc(String(v || ''));
 
       const participantesXml = xmlState.participantes.map(p =>
@@ -5840,7 +6030,28 @@
         '</grupos>';
 
       downloadXML(xml, 'Finalizacion_' + accion.codigo + '_G' + idGrupo + '.xml');
-      showToast('XML Finalización de Grupo generado', 'success');
+      showToast('XML Finalizacion de Grupo generado', 'success');
+    }
+
+    function genXmlFinalizacion() {
+      const accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
+
+      const idGrupo = document.getElementById('xmlIdGrupo').value;
+      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
+
+      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
+
+      var result = validateXmlData('finalizacion', accion, null, xmlState.participantes);
+      if (result.errors.length > 0) {
+        showValidationDialog(result.errors, result.warnings);
+        return;
+      }
+      if (result.warnings.length > 0) {
+        showValidationDialog(result.errors, result.warnings, function() { doGenXmlFinalizacion(accion, idGrupo); });
+        return;
+      }
+      doGenXmlFinalizacion(accion, idGrupo);
     }
 
     // ─── Wire up XML generation buttons ───
