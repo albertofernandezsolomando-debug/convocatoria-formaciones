@@ -77,7 +77,7 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      box-shadow: 2px 0 12px rgba(15,23,42,0.03);
+      box-shadow: var(--shadow-sm);
     }
 
     /* Custom scrollbar for left panel */
@@ -85,7 +85,7 @@
     .left-panel::-webkit-scrollbar-track { background: transparent; }
     .left-panel::-webkit-scrollbar-thumb {
       background: var(--border-strong);
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
     }
 
     .app-header {
@@ -200,7 +200,7 @@
       width: 3px;
       height: 14px;
       background: var(--accent);
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
     }
 
     /* Retained for catalog form collapsible sections (Task 6) */
@@ -387,7 +387,7 @@
     .attendee-table-wrap::-webkit-scrollbar-track { background: transparent; }
     .attendee-table-wrap::-webkit-scrollbar-thumb {
       background: var(--border-strong);
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
     }
 
     .attendee-table {
@@ -455,7 +455,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 -2px 8px rgba(15,23,42,0.03);
+      box-shadow: var(--shadow-sm);
     }
 
     /* --- Shared components --- */
@@ -864,7 +864,7 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 2px 6px rgba(79,70,229,0.25);
+      box-shadow: var(--shadow-sm);
     }
 
     /* Dialog overlay for series confirmation */
@@ -953,7 +953,7 @@
     }
     .toast-success { background: var(--success); }
     .toast-error { background: var(--danger); }
-    .toast-warning { background: #b45309; }
+    .toast-warning { background: var(--warning); }
     .toast-info { background: var(--accent); }
 
     @keyframes toastIn {
@@ -4472,13 +4472,36 @@
         showToast('No hay filtros activos para guardar', 'warning');
         return;
       }
-      const name = prompt('Nombre del preset:');
-      if (!name || !name.trim()) return;
-      const presets = getPresets();
-      presets.push({ name: name.trim(), filters: JSON.parse(JSON.stringify(state.activeFilters)) });
-      savePresets(presets);
-      renderPresets();
-      showToast('Preset "' + name.trim() + '" guardado', 'success');
+      var existingOvl = document.getElementById('presetSaveOverlay');
+      if (existingOvl) existingOvl.remove();
+      var overlay = document.createElement('div');
+      overlay.id = 'presetSaveOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar preset de filtros</h3>' +
+        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre del preset</label>' +
+        '<input type="text" class="input-field" id="presetNameInput" placeholder="Ej: Fábrica Madrid" style="width:100%;">' +
+        '<div class="dialog-buttons" style="margin-top:16px;">' +
+          '<button class="link-btn link-clear" id="presetSaveCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="presetSaveConfirm">Guardar</button>' +
+        '</div>' +
+      '</div>';
+      document.body.appendChild(overlay);
+      var presetInput = document.getElementById('presetNameInput');
+      presetInput.focus();
+      function doSavePreset() {
+        var name = presetInput.value.trim();
+        if (!name) { showToast('Introduce un nombre para el preset', 'warning'); return; }
+        var presets = getPresets();
+        presets.push({ name: name, filters: JSON.parse(JSON.stringify(state.activeFilters)) });
+        savePresets(presets);
+        renderPresets();
+        overlay.remove();
+        showToast('Preset "' + name + '" guardado', 'success');
+      }
+      document.getElementById('presetSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('presetSaveConfirm').addEventListener('click', doSavePreset);
+      presetInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSavePreset(); });
     });
 
     document.addEventListener('click', () => {
@@ -4625,7 +4648,7 @@
         const isExcluded = state.excludedNIFs.has(emp._id);
         const isExternal = emp._source === 'external';
         const rowClass = !hasEmail ? 'row-no-email' : '';
-        const sourceBadge = isExternal ? ' <span class="chip" style="background:#dbeafe;">ext</span>' : '';
+        const sourceBadge = isExternal ? ' <span class="chip" style="background:var(--accent-light);">ext</span>' : '';
 
         return '<tr class="' + rowClass + '">' +
           '<td>' +
@@ -5114,6 +5137,25 @@
       document.getElementById('confirmProceed').onclick = () => {
         document.getElementById('confirmDialog').classList.remove('visible');
 
+        function doSend() {
+          if (isSeries) {
+            openSeriesSequentially(event, emails);
+            logToHistory(event, selected.length, emails, state.activeFilters);
+          } else {
+            const result = buildDeepLink(event, emails);
+            window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
+            if (result.useFallback) {
+              copyToClipboard(result.emailString).then(() => {
+                showToast('Emails copiados al portapapeles (' + emails.length + ')', 'success');
+              });
+            }
+            logToHistory(event, selected.length, emails, state.activeFilters);
+          }
+          if (document.getElementById('surveyCheck').checked) {
+            sendSurveyEmail(event, emails);
+          }
+        }
+
         // Duplicate detection
         const history = getHistory();
         const duplicate = history.find(h =>
@@ -5121,28 +5163,22 @@
         );
         if (duplicate) {
           const dupDate = new Date(duplicate.timestamp).toLocaleDateString('es-ES');
-          if (!confirm('Ya enviaste "' + event.title + '" para el ' + event.date + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + '). ¿Continuar?')) {
-            return;
-          }
-        }
-
-        if (isSeries) {
-          openSeriesSequentially(event, emails);
-          logToHistory(event, selected.length, emails, state.activeFilters);
+          var dupOverlay = document.createElement('div');
+          dupOverlay.className = 'dialog-overlay visible';
+          dupOverlay.innerHTML = '<div class="dialog-box" style="max-width:440px;">' +
+            '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--warning);">Posible duplicado</h3>' +
+            '<p style="font-size:13px; color:var(--text-secondary); line-height:1.5;">Ya enviaste <strong>' + esc(event.title) + '</strong> para el ' + esc(event.date) + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + ').</p>' +
+            '<p style="font-size:13px; color:var(--text-secondary);">¿Continuar de todos modos?</p>' +
+            '<div class="dialog-buttons" style="margin-top:16px;">' +
+              '<button class="btn btn-secondary" id="dupCancel">Cancelar</button>' +
+              '<button class="btn btn-primary" id="dupProceed">Continuar</button>' +
+            '</div>' +
+          '</div>';
+          document.body.appendChild(dupOverlay);
+          document.getElementById('dupCancel').addEventListener('click', function() { dupOverlay.remove(); });
+          document.getElementById('dupProceed').addEventListener('click', function() { dupOverlay.remove(); doSend(); });
         } else {
-          const result = buildDeepLink(event, emails);
-          window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
-          if (result.useFallback) {
-            copyToClipboard(result.emailString).then(() => {
-              showToast('Emails copiados al portapapeles (' + emails.length + ')', 'success');
-            });
-          }
-          logToHistory(event, selected.length, emails, state.activeFilters);
-        }
-
-        // Send survey if enabled
-        if (document.getElementById('surveyCheck').checked) {
-          sendSurveyEmail(event, emails);
+          doSend();
         }
       };
 
@@ -6104,8 +6140,8 @@
           '</select></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:11px; padding:3px 6px; width:140px;"></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:11px; padding:3px 6px; width:100px;"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingCat ? ' background:rgba(220,38,38,0.1); border-color:var(--danger);' : '') + '"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingNivel ? ' background:rgba(220,38,38,0.1); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingCat ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingNivel ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:11px; padding:3px 6px; width:40px;"></td>' +
           '<td style="padding:6px;"><select class="input-field" data-field="diploma" data-idx="' + idx + '" style="font-size:11px; padding:3px 6px;">' +
             '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
