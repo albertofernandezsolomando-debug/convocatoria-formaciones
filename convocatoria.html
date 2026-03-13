@@ -11808,6 +11808,20 @@
       showToast('Ficha exportada: Ficha_' + nif + '.xlsx', 'success');
     }
 
+    // ═══════════════════════════════════
+    // ESCAPE KEY CLOSES DIALOGS
+    // ═══════════════════════════════════
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var dialogs = document.querySelectorAll('.dialog-overlay.visible');
+        if (dialogs.length > 0) {
+          var last = dialogs[dialogs.length - 1];
+          last.classList.remove('visible');
+          e.preventDefault();
+        }
+      }
+    });
+
   </script>
 </body>
 </html>
