@@ -1197,15 +1197,13 @@
       min-width: 0;
       opacity: 0;
       transform: translateY(12px);
-      animation: dashFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 0.3s;
     }
-    .dash-chart-row:nth-child(4) .dash-card { animation-delay: 0.35s; }
-    .dash-chart-row:nth-child(4) .dash-card:nth-child(2) { animation-delay: 0.40s; }
-    .dash-chart-row:nth-child(5) .dash-card { animation-delay: 0.45s; }
-    .dash-chart-row:nth-child(5) .dash-card:nth-child(2) { animation-delay: 0.50s; }
-    .dash-chart-row:nth-child(6) .dash-card { animation-delay: 0.55s; }
-    .dash-chart-row:nth-child(6) .dash-card:nth-child(2) { animation-delay: 0.60s; }
+    .dash-card-visible {
+      animation: dashCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes dashCardIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     .dash-card:hover {
       box-shadow: var(--shadow-lg);
@@ -1219,6 +1217,30 @@
       margin-bottom: 16px;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dash-card-title::after {
+      content: '\25BE';
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: transform var(--transition);
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    .dash-card.collapsed .dash-card-title::after {
+      transform: rotate(-90deg);
+    }
+    .dash-card.collapsed .dash-card-title {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .dash-card.collapsed > *:not(.dash-card-title) {
+      display: none;
     }
 
     /* ═══ Calendar Tab ═══ */
@@ -1881,6 +1903,103 @@
     @keyframes dashFadeUp {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dash-mode-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .dash-mode-btn {
+      padding: 4px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      border: none;
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .dash-mode-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .dash-nav {
+      display: flex;
+      gap: 4px;
+      padding: 8px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .dash-nav-btn {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      white-space: nowrap;
+    }
+    .dash-nav-btn:hover, .dash-nav-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Shared analytics module classes */
+    .dash-module-kpi-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .dash-module-kpi { flex: 1; text-align: center; padding: 8px; background: var(--bg-input); border-radius: var(--radius-sm); }
+    .dash-module-kpi-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .dash-module-kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .dash-module-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+    .dash-module-table th { text-align: left; padding: 4px 6px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .dash-module-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+    .dash-module-summary { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .dash-module-chip { font-size: 10px; padding: 3px 8px; border-radius: var(--radius-lg); background: var(--bg-input); color: var(--text-secondary); }
+    .dash-module-footer { font-size: 10px; color: var(--text-muted); margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .dash-module-empty { text-align: center; color: var(--text-muted); padding: 24px; font-size: 13px; }
+    .dash-module-section { margin-top: 12px; }
+    .dash-module-section-title { font-size: 11px; font-weight: 600; margin-bottom: 6px; }
+
+    .dash-section-heading {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin: 24px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      grid-column: 1 / -1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dash-kpi, .dash-card {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .dash-completeness-fill.dash-pulse {
+        animation: none !important;
+      }
+      .dash-completeness-fill {
+        transition: none !important;
+      }
+    }
+
+    @media (max-width: 1200px) and (min-width: 901px) {
+      .dash-chart-row { grid-template-columns: 1fr; }
+      .dash-card { padding: 16px; }
     }
 
     @media (max-width: 900px) {
@@ -2703,28 +2822,22 @@
     </div>
     <div class="dash-container" id="dashContainer">
       <!-- Header -->
-      <div class="dash-header">
+      <div class="dash-header" style="flex-wrap:wrap; gap:8px;">
         <h2>Cuadro de Mando</h2>
-        <span class="dash-header-time" id="dashLastUpdate"></span>
+        <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:wrap;">
+          <div class="dash-mode-toggle" id="dashModeToggle">
+            <button class="dash-mode-btn active" data-mode="completo">Completo</button>
+            <button class="dash-mode-btn" data-mode="resumen">Resumen</button>
+          </div>
+          <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:200px; font-size:12px; padding:4px 10px;">
+          <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:11px; padding:4px 10px;">Buscar</button>
+          <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:11px; padding:4px 10px;">Exportar</button>
+          <span class="dash-header-time" id="dashLastUpdate"></span>
+        </div>
       </div>
 
-      <!-- Dashboard nav -->
-      <div class="dash-nav" id="dashNav">
-        <button class="dash-nav-btn active" data-section="dashKpis">KPIs</button>
-        <button class="dash-nav-btn" data-section="dashAlertsWidget">Alertas</button>
-        <button class="dash-nav-btn" data-section="dashCreditChart">Crédito</button>
-        <button class="dash-nav-btn" data-section="dashEstadoChart">Estado</button>
-        <button class="dash-nav-btn" data-section="dashCompletenessChart">FUNDAE</button>
-        <button class="dash-nav-btn" data-section="dashSeasonality">Analytics</button>
-      </div>
-
-      <!-- Employee search + Export -->
-      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
-        <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:300px; font-size:13px;">
-        <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
-        <div style="flex:1;"></div>
-        <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
-      </div>
+      <!-- Sticky section navigator -->
+      <div class="dash-nav" id="dashNav"></div>
 
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
@@ -2740,30 +2853,45 @@
       </div>
 
       <!-- Plazos FUNDAE -->
-      <div class="dash-card" id="dashPlazosFundae" style="display:none; margin-bottom:16px;">
+      <div class="dash-card" id="dashPlazosFundae" data-card-id="plazos" style="display:none; margin-bottom:16px;">
         <div class="dash-card-title">Plazos FUNDAE</div>
         <div id="dashPlazosList"></div>
       </div>
 
+      <!-- Completeness (actionable, right after plazos) -->
+      <div class="dash-card" data-card-id="completitud" style="margin-bottom:16px;">
+        <div class="dash-card-title">Completitud del catálogo</div>
+        <div id="dashCompletenessChart"></div>
+      </div>
+
+      <!-- Section: Vision general -->
+      <div id="dash-group-general">
+      <div class="dash-section-heading">Vision general</div>
+
       <!-- Charts row 1: Credit + Estado donut -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="credito">
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
           <div id="dashCreditChart"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="estado">
           <div class="dash-card-title">Acciones por estado</div>
           <div id="dashEstadoChart"></div>
         </div>
       </div>
+      </div>
+
+      <!-- Section: Distribucion operativa -->
+      <div id="dash-group-operativo">
+      <div class="dash-section-heading">Distribucion operativa</div>
 
       <!-- Charts row 2: Gasto por proveedor + Modalidad -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="proveedor">
           <div class="dash-card-title">Gasto por proveedor</div>
           <div id="dashProveedorChart"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="modalidad">
           <div class="dash-card-title">Horas por modalidad</div>
           <div id="dashModalidadChart"></div>
         </div>
@@ -2771,31 +2899,29 @@
 
       <!-- Charts row 3: Area + Department -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="area">
           <div class="dash-card-title">Acciones por área profesional</div>
           <div id="dashAreaChart"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="departamento">
           <div class="dash-card-title">Acciones por departamento</div>
           <div id="dashDeptChart"></div>
         </div>
       </div>
 
-      <!-- Charts row 4: Completeness -->
-      <div class="dash-chart-row">
-        <div class="dash-card">
-          <div class="dash-card-title">Completitud del catálogo</div>
-          <div id="dashCompletenessChart"></div>
-        </div>
       </div>
+
+      <!-- Section: Personas y participacion -->
+      <div id="dash-group-personas">
+      <div class="dash-section-heading">Personas y participacion</div>
 
       <!-- Charts row 5: Attendance + Confirmations -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="asistencia">
           <div class="dash-card-title">Monitor de asistencia y abandono</div>
           <div id="dashAttendance"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="confirmaciones">
           <div class="dash-card-title">Efectividad de confirmaciones</div>
           <div id="dashConfirmations"></div>
         </div>
@@ -2803,39 +2929,47 @@
 
       <!-- Charts row 6: Seasonality + Recurrence -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="estacionalidad">
           <div class="dash-card-title">Estacionalidad formativa</div>
           <div id="dashSeasonality"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="recurrencia">
           <div class="dash-card-title">Recurrencia de participantes</div>
           <div id="dashRecurrence"></div>
         </div>
       </div>
+      </div>
 
-      <!-- Charts row 7: Survey Coverage + Gestor Activity -->
+      <!-- Section: Calidad y proveedores -->
+      <div id="dash-group-calidad">
+      <div class="dash-section-heading">Calidad y proveedores</div>
+
+      <!-- Charts row 7: Survey Coverage + Scorecard -->
       <div class="dash-chart-row">
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="encuestas">
           <div class="dash-card-title">Cobertura de encuestas</div>
           <div id="dashSurveyCoverage"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-card-id="scorecard">
+          <div class="dash-card-title">Scorecard de proveedores</div>
+          <div id="dashProviderScorecard"></div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Section: Actividad del gestor -->
+      <div id="dash-group-gestor">
+      <div class="dash-section-heading">Actividad del gestor</div>
+
+      <!-- Gestor Activity -->
+      <div class="dash-chart-row" style="grid-template-columns:1fr;">
+        <div class="dash-card" data-card-id="gestor">
           <div class="dash-card-title">Productividad del gestor</div>
           <div id="dashGestorActivity"></div>
         </div>
       </div>
-
-      <!-- Charts row 8: Provider Scorecard -->
-      <div class="dash-card" style="margin-bottom:16px;">
-        <div class="dash-card-title">Scorecard de proveedores</div>
-        <div id="dashProviderScorecard"></div>
       </div>
 
-      <!-- Training load chart -->
-      <div class="dash-card" style="margin-bottom:16px;">
-        <div class="dash-card-title">Carga formativa por mes</div>
-        <canvas id="trainingLoadCanvas" height="200" style="width: 100%; background: var(--bg-panel); border-radius: var(--radius);"></canvas>
-      </div>
 
     </div>
   </div>
@@ -2855,6 +2989,7 @@
   </div>
 
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
+  <div id="dashTooltip" style="position:fixed;pointer-events:none;z-index:200;background:var(--bg-panel);border:1px solid var(--border);box-shadow:var(--shadow-lg);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;display:none;color:var(--text-primary);max-width:220px;"></div>
 
   <!-- Series dialog -->
   <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true">
@@ -9148,6 +9283,11 @@
         el.textContent = prefix + end + suffix;
         return;
       }
+      // Respect prefers-reduced-motion
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.textContent = prefix + end.toLocaleString('es-ES') + suffix;
+        return;
+      }
       var start = 0;
       var startTime = null;
       function step(timestamp) {
@@ -9191,6 +9331,28 @@
      * @param {Array} items - [{label, value, color?, secondaryValue?, secondaryColor?}]
      * @param {Object} opts - {maxValue, valueFormatter, labelWidth, footnote}
      */
+    function showDashTooltip(e, html) {
+      var tip = document.getElementById('dashTooltip');
+      if (!tip) return;
+      tip.textContent = '';
+      // Use textContent for safety; if caller needs html, they build DOM elements
+      if (typeof html === 'string') {
+        tip.textContent = html;
+      }
+      tip.style.display = 'block';
+      var x = e.clientX + 12;
+      var y = e.clientY - 8;
+      // Keep within viewport
+      if (x + 220 > window.innerWidth) x = e.clientX - 220;
+      if (y + 40 > window.innerHeight) y = e.clientY - 40;
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }
+    function hideDashTooltip() {
+      var tip = document.getElementById('dashTooltip');
+      if (tip) tip.style.display = 'none';
+    }
+
     function renderSvgBarChart(containerId, items, opts) {
       opts = opts || {};
       var container = document.getElementById(containerId);
@@ -9260,6 +9422,19 @@
           val.textContent = formatter(total);
         }
         row.appendChild(val);
+
+        // Tooltip on hover
+        (function(itemRef, total, maxV, fmt) {
+          row.addEventListener('mouseenter', function(e) {
+            var pct = maxV > 0 ? Math.round((total / maxV) * 100) : 0;
+            showDashTooltip(e, itemRef.label + ': ' + fmt(total) + ' (' + pct + '%)');
+          });
+          row.addEventListener('mousemove', function(e) {
+            var pct = maxV > 0 ? Math.round((total / maxV) * 100) : 0;
+            showDashTooltip(e, itemRef.label + ': ' + fmt(total) + ' (' + pct + '%)');
+          });
+          row.addEventListener('mouseleave', hideDashTooltip);
+        })(item, total, maxVal, formatter);
 
         container.appendChild(row);
       });
@@ -9355,8 +9530,20 @@
           'stroke-dasharray': dashLen + ' ' + dashGap,
           'stroke-dashoffset': -offset,
           'class': 'dash-donut-segment',
-          'transform': 'rotate(-90 ' + cx + ' ' + cy + ')'
+          'transform': 'rotate(-90 ' + cx + ' ' + cy + ')',
+          'style': 'cursor:pointer;'
         });
+        // Tooltip on hover
+        (function(it, tot) {
+          var pctStr = tot > 0 ? Math.round((it.value / tot) * 100) + '%' : '0%';
+          circle.addEventListener('mouseenter', function(e) {
+            showDashTooltip(e, it.label + ': ' + it.value + ' (' + pctStr + ')');
+          });
+          circle.addEventListener('mousemove', function(e) {
+            showDashTooltip(e, it.label + ': ' + it.value + ' (' + pctStr + ')');
+          });
+          circle.addEventListener('mouseleave', hideDashTooltip);
+        })(item, total);
         svg.appendChild(circle);
         offset += dashLen;
       });
@@ -9434,6 +9621,15 @@
 
         var row = document.createElement('div');
         row.className = 'dash-completeness-row';
+        if (pct < 100) {
+          row.style.cursor = 'pointer';
+          row.title = 'Ver acciones sin ' + item.label;
+          row.addEventListener('click', function() {
+            var catalogBtn = document.querySelector('.tab-btn[data-tab="tabCatalogos"]');
+            if (catalogBtn) catalogBtn.click();
+            showToast('Filtra por acciones sin ' + item.label + ' en el catalogo', 'info');
+          });
+        }
 
         var lbl = document.createElement('span');
         lbl.className = 'dash-completeness-label';
@@ -9470,95 +9666,7 @@
      * Main dashboard render function. Computes all stats from catalogs
      * and renders KPIs, alerts, and charts using inline SVG.
      */
-    function renderTrainingLoadChart() {
-      var canvas = document.getElementById('trainingLoadCanvas');
-      if (!canvas) return;
-      var ctx = canvas.getContext('2d');
-      var rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-      // Agrupar acciones por mes
-      var acciones = getCatalog('acciones');
-      var monthData = {};
-      acciones.forEach(function(a) {
-        var fecha = a.fechaInicio;
-        if (!fecha) return;
-        var d = new Date(fecha);
-        if (isNaN(d.getTime())) return;
-        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        if (!monthData[key]) monthData[key] = { count: 0, hours: 0 };
-        monthData[key].count++;
-        monthData[key].hours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
-      });
-
-      var months = Object.keys(monthData).sort();
-      if (!months.length) {
-        ctx.fillStyle = DS.textMuted;
-        ctx.font = '13px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Sin datos de acciones formativas', rect.width / 2, rect.height / 2);
-        return;
-      }
-
-      var maxCount = Math.max.apply(null, months.map(function(m) { return monthData[m].count; }));
-      var padding = { top: 20, right: 20, bottom: 40, left: 50 };
-      var chartW = rect.width - padding.left - padding.right;
-      var chartH = rect.height - padding.top - padding.bottom;
-      var barW = Math.min(40, chartW / months.length * 0.6);
-      var gap = chartW / months.length;
-      var monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-      // Ejes
-      ctx.strokeStyle = DS.border;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, padding.top);
-      ctx.lineTo(padding.left, padding.top + chartH);
-      ctx.lineTo(padding.left + chartW, padding.top + chartH);
-      ctx.stroke();
-
-      // Barras
-      months.forEach(function(m, i) {
-        var d = monthData[m];
-        var h = maxCount > 0 ? (d.count / maxCount) * chartH : 0;
-        var x = padding.left + i * gap + gap / 2 - barW / 2;
-        var y = padding.top + chartH - h;
-
-        // Bar with rounded top
-        ctx.fillStyle = DS.accent;
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(x, y, barW, h, [4, 4, 0, 0]);
-        } else {
-          ctx.rect(x, y, barW, h);
-        }
-        ctx.fill();
-
-        // Label mes
-        ctx.fillStyle = DS.textMuted;
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        var parts = m.split('-');
-        ctx.fillText(monthNames[parseInt(parts[1], 10) - 1], x + barW / 2, padding.top + chartH + 16);
-
-        // Valor encima
-        ctx.fillStyle = DS.textSecondary;
-        ctx.font = '11px Inter, sans-serif';
-        ctx.fillText(String(d.count), x + barW / 2, y - 6);
-      });
-
-      // Label eje Y
-      ctx.save();
-      ctx.fillStyle = DS.textMuted;
-      ctx.font = '10px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.translate(14, padding.top + chartH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText('Acciones', 0, 0);
-      ctx.restore();
-    }
+    // renderTrainingLoadChart removed — superseded by SVG seasonality chart
 
     // ═══════════════════════════════════
     // ANALYTICS MODULE 1: Attendance & Abandonment Monitor
@@ -9631,7 +9739,9 @@
         // Only draw line chart for multi-session actions
         if (sesiones.length > 1) {
           var chartLabel = document.createElement('div');
-          chartLabel.style.cssText = 'font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:6px; margin-top:12px;';
+          chartLabel.className = 'dash-module-section-title';
+          chartLabel.style.marginTop = '12px';
+          chartLabel.style.color = 'var(--text-primary)';
           chartLabel.textContent = esc(a.nombre || a.codigo || '');
           container.appendChild(chartLabel);
 
@@ -9711,35 +9821,53 @@
       var avgAttendance = totalSesiones > 0 ? Math.round((totalPresentes / totalSesiones) * 100) : 0;
 
       var kpiRow = document.createElement('div');
-      kpiRow.style.cssText = 'display:flex; gap:16px; margin-bottom:12px;';
-      var kpi1 = document.createElement('div');
-      kpi1.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
-      kpi1.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + avgAttendance + '%</div><div style="font-size:11px; color:var(--text-muted);">Asistencia media</div>';
-      var kpi2 = document.createElement('div');
-      kpi2.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
-      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div style="font-size:11px; color:var(--text-muted);">Acciones con registro</div>';
-      var kpi3 = document.createElement('div');
-      kpi3.style.cssText = 'flex:1; text-align:center; padding:8px; background:' + (abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)') + '; border-radius:var(--radius-sm);';
-      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div style="font-size:11px; color:var(--text-muted);">Alertas de abandono</div>';
-      kpiRow.appendChild(kpi1);
-      kpiRow.appendChild(kpi2);
-      kpiRow.appendChild(kpi3);
+      kpiRow.className = 'dash-module-kpi-row';
+
+      function makeModuleKpi(val, label, bgOverride, colorOverride) {
+        var el = document.createElement('div');
+        el.className = 'dash-module-kpi';
+        if (bgOverride) el.style.background = bgOverride;
+        var valEl = document.createElement('div');
+        valEl.className = 'dash-module-kpi-value';
+        if (colorOverride) valEl.style.color = colorOverride;
+        valEl.textContent = val;
+        var lblEl = document.createElement('div');
+        lblEl.className = 'dash-module-kpi-label';
+        lblEl.textContent = label;
+        el.appendChild(valEl);
+        el.appendChild(lblEl);
+        return el;
+      }
+
+      kpiRow.appendChild(makeModuleKpi(avgAttendance + '%', 'Asistencia media'));
+      kpiRow.appendChild(makeModuleKpi(accionesConAsistencia.length, 'Acciones con registro'));
+      kpiRow.appendChild(makeModuleKpi(abandonmentAlerts.length, 'Alertas de abandono',
+        abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)',
+        abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)'));
       container.insertBefore(kpiRow, container.firstChild);
 
       // Abandonment alerts table
       if (abandonmentAlerts.length > 0) {
         abandonmentAlerts.sort(function(a, b) { return a.pct - b.pct; });
         var alertSection = document.createElement('div');
-        alertSection.style.cssText = 'margin-top:12px;';
+        alertSection.className = 'dash-module-section';
         var alertTitle = document.createElement('div');
-        alertTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:6px;';
+        alertTitle.className = 'dash-module-section-title';
+        alertTitle.style.color = 'var(--danger)';
         alertTitle.textContent = 'Participantes con asistencia < 75%';
         alertSection.appendChild(alertTitle);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.className = 'dash-module-table';
         var thead = document.createElement('thead');
-        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">NIF</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Sesiones</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">%</th></tr>';
+        var headTr = document.createElement('tr');
+        ['Accion', 'NIF', 'Sesiones', '%'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          if (h === 'Sesiones' || h === '%') th.style.textAlign = 'center';
+          headTr.appendChild(th);
+        });
+        thead.appendChild(headTr);
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -9747,10 +9875,12 @@
         for (var i = 0; i < maxAlerts; i++) {
           var alert = abandonmentAlerts[i];
           var tr = document.createElement('tr');
-          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var td1 = document.createElement('td');
-          td1.style.cssText = 'padding:4px 6px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+          td1.style.maxWidth = '120px';
+          td1.style.overflow = 'hidden';
+          td1.style.textOverflow = 'ellipsis';
+          td1.style.whiteSpace = 'nowrap';
           td1.textContent = alert.accion;
           td1.title = alert.accion;
 
@@ -9759,11 +9889,13 @@
           td2.textContent = esc(alert.nif);
 
           var td3 = document.createElement('td');
-          td3.style.cssText = 'padding:4px 6px; text-align:center;';
+          td3.style.textAlign = 'center';
           td3.textContent = alert.attended + '/' + alert.totalSessions;
 
           var td4 = document.createElement('td');
-          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:var(--danger);';
+          td4.style.textAlign = 'center';
+          td4.style.fontWeight = '600';
+          td4.style.color = 'var(--danger)';
           td4.textContent = alert.pct + '%';
 
           tr.appendChild(td1);
@@ -9777,8 +9909,9 @@
 
         if (abandonmentAlerts.length > 10) {
           var more = document.createElement('div');
-          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
-          more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' más)';
+          more.className = 'dash-module-footer';
+          more.style.borderTop = 'none';
+          more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' mas)';
           alertSection.appendChild(more);
         }
         container.appendChild(alertSection);
@@ -9858,16 +9991,24 @@
 
       if (worstActions.length > 0) {
         var section = document.createElement('div');
-        section.style.cssText = 'margin-top:12px;';
+        section.className = 'dash-module-section';
         var title = document.createElement('div');
-        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--warning); margin-bottom:6px;';
-        title.textContent = 'Acciones con tasa de confirmación < 80%';
+        title.className = 'dash-module-section-title';
+        title.style.color = 'var(--warning)';
+        title.textContent = 'Acciones con tasa de confirmacion < 80%';
         section.appendChild(title);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.className = 'dash-module-table';
         var thead = document.createElement('thead');
-        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Conf.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Rech.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Tasa</th></tr>';
+        var htr = document.createElement('tr');
+        ['Accion', 'Conf.', 'Rech.', 'Tasa'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          if (h !== 'Accion') th.style.textAlign = 'center';
+          htr.appendChild(th);
+        });
+        thead.appendChild(htr);
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -9875,23 +10016,29 @@
         for (var i = 0; i < maxItems; i++) {
           var st = worstActions[i];
           var tr = document.createElement('tr');
-          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var td1 = document.createElement('td');
-          td1.style.cssText = 'padding:4px 6px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+          td1.style.maxWidth = '130px';
+          td1.style.overflow = 'hidden';
+          td1.style.textOverflow = 'ellipsis';
+          td1.style.whiteSpace = 'nowrap';
           td1.textContent = st.nombre;
           td1.title = st.nombre;
 
           var td2 = document.createElement('td');
-          td2.style.cssText = 'padding:4px 6px; text-align:center; color:var(--success);';
+          td2.style.textAlign = 'center';
+          td2.style.color = 'var(--success)';
           td2.textContent = st.confirmado;
 
           var td3 = document.createElement('td');
-          td3.style.cssText = 'padding:4px 6px; text-align:center; color:var(--danger);';
+          td3.style.textAlign = 'center';
+          td3.style.color = 'var(--danger)';
           td3.textContent = st.rechazado;
 
           var td4 = document.createElement('td');
-          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:' + (st.confirmRate < 50 ? 'var(--danger)' : 'var(--warning)') + ';';
+          td4.style.textAlign = 'center';
+          td4.style.fontWeight = '600';
+          td4.style.color = st.confirmRate < 50 ? 'var(--danger)' : 'var(--warning)';
           td4.textContent = st.confirmRate + '%';
 
           tr.appendChild(td1);
@@ -9921,10 +10068,11 @@
       var deptKeys = Object.keys(deptConfirm).filter(function(k) { return deptConfirm[k].total > 0; });
       if (deptKeys.length > 1) {
         var deptSection = document.createElement('div');
-        deptSection.style.cssText = 'margin-top:10px;';
+        deptSection.className = 'dash-module-section';
         var deptTitle = document.createElement('div');
-        deptTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
-        deptTitle.textContent = 'Confirmación por departamento';
+        deptTitle.className = 'dash-module-section-title';
+        deptTitle.style.color = 'var(--text-secondary)';
+        deptTitle.textContent = 'Confirmacion por departamento';
         deptSection.appendChild(deptTitle);
 
         deptKeys.sort(function(a, b) {
@@ -10086,11 +10234,11 @@
 
       // Summary row
       var summary = document.createElement('div');
-      summary.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
+      summary.className = 'dash-module-summary';
 
       var chips = [
         { label: 'Pico', value: peakMonth.label + ' (' + peakMonth.count + ')', color: 'var(--accent)' },
-        { label: 'Concentración', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
+        { label: 'Concentracion', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
       ];
       if (valleyMonths.length > 0) {
         chips.push({ label: 'Sin actividad', value: valleyMonths.map(function(v) { return v.label; }).join(', '), color: 'var(--text-muted)' });
@@ -10098,8 +10246,12 @@
 
       chips.forEach(function(chip) {
         var el = document.createElement('span');
-        el.style.cssText = 'font-size:10px; padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
-        el.innerHTML = '<span style="font-weight:600; color:' + chip.color + ';">' + esc(chip.label) + ':</span> ' + esc(chip.value);
+        el.className = 'dash-module-chip';
+        var strong = document.createElement('strong');
+        strong.style.color = chip.color;
+        strong.textContent = chip.label + ':';
+        el.appendChild(strong);
+        el.appendChild(document.createTextNode(' ' + chip.value));
         summary.appendChild(el);
       });
       container.appendChild(summary);
@@ -10107,8 +10259,15 @@
       // Totals footer
       var avgHoursPerAction = totalCount > 0 ? (totalHours / totalCount).toFixed(1) : '0';
       var footerRow = document.createElement('div');
-      footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:10px; color:var(--text-muted);';
-      footerRow.innerHTML = '<span>' + totalCount + ' acciones en total</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
+      footerRow.className = 'dash-module-footer';
+      footerRow.style.display = 'flex';
+      footerRow.style.gap = '16px';
+      var footerItems = [totalCount + ' acciones en total', Math.round(totalHours) + 'h totales', 'Media: ' + avgHoursPerAction + 'h/accion'];
+      footerItems.forEach(function(txt) {
+        var sp = document.createElement('span');
+        sp.textContent = txt;
+        footerRow.appendChild(sp);
+      });
       container.appendChild(footerRow);
     }
 
@@ -10179,7 +10338,7 @@
 
       // KPI row
       var kpiRow = document.createElement('div');
-      kpiRow.style.cssText = 'display:flex; gap:10px; margin-bottom:10px;';
+      kpiRow.className = 'dash-module-kpi-row';
 
       var kpiItems = [
         { val: nifs.length, label: 'Participantes', color: 'var(--text-primary)' },
@@ -10188,8 +10347,16 @@
       ];
       kpiItems.forEach(function(kpi) {
         var el = document.createElement('div');
-        el.style.cssText = 'flex:1; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
-        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        el.className = 'dash-module-kpi';
+        var valEl = document.createElement('div');
+        valEl.className = 'dash-module-kpi-value';
+        valEl.style.color = kpi.color;
+        valEl.textContent = kpi.val;
+        var lblEl = document.createElement('div');
+        lblEl.className = 'dash-module-kpi-label';
+        lblEl.textContent = kpi.label;
+        el.appendChild(valEl);
+        el.appendChild(lblEl);
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -10242,6 +10409,23 @@
         svg.appendChild(xAxisLabel);
 
         container.appendChild(svg);
+
+        // Color legend for histogram
+        var legend = document.createElement('div');
+        legend.className = 'dash-module-summary';
+        var legendItems = [
+          { label: '1-2 acc.', color: 'var(--success)' },
+          { label: '3-5 acc.', color: 'var(--accent)' },
+          { label: '6+ acc.', color: '#8B5CF6' }
+        ];
+        legendItems.forEach(function(li) {
+          var chip = document.createElement('span');
+          chip.className = 'dash-module-chip';
+          chip.style.borderLeft = '3px solid ' + li.color;
+          chip.textContent = li.label;
+          legend.appendChild(chip);
+        });
+        container.appendChild(legend);
       }
 
       // Build NIF-to-name map from employees for name resolution
@@ -10259,27 +10443,31 @@
       // Top 10 table
       if (top10.length > 0) {
         var tableSection = document.createElement('div');
-        tableSection.style.cssText = 'margin-top:8px;';
+        tableSection.className = 'dash-module-section';
         var tableTitle = document.createElement('div');
-        tableTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:4px;';
-        tableTitle.textContent = 'Top 10 más formados';
+        tableTitle.className = 'dash-module-section-title';
+        tableTitle.style.color = 'var(--text-primary)';
+        tableTitle.textContent = 'Top 10 mas formados';
         tableSection.appendChild(tableTitle);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.className = 'dash-module-table';
         var tbody = document.createElement('tbody');
         top10.forEach(function(item, idx) {
           var tr = document.createElement('tr');
-          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var tdRank = document.createElement('td');
-          tdRank.style.cssText = 'padding:3px 6px; color:var(--text-muted); width:20px;';
+          tdRank.style.color = 'var(--text-muted)';
+          tdRank.style.width = '20px';
           tdRank.textContent = (idx + 1) + '.';
 
           var tdName = document.createElement('td');
           var resolvedName = nifNameMap[item.nif];
           if (resolvedName) {
-            tdName.style.cssText = 'padding:3px 6px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+            tdName.style.maxWidth = '140px';
+            tdName.style.overflow = 'hidden';
+            tdName.style.textOverflow = 'ellipsis';
+            tdName.style.whiteSpace = 'nowrap';
             tdName.textContent = esc(resolvedName);
             tdName.title = resolvedName + ' (' + item.nif + ')';
           } else {
@@ -10288,7 +10476,9 @@
           }
 
           var tdCount = document.createElement('td');
-          tdCount.style.cssText = 'padding:3px 6px; text-align:right; font-weight:600; color:var(--accent);';
+          tdCount.style.textAlign = 'right';
+          tdCount.style.fontWeight = '600';
+          tdCount.style.color = 'var(--accent)';
           tdCount.textContent = item.count + ' acc.';
 
           tr.appendChild(tdRank);
@@ -10355,34 +10545,48 @@
 
       // KPI
       var kpiEl = document.createElement('div');
-      kpiEl.style.cssText = 'text-align:center; margin-bottom:12px; padding:10px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      kpiEl.className = 'dash-module-kpi';
+      kpiEl.style.marginBottom = '12px';
       var kpiColor = coveragePct >= 75 ? 'var(--success)' : (coveragePct >= 50 ? 'var(--warning)' : 'var(--danger)');
-      kpiEl.innerHTML = '<div style="font-size:28px; font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:11px; color:var(--text-muted);">Cobertura de encuestas</div>';
+      var kpiValEl = document.createElement('div');
+      kpiValEl.className = 'dash-module-kpi-value';
+      kpiValEl.style.fontSize = '28px';
+      kpiValEl.style.color = kpiColor;
+      kpiValEl.textContent = coveragePct + '%';
+      var kpiLblEl = document.createElement('div');
+      kpiLblEl.className = 'dash-module-kpi-label';
+      kpiLblEl.textContent = 'Cobertura de encuestas';
+      kpiEl.appendChild(kpiValEl);
+      kpiEl.appendChild(kpiLblEl);
       container.appendChild(kpiEl);
 
-      // Donut
-      var donutItems = [
-        { label: 'Con encuesta', value: withSurvey, color: '#10B981' },
-        { label: 'Sin encuesta', value: withoutSurvey.length, color: '#EF4444' }
-      ].filter(function(i) { return i.value > 0; });
-
-      // Create a temp container for the donut
-      var donutWrap = document.createElement('div');
-      donutWrap.id = 'dashSurveyCoverageDonut_' + Date.now();
-      container.appendChild(donutWrap);
-
-      // Render donut using the temp id
-      renderSvgDonut(donutWrap.id, donutItems, {
-        centerLabel: 'Terminadas',
-        centerValue: completedActions.length
-      });
+      // Compact progress bar instead of donut
+      var progressWrap = document.createElement('div');
+      progressWrap.style.cssText = 'margin-bottom:12px;';
+      var progressTrack = document.createElement('div');
+      progressTrack.style.cssText = 'height:8px; background:var(--bg-input); border-radius:var(--radius-sm); overflow:hidden;';
+      var progressFill = document.createElement('div');
+      progressFill.style.cssText = 'height:100%; border-radius:var(--radius-sm); transition:width 0.8s cubic-bezier(0.4,0,0.2,1); background:' + kpiColor + '; width:' + coveragePct + '%;';
+      progressTrack.appendChild(progressFill);
+      progressWrap.appendChild(progressTrack);
+      var progressLabel = document.createElement('div');
+      progressLabel.style.cssText = 'display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px;';
+      var plLeft = document.createElement('span');
+      plLeft.textContent = withSurvey + ' con encuesta';
+      var plRight = document.createElement('span');
+      plRight.textContent = withoutSurvey.length + ' sin encuesta';
+      progressLabel.appendChild(plLeft);
+      progressLabel.appendChild(plRight);
+      progressWrap.appendChild(progressLabel);
+      container.appendChild(progressWrap);
 
       // List of pending actions
       if (withoutSurvey.length > 0) {
         var section = document.createElement('div');
-        section.style.cssText = 'margin-top:10px;';
+        section.className = 'dash-module-section';
         var title = document.createElement('div');
-        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:4px;';
+        title.className = 'dash-module-section-title';
+        title.style.color = 'var(--danger)';
         title.textContent = 'Acciones terminadas sin encuesta (' + withoutSurvey.length + ')';
         section.appendChild(title);
 
@@ -10478,10 +10682,11 @@
 
       // KPI row
       var kpiRow = document.createElement('div');
-      kpiRow.style.cssText = 'display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;';
+      kpiRow.className = 'dash-module-kpi-row';
+      kpiRow.style.flexWrap = 'wrap';
 
       var kpis = [
-        { val: sends.length, label: 'Envíos totales', color: 'var(--accent)' },
+        { val: sends.length, label: 'Envios totales', color: 'var(--accent)' },
         { val: sendsThisWeek, label: 'Esta semana', color: 'var(--success)' },
         { val: avgPerMonth, label: 'Media/mes activo', color: 'var(--text-primary)' },
         { val: activeActions, label: 'Acciones activas', color: 'var(--warning)' }
@@ -10489,8 +10694,17 @@
 
       kpis.forEach(function(kpi) {
         var el = document.createElement('div');
-        el.style.cssText = 'flex:1; min-width:60px; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
-        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        el.className = 'dash-module-kpi';
+        el.style.minWidth = '60px';
+        var valEl = document.createElement('div');
+        valEl.className = 'dash-module-kpi-value';
+        valEl.style.color = kpi.color;
+        valEl.textContent = kpi.val;
+        var lblEl = document.createElement('div');
+        lblEl.className = 'dash-module-kpi-label';
+        lblEl.textContent = kpi.label;
+        el.appendChild(valEl);
+        el.appendChild(lblEl);
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -10539,7 +10753,9 @@
       var totalAttendees = sends.reduce(function(s, h) { return s + (h.attendeeCount || 0); }, 0);
       if (totalAttendees > 0) {
         var footer = document.createElement('div');
-        footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+        footer.className = 'dash-module-footer';
+        footer.style.borderTop = 'none';
+        footer.style.paddingTop = '0';
         footer.textContent = totalAttendees + ' asistentes procesados en total';
         container.appendChild(footer);
       }
@@ -10563,13 +10779,19 @@
 
         var dayRow = document.createElement('div');
         dayRow.style.cssText = 'display:flex; gap:4px; align-items:flex-end; height:36px;';
+        var lowThreshold = Math.ceil(maxDayCount * 0.33);
+        var midThreshold = Math.ceil(maxDayCount * 0.66);
         dayCounts.forEach(function(count, idx) {
           var col = document.createElement('div');
           col.style.cssText = 'flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;';
           var bar = document.createElement('div');
           var h = maxDayCount > 0 ? Math.max((count / maxDayCount) * 28, count > 0 ? 3 : 1) : 1;
-          var opacity = count > 0 ? (0.3 + 0.7 * (count / maxDayCount)) : 0.1;
-          bar.style.cssText = 'width:100%; height:' + h + 'px; background:var(--accent); border-radius:2px; opacity:' + opacity + ';';
+          // Discrete color levels instead of opacity
+          var bg = count === 0 ? 'var(--bg-input)' :
+                   count <= lowThreshold ? 'var(--accent-light)' :
+                   count <= midThreshold ? 'var(--accent)' : 'var(--accent-hover)';
+          var textColor = count <= lowThreshold ? 'var(--text-primary)' : 'white';
+          bar.style.cssText = 'width:100%; height:' + h + 'px; background:' + bg + '; border-radius:2px;';
           var lbl = document.createElement('div');
           lbl.style.cssText = 'font-size:8px; color:var(--text-muted);';
           lbl.textContent = dayNames[idx];
@@ -10681,17 +10903,17 @@
 
       // Table
       var table = document.createElement('table');
-      table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+      table.className = 'dash-module-table';
 
       var thead = document.createElement('thead');
       var headerRow = document.createElement('tr');
-      headerRow.style.cssText = 'border-bottom:2px solid var(--border);';
       var headers = ['Proveedor', 'Acciones', 'Presupuesto', 'Asist.', 'Anul.', 'Punt.'];
       var headerWidths = ['auto', '50px', '80px', '50px', '50px', '50px'];
       var headerAligns = ['left', 'center', 'right', 'center', 'center', 'center'];
       headers.forEach(function(h, idx) {
         var th = document.createElement('th');
-        th.style.cssText = 'padding:4px 6px; color:var(--text-muted); font-weight:500; text-align:' + headerAligns[idx] + '; width:' + headerWidths[idx] + ';';
+        th.style.textAlign = headerAligns[idx];
+        th.style.width = headerWidths[idx];
         th.textContent = h;
         headerRow.appendChild(th);
       });
@@ -10701,17 +10923,22 @@
       var tbody = document.createElement('tbody');
       scorecardData.forEach(function(p, idx) {
         var tr = document.createElement('tr');
-        tr.style.cssText = 'border-bottom:1px solid var(--border);' + (idx === 0 ? ' background:var(--success-light);' : (idx === scorecardData.length - 1 && scorecardData.length > 1 ? ' background:var(--danger-light);' : ''));
+        if (idx === 0) tr.style.background = 'var(--success-light)';
+        else if (idx === scorecardData.length - 1 && scorecardData.length > 1) tr.style.background = 'var(--danger-light)';
 
         // Name
         var tdName = document.createElement('td');
-        tdName.style.cssText = 'padding:5px 6px; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        tdName.style.fontWeight = '500';
+        tdName.style.maxWidth = '120px';
+        tdName.style.overflow = 'hidden';
+        tdName.style.textOverflow = 'ellipsis';
+        tdName.style.whiteSpace = 'nowrap';
         tdName.textContent = esc(p.nombre);
         tdName.title = p.nombre;
 
         // Actions count
         var tdActions = document.createElement('td');
-        tdActions.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdActions.style.textAlign = 'center';
         tdActions.textContent = p.numActions;
 
         // Budget
@@ -10721,7 +10948,7 @@
 
         // Attendance
         var tdAttendance = document.createElement('td');
-        tdAttendance.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdAttendance.style.textAlign = 'center';
         if (p.attendanceRate !== null) {
           tdAttendance.style.color = p.attendanceRate >= 75 ? 'var(--success)' : (p.attendanceRate >= 50 ? 'var(--warning)' : 'var(--danger)');
           tdAttendance.style.fontWeight = '600';
@@ -10733,14 +10960,14 @@
 
         // Cancellation
         var tdCancel = document.createElement('td');
-        tdCancel.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdCancel.style.textAlign = 'center';
         tdCancel.style.color = p.cancelRate > 20 ? 'var(--danger)' : (p.cancelRate > 0 ? 'var(--warning)' : 'var(--success)');
         tdCancel.style.fontWeight = '600';
         tdCancel.textContent = p.cancelRate + '%';
 
         // Score badge
         var tdScore = document.createElement('td');
-        tdScore.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdScore.style.textAlign = 'center';
         var scoreBadge = document.createElement('span');
         scoreBadge.style.cssText = 'display:inline-block; padding:2px 8px; border-radius:var(--radius-lg); font-weight:700; font-size:11px;';
         if (p.score >= 70) {
@@ -10772,9 +10999,27 @@
       var totalActionsAll = scorecardData.reduce(function(s, p) { return s + p.numActions; }, 0);
       var avgBudgetPerAction = totalActionsAll > 0 ? totalBudgetAll / totalActionsAll : 0;
       var footer = document.createElement('div');
-      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;';
-      footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span><span>Media: ' + formatCurrency(avgBudgetPerAction) + '/acción</span>';
+      footer.className = 'dash-module-footer';
+      footer.style.display = 'flex';
+      footer.style.justifyContent = 'space-between';
+      footer.style.flexWrap = 'wrap';
+      footer.style.gap = '4px';
+      var f1 = document.createElement('span');
+      f1.textContent = scorecardData.length + ' proveedores activos';
+      var f2 = document.createElement('span');
+      f2.textContent = totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll);
+      var f3 = document.createElement('span');
+      f3.textContent = 'Media: ' + formatCurrency(avgBudgetPerAction) + '/accion';
+      footer.appendChild(f1);
+      footer.appendChild(f2);
+      footer.appendChild(f3);
       container.appendChild(footer);
+
+      // Score explanation footnote
+      var scoreFootnote = document.createElement('div');
+      scoreFootnote.className = 'dash-module-footer';
+      scoreFootnote.textContent = 'Puntuacion 0-100: asistencia media (40%) + tasa de no anulacion (40%) + base (20%). >70 bueno, 40-70 mejorable, <40 atencion.';
+      container.appendChild(scoreFootnote);
 
       // Best/worst performers highlight
       if (scorecardData.length >= 2) {
@@ -10991,7 +11236,8 @@
       addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes);
       addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto);
       var creditoDisponible = totalCredito - totalConsumido;
-      addKpi('Crédito FUNDAE', formatCurrency(totalConsumido), formatCurrency(creditoDisponible) + ' disponible / ' + formatCurrency(totalCredito) + ' total');
+      var creditoPct = totalCredito > 0 ? Math.round((totalConsumido / totalCredito) * 100) : 0;
+      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total');
 
       // --- Alerts (collapsible, dismissible) ---
       var alertsWidget = document.getElementById('dashAlertsWidget');
@@ -11203,14 +11449,23 @@
           var dateStr = p.deadline.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
           var statusColor = p.sent ? 'var(--success)' : (p.daysRemaining < 0 ? 'var(--danger)' : (p.daysRemaining <= 5 ? 'var(--warning)' : 'var(--text-secondary)'));
           var statusLabel = p.sent ? 'Enviada' : (p.daysRemaining < 0 ? 'Vencido hace ' + Math.abs(p.daysRemaining) + 'd' : p.daysRemaining + ' días');
-          plazosHtml += '<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;">' +
-            '<div style="flex:1; min-width:0;">' +
-              '<div style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.accion) + '</div>' +
-              '<div style="color:var(--text-muted); font-size:11px;">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
+          // Progress bar: time elapsed toward deadline
+          var elapsed = p.sent ? 100 : Math.max(0, Math.min(100, ((60 - p.daysRemaining) / 60) * 100));
+          var urgencyColor = p.sent ? 'var(--success)' : (elapsed > 80 ? 'var(--danger)' : (elapsed > 50 ? 'var(--warning)' : 'var(--success)'));
+
+          plazosHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;">' +
+            '<div style="display:flex; align-items:center; gap:10px;">' +
+              '<div style="flex:1; min-width:0;">' +
+                '<div style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.accion) + '</div>' +
+                '<div style="color:var(--text-muted); font-size:11px;">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
+              '</div>' +
+              '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
+              (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Marcar enviada</button>') +
+              '<button class="btn btn-secondary btnPlazoXml" data-codigo="' + esc(p.codigo) + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Generar XML</button>' +
             '</div>' +
-            '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
-            (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Marcar enviada</button>') +
-            '<button class="btn btn-secondary btnPlazoXml" data-codigo="' + esc(p.codigo) + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Generar XML</button>' +
+            '<div style="height:3px; background:var(--bg-input); border-radius:2px; margin-top:4px;">' +
+              '<div style="height:100%; border-radius:2px; background:' + urgencyColor + '; width:' + elapsed + '%; transition:width 0.3s;"></div>' +
+            '</div>' +
           '</div>';
         });
         plazosList.innerHTML = plazosHtml;
@@ -11333,8 +11588,9 @@
       var modalidadItems = Object.keys(modalidadHoras).map(function(k) {
         return { label: k, value: modalidadHoras[k], color: modalidadColorMap[k] || DS.textMuted };
       }).sort(function(a, b) { return b.value - a.value; });
-      renderSvgBarChart('dashModalidadChart', modalidadItems, {
-        valueFormatter: function(v) { return v + 'h'; }
+      renderSvgDonut('dashModalidadChart', modalidadItems, {
+        centerLabel: 'Horas',
+        centerValue: totalHoras
       });
 
       // --- Area chart ---
@@ -11346,6 +11602,12 @@
       var areaItems = Object.keys(areaCounts).map(function(k, idx) {
         return { label: k, value: areaCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
+      if (areaItems.length > 8) {
+        var visibleArea = areaItems.slice(0, 8);
+        var otrosAreaVal = areaItems.slice(8).reduce(function(s, i) { return s + i.value; }, 0);
+        visibleArea.push({ label: 'Otros (' + (areaItems.length - 8) + ')', value: otrosAreaVal, color: '#94a3b8' });
+        areaItems = visibleArea;
+      }
       renderSvgBarChart('dashAreaChart', areaItems, {
         valueFormatter: function(v) { return v; }
       });
@@ -11359,6 +11621,12 @@
       var deptItems = Object.keys(deptCounts).map(function(k, idx) {
         return { label: k, value: deptCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
+      if (deptItems.length > 8) {
+        var visibleDept = deptItems.slice(0, 8);
+        var otrosDeptVal = deptItems.slice(8).reduce(function(s, i) { return s + i.value; }, 0);
+        visibleDept.push({ label: 'Otros (' + (deptItems.length - 8) + ')', value: otrosDeptVal, color: '#94a3b8' });
+        deptItems = visibleDept;
+      }
       renderSvgBarChart('dashDeptChart', deptItems, {
         valueFormatter: function(v) { return v; }
       });
@@ -11417,8 +11685,138 @@
       renderGestorActivity('dashGestorActivity', acciones);
       renderProviderScorecard('dashProviderScorecard', acciones);
 
-      // Render training load chart
-      renderTrainingLoadChart();
+
+      // --- Section navigator ---
+      var dashNavEl = document.getElementById('dashNav');
+      if (dashNavEl) {
+        dashNavEl.textContent = '';
+        var navSections = [
+          { id: 'dash-group-general', label: 'Vision general' },
+          { id: 'dash-group-operativo', label: 'Operativo' },
+          { id: 'dash-group-personas', label: 'Personas' },
+          { id: 'dash-group-calidad', label: 'Calidad' },
+          { id: 'dash-group-gestor', label: 'Gestor' }
+        ];
+        navSections.forEach(function(sec) {
+          var btn = document.createElement('button');
+          btn.className = 'dash-nav-btn';
+          btn.textContent = sec.label;
+          btn.setAttribute('data-target', sec.id);
+          btn.addEventListener('click', function() {
+            var target = document.getElementById(sec.id);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+          dashNavEl.appendChild(btn);
+        });
+
+        // IntersectionObserver for active state
+        var navObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            var btn = dashNavEl.querySelector('[data-target="' + entry.target.id + '"]');
+            if (btn) {
+              if (entry.isIntersecting) {
+                dashNavEl.querySelectorAll('.dash-nav-btn').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+              }
+            }
+          });
+        }, { root: document.getElementById('dashContainer'), threshold: 0.1 });
+
+        navSections.forEach(function(sec) {
+          var el = document.getElementById(sec.id);
+          if (el) navObserver.observe(el);
+        });
+      }
+
+      // --- Executive mode toggle ---
+      var dashMode = localStorage.getItem('convocatoria_dash_mode') || 'completo';
+      var modeToggle = document.getElementById('dashModeToggle');
+      var dashNavEl2 = document.getElementById('dashNav');
+
+      function applyDashMode(mode) {
+        dashMode = mode;
+        try { localStorage.setItem('convocatoria_dash_mode', mode); } catch(e) {}
+        modeToggle.querySelectorAll('.dash-mode-btn').forEach(function(b) {
+          b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+        });
+        // In resumen mode, only show KPIs, alerts, plazos, credito, estado, completitud
+        var resumenCards = { plazos: true, credito: true, estado: true, completitud: true };
+        var sectionGroups = ['dash-group-operativo', 'dash-group-personas', 'dash-group-calidad', 'dash-group-gestor'];
+
+        if (mode === 'resumen') {
+          // Hide section groups that are not in resumen
+          sectionGroups.forEach(function(gid) {
+            var el = document.getElementById(gid);
+            if (el) el.style.display = 'none';
+          });
+          // In general group, only show credito and estado (completitud is in operativo)
+          // Actually completitud is in operativo group. Let me show general group fully.
+          var generalGroup = document.getElementById('dash-group-general');
+          if (generalGroup) generalGroup.style.display = '';
+          // Hide nav in resumen
+          if (dashNavEl2) dashNavEl2.style.display = 'none';
+        } else {
+          // Show everything
+          sectionGroups.forEach(function(gid) {
+            var el = document.getElementById(gid);
+            if (el) el.style.display = '';
+          });
+          var generalGroup = document.getElementById('dash-group-general');
+          if (generalGroup) generalGroup.style.display = '';
+          if (dashNavEl2) dashNavEl2.style.display = '';
+        }
+      }
+
+      modeToggle.querySelectorAll('.dash-mode-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          applyDashMode(btn.getAttribute('data-mode'));
+        });
+      });
+      applyDashMode(dashMode);
+
+      // --- Collapsible cards with localStorage persistence ---
+      var dashCollapsed = {};
+      try { dashCollapsed = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
+      // Default collapsed cards (secondary/periodic analytics)
+      var defaultCollapsed = { modalidad: true, area: true, departamento: true, recurrencia: true, encuestas: true, gestor: true };
+      // On first run (no stored state), use defaults
+      var hasStoredCollapsed = localStorage.getItem('convocatoria_dash_collapsed') !== null;
+      if (!hasStoredCollapsed) dashCollapsed = defaultCollapsed;
+
+      document.querySelectorAll('#dashContainer .dash-card[data-card-id]').forEach(function(card) {
+        var cardId = card.getAttribute('data-card-id');
+        if (dashCollapsed[cardId]) {
+          card.classList.add('collapsed');
+        }
+        var title = card.querySelector('.dash-card-title');
+        if (title) {
+          title.addEventListener('click', function() {
+            card.classList.toggle('collapsed');
+            var currentState = {};
+            try { currentState = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
+            if (card.classList.contains('collapsed')) {
+              currentState[cardId] = true;
+            } else {
+              delete currentState[cardId];
+            }
+            try { localStorage.setItem('convocatoria_dash_collapsed', JSON.stringify(currentState)); } catch(e) {}
+          });
+        }
+      });
+
+      // --- IntersectionObserver for card animations ---
+      var dashCardObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('dash-card-visible');
+            dashCardObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('#dashContainer .dash-card').forEach(function(card) {
+        dashCardObserver.observe(card);
+      });
     }
 
     // ═══════════════════════════════════
