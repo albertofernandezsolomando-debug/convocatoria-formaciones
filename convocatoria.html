@@ -2420,6 +2420,7 @@
         '<div style="display:flex; gap:10px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">' +
           '<button class="btn btn-primary" id="btnSaveCatalog" style="font-size:12px;">Guardar</button>' +
           (isNew ? '' : '<button class="btn btn-secondary" id="btnDeleteCatalog" style="font-size:12px; color:var(--danger); border-color:var(--danger);">Eliminar</button>') +
+          (!isNew && key === 'acciones' ? '<button class="btn btn-secondary" id="btnDuplicateCatalog" style="font-size:12px;">Duplicar</button>' : '') +
         '</div>' +
       '</div>';
     }
@@ -2490,6 +2491,34 @@
             document.getElementById('cf_horasPresencialesWrap').style.display = showP ? '' : 'none';
             document.getElementById('cf_horasTeleformacionWrap').style.display = showT ? '' : 'none';
             document.getElementById('cf_plataformaWrap').style.display = showPlat ? '' : 'none';
+          });
+        }
+
+        // Duplicate action handler
+        var duplicateBtn = document.getElementById('btnDuplicateCatalog');
+        if (duplicateBtn) {
+          duplicateBtn.addEventListener('click', function() {
+            var allAcciones = getCatalog('acciones');
+            var maxCodigo = 0;
+            for (var i = 0; i < allAcciones.length; i++) {
+              var c = parseInt(allAcciones[i].codigo, 10);
+              if (!isNaN(c) && c > maxCodigo) maxCodigo = c;
+            }
+            var newCodigo = String(maxCodigo + 1);
+            var clone = JSON.parse(JSON.stringify(record));
+            clone.codigo = newCodigo;
+            clone.participantes = [];
+            clone.estado = 'Pendiente';
+            clone.fechaInicio = '';
+            clone.fechaFin = '';
+            clone.grupoAccion = '';
+            clone.codigoGrupo = '';
+            var cfg = CATALOG_CONFIG['acciones'];
+            upsertCatalogRecord('acciones', cfg.pk, clone);
+            catalogState.selectedPK = newCodigo;
+            renderCatalogList();
+            renderCatalogForm();
+            showToast('Acción duplicada como código ' + newCodigo, 'success');
           });
         }
 
