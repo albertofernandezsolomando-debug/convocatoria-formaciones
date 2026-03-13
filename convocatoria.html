@@ -1968,6 +1968,12 @@
       <div class="section" id="eventoSection" style="display:none;">
         <div class="section-label">3. Datos del evento</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <select class="input-field" id="trainingTemplateSelect" style="flex:1; font-size:12px;">
+            <option value="">Cargar formacion recurrente...</option>
+          </select>
+          <button class="link-btn link-add" onclick="saveAsTrainingTemplate()" style="font-size:12px; white-space:nowrap;">+ Recurrente</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
           <select class="input-field" id="templateSelect" style="flex:1; font-size:12px;">
             <option value="">Selecciona plantilla...</option>
           </select>
@@ -4919,6 +4925,116 @@
       });
     }
 
+    // ═══════════════════════════════════
+    // RECURRING TRAINING TEMPLATES (formaciones recurrentes)
+    // ═══════════════════════════════════
+
+    function loadTrainingTemplates() {
+      try {
+        return JSON.parse(localStorage.getItem('convocatoria_trainingTemplates') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveTrainingTemplates(templates) {
+      try {
+        localStorage.setItem('convocatoria_trainingTemplates', JSON.stringify(templates));
+      } catch(e) {
+        showToast('Error al guardar: almacenamiento lleno', 'error');
+      }
+    }
+
+    function saveAsTrainingTemplate() {
+      var existing = document.getElementById('trainingTemplateSaveOverlay');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'trainingTemplateSaveOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar formacion recurrente</h3>' +
+        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Guarda todos los campos excepto la fecha para reutilizar en futuras convocatorias.</p>' +
+        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
+        '<input type="text" class="input-field" id="trainingTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
+        '<div class="dialog-buttons" style="margin-top:16px;">' +
+          '<button class="link-btn link-clear" id="trainingTemplateSaveCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="trainingTemplateSaveConfirm">Guardar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      var nameInput = document.getElementById('trainingTemplateNameInput');
+      nameInput.focus();
+
+      function doSave() {
+        var name = nameInput.value.trim();
+        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
+        var templates = loadTrainingTemplates();
+        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+        templates.push({
+          id: Date.now(),
+          name: name,
+          eventTitle: document.getElementById('eventTitle').value || '',
+          eventIsTeams: isTeams,
+          eventLocation: document.getElementById('eventLocation').value || '',
+          eventFormador: document.getElementById('eventFormador').value || '',
+          eventStartTime: document.getElementById('eventStart').value || '',
+          eventEndTime: document.getElementById('eventEnd').value || '',
+          eventBody: document.getElementById('eventBody').value || '',
+          filters: JSON.parse(JSON.stringify(state.activeFilters)),
+          createdAt: new Date().toISOString()
+        });
+        saveTrainingTemplates(templates);
+        showToast('Formacion recurrente "' + name + '" guardada', 'success');
+        renderTrainingTemplateSelector();
+        overlay.remove();
+      }
+
+      document.getElementById('trainingTemplateSaveConfirm').addEventListener('click', doSave);
+      nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
+      document.getElementById('trainingTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+
+    function renderTrainingTemplateSelector() {
+      var sel = document.getElementById('trainingTemplateSelect');
+      if (!sel) return;
+      var templates = loadTrainingTemplates();
+      sel.replaceChildren();
+      var opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = 'Cargar formacion recurrente...';
+      sel.appendChild(opt0);
+      templates.forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = String(t.id);
+        opt.textContent = t.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    function applyTrainingTemplate(id) {
+      var templates = loadTrainingTemplates();
+      var t = templates.find(function(x) { return x.id == id; });
+      if (!t) return;
+      // Rellenar campos excepto fecha
+      if (t.eventTitle) document.getElementById('eventTitle').value = t.eventTitle;
+      if (t.eventLocation) document.getElementById('eventLocation').value = t.eventLocation;
+      if (t.eventFormador) document.getElementById('eventFormador').value = t.eventFormador;
+      if (t.eventStartTime) document.getElementById('eventStart').value = t.eventStartTime;
+      if (t.eventEndTime) document.getElementById('eventEnd').value = t.eventEndTime;
+      if (t.eventBody) document.getElementById('eventBody').value = t.eventBody;
+      if (t.eventIsTeams) {
+        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+      } else {
+        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+      }
+      if (t.filters) {
+        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
+        renderFilters();
+        renderTable();
+      }
+      showToast('Formacion recurrente "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
+    }
+
     function substituteTemplateVars(bodyText, event) {
       if (!bodyText) return bodyText;
       return bodyText
@@ -5865,6 +5981,15 @@
 
     // Populate template dropdown on init
     populateTemplateSelect();
+
+    // Training template (recurring) selector
+    document.getElementById('trainingTemplateSelect').addEventListener('change', function() {
+      if (this.value) {
+        applyTrainingTemplate(this.value);
+        this.value = '';
+      }
+    });
+    renderTrainingTemplateSelector();
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
