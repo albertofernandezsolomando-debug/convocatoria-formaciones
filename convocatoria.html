@@ -554,6 +554,40 @@
       color: var(--text-primary);
     }
 
+    .workflow-stepper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .workflow-step {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .workflow-step.pending {
+      background: var(--bg-input);
+      color: var(--text-muted);
+    }
+    .workflow-step.done {
+      background: var(--success);
+      color: white;
+    }
+    .workflow-step.active {
+      background: var(--accent);
+      color: white;
+    }
+    .workflow-step-line {
+      width: 12px;
+      height: 2px;
+      background: var(--border);
+    }
+
     .filter-row {
       display: flex;
       align-items: center;
@@ -1963,6 +1997,13 @@
 
       <div class="app-header">
         <span class="app-header-title">Convocatoria de Formaciones</span>
+        <div class="workflow-stepper" id="workflowStepper">
+          <div class="workflow-step pending" id="wfStep1" title="Carga de datos">1</div>
+          <div class="workflow-step-line"></div>
+          <div class="workflow-step pending" id="wfStep2" title="Seleccionar asistentes">2</div>
+          <div class="workflow-step-line"></div>
+          <div class="workflow-step pending" id="wfStep3" title="Datos del evento">3</div>
+        </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <button class="settings-btn" id="btnSettings" title="Ajustes">&#9881;</button>
           <button class="link-btn link-add" id="btnHistory" style="font-size:13px; padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
@@ -6099,6 +6140,46 @@
       }
 
       saveState();
+      updateWorkflowStepper();
+    }
+
+    function updateWorkflowStepper() {
+      var step1 = document.getElementById('wfStep1');
+      var step2 = document.getElementById('wfStep2');
+      var step3 = document.getElementById('wfStep3');
+
+      var hasEmployees = state.employees.length > 0;
+      var allEmployees = hasEmployees ? [...state.employees, ...state.externalEmployees] : [];
+      var hasSelected = false;
+      if (hasEmployees) {
+        var filtered = filterEmployees(allEmployees, state.activeFilters);
+        var split = splitByEmail(filtered);
+        hasSelected = split.valid.filter(function(emp) { return !state.excludedNIFs.has(emp._id); }).length > 0;
+      }
+      var title = document.getElementById('eventTitle').value.trim();
+      var date = document.getElementById('eventDate').value;
+      var hasEvent = title && date;
+
+      // Determine first incomplete step
+      var activeStep = !hasEmployees ? 1 : !hasSelected ? 2 : !hasEvent ? 3 : 0;
+
+      function setStep(el, num) {
+        if (num < activeStep || (activeStep === 0)) {
+          // done if we're past it, or all done
+          if ((activeStep === 0 && num <= 3) || num < activeStep) {
+            var isDone = (activeStep === 0) || num < activeStep;
+            el.className = 'workflow-step ' + (isDone && ((activeStep === 0 && hasEmployees && (num === 1)) || (activeStep === 0 && hasSelected && num === 2) || (activeStep === 0 && hasEvent && num === 3) || num < activeStep) ? 'done' : 'pending');
+          }
+        } else if (num === activeStep) {
+          el.className = 'workflow-step active';
+        } else {
+          el.className = 'workflow-step pending';
+        }
+      }
+
+      step1.className = 'workflow-step ' + (hasEmployees ? 'done' : (activeStep === 1 ? 'active' : 'pending'));
+      step2.className = 'workflow-step ' + (hasSelected && hasEmployees ? 'done' : (activeStep === 2 ? 'active' : 'pending'));
+      step3.className = 'workflow-step ' + (hasEvent && hasSelected && hasEmployees ? 'done' : (activeStep === 3 ? 'active' : 'pending'));
     }
 
     document.getElementById('selectAll').addEventListener('change', e => {
