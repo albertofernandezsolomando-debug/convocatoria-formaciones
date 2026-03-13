@@ -1793,10 +1793,12 @@
         <span class="dash-header-time" id="dashLastUpdate"></span>
       </div>
 
-      <!-- Employee search -->
+      <!-- Employee search + Export -->
       <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
         <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:300px; font-size:13px;">
         <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
       </div>
 
       <!-- KPI Cards -->
@@ -7481,6 +7483,149 @@
       if (searchInput) {
         searchInput.onkeydown = function(e) { if (e.key === 'Enter') searchEmployee(); };
       }
+
+      // Wire export annual report button
+      var exportBtn = document.getElementById('btnExportAnnualReport');
+      if (exportBtn) {
+        exportBtn.onclick = function() { exportAnnualReport(); };
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANNUAL TRAINING REPORT EXPORT
+    // ═══════════════════════════════════
+
+    function exportAnnualReport() {
+      var acciones = getCatalog('acciones');
+      if (acciones.length === 0) {
+        showToast('No hay datos para exportar', 'warning');
+        return;
+      }
+
+      var proveedores = getCatalog('proveedores');
+      var centros = getCatalog('centros');
+      var tutores = getCatalog('tutores');
+
+      // Build lookup maps
+      var proveedorMap = {};
+      proveedores.forEach(function(p) { proveedorMap[p.cif] = p.razonSocial || p.cif; });
+      var centroMap = {};
+      centros.forEach(function(c) { centroMap[c.documento] = c.nombre || c.documento; });
+      var tutorMap = {};
+      tutores.forEach(function(t) {
+        tutorMap[t.documento] = [t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ') || t.documento;
+      });
+
+      // --- Computed stats ---
+      var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
+
+      var totalHorasP = 0, totalHorasT = 0;
+      acciones.forEach(function(a) {
+        totalHorasP += (Number(a.horasPresenciales) || 0);
+        totalHorasT += (Number(a.horasTeleformacion) || 0);
+      });
+      var totalHoras = totalHorasP + totalHorasT;
+
+      var allNifs = {};
+      acciones.forEach(function(a) {
+        (a.participantes || []).forEach(function(n) { allNifs[n] = true; });
+      });
+      var totalParticipantes = Object.keys(allNifs).length;
+
+      var totalPresupuesto = acciones.reduce(function(sum, a) { return sum + (Number(a.presupuesto) || 0); }, 0);
+
+      var totalCredito = EMPRESAS_GRUPO.reduce(function(s, e) { return s + e.credito; }, 0);
+      var consumido = {};
+      bonificables.forEach(function(a) {
+        if (a.empresaPagadora && Number(a.presupuesto)) {
+          consumido[a.empresaPagadora] = (consumido[a.empresaPagadora] || 0) + Number(a.presupuesto);
+        }
+      });
+      var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+
+      // --- Sheet 1: Resumen ---
+      var resumenData = [
+        { 'Indicador': 'Total acciones formativas', 'Valor': acciones.length },
+        { 'Indicador': 'Acciones bonificables', 'Valor': bonificables.length },
+        { 'Indicador': 'Total horas presenciales', 'Valor': totalHorasP },
+        { 'Indicador': 'Total horas teleformacion', 'Valor': totalHorasT },
+        { 'Indicador': 'Total horas', 'Valor': totalHoras },
+        { 'Indicador': 'Participantes unicos', 'Valor': totalParticipantes },
+        { 'Indicador': 'Presupuesto total', 'Valor': totalPresupuesto },
+        { 'Indicador': 'Credito FUNDAE total', 'Valor': totalCredito },
+        { 'Indicador': 'Credito consumido', 'Valor': totalConsumido },
+        { 'Indicador': 'Credito disponible', 'Valor': totalCredito - totalConsumido }
+      ];
+
+      // --- Sheet 2: Acciones Formativas ---
+      var accionesData = acciones.map(function(a) {
+        return {
+          'Codigo': a.codigo || '',
+          'Nombre': a.nombre || '',
+          'Estado': a.estado || '',
+          'Modalidad': a.modalidad || '',
+          'Horas Presenciales': Number(a.horasPresenciales) || 0,
+          'Horas Teleformacion': Number(a.horasTeleformacion) || 0,
+          'Area Profesional': a.areaProfesional || '',
+          'Empresa Pagadora': a.empresaPagadora || '',
+          'Presupuesto': Number(a.presupuesto) || 0,
+          'Proveedor': proveedorMap[a.proveedorVinculado] || a.proveedorVinculado || '',
+          'Centro': centroMap[a.centroVinculado] || a.centroVinculado || '',
+          'Tutor': tutorMap[a.tutorVinculado] || a.tutorVinculado || '',
+          'N Participantes': (a.participantes || []).length,
+          'Fecha Inicio': a.fechaInicio || '',
+          'Fecha Fin': a.fechaFin || ''
+        };
+      });
+
+      // --- Sheet 3: Credito FUNDAE ---
+      var creditoData = EMPRESAS_GRUPO.map(function(e) {
+        var cons = consumido[e.cif] || 0;
+        var disponible = e.credito - cons;
+        var pctConsumido = e.credito > 0 ? Math.round((cons / e.credito) * 10000) / 100 : 0;
+        return {
+          'Razon Social': e.razonSocial,
+          'CIF': e.cif,
+          'Credito Asignado': e.credito,
+          'Consumido': cons,
+          'Disponible': disponible,
+          '% Consumido': pctConsumido
+        };
+      });
+
+      // --- Sheet 4: Participantes ---
+      var nifList = Object.keys(allNifs);
+      var employees = state.employees || [];
+      var empMap = {};
+      employees.forEach(function(e) { empMap[e.NIF] = e; });
+
+      var participantesData = nifList.map(function(nif) {
+        var emp = empMap[nif];
+        var nAcciones = 0;
+        var horasTotales = 0;
+        acciones.forEach(function(a) {
+          if ((a.participantes || []).indexOf(nif) !== -1) {
+            nAcciones++;
+            horasTotales += (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+          }
+        });
+        return {
+          'NIF': nif,
+          'Nombre': emp ? (emp.Empleado || '') : '',
+          'Empresa': emp ? (emp.Empresa || '') : '',
+          'N Acciones': nAcciones,
+          'Horas Totales': horasTotales
+        };
+      });
+
+      // --- Build workbook ---
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumenData), 'Resumen');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(accionesData), 'Acciones Formativas');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(creditoData), 'Credito FUNDAE');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantesData), 'Participantes');
+      XLSX.writeFile(wb, 'Informe_Formacion_' + new Date().getFullYear() + '.xlsx');
+      showToast('Informe exportado', 'success');
     }
 
     // ═══════════════════════════════════
