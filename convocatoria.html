@@ -1105,6 +1105,60 @@
       border-bottom: 1px solid var(--border);
     }
 
+    /* Calendar timeline */
+    .dash-timeline-wrap {
+      overflow-x: auto;
+      position: relative;
+    }
+    .dash-timeline-header {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .dash-timeline-month {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      padding: 4px 0;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .dash-timeline-month:last-child { border-right: none; }
+    .dash-timeline-rows {
+      position: relative;
+    }
+    .dash-timeline-row {
+      position: relative;
+      height: 26px;
+      margin-bottom: 2px;
+    }
+    .dash-timeline-bar {
+      position: absolute;
+      height: 20px;
+      top: 3px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      color: white;
+      font-weight: 500;
+      padding: 0 6px;
+      line-height: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: default;
+      transition: opacity var(--transition);
+      min-width: 4px;
+    }
+    .dash-timeline-bar:hover { opacity: 0.85; }
+    .dash-timeline-overflow {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
     /* Alerts widget (collapsible) */
     .dash-alerts-widget {
       margin-bottom: 16px;
@@ -1858,6 +1912,14 @@
         <div class="dash-card">
           <div class="dash-card-title">Completitud del catálogo</div>
           <div id="dashCompletenessChart"></div>
+        </div>
+      </div>
+
+      <!-- Calendar timeline -->
+      <div class="dash-chart-row">
+        <div class="dash-card" id="dashCalendarCard" style="display:none; grid-column: span 2;">
+          <div class="dash-card-title">Calendario de formaciones</div>
+          <div id="dashCalendar"></div>
         </div>
       </div>
     </div>
@@ -7542,6 +7604,9 @@
         ]);
       }
 
+      // --- Calendar timeline ---
+      renderCalendar(acciones);
+
       // Update timestamp
       document.getElementById('dashLastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleString('es-ES');
 
@@ -7569,6 +7634,187 @@
       var exportBtn = document.getElementById('btnExportAnnualReport');
       if (exportBtn) {
         exportBtn.onclick = function() { exportAnnualReport(); };
+      }
+    }
+
+    // ═══════════════════════════════════
+    // CALENDAR TIMELINE
+    // ═══════════════════════════════════
+
+    function renderCalendar(acciones) {
+      var card = document.getElementById('dashCalendarCard');
+      var container = document.getElementById('dashCalendar');
+
+      // Filter acciones with both fechaInicio and fechaFin
+      var items = acciones.filter(function(a) {
+        return a.fechaInicio && a.fechaFin;
+      });
+
+      if (items.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = '';
+
+      // Estado → color map (matching the donut chart colors)
+      var estadoColorMap = {
+        'Pendiente': '#94a3b8',
+        'En preparación': '#0EA5E9',
+        'En marcha': '#4F46E5',
+        'Buscando': '#F59E0B',
+        'Terminada': '#10B981',
+        'Finalizada': '#10B981',
+        'Anulada': '#EF4444',
+        'Retrasada': '#EF4444',
+        'Cancelada': '#EF4444'
+      };
+      var defaultColor = CHART_PALETTE[0];
+
+      // Parse dates and calculate range
+      var parsed = items.map(function(a) {
+        return {
+          nombre: a.nombre || '(Sin nombre)',
+          estado: a.estado || '',
+          fechaInicio: new Date(a.fechaInicio),
+          fechaFin: new Date(a.fechaFin),
+          participantes: a.participantes || [],
+          rawInicio: a.fechaInicio,
+          rawFin: a.fechaFin
+        };
+      }).filter(function(p) {
+        return !isNaN(p.fechaInicio.getTime()) && !isNaN(p.fechaFin.getTime());
+      });
+
+      if (parsed.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+
+      // Sort by start date
+      parsed.sort(function(a, b) { return a.fechaInicio - b.fechaInicio; });
+
+      // Find min/max dates
+      var minDate = parsed[0].fechaInicio;
+      var maxDate = parsed[0].fechaFin;
+      parsed.forEach(function(p) {
+        if (p.fechaInicio < minDate) minDate = p.fechaInicio;
+        if (p.fechaFin > maxDate) maxDate = p.fechaFin;
+      });
+
+      // Expand to full months
+      var rangeStart = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      var rangeEndMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); // last day of month
+      var rangeEnd = rangeEndMonth;
+
+      // Total days in range
+      var totalDays = Math.max(Math.round((rangeEnd - rangeStart) / 86400000) + 1, 1);
+
+      // Generate month headers
+      var months = [];
+      var cursor = new Date(rangeStart);
+      while (cursor <= rangeEnd) {
+        var monthStart = new Date(cursor);
+        var monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+        if (monthEnd > rangeEnd) monthEnd = rangeEnd;
+        var daysInMonth = Math.round((monthEnd - monthStart) / 86400000) + 1;
+        var monthName = monthStart.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+        months.push({
+          label: monthName,
+          widthPct: (daysInMonth / totalDays) * 100
+        });
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      }
+
+      // Limit bars to display
+      var maxBars = 20;
+      var displayItems = parsed.slice(0, maxBars);
+      var overflowCount = parsed.length - maxBars;
+
+      // Swim-lane assignment: assign each bar to the first row where it doesn't overlap
+      var rows = []; // each row is an array of { end: Date }
+      displayItems.forEach(function(item) {
+        var assigned = false;
+        for (var r = 0; r < rows.length; r++) {
+          // Check if this item overlaps with any bar in this row
+          var fits = true;
+          for (var b = 0; b < rows[r].length; b++) {
+            if (item.fechaInicio <= rows[r][b].end && item.fechaFin >= rows[r][b].start) {
+              fits = false;
+              break;
+            }
+          }
+          if (fits) {
+            rows[r].push({ start: item.fechaInicio, end: item.fechaFin });
+            item._row = r;
+            assigned = true;
+            break;
+          }
+        }
+        if (!assigned) {
+          rows.push([{ start: item.fechaInicio, end: item.fechaFin }]);
+          item._row = rows.length - 1;
+        }
+      });
+
+      // Build DOM
+      container.textContent = '';
+
+      var wrap = document.createElement('div');
+      wrap.className = 'dash-timeline-wrap';
+
+      // Month header
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'dash-timeline-header';
+      months.forEach(function(m) {
+        var mDiv = document.createElement('div');
+        mDiv.className = 'dash-timeline-month';
+        mDiv.style.width = m.widthPct + '%';
+        mDiv.textContent = m.label;
+        headerDiv.appendChild(mDiv);
+      });
+      wrap.appendChild(headerDiv);
+
+      // Rows container
+      var rowsContainer = document.createElement('div');
+      rowsContainer.className = 'dash-timeline-rows';
+      rowsContainer.style.height = (rows.length * 28) + 'px';
+
+      displayItems.forEach(function(item) {
+        var daysSinceStart = Math.max(Math.round((item.fechaInicio - rangeStart) / 86400000), 0);
+        var durationDays = Math.max(Math.round((item.fechaFin - item.fechaInicio) / 86400000) + 1, 1);
+        var leftPct = (daysSinceStart / totalDays) * 100;
+        var widthPct = (durationDays / totalDays) * 100;
+
+        var barColor = estadoColorMap[item.estado] || defaultColor;
+
+        var row = document.createElement('div');
+        row.className = 'dash-timeline-row';
+        row.style.position = 'absolute';
+        row.style.top = (item._row * 28) + 'px';
+        row.style.left = '0';
+        row.style.right = '0';
+
+        var bar = document.createElement('div');
+        bar.className = 'dash-timeline-bar';
+        bar.style.left = leftPct + '%';
+        bar.style.width = widthPct + '%';
+        bar.style.background = barColor;
+        bar.textContent = item.nombre;
+        bar.title = item.nombre + '\n' + item.rawInicio + ' \u2192 ' + item.rawFin + '\n' + item.participantes.length + ' participantes';
+
+        row.appendChild(bar);
+        rowsContainer.appendChild(row);
+      });
+
+      wrap.appendChild(rowsContainer);
+      container.appendChild(wrap);
+
+      // Overflow note
+      if (overflowCount > 0) {
+        var note = document.createElement('div');
+        note.className = 'dash-timeline-overflow';
+        note.textContent = 'y ' + overflowCount + ' m\u00e1s acciones';
+        container.appendChild(note);
       }
     }
 
