@@ -5475,8 +5475,12 @@
           : 'Todos';
         const btnClass = selected.length > 0 ? 'filter-select-btn active' : 'filter-select-btn';
 
+        var badgeHtml = selected.length > 0
+          ? '<span class="filter-badge">' + selected.length + '</span>'
+          : '';
+
         return '<div class="filter-row">' +
-          '<span class="filter-label">' + esc(key) + '</span>' +
+          '<span class="filter-label">' + esc(key) + badgeHtml + '</span>' +
           '<div class="filter-select" data-key="' + esc(key) + '">' +
             '<button class="' + btnClass + '" type="button">' + esc(btnText) + '</button>' +
             '<div class="filter-dropdown">' +
