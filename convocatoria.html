@@ -2239,6 +2239,58 @@
       bindCatalogFormEvents(key, record);
     }
 
+    function renderNotasTimelineHtml(record) {
+      var notas = record.notas || [];
+      var TAG_COLORS = {
+        proveedor: 'var(--chart-2)',
+        FUNDAE: 'var(--accent)',
+        interno: 'var(--chart-3)',
+        empleado: 'var(--chart-4)'
+      };
+      // Sort newest first
+      var sorted = notas.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+
+      var notasListHtml = '';
+      if (sorted.length === 0) {
+        notasListHtml = '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">Sin notas de seguimiento</div>';
+      } else {
+        sorted.forEach(function(nota) {
+          var dateStr = new Date(nota.date).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          var tagColor = TAG_COLORS[nota.tag] || 'var(--text-muted)';
+          notasListHtml += '<div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; border-bottom:1px solid var(--border);">' +
+            '<div style="flex:1; min-width:0;">' +
+              '<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">' +
+                '<span style="font-size:11px; color:var(--text-muted);">' + esc(dateStr) + '</span>' +
+                '<span style="font-size:10px; padding:1px 6px; border-radius:var(--radius-lg); color:var(--bg-panel); background:' + tagColor + ';">' + esc(nota.tag) + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px; color:var(--text-primary); word-break:break-word;">' + esc(nota.text) + '</div>' +
+            '</div>' +
+            '<button class="btn btn-secondary cfDeleteNota" data-nota-id="' + nota.id + '" style="font-size:10px; padding:2px 6px; color:var(--danger); border-color:var(--danger); flex-shrink:0;">\u2715</button>' +
+          '</div>';
+        });
+      }
+
+      return '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
+        '<div onclick="toggleFundaeSub(\'cfNotasInner\')" style="cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); user-select:none; padding:0 0 8px 0;">' +
+          '&#9660; Notas de seguimiento' +
+          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + sorted.length + ')</span>' +
+        '</div>' +
+        '<div id="cfNotasInner">' +
+          '<div id="cfNotasList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;">' + notasListHtml + '</div>' +
+          '<div style="display:flex; gap:6px; align-items:center;">' +
+            '<select class="input-field" id="cfNotaTag" style="font-size:12px; width:auto; min-width:100px;">' +
+              '<option value="interno">interno</option>' +
+              '<option value="proveedor">proveedor</option>' +
+              '<option value="FUNDAE">FUNDAE</option>' +
+              '<option value="empleado">empleado</option>' +
+            '</select>' +
+            '<input class="input-field" id="cfNotaText" placeholder="Escribe una nota..." style="font-size:12px; flex:1;">' +
+            '<button class="btn btn-secondary" id="btnAddNota" style="font-size:12px; white-space:nowrap;">A\u00F1adir</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
     function getCatalogFormHtml(key, record, isNew) {
       const cfg = CATALOG_CONFIG[key];
       const v = field => esc(String(record[field] || ''));
@@ -2399,6 +2451,7 @@
           '</div>' +
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+          renderNotasTimelineHtml(record) +
           '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
             '<div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">' +
               'Participantes vinculados' +
@@ -2509,6 +2562,7 @@
             var clone = JSON.parse(JSON.stringify(record));
             clone.codigo = newCodigo;
             clone.participantes = [];
+            clone.notas = [];
             clone.estado = 'Pendiente';
             clone.fechaInicio = '';
             clone.fechaFin = '';
@@ -2523,9 +2577,46 @@
           });
         }
 
+        // Notes timeline
+        bindNotasEvents(record);
+
         // Participant linking
         renderAccionParticipants(record);
       }
+    }
+
+    function bindNotasEvents(record) {
+      var addBtn = document.getElementById('btnAddNota');
+      if (addBtn) {
+        addBtn.addEventListener('click', function() {
+          var tagEl = document.getElementById('cfNotaTag');
+          var textEl = document.getElementById('cfNotaText');
+          if (!tagEl || !textEl) return;
+          var text = textEl.value.trim();
+          if (!text) { showToast('Escribe el texto de la nota', 'warning'); textEl.focus(); return; }
+          if (!record.notas) record.notas = [];
+          record.notas.push({ id: Date.now(), date: new Date().toISOString(), tag: tagEl.value, text: text });
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+        });
+        // Allow Enter key in text input to add note
+        var textEl = document.getElementById('cfNotaText');
+        if (textEl) {
+          textEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); addBtn.click(); }
+          });
+        }
+      }
+      // Delete note buttons
+      document.querySelectorAll('.cfDeleteNota').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var notaId = Number(btn.getAttribute('data-nota-id'));
+          if (!record.notas) return;
+          record.notas = record.notas.filter(function(n) { return n.id !== notaId; });
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+        });
+      });
     }
 
     function renderAccionParticipants(record) {
@@ -2912,9 +3003,10 @@
         record.centroVinculado = val('centroVinculado');
         record.tutorVinculado = val('tutorVinculado');
 
-        // Preserve participantes from existing record (managed by picker, not form inputs)
+        // Preserve participantes and notas from existing record (managed by their own UI, not form inputs)
         var existingAccion = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
         record.participantes = existingAccion ? (existingAccion.participantes || []) : [];
+        record.notas = existingAccion ? (existingAccion.notas || []) : [];
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
