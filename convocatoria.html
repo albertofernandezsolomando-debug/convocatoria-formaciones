@@ -2443,6 +2443,48 @@
         </div>
       </div>
 
+      <!-- Charts row 5: Attendance + Confirmations -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Monitor de asistencia y abandono</div>
+          <div id="dashAttendance"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Efectividad de confirmaciones</div>
+          <div id="dashConfirmations"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 6: Seasonality + Recurrence -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Estacionalidad formativa</div>
+          <div id="dashSeasonality"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Recurrencia de participantes</div>
+          <div id="dashRecurrence"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 7: Survey Coverage + Gestor Activity -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Cobertura de encuestas</div>
+          <div id="dashSurveyCoverage"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Productividad del gestor</div>
+          <div id="dashGestorActivity"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 8: Provider Scorecard -->
+      <div class="dash-card" style="margin-bottom:16px;">
+        <div class="dash-card-title">Scorecard de proveedores</div>
+        <div id="dashProviderScorecard"></div>
+      </div>
+
       <!-- Training load chart -->
       <div class="dash-card" style="margin-bottom:16px;">
         <div class="dash-card-title">Carga formativa por mes</div>
@@ -8975,6 +9017,1107 @@
       ctx.restore();
     }
 
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 1: Attendance & Abandonment Monitor
+    // ═══════════════════════════════════
+
+    function renderAttendanceMonitor(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      // Filter actions that have attendance data
+      var accionesConAsistencia = acciones.filter(function(a) {
+        return a.asistencia && a.asistencia.registro && a.asistencia.sesiones && a.asistencia.sesiones.length > 0;
+      });
+
+      if (accionesConAsistencia.length === 0) {
+        renderEmptyState(container, 'Registra asistencia en las acciones para ver estadísticas');
+        return;
+      }
+
+      // Build attendance data per action per session
+      var abandonmentAlerts = [];
+
+      accionesConAsistencia.forEach(function(a) {
+        var registro = a.asistencia.registro || {};
+        var sesiones = a.asistencia.sesiones || [];
+        var nifs = Object.keys(registro);
+        if (nifs.length === 0 || sesiones.length === 0) return;
+
+        // Calculate attendance per session
+        var sessionData = sesiones.map(function(s) {
+          var fecha = s.fecha;
+          var present = 0;
+          var total = nifs.length;
+          nifs.forEach(function(nif) {
+            var asistNif = registro[nif];
+            if (asistNif && asistNif[fecha]) {
+              var val = asistNif[fecha];
+              if (val === true || val === 'presente' || val === 'Presente') {
+                present++;
+              }
+            }
+          });
+          return { fecha: fecha, present: present, total: total, pct: total > 0 ? Math.round((present / total) * 100) : 0 };
+        });
+
+        // Detect abandonment: participants below 75% overall
+        nifs.forEach(function(nif) {
+          var attended = 0;
+          var totalSessions = sesiones.length;
+          sesiones.forEach(function(s) {
+            var asistNif = registro[nif];
+            if (asistNif && asistNif[s.fecha]) {
+              var val = asistNif[s.fecha];
+              if (val === true || val === 'presente' || val === 'Presente') attended++;
+            }
+          });
+          var pct = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+          if (pct < 75 && totalSessions > 1) {
+            abandonmentAlerts.push({
+              accion: a.nombre || a.codigo || '(Sin nombre)',
+              nif: nif,
+              attended: attended,
+              totalSessions: totalSessions,
+              pct: pct
+            });
+          }
+        });
+
+        // Only draw line chart for multi-session actions
+        if (sesiones.length > 1) {
+          var chartLabel = document.createElement('div');
+          chartLabel.style.cssText = 'font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:6px; margin-top:12px;';
+          chartLabel.textContent = esc(a.nombre || a.codigo || '');
+          container.appendChild(chartLabel);
+
+          // SVG line chart
+          var svgW = 320, svgH = 80;
+          var padL = 32, padR = 10, padT = 10, padB = 20;
+          var chartW = svgW - padL - padR;
+          var chartH = svgH - padT - padB;
+
+          var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+          svg.style.cssText = 'width:100%; max-width:320px; display:block;';
+
+          // Y axis labels
+          [0, 50, 100].forEach(function(v) {
+            var y = padT + chartH - (v / 100) * chartH;
+            svg.appendChild(svgEl('line', { x1: padL, y1: y, x2: svgW - padR, y2: y, stroke: '#e2e8f0', 'stroke-width': '0.5' }));
+            var txt = svgEl('text', { x: padL - 4, y: y + 3, 'text-anchor': 'end', fill: '#94a3b8', 'font-size': '8', 'font-family': 'Inter, sans-serif' });
+            txt.textContent = v + '%';
+            svg.appendChild(txt);
+          });
+
+          // 75% threshold line
+          var threshY = padT + chartH - (75 / 100) * chartH;
+          svg.appendChild(svgEl('line', { x1: padL, y1: threshY, x2: svgW - padR, y2: threshY, stroke: '#dc2626', 'stroke-width': '0.5', 'stroke-dasharray': '4,3' }));
+
+          // Plot points and lines
+          var points = sessionData.map(function(d, i) {
+            var x = padL + (sessionData.length > 1 ? (i / (sessionData.length - 1)) * chartW : chartW / 2);
+            var y = padT + chartH - (d.pct / 100) * chartH;
+            return { x: x, y: y, pct: d.pct, fecha: d.fecha };
+          });
+
+          // Line path
+          if (points.length > 1) {
+            var pathD = points.map(function(p, i) { return (i === 0 ? 'M' : 'L') + p.x + ',' + p.y; }).join(' ');
+            svg.appendChild(svgEl('path', { d: pathD, fill: 'none', stroke: '#4F46E5', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+          }
+
+          // Dots and labels
+          points.forEach(function(p) {
+            var dotColor = p.pct < 75 ? '#dc2626' : '#4F46E5';
+            svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '3', fill: dotColor }));
+            var valTxt = svgEl('text', { x: p.x, y: p.y - 6, 'text-anchor': 'middle', fill: dotColor, 'font-size': '7', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+            valTxt.textContent = p.pct + '%';
+            svg.appendChild(valTxt);
+          });
+
+          // X axis labels (session dates)
+          points.forEach(function(p) {
+            var shortDate = p.fecha ? p.fecha.substring(5).replace('-', '/') : '';
+            var xTxt = svgEl('text', { x: p.x, y: svgH - 2, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '7', 'font-family': 'Inter, sans-serif' });
+            xTxt.textContent = shortDate;
+            svg.appendChild(xTxt);
+          });
+
+          container.appendChild(svg);
+        }
+      });
+
+      // Overall KPI row
+      var totalSesiones = 0, totalPresentes = 0;
+      accionesConAsistencia.forEach(function(a) {
+        var registro = a.asistencia.registro || {};
+        var sesiones = a.asistencia.sesiones || [];
+        var nifs = Object.keys(registro);
+        sesiones.forEach(function(s) {
+          nifs.forEach(function(nif) {
+            totalSesiones++;
+            var asistNif = registro[nif];
+            if (asistNif && asistNif[s.fecha]) {
+              var val = asistNif[s.fecha];
+              if (val === true || val === 'presente' || val === 'Presente') totalPresentes++;
+            }
+          });
+        });
+      });
+      var avgAttendance = totalSesiones > 0 ? Math.round((totalPresentes / totalSesiones) * 100) : 0;
+
+      var kpiRow = document.createElement('div');
+      kpiRow.style.cssText = 'display:flex; gap:16px; margin-bottom:12px;';
+      var kpi1 = document.createElement('div');
+      kpi1.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      kpi1.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + avgAttendance + '%</div><div style="font-size:11px; color:var(--text-muted);">Asistencia media</div>';
+      var kpi2 = document.createElement('div');
+      kpi2.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div style="font-size:11px; color:var(--text-muted);">Acciones con registro</div>';
+      var kpi3 = document.createElement('div');
+      kpi3.style.cssText = 'flex:1; text-align:center; padding:8px; background:' + (abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)') + '; border-radius:var(--radius-sm);';
+      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div style="font-size:11px; color:var(--text-muted);">Alertas de abandono</div>';
+      kpiRow.appendChild(kpi1);
+      kpiRow.appendChild(kpi2);
+      kpiRow.appendChild(kpi3);
+      container.insertBefore(kpiRow, container.firstChild);
+
+      // Abandonment alerts table
+      if (abandonmentAlerts.length > 0) {
+        abandonmentAlerts.sort(function(a, b) { return a.pct - b.pct; });
+        var alertSection = document.createElement('div');
+        alertSection.style.cssText = 'margin-top:12px;';
+        var alertTitle = document.createElement('div');
+        alertTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:6px;';
+        alertTitle.textContent = 'Participantes con asistencia < 75%';
+        alertSection.appendChild(alertTitle);
+
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        var thead = document.createElement('thead');
+        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">NIF</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Sesiones</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">%</th></tr>';
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        var maxAlerts = Math.min(abandonmentAlerts.length, 10);
+        for (var i = 0; i < maxAlerts; i++) {
+          var alert = abandonmentAlerts[i];
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
+
+          var td1 = document.createElement('td');
+          td1.style.cssText = 'padding:4px 6px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+          td1.textContent = alert.accion;
+          td1.title = alert.accion;
+
+          var td2 = document.createElement('td');
+          td2.style.cssText = 'padding:4px 6px; font-family:monospace; font-size:10px;';
+          td2.textContent = esc(alert.nif);
+
+          var td3 = document.createElement('td');
+          td3.style.cssText = 'padding:4px 6px; text-align:center;';
+          td3.textContent = alert.attended + '/' + alert.totalSessions;
+
+          var td4 = document.createElement('td');
+          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:var(--danger);';
+          td4.textContent = alert.pct + '%';
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        alertSection.appendChild(table);
+
+        if (abandonmentAlerts.length > 10) {
+          var more = document.createElement('div');
+          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+          more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' más)';
+          alertSection.appendChild(more);
+        }
+        container.appendChild(alertSection);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 2: Confirmation Effectiveness
+    // ═══════════════════════════════════
+
+    function renderConfirmationEffectiveness(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      var accionesConConfirm = acciones.filter(function(a) {
+        return a.confirmaciones && typeof a.confirmaciones === 'object' && Object.keys(a.confirmaciones).length > 0;
+      });
+
+      if (accionesConConfirm.length === 0) {
+        renderEmptyState(container, 'Registra confirmaciones en las acciones para ver estadísticas');
+        return;
+      }
+
+      // Aggregate overall confirmation status
+      var statusCounts = { confirmado: 0, pendiente: 0, rechazado: 0, sin_respuesta: 0 };
+      var accionStats = [];
+
+      accionesConConfirm.forEach(function(a) {
+        var confs = a.confirmaciones;
+        var nifs = Object.keys(confs);
+        var localCounts = { confirmado: 0, pendiente: 0, rechazado: 0, sin_respuesta: 0, total: nifs.length };
+
+        nifs.forEach(function(nif) {
+          var status = (confs[nif] || 'sin_respuesta').toLowerCase().replace(/ /g, '_');
+          if (statusCounts.hasOwnProperty(status)) {
+            statusCounts[status]++;
+            localCounts[status]++;
+          } else {
+            statusCounts.sin_respuesta++;
+            localCounts.sin_respuesta++;
+          }
+        });
+
+        var confirmRate = localCounts.total > 0 ? Math.round((localCounts.confirmado / localCounts.total) * 100) : 0;
+        accionStats.push({
+          nombre: a.nombre || a.codigo || '(Sin nombre)',
+          codigo: a.codigo || '',
+          confirmRate: confirmRate,
+          total: localCounts.total,
+          confirmado: localCounts.confirmado,
+          rechazado: localCounts.rechazado,
+          pendiente: localCounts.pendiente,
+          sin_respuesta: localCounts.sin_respuesta
+        });
+      });
+
+      // Donut chart for overall distribution
+      var donutItems = [
+        { label: 'Confirmado', value: statusCounts.confirmado, color: '#10B981' },
+        { label: 'Pendiente', value: statusCounts.pendiente, color: '#F59E0B' },
+        { label: 'Rechazado', value: statusCounts.rechazado, color: '#EF4444' },
+        { label: 'Sin respuesta', value: statusCounts.sin_respuesta, color: '#94a3b8' }
+      ].filter(function(i) { return i.value > 0; });
+
+      var totalConfs = donutItems.reduce(function(s, i) { return s + i.value; }, 0);
+      var globalRate = totalConfs > 0 ? Math.round((statusCounts.confirmado / totalConfs) * 100) : 0;
+
+      renderSvgDonut(containerId, donutItems, {
+        centerLabel: 'Confirmado',
+        centerValue: globalRate + '%'
+      });
+
+      // Table of worst confirmation rates
+      accionStats.sort(function(a, b) { return a.confirmRate - b.confirmRate; });
+      var worstActions = accionStats.filter(function(a) { return a.confirmRate < 80; });
+
+      if (worstActions.length > 0) {
+        var section = document.createElement('div');
+        section.style.cssText = 'margin-top:12px;';
+        var title = document.createElement('div');
+        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--warning); margin-bottom:6px;';
+        title.textContent = 'Acciones con tasa de confirmación < 80%';
+        section.appendChild(title);
+
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        var thead = document.createElement('thead');
+        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Conf.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Rech.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Tasa</th></tr>';
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        var maxItems = Math.min(worstActions.length, 8);
+        for (var i = 0; i < maxItems; i++) {
+          var st = worstActions[i];
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
+
+          var td1 = document.createElement('td');
+          td1.style.cssText = 'padding:4px 6px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+          td1.textContent = st.nombre;
+          td1.title = st.nombre;
+
+          var td2 = document.createElement('td');
+          td2.style.cssText = 'padding:4px 6px; text-align:center; color:var(--success);';
+          td2.textContent = st.confirmado;
+
+          var td3 = document.createElement('td');
+          td3.style.cssText = 'padding:4px 6px; text-align:center; color:var(--danger);';
+          td3.textContent = st.rechazado;
+
+          var td4 = document.createElement('td');
+          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:' + (st.confirmRate < 50 ? 'var(--danger)' : 'var(--warning)') + ';';
+          td4.textContent = st.confirmRate + '%';
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        section.appendChild(table);
+        container.appendChild(section);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 3: Training Seasonality
+    // ═══════════════════════════════════
+
+    function renderSeasonality(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      if (!acciones || acciones.length === 0) {
+        renderEmptyState(container, 'Añade acciones con fecha de inicio para ver estacionalidad');
+        return;
+      }
+
+      var monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      var monthData = [];
+      for (var m = 0; m < 12; m++) {
+        monthData.push({ month: m, label: monthNames[m], count: 0, hours: 0 });
+      }
+
+      var hasData = false;
+      acciones.forEach(function(a) {
+        if (!a.fechaInicio) return;
+        var d = new Date(a.fechaInicio);
+        if (isNaN(d.getTime())) return;
+        hasData = true;
+        var mo = d.getMonth();
+        monthData[mo].count++;
+        monthData[mo].hours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+      });
+
+      if (!hasData) {
+        renderEmptyState(container, 'Las acciones no tienen fechas de inicio');
+        return;
+      }
+
+      var maxCount = Math.max.apply(null, monthData.map(function(d) { return d.count; })) || 1;
+      var maxHours = Math.max.apply(null, monthData.map(function(d) { return d.hours; })) || 1;
+      var totalCount = monthData.reduce(function(s, d) { return s + d.count; }, 0);
+      var totalHours = monthData.reduce(function(s, d) { return s + d.hours; }, 0);
+
+      // Find peak and valley months
+      var peakMonth = monthData.reduce(function(best, d) { return d.count > best.count ? d : best; }, monthData[0]);
+      var valleyMonths = monthData.filter(function(d) { return d.count === 0; });
+
+      // Concentration index (Herfindahl-like)
+      var hhi = 0;
+      monthData.forEach(function(d) {
+        var share = totalCount > 0 ? d.count / totalCount : 0;
+        hhi += share * share;
+      });
+      var concentrationPct = Math.round(hhi * 100);
+
+      // SVG grouped bar chart
+      var svgW = 340, svgH = 160;
+      var padL = 36, padR = 10, padT = 16, padB = 28;
+      var chartW = svgW - padL - padR;
+      var chartH = svgH - padT - padB;
+      var barGroupW = chartW / 12;
+      var barW = barGroupW * 0.35;
+
+      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+      svg.style.cssText = 'width:100%; display:block;';
+
+      // Grid lines
+      for (var g = 0; g <= 4; g++) {
+        var yGrid = padT + (g / 4) * chartH;
+        svg.appendChild(svgEl('line', { x1: padL, y1: yGrid, x2: svgW - padR, y2: yGrid, stroke: '#e2e8f0', 'stroke-width': '0.5' }));
+      }
+
+      monthData.forEach(function(d, i) {
+        var x = padL + i * barGroupW;
+
+        // Count bar (left, accent color)
+        var hCount = maxCount > 0 ? (d.count / maxCount) * chartH : 0;
+        var yCount = padT + chartH - hCount;
+        var isPeak = d === peakMonth && d.count > 0;
+
+        var countBar = svgEl('rect', {
+          x: x + barGroupW * 0.1,
+          y: yCount,
+          width: barW,
+          height: hCount,
+          rx: '2',
+          fill: isPeak ? '#4F46E5' : '#818CF8'
+        });
+        svg.appendChild(countBar);
+
+        // Hours bar (right, teal color)
+        var hHours = maxHours > 0 ? (d.hours / maxHours) * chartH : 0;
+        var yHours = padT + chartH - hHours;
+        var hoursBar = svgEl('rect', {
+          x: x + barGroupW * 0.1 + barW + 2,
+          y: yHours,
+          width: barW,
+          height: hHours,
+          rx: '2',
+          fill: '#0EA5E9'
+        });
+        svg.appendChild(hoursBar);
+
+        // Count label on top if > 0
+        if (d.count > 0) {
+          var countTxt = svgEl('text', { x: x + barGroupW * 0.1 + barW / 2, y: yCount - 3, 'text-anchor': 'middle', fill: '#475569', 'font-size': '7', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+          countTxt.textContent = d.count;
+          svg.appendChild(countTxt);
+        }
+
+        // X label
+        var xLabel = svgEl('text', { x: x + barGroupW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '8', 'font-family': 'Inter, sans-serif' });
+        xLabel.textContent = d.label;
+        svg.appendChild(xLabel);
+      });
+
+      // Legend
+      var legendY = 6;
+      svg.appendChild(svgEl('rect', { x: svgW - 100, y: legendY, width: 8, height: 8, rx: '1', fill: '#818CF8' }));
+      var leg1 = svgEl('text', { x: svgW - 88, y: legendY + 7, fill: '#94a3b8', 'font-size': '8', 'font-family': 'Inter, sans-serif' });
+      leg1.textContent = 'Acciones';
+      svg.appendChild(leg1);
+      svg.appendChild(svgEl('rect', { x: svgW - 50, y: legendY, width: 8, height: 8, rx: '1', fill: '#0EA5E9' }));
+      var leg2 = svgEl('text', { x: svgW - 38, y: legendY + 7, fill: '#94a3b8', 'font-size': '8', 'font-family': 'Inter, sans-serif' });
+      leg2.textContent = 'Horas';
+      svg.appendChild(leg2);
+
+      container.appendChild(svg);
+
+      // Summary row
+      var summary = document.createElement('div');
+      summary.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
+
+      var chips = [
+        { label: 'Pico', value: peakMonth.label + ' (' + peakMonth.count + ')', color: 'var(--accent)' },
+        { label: 'Concentración', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
+      ];
+      if (valleyMonths.length > 0) {
+        chips.push({ label: 'Sin actividad', value: valleyMonths.map(function(v) { return v.label; }).join(', '), color: 'var(--text-muted)' });
+      }
+
+      chips.forEach(function(chip) {
+        var el = document.createElement('span');
+        el.style.cssText = 'font-size:10px; padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
+        el.innerHTML = '<span style="font-weight:600; color:' + chip.color + ';">' + esc(chip.label) + ':</span> ' + esc(chip.value);
+        summary.appendChild(el);
+      });
+      container.appendChild(summary);
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 4: Participant Recurrence
+    // ═══════════════════════════════════
+
+    function renderParticipantRecurrence(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      if (!acciones || acciones.length === 0) {
+        renderEmptyState(container, 'Vincula participantes a las acciones para ver recurrencia');
+        return;
+      }
+
+      // Count actions per NIF
+      var nifCount = {};
+      acciones.forEach(function(a) {
+        var parts = a.participantes || [];
+        parts.forEach(function(nif) {
+          nifCount[nif] = (nifCount[nif] || 0) + 1;
+        });
+      });
+
+      var nifs = Object.keys(nifCount);
+      if (nifs.length === 0) {
+        renderEmptyState(container, 'Vincula participantes a las acciones para ver recurrencia');
+        return;
+      }
+
+      // Histogram distribution
+      var histogram = {};
+      var maxActions = 0;
+      nifs.forEach(function(nif) {
+        var c = nifCount[nif];
+        histogram[c] = (histogram[c] || 0) + 1;
+        if (c > maxActions) maxActions = c;
+      });
+
+      // Employees with 0 training (from state.employees)
+      var allEmployees = (typeof state !== 'undefined' && state.employees) ? state.employees : [];
+      var zeroTraining = [];
+      if (allEmployees.length > 0) {
+        allEmployees.forEach(function(emp) {
+          var empNif = (emp.NIF || emp.nif || '').toString().trim();
+          if (empNif && !nifCount[empNif]) {
+            zeroTraining.push(empNif);
+          }
+        });
+      }
+
+      // Top 10 most trained
+      var sorted = nifs.map(function(nif) { return { nif: nif, count: nifCount[nif] }; }).sort(function(a, b) { return b.count - a.count; });
+      var top10 = sorted.slice(0, 10);
+
+      // Pareto: what % of employees receive Y% of training
+      var totalSlots = nifs.reduce(function(s, n) { return s + nifCount[n]; }, 0);
+      var cumulative = 0;
+      var paretoEmployees = 0;
+      for (var i = 0; i < sorted.length; i++) {
+        cumulative += sorted[i].count;
+        paretoEmployees++;
+        if (cumulative >= totalSlots * 0.8) break;
+      }
+      var paretoPctEmployees = nifs.length > 0 ? Math.round((paretoEmployees / nifs.length) * 100) : 0;
+
+      // KPI row
+      var kpiRow = document.createElement('div');
+      kpiRow.style.cssText = 'display:flex; gap:10px; margin-bottom:10px;';
+
+      var kpiItems = [
+        { val: nifs.length, label: 'Participantes', color: 'var(--text-primary)' },
+        { val: (totalSlots / nifs.length).toFixed(1), label: 'Media acciones', color: 'var(--accent)' },
+        { val: paretoPctEmployees + '%', label: 'reciben 80% form.', color: 'var(--warning)' }
+      ];
+      kpiItems.forEach(function(kpi) {
+        var el = document.createElement('div');
+        el.style.cssText = 'flex:1; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
+        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        kpiRow.appendChild(el);
+      });
+      container.appendChild(kpiRow);
+
+      // Histogram SVG
+      var bins = [];
+      for (var b = 1; b <= maxActions; b++) {
+        bins.push({ actions: b, count: histogram[b] || 0 });
+      }
+      if (bins.length > 0) {
+        var svgW = 320, svgH = 100;
+        var padL = 28, padR = 10, padT = 10, padB = 22;
+        var chartW = svgW - padL - padR;
+        var chartH = svgH - padT - padB;
+        var maxBinCount = Math.max.apply(null, bins.map(function(b) { return b.count; })) || 1;
+        var binW = Math.min(chartW / bins.length, 30);
+
+        var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+        svg.style.cssText = 'width:100%; max-width:320px; display:block;';
+
+        // Y label
+        var yLabel = svgEl('text', { x: '4', y: padT + chartH / 2, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '7', 'font-family': 'Inter, sans-serif', transform: 'rotate(-90, 4, ' + (padT + chartH / 2) + ')' });
+        yLabel.textContent = 'Empleados';
+        svg.appendChild(yLabel);
+
+        bins.forEach(function(bin, idx) {
+          var x = padL + idx * (chartW / bins.length) + (chartW / bins.length - binW) / 2;
+          var h = (bin.count / maxBinCount) * chartH;
+          var y = padT + chartH - h;
+
+          svg.appendChild(svgEl('rect', {
+            x: x, y: y, width: binW, height: h, rx: '2',
+            fill: idx < 2 ? '#10B981' : (idx < 5 ? '#4F46E5' : '#8B5CF6')
+          }));
+
+          if (bin.count > 0) {
+            var valTxt = svgEl('text', { x: x + binW / 2, y: y - 3, 'text-anchor': 'middle', fill: '#475569', 'font-size': '7', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+            valTxt.textContent = bin.count;
+            svg.appendChild(valTxt);
+          }
+
+          var xTxt = svgEl('text', { x: x + binW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '7', 'font-family': 'Inter, sans-serif' });
+          xTxt.textContent = bin.actions;
+          svg.appendChild(xTxt);
+        });
+
+        // X axis label
+        var xAxisLabel = svgEl('text', { x: padL + chartW / 2, y: svgH, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '7', 'font-family': 'Inter, sans-serif' });
+        xAxisLabel.textContent = 'N.º de acciones formativas';
+        svg.appendChild(xAxisLabel);
+
+        container.appendChild(svg);
+      }
+
+      // Top 10 table
+      if (top10.length > 0) {
+        var tableSection = document.createElement('div');
+        tableSection.style.cssText = 'margin-top:8px;';
+        var tableTitle = document.createElement('div');
+        tableTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:4px;';
+        tableTitle.textContent = 'Top 10 más formados';
+        tableSection.appendChild(tableTitle);
+
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        var tbody = document.createElement('tbody');
+        top10.forEach(function(item, idx) {
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
+
+          var tdRank = document.createElement('td');
+          tdRank.style.cssText = 'padding:3px 6px; color:var(--text-muted); width:20px;';
+          tdRank.textContent = (idx + 1) + '.';
+
+          var tdNif = document.createElement('td');
+          tdNif.style.cssText = 'padding:3px 6px; font-family:monospace; font-size:10px;';
+          tdNif.textContent = esc(item.nif);
+
+          var tdCount = document.createElement('td');
+          tdCount.style.cssText = 'padding:3px 6px; text-align:right; font-weight:600; color:var(--accent);';
+          tdCount.textContent = item.count + ' acc.';
+
+          tr.appendChild(tdRank);
+          tr.appendChild(tdNif);
+          tr.appendChild(tdCount);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        tableSection.appendChild(table);
+        container.appendChild(tableSection);
+      }
+
+      // Zero training indicator
+      if (zeroTraining.length > 0) {
+        var zeroEl = document.createElement('div');
+        zeroEl.style.cssText = 'margin-top:8px; padding:6px 10px; background:var(--warning-light); border-radius:var(--radius-sm); font-size:11px; color:var(--warning);';
+        zeroEl.innerHTML = '<strong>' + zeroTraining.length + '</strong> empleados del Excel sin ninguna formación vinculada';
+        container.appendChild(zeroEl);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 5: Survey Coverage
+    // ═══════════════════════════════════
+
+    function renderSurveyCoverage(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      var history = getHistory();
+
+      // Filter completed actions
+      var completedActions = acciones.filter(function(a) {
+        return a.estado === 'Terminada' || a.estado === 'Finalizada';
+      });
+
+      if (completedActions.length === 0) {
+        renderEmptyState(container, 'Marca acciones como terminadas para medir cobertura de encuestas');
+        return;
+      }
+
+      // Check which completed actions have survey scheduled in history
+      var surveyScheduled = {};
+      history.forEach(function(h) {
+        if (h.surveyScheduled && h.actionCode) {
+          surveyScheduled[h.actionCode] = true;
+        }
+      });
+
+      var withSurvey = 0;
+      var withoutSurvey = [];
+      completedActions.forEach(function(a) {
+        var code = a.codigo || '';
+        if (surveyScheduled[code]) {
+          withSurvey++;
+        } else {
+          withoutSurvey.push(a);
+        }
+      });
+
+      var coveragePct = completedActions.length > 0 ? Math.round((withSurvey / completedActions.length) * 100) : 0;
+
+      // KPI
+      var kpiEl = document.createElement('div');
+      kpiEl.style.cssText = 'text-align:center; margin-bottom:12px; padding:10px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      var kpiColor = coveragePct >= 75 ? 'var(--success)' : (coveragePct >= 50 ? 'var(--warning)' : 'var(--danger)');
+      kpiEl.innerHTML = '<div style="font-size:28px; font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:11px; color:var(--text-muted);">Cobertura de encuestas</div>';
+      container.appendChild(kpiEl);
+
+      // Donut
+      var donutItems = [
+        { label: 'Con encuesta', value: withSurvey, color: '#10B981' },
+        { label: 'Sin encuesta', value: withoutSurvey.length, color: '#EF4444' }
+      ].filter(function(i) { return i.value > 0; });
+
+      // Create a temp container for the donut
+      var donutWrap = document.createElement('div');
+      donutWrap.id = 'dashSurveyCoverageDonut_' + Date.now();
+      container.appendChild(donutWrap);
+
+      // Render donut using the temp id
+      renderSvgDonut(donutWrap.id, donutItems, {
+        centerLabel: 'Terminadas',
+        centerValue: completedActions.length
+      });
+
+      // List of pending actions
+      if (withoutSurvey.length > 0) {
+        var section = document.createElement('div');
+        section.style.cssText = 'margin-top:10px;';
+        var title = document.createElement('div');
+        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:4px;';
+        title.textContent = 'Acciones terminadas sin encuesta (' + withoutSurvey.length + ')';
+        section.appendChild(title);
+
+        var list = document.createElement('div');
+        list.style.cssText = 'max-height:120px; overflow-y:auto;';
+        var maxShow = Math.min(withoutSurvey.length, 10);
+        for (var i = 0; i < maxShow; i++) {
+          var a = withoutSurvey[i];
+          var item = document.createElement('div');
+          item.style.cssText = 'font-size:11px; padding:3px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;';
+          var nameSpan = document.createElement('span');
+          nameSpan.style.cssText = 'overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;';
+          nameSpan.textContent = esc(a.nombre || a.codigo || '(Sin nombre)');
+          nameSpan.title = a.nombre || '';
+          var codeSpan = document.createElement('span');
+          codeSpan.style.cssText = 'color:var(--text-muted); font-size:10px;';
+          codeSpan.textContent = esc(a.codigo || '');
+          item.appendChild(nameSpan);
+          item.appendChild(codeSpan);
+          list.appendChild(item);
+        }
+        section.appendChild(list);
+        if (withoutSurvey.length > 10) {
+          var more = document.createElement('div');
+          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+          more.textContent = '(+' + (withoutSurvey.length - 10) + ' más)';
+          section.appendChild(more);
+        }
+        container.appendChild(section);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 6: Gestor Productivity Metrics
+    // ═══════════════════════════════════
+
+    function renderGestorActivity(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      var history = getHistory();
+
+      if (history.length === 0 && acciones.length === 0) {
+        renderEmptyState(container, 'Envía convocatorias para ver métricas de actividad');
+        return;
+      }
+
+      // Analyze history timestamps
+      var now = new Date();
+      var sends = history.filter(function(h) { return h.status === 'completed'; });
+
+      // Sends per month (last 6 months)
+      var monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      var monthBuckets = [];
+      for (var m = 5; m >= 0; m--) {
+        var d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        monthBuckets.push({
+          year: d.getFullYear(),
+          month: d.getMonth(),
+          label: monthNames[d.getMonth()] + ' ' + d.getFullYear().toString().substring(2),
+          count: 0,
+          attendees: 0
+        });
+      }
+
+      sends.forEach(function(h) {
+        var ts = new Date(h.timestamp);
+        if (isNaN(ts.getTime())) return;
+        monthBuckets.forEach(function(bucket) {
+          if (ts.getFullYear() === bucket.year && ts.getMonth() === bucket.month) {
+            bucket.count++;
+            bucket.attendees += (h.attendeeCount || 0);
+          }
+        });
+      });
+
+      // Sends this week
+      var startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      var sendsThisWeek = sends.filter(function(h) {
+        return new Date(h.timestamp) >= startOfWeek;
+      }).length;
+
+      // Active actions count
+      var activeActions = acciones.filter(function(a) {
+        return a.estado === 'En marcha' || a.estado === 'En preparación';
+      }).length;
+
+      // Average processing time (time between history entries)
+      var avgPerMonth = monthBuckets.length > 0 ? (sends.length / Math.max(monthBuckets.filter(function(b) { return b.count > 0; }).length, 1)).toFixed(1) : '0';
+
+      // KPI row
+      var kpiRow = document.createElement('div');
+      kpiRow.style.cssText = 'display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;';
+
+      var kpis = [
+        { val: sends.length, label: 'Envíos totales', color: 'var(--accent)' },
+        { val: sendsThisWeek, label: 'Esta semana', color: 'var(--success)' },
+        { val: avgPerMonth, label: 'Media/mes activo', color: 'var(--text-primary)' },
+        { val: activeActions, label: 'Acciones activas', color: 'var(--warning)' }
+      ];
+
+      kpis.forEach(function(kpi) {
+        var el = document.createElement('div');
+        el.style.cssText = 'flex:1; min-width:60px; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
+        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        kpiRow.appendChild(el);
+      });
+      container.appendChild(kpiRow);
+
+      // Mini bar chart: sends per month (last 6 months)
+      var maxSends = Math.max.apply(null, monthBuckets.map(function(b) { return b.count; })) || 1;
+
+      var svgW = 300, svgH = 90;
+      var padL = 24, padR = 10, padT = 12, padB = 22;
+      var chartW = svgW - padL - padR;
+      var chartH = svgH - padT - padB;
+      var barW = chartW / monthBuckets.length * 0.6;
+
+      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+      svg.style.cssText = 'width:100%; display:block;';
+
+      // Baseline
+      svg.appendChild(svgEl('line', { x1: padL, y1: padT + chartH, x2: svgW - padR, y2: padT + chartH, stroke: '#e2e8f0', 'stroke-width': '0.5' }));
+
+      monthBuckets.forEach(function(bucket, idx) {
+        var gap = chartW / monthBuckets.length;
+        var x = padL + idx * gap + (gap - barW) / 2;
+        var h = (bucket.count / maxSends) * chartH;
+        var y = padT + chartH - h;
+
+        var isCurrentMonth = bucket.year === now.getFullYear() && bucket.month === now.getMonth();
+        svg.appendChild(svgEl('rect', {
+          x: x, y: y, width: barW, height: h, rx: '2',
+          fill: isCurrentMonth ? '#4F46E5' : '#818CF8'
+        }));
+
+        if (bucket.count > 0) {
+          var valTxt = svgEl('text', { x: x + barW / 2, y: y - 3, 'text-anchor': 'middle', fill: '#475569', 'font-size': '8', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+          valTxt.textContent = bucket.count;
+          svg.appendChild(valTxt);
+        }
+
+        var xTxt = svgEl('text', { x: x + barW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '7', 'font-family': 'Inter, sans-serif' });
+        xTxt.textContent = bucket.label;
+        svg.appendChild(xTxt);
+      });
+
+      container.appendChild(svg);
+
+      // Total attendees processed
+      var totalAttendees = sends.reduce(function(s, h) { return s + (h.attendeeCount || 0); }, 0);
+      if (totalAttendees > 0) {
+        var footer = document.createElement('div');
+        footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+        footer.textContent = totalAttendees + ' asistentes procesados en total';
+        container.appendChild(footer);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ANALYTICS MODULE 7: Provider Scorecard
+    // ═══════════════════════════════════
+
+    function renderProviderScorecard(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      var proveedores = getCatalog('proveedores');
+      if (proveedores.length === 0) {
+        renderEmptyState(container, 'Añade proveedores al catálogo para ver su scorecard');
+        return;
+      }
+
+      // Build provider map
+      var providerMap = {};
+      proveedores.forEach(function(p) {
+        providerMap[p.cif] = {
+          cif: p.cif,
+          nombre: p.razonSocial || p.cif,
+          numActions: 0,
+          totalBudget: 0,
+          totalAttendanceSlots: 0,
+          totalPresent: 0,
+          cancelled: 0,
+          completed: 0,
+          totalActions: 0
+        };
+      });
+
+      // Aggregate data per provider
+      acciones.forEach(function(a) {
+        var provCif = a.proveedorVinculado;
+        if (!provCif || !providerMap[provCif]) return;
+
+        var prov = providerMap[provCif];
+        prov.numActions++;
+        prov.totalBudget += (Number(a.presupuesto) || 0);
+
+        if (a.estado === 'Anulada' || a.estado === 'Cancelada') {
+          prov.cancelled++;
+        }
+        if (a.estado === 'Terminada' || a.estado === 'Finalizada') {
+          prov.completed++;
+        }
+        prov.totalActions++;
+
+        // Attendance data if available
+        if (a.asistencia && a.asistencia.registro && a.asistencia.sesiones) {
+          var registro = a.asistencia.registro;
+          var sesiones = a.asistencia.sesiones;
+          var nifs = Object.keys(registro);
+          sesiones.forEach(function(s) {
+            nifs.forEach(function(nif) {
+              prov.totalAttendanceSlots++;
+              var asistNif = registro[nif];
+              if (asistNif && asistNif[s.fecha]) {
+                var val = asistNif[s.fecha];
+                if (val === true || val === 'presente' || val === 'Presente') prov.totalPresent++;
+              }
+            });
+          });
+        }
+      });
+
+      // Build scorecard data
+      var scorecardData = Object.keys(providerMap).map(function(cif) {
+        var p = providerMap[cif];
+        var attendanceRate = p.totalAttendanceSlots > 0 ? Math.round((p.totalPresent / p.totalAttendanceSlots) * 100) : null;
+        var cancelRate = p.totalActions > 0 ? Math.round((p.cancelled / p.totalActions) * 100) : 0;
+        // Score: weighted combination (attendance 40%, budget efficiency 20%, cancellation penalty 40%)
+        var score = 50; // base score
+        if (attendanceRate !== null) score += (attendanceRate - 50) * 0.4;
+        score -= cancelRate * 0.4;
+        score = Math.max(0, Math.min(100, Math.round(score)));
+
+        return {
+          nombre: p.nombre,
+          cif: p.cif,
+          numActions: p.numActions,
+          totalBudget: p.totalBudget,
+          attendanceRate: attendanceRate,
+          cancelRate: cancelRate,
+          completed: p.completed,
+          score: score
+        };
+      }).filter(function(p) { return p.numActions > 0; });
+
+      if (scorecardData.length === 0) {
+        renderEmptyState(container, 'Vincula proveedores a las acciones para ver el scorecard');
+        return;
+      }
+
+      // Sort by score descending
+      scorecardData.sort(function(a, b) { return b.score - a.score; });
+
+      // Table
+      var table = document.createElement('table');
+      table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+
+      var thead = document.createElement('thead');
+      var headerRow = document.createElement('tr');
+      headerRow.style.cssText = 'border-bottom:2px solid var(--border);';
+      var headers = ['Proveedor', 'Acciones', 'Presupuesto', 'Asist.', 'Anul.', 'Punt.'];
+      var headerWidths = ['auto', '50px', '80px', '50px', '50px', '50px'];
+      var headerAligns = ['left', 'center', 'right', 'center', 'center', 'center'];
+      headers.forEach(function(h, idx) {
+        var th = document.createElement('th');
+        th.style.cssText = 'padding:4px 6px; color:var(--text-muted); font-weight:500; text-align:' + headerAligns[idx] + '; width:' + headerWidths[idx] + ';';
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      scorecardData.forEach(function(p, idx) {
+        var tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom:1px solid var(--border);' + (idx === 0 ? ' background:var(--success-light);' : (idx === scorecardData.length - 1 && scorecardData.length > 1 ? ' background:var(--danger-light);' : ''));
+
+        // Name
+        var tdName = document.createElement('td');
+        tdName.style.cssText = 'padding:5px 6px; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        tdName.textContent = esc(p.nombre);
+        tdName.title = p.nombre;
+
+        // Actions count
+        var tdActions = document.createElement('td');
+        tdActions.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdActions.textContent = p.numActions;
+
+        // Budget
+        var tdBudget = document.createElement('td');
+        tdBudget.style.cssText = 'padding:5px 6px; text-align:right; font-family:monospace; font-size:10px;';
+        tdBudget.textContent = formatCurrency(p.totalBudget);
+
+        // Attendance
+        var tdAttendance = document.createElement('td');
+        tdAttendance.style.cssText = 'padding:5px 6px; text-align:center;';
+        if (p.attendanceRate !== null) {
+          tdAttendance.style.color = p.attendanceRate >= 75 ? 'var(--success)' : (p.attendanceRate >= 50 ? 'var(--warning)' : 'var(--danger)');
+          tdAttendance.style.fontWeight = '600';
+          tdAttendance.textContent = p.attendanceRate + '%';
+        } else {
+          tdAttendance.style.color = 'var(--text-muted)';
+          tdAttendance.textContent = '—';
+        }
+
+        // Cancellation
+        var tdCancel = document.createElement('td');
+        tdCancel.style.cssText = 'padding:5px 6px; text-align:center;';
+        tdCancel.style.color = p.cancelRate > 20 ? 'var(--danger)' : (p.cancelRate > 0 ? 'var(--warning)' : 'var(--success)');
+        tdCancel.style.fontWeight = '600';
+        tdCancel.textContent = p.cancelRate + '%';
+
+        // Score badge
+        var tdScore = document.createElement('td');
+        tdScore.style.cssText = 'padding:5px 6px; text-align:center;';
+        var scoreBadge = document.createElement('span');
+        scoreBadge.style.cssText = 'display:inline-block; padding:2px 8px; border-radius:var(--radius-lg); font-weight:700; font-size:11px;';
+        if (p.score >= 70) {
+          scoreBadge.style.background = 'var(--success-light)';
+          scoreBadge.style.color = 'var(--success)';
+        } else if (p.score >= 40) {
+          scoreBadge.style.background = 'var(--warning-light)';
+          scoreBadge.style.color = 'var(--warning)';
+        } else {
+          scoreBadge.style.background = 'var(--danger-light)';
+          scoreBadge.style.color = 'var(--danger)';
+        }
+        scoreBadge.textContent = p.score;
+        tdScore.appendChild(scoreBadge);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdActions);
+        tr.appendChild(tdBudget);
+        tr.appendChild(tdAttendance);
+        tr.appendChild(tdCancel);
+        tr.appendChild(tdScore);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      // Summary footer
+      var totalBudgetAll = scorecardData.reduce(function(s, p) { return s + p.totalBudget; }, 0);
+      var totalActionsAll = scorecardData.reduce(function(s, p) { return s + p.numActions; }, 0);
+      var footer = document.createElement('div');
+      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between;';
+      footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span>';
+      container.appendChild(footer);
+    }
+
     function renderDashboard() {
       autoTransitionEstados();
       var acciones = getCatalog('acciones');
@@ -9468,6 +10611,15 @@
       if (exportBtn) {
         exportBtn.onclick = function() { exportAnnualReport(); };
       }
+
+      // Render analytics modules
+      renderAttendanceMonitor('dashAttendance', acciones);
+      renderConfirmationEffectiveness('dashConfirmations', acciones);
+      renderSeasonality('dashSeasonality', acciones);
+      renderParticipantRecurrence('dashRecurrence', acciones);
+      renderSurveyCoverage('dashSurveyCoverage', acciones);
+      renderGestorActivity('dashGestorActivity', acciones);
+      renderProviderScorecard('dashProviderScorecard', acciones);
 
       // Render training load chart
       renderTrainingLoadChart();
