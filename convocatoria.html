@@ -2291,6 +2291,86 @@
       '</div>';
     }
 
+    function renderAsistenciaHtml(record) {
+      var asistencia = record.asistencia || { sesiones: [], registro: {} };
+      var sesiones = asistencia.sesiones || [];
+      var registro = asistencia.registro || {};
+      var participantes = record.participantes || [];
+
+      var innerHtml = '';
+
+      if (participantes.length === 0) {
+        innerHtml = '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">Asigna participantes primero</div>';
+      } else {
+        // Add session row
+        innerHtml += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">' +
+          '<input class="input-field" id="cfAsistenciaDate" type="date" style="font-size:12px; width:auto;">' +
+          '<button class="btn btn-secondary" id="btnAddSesion" style="font-size:12px; white-space:nowrap;">A\u00F1adir sesi\u00F3n</button>' +
+        '</div>';
+
+        if (sesiones.length === 0) {
+          innerHtml += '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">Sin sesiones definidas</div>';
+        } else {
+          // Grid table
+          innerHtml += '<div style="width:100%; overflow-x:auto;">' +
+            '<table style="width:100%; font-size:12px; border-collapse:collapse; font-family:var(--font-body);">' +
+            '<thead><tr>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600; white-space:nowrap;">Participante</th>';
+
+          for (var si = 0; si < sesiones.length; si++) {
+            var dateLabel = sesiones[si];
+            try {
+              var parts = dateLabel.split('-');
+              dateLabel = parts[2] + '/' + parts[1];
+            } catch(e) {}
+            innerHtml += '<th style="text-align:center; padding:6px 4px; border:1px solid var(--border); background:var(--bg-input); font-weight:600; white-space:nowrap; min-width:60px;">' +
+              '<div style="display:flex; align-items:center; justify-content:center; gap:2px;">' +
+                '<span>' + esc(dateLabel) + '</span>' +
+                '<button class="cfDeleteSesion" data-sesion-idx="' + si + '" style="background:none; border:none; cursor:pointer; color:var(--danger); font-size:11px; padding:0 2px; line-height:1;" title="Eliminar sesi\u00F3n">\u2715</button>' +
+              '</div>' +
+              '<div style="margin-top:3px;"><label style="font-size:10px; color:var(--text-muted); cursor:pointer; user-select:none;"><input type="checkbox" class="cfToggleAllSesion" data-sesion-idx="' + si + '" style="accent-color:var(--accent); vertical-align:middle;"> todos</label></div>' +
+            '</th>';
+          }
+
+          innerHtml += '<th style="text-align:center; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600; white-space:nowrap;">% Asist.</th>' +
+            '</tr></thead><tbody>';
+
+          for (var pi = 0; pi < participantes.length; pi++) {
+            var nif = participantes[pi];
+            var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+            var empName = emp ? emp.Empleado : nif;
+            var nifRegistro = registro[nif] || [];
+            var checked = 0;
+
+            innerHtml += '<tr><td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap; color:var(--text-primary);">' + esc(empName) + '</td>';
+
+            for (var sj = 0; sj < sesiones.length; sj++) {
+              var isChecked = nifRegistro[sj] === true;
+              if (isChecked) checked++;
+              innerHtml += '<td style="text-align:center; padding:6px 4px; border:1px solid var(--border);">' +
+                '<input type="checkbox" class="cfAsistenciaCheck" data-nif="' + esc(nif) + '" data-sesion-idx="' + sj + '"' + (isChecked ? ' checked' : '') + ' style="accent-color:var(--accent);">' +
+              '</td>';
+            }
+
+            var pct = sesiones.length > 0 ? Math.round((checked / sesiones.length) * 100) : 0;
+            var pctColor = pct < 75 ? 'color:var(--danger);' : 'color:var(--text-primary);';
+            innerHtml += '<td style="text-align:center; padding:6px 8px; border:1px solid var(--border); font-variant-numeric:tabular-nums; font-weight:600; ' + pctColor + '">' + pct + '%</td>';
+            innerHtml += '</tr>';
+          }
+
+          innerHtml += '</tbody></table></div>';
+        }
+      }
+
+      return '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
+        '<div onclick="toggleFundaeSub(\'cfAsistenciaInner\')" style="cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); user-select:none; padding:0 0 8px 0;">' +
+          '&#9660; Control de asistencia' +
+          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
+        '</div>' +
+        '<div id="cfAsistenciaInner">' + innerHtml + '</div>' +
+      '</div>';
+    }
+
     function getCatalogFormHtml(key, record, isNew) {
       const cfg = CATALOG_CONFIG[key];
       const v = field => esc(String(record[field] || ''));
@@ -2452,6 +2532,7 @@
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           renderNotasTimelineHtml(record) +
+          renderAsistenciaHtml(record) +
           '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
             '<div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">' +
               'Participantes vinculados' +
@@ -2563,6 +2644,7 @@
             clone.codigo = newCodigo;
             clone.participantes = [];
             clone.notas = [];
+            clone.asistencia = { sesiones: [], registro: {} };
             clone.estado = 'Pendiente';
             clone.fechaInicio = '';
             clone.fechaFin = '';
@@ -2579,6 +2661,9 @@
 
         // Notes timeline
         bindNotasEvents(record);
+
+        // Attendance tracking
+        bindAsistenciaEvents(record);
 
         // Participant linking
         renderAccionParticipants(record);
@@ -2615,6 +2700,134 @@
           record.notas = record.notas.filter(function(n) { return n.id !== notaId; });
           upsertCatalogRecord('acciones', 'codigo', record);
           renderCatalogForm();
+        });
+      });
+    }
+
+    function bindAsistenciaEvents(record) {
+      // Ensure asistencia structure exists
+      if (!record.asistencia) record.asistencia = { sesiones: [], registro: {} };
+      if (!record.asistencia.sesiones) record.asistencia.sesiones = [];
+      if (!record.asistencia.registro) record.asistencia.registro = {};
+
+      // Add session button
+      var addSesionBtn = document.getElementById('btnAddSesion');
+      if (addSesionBtn) {
+        addSesionBtn.addEventListener('click', function() {
+          var dateEl = document.getElementById('cfAsistenciaDate');
+          if (!dateEl || !dateEl.value) { showToast('Selecciona una fecha para la sesi\u00F3n', 'warning'); return; }
+          var dateVal = dateEl.value;
+          if (record.asistencia.sesiones.indexOf(dateVal) !== -1) { showToast('Esa fecha ya existe', 'warning'); return; }
+          record.asistencia.sesiones.push(dateVal);
+          record.asistencia.sesiones.sort();
+          // Add false entry for all participants for the new session
+          var newIdx = record.asistencia.sesiones.indexOf(dateVal);
+          var participantes = record.participantes || [];
+          for (var i = 0; i < participantes.length; i++) {
+            var nif = participantes[i];
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = [];
+              for (var j = 0; j < record.asistencia.sesiones.length; j++) record.asistencia.registro[nif].push(false);
+            } else {
+              record.asistencia.registro[nif].splice(newIdx, 0, false);
+            }
+          }
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+        });
+      }
+
+      // Delete session buttons
+      document.querySelectorAll('.cfDeleteSesion').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var idx = parseInt(btn.getAttribute('data-sesion-idx'), 10);
+          record.asistencia.sesiones.splice(idx, 1);
+          var participantes = record.participantes || [];
+          for (var i = 0; i < participantes.length; i++) {
+            var nif = participantes[i];
+            if (record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif].splice(idx, 1);
+            }
+          }
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+        });
+      });
+
+      // Individual checkbox changes
+      document.querySelectorAll('.cfAsistenciaCheck').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          var nif = cb.getAttribute('data-nif');
+          var sIdx = parseInt(cb.getAttribute('data-sesion-idx'), 10);
+          if (!record.asistencia.registro[nif]) {
+            record.asistencia.registro[nif] = [];
+            for (var j = 0; j < record.asistencia.sesiones.length; j++) record.asistencia.registro[nif].push(false);
+          }
+          record.asistencia.registro[nif][sIdx] = cb.checked;
+          upsertCatalogRecord('acciones', 'codigo', record);
+          // Update percentage display for this participant row
+          var row = cb.closest('tr');
+          if (row) {
+            var checks = row.querySelectorAll('.cfAsistenciaCheck');
+            var total = checks.length;
+            var checked = 0;
+            checks.forEach(function(c) { if (c.checked) checked++; });
+            var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+            var pctCell = row.querySelector('td:last-child');
+            if (pctCell) {
+              pctCell.textContent = pct + '%';
+              pctCell.style.color = pct < 75 ? 'var(--danger)' : 'var(--text-primary)';
+            }
+          }
+          // Update toggle-all checkbox state
+          var toggleCb = document.querySelector('.cfToggleAllSesion[data-sesion-idx="' + sIdx + '"]');
+          if (toggleCb) {
+            var allChecked = true;
+            document.querySelectorAll('.cfAsistenciaCheck[data-sesion-idx="' + sIdx + '"]').forEach(function(c) {
+              if (!c.checked) allChecked = false;
+            });
+            toggleCb.checked = allChecked;
+          }
+        });
+      });
+
+      // Toggle-all per session column
+      document.querySelectorAll('.cfToggleAllSesion').forEach(function(toggleCb) {
+        // Set initial state
+        var sIdx = parseInt(toggleCb.getAttribute('data-sesion-idx'), 10);
+        var colChecks = document.querySelectorAll('.cfAsistenciaCheck[data-sesion-idx="' + sIdx + '"]');
+        var allCheckedInit = colChecks.length > 0;
+        colChecks.forEach(function(c) { if (!c.checked) allCheckedInit = false; });
+        toggleCb.checked = allCheckedInit;
+
+        toggleCb.addEventListener('change', function() {
+          var sIdx2 = parseInt(toggleCb.getAttribute('data-sesion-idx'), 10);
+          var newVal = toggleCb.checked;
+          document.querySelectorAll('.cfAsistenciaCheck[data-sesion-idx="' + sIdx2 + '"]').forEach(function(c) {
+            c.checked = newVal;
+            var nif = c.getAttribute('data-nif');
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = [];
+              for (var j = 0; j < record.asistencia.sesiones.length; j++) record.asistencia.registro[nif].push(false);
+            }
+            record.asistencia.registro[nif][sIdx2] = newVal;
+            // Update row percentage
+            var row = c.closest('tr');
+            if (row) {
+              var checks = row.querySelectorAll('.cfAsistenciaCheck');
+              var total = checks.length;
+              var checked = 0;
+              checks.forEach(function(ch) { if (ch.checked) checked++; });
+              var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+              var pctCell = row.querySelector('td:last-child');
+              if (pctCell) {
+                pctCell.textContent = pct + '%';
+                pctCell.style.color = pct < 75 ? 'var(--danger)' : 'var(--text-primary)';
+              }
+            }
+          });
+          upsertCatalogRecord('acciones', 'codigo', record);
         });
       });
     }
@@ -3003,10 +3216,11 @@
         record.centroVinculado = val('centroVinculado');
         record.tutorVinculado = val('tutorVinculado');
 
-        // Preserve participantes and notas from existing record (managed by their own UI, not form inputs)
+        // Preserve participantes, notas and asistencia from existing record (managed by their own UI, not form inputs)
         var existingAccion = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
         record.participantes = existingAccion ? (existingAccion.participantes || []) : [];
         record.notas = existingAccion ? (existingAccion.notas || []) : [];
+        record.asistencia = existingAccion ? (existingAccion.asistencia || { sesiones: [], registro: {} }) : { sesiones: [], registro: {} };
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
