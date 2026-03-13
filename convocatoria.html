@@ -1730,6 +1730,9 @@
               <div style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">
                 <button class="btn btn-primary" id="btnGenXmlBatch" style="font-size:12px; width:100%;">Generar los 3 XMLs (ZIP)</button>
               </div>
+              <div style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">
+                <button class="btn btn-secondary" id="btnExportFundaeExcel" style="font-size:12px; width:100%;">Exportar Excel FUNDAE</button>
+              </div>
             </div>
           </div>
         </div>
@@ -5999,6 +6002,7 @@
         grupoCotizacion: emp ? (emp['_f_Grupo Cotización'] || '') : '',
         diploma: 'N',
         costeHora: emp ? (emp['_f_Coste Salarial Hora'] || '') : '',
+        costeSS: emp ? (emp['_f_Coste aproximado SS'] || '') : '',
         discapacidad: emp ? (emp['_f_DiscapacidadContrib'] === 'true' || emp['_f_DiscapacidadContrib'] === 'Sí' ? true : false) : false,
         // For XML generation
         nombre: emp ? (emp['_f_Nombre'] || '') : '',
@@ -6726,6 +6730,83 @@
         return;
       }
       doBatchGenerate();
+    });
+
+    // ─── FUNDAE Excel export ───
+
+    document.getElementById('btnExportFundaeExcel').addEventListener('click', function() {
+      var accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una acción formativa', 'warning'); return; }
+
+      var participantes = xmlState.participantes;
+      if (participantes.length === 0) {
+        showToast('No hay participantes para exportar', 'warning');
+        return;
+      }
+
+      // Read current values from table inputs (they may have been edited)
+      var tbody = document.getElementById('xmlParticipantBody');
+      tbody.querySelectorAll('input[data-field], select[data-field]').forEach(function(el) {
+        var idx = parseInt(el.dataset.idx);
+        var field = el.dataset.field;
+        if (field === 'discapacidad') {
+          participantes[idx][field] = el.checked;
+        } else {
+          participantes[idx][field] = el.value;
+        }
+      });
+
+      // Sheet 1: Participantes
+      var participantData = participantes.map(function(p) {
+        return {
+          'NIF': p.nif || '',
+          'Tipo Documento': p.tipoDocumento == 60 ? '60 - NIE' : (p.tipoDocumento == 20 ? '20 - Pasaporte' : '10 - NIF'),
+          'Nombre': p.nombre || '',
+          'Apellidos': p.apellidos || '',
+          'Email': p.email || '',
+          'Telefono': p.telefono || '',
+          'Categoria Profesional': p.categoriaProfesional || '',
+          'Nivel Estudios': p.nivelEstudios || '',
+          'Grupo Cotizacion': p.grupoCotizacion || '',
+          'Diploma': p.diploma || 'N',
+          'Coste Hora': p.costeHora || '',
+          'Coste SS': p.costeSS || '',
+          'Discapacidad': p.discapacidad ? 'Sí' : 'No',
+          'CIF Empresa': p.cifEmpresa || ''
+        };
+      });
+
+      // Sheet 2: Accion Formativa
+      var centro = getXmlCentro();
+      var tutor = getXmlTutor();
+      var fechaInicio = document.getElementById('xmlFechaInicio').value || '';
+      var fechaFin = document.getElementById('xmlFechaFin').value || '';
+      var tutorNombre = '';
+      if (tutor) {
+        tutorNombre = [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
+      }
+
+      var accionData = [{
+        'Codigo': accion.codigo || '',
+        'Nombre': accion.nombre || '',
+        'Modalidad': accion.modalidad || '',
+        'Horas Presenciales': accion.horasPresenciales || 0,
+        'Horas Teleformacion': accion.horasTeleformacion || 0,
+        'Area Profesional': accion.areaProfesional || '',
+        'Nivel Formacion': accion.nivelFormacion != null ? accion.nivelFormacion : '',
+        'Objetivos': accion.objetivos || '',
+        'Contenidos': accion.contenidos || '',
+        'Centro': centro ? (centro.nombre || centro.documento || '') : '',
+        'Tutor': tutorNombre,
+        'Fecha Inicio': fechaInicio ? toFundaeDate(fechaInicio) : '',
+        'Fecha Fin': fechaFin ? toFundaeDate(fechaFin) : ''
+      }];
+
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantData), 'Participantes');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(accionData), 'Accion Formativa');
+      XLSX.writeFile(wb, 'FUNDAE_' + (accion.codigo || 'sin_codigo') + '_participantes.xlsx');
+      showToast('Datos FUNDAE exportados', 'success');
     });
 
     // ═══════════════════════════════════
