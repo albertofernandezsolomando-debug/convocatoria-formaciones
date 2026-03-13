@@ -1809,24 +1809,32 @@
         </div>
       </div>
 
-      <!-- Charts row 2: Modalidad + Area -->
+      <!-- Charts row 2: Gasto por proveedor + Modalidad -->
       <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Gasto por proveedor</div>
+          <div id="dashProveedorChart"></div>
+        </div>
         <div class="dash-card">
           <div class="dash-card-title">Horas por modalidad</div>
           <div id="dashModalidadChart"></div>
         </div>
+      </div>
+
+      <!-- Charts row 3: Area + Department -->
+      <div class="dash-chart-row">
         <div class="dash-card">
           <div class="dash-card-title">Acciones por área profesional</div>
           <div id="dashAreaChart"></div>
         </div>
-      </div>
-
-      <!-- Charts row 3: Department + Completeness -->
-      <div class="dash-chart-row">
         <div class="dash-card">
           <div class="dash-card-title">Acciones por departamento</div>
           <div id="dashDeptChart"></div>
         </div>
+      </div>
+
+      <!-- Charts row 4: Completeness -->
+      <div class="dash-chart-row">
         <div class="dash-card">
           <div class="dash-card-title">Completitud del catálogo</div>
           <div id="dashCompletenessChart"></div>
@@ -1991,6 +1999,7 @@
       return getCatalog('acciones').filter(function(a) {
         if (type === 'centros') return a.centroVinculado === documento;
         if (type === 'tutores') return a.tutorVinculado === documento;
+        if (type === 'proveedores') return a.proveedorVinculado === documento;
         return false;
       });
     }
@@ -2437,7 +2446,8 @@
           field('Provincia', 'provincia', v('provincia')) +
           field('Teléfono contacto', 'telefono', v('telefono')) +
           field('Email contacto', 'email', v('email'), { type: 'email' }) +
-          field('Responsable formación', 'responsable', v('responsable'));
+          field('Responsable formación', 'responsable', v('responsable')) +
+          renderLinkedAccionesHtml('proveedores', record.cif);
       } else if (key === 'centros') {
         title = isNew ? 'Nuevo centro' : esc(cfg.title(record));
         body = select('Tipo documento centro', 'tipoDocumento', record.tipoDocumento || '', [
@@ -2529,6 +2539,7 @@
               '</div>' +
             '</div>' +
           '</div>' +
+          select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           renderNotasTimelineHtml(record) +
@@ -2575,16 +2586,16 @@
           const cfg = CATALOG_CONFIG[key];
           const pkValue = record[cfg.pk];
 
-          if (key === 'centros' || key === 'tutores') {
+          if (key === 'centros' || key === 'tutores' || key === 'proveedores') {
             var linkedAcc = getLinkedAcciones(key, pkValue);
             if (linkedAcc.length > 0) {
-              var label = key === 'centros' ? 'centro' : 'tutor';
+              var label = key === 'centros' ? 'centro' : (key === 'tutores' ? 'tutor' : 'proveedor');
               showCatalogConfirm(
                 label.charAt(0).toUpperCase() + label.slice(1) + ' vinculado',
                 'Este ' + label + ' está referenciado por ' + linkedAcc.length + ' acción(es) formativa(s). Si lo eliminas, esas acciones perderán la referencia. ¿Continuar?',
                 function() {
                   deleteCatalogRecord(key, cfg.pk, pkValue);
-                  var field = key === 'centros' ? 'centroVinculado' : 'tutorVinculado';
+                  var field = key === 'centros' ? 'centroVinculado' : (key === 'tutores' ? 'tutorVinculado' : 'proveedorVinculado');
                   var acciones = getCatalog('acciones');
                   for (var i = 0; i < acciones.length; i++) {
                     if (acciones[i][field] === pkValue) acciones[i][field] = '';
@@ -3213,6 +3224,7 @@
         record.plataformaUri = val('plataformaUri');
         record.plataformaUsuario = val('plataformaUsuario');
         record.plataformaPassword = val('plataformaPassword');
+        record.proveedorVinculado = val('proveedorVinculado');
         record.centroVinculado = val('centroVinculado');
         record.tutorVinculado = val('tutorVinculado');
 
@@ -6418,6 +6430,26 @@
         labelWidth: 200,
         valueFormatter: function(v) { return formatCurrency(v); },
         footnote: empresasHidden > 0 ? '(+' + empresasHidden + ' más con crédito < 1.000\u20AC)' : ''
+      });
+
+      // --- Gasto por proveedor chart ---
+      var gastoProveedor = {};
+      acciones.forEach(function(a) {
+        if (a.proveedorVinculado && Number(a.presupuesto) > 0) {
+          gastoProveedor[a.proveedorVinculado] = (gastoProveedor[a.proveedorVinculado] || 0) + Number(a.presupuesto);
+        }
+      });
+      var proveedorMap = {};
+      proveedores.forEach(function(p) { proveedorMap[p.cif] = p.razonSocial || p.cif; });
+      var proveedorItems = Object.keys(gastoProveedor).map(function(cif, idx) {
+        return {
+          label: proveedorMap[cif] || cif,
+          value: gastoProveedor[cif],
+          color: CHART_PALETTE[idx % CHART_PALETTE.length]
+        };
+      }).sort(function(a, b) { return b.value - a.value; });
+      renderSvgBarChart('dashProveedorChart', proveedorItems, {
+        valueFormatter: function(v) { return formatCurrency(v); }
       });
 
       // --- Estado chart (donut) ---
