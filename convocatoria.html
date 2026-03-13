@@ -1950,7 +1950,10 @@
           <span style="font-size:11px; color:var(--text-muted);">Presets:</span>
           <div id="presetList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
           <button class="link-btn link-add" id="btnSavePreset" style="font-size:11px;">+ Guardar filtro actual</button>
+          <span style="color: var(--border-strong); font-size: 11px;">|</span>
+          <button class="link-btn link-add" onclick="saveAsFilterTemplate()" style="font-size:11px;">+ Plantilla completa</button>
         </div>
+        <div id="filterTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
         <div id="filterContainer"></div>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
@@ -4768,6 +4771,137 @@
       });
     }
 
+    // ═══════════════════════════════════
+    // FILTER+EVENT TEMPLATES (plantillas reutilizables)
+    // ═══════════════════════════════════
+
+    function loadFilterTemplates() {
+      try {
+        return JSON.parse(localStorage.getItem('convocatoria_filterTemplates') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveFilterTemplates(templates) {
+      try {
+        localStorage.setItem('convocatoria_filterTemplates', JSON.stringify(templates));
+      } catch(e) {
+        showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
+      }
+    }
+
+    function saveAsFilterTemplate() {
+      var existing = document.getElementById('filterTemplateSaveOverlay');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'filterTemplateSaveOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar plantilla completa</h3>' +
+        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Incluye filtros activos + datos del evento (excepto fecha).</p>' +
+        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
+        '<input type="text" class="input-field" id="filterTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
+        '<div class="dialog-buttons" style="margin-top:16px;">' +
+          '<button class="link-btn link-clear" id="filterTemplateSaveCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="filterTemplateSaveConfirm">Guardar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      var nameInput = document.getElementById('filterTemplateNameInput');
+      nameInput.focus();
+
+      function doSave() {
+        var name = nameInput.value.trim();
+        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
+        var templates = loadFilterTemplates();
+        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+        templates.push({
+          id: Date.now(),
+          name: name,
+          filters: JSON.parse(JSON.stringify(state.activeFilters)),
+          event: {
+            title: document.getElementById('eventTitle').value || '',
+            isTeams: isTeams,
+            startTime: document.getElementById('eventStart').value || '',
+            endTime: document.getElementById('eventEnd').value || '',
+            location: document.getElementById('eventLocation').value || '',
+            body: document.getElementById('eventBody').value || '',
+            formador: document.getElementById('eventFormador').value || ''
+          },
+          createdAt: new Date().toISOString()
+        });
+        saveFilterTemplates(templates);
+        renderFilterTemplateChips();
+        overlay.remove();
+        showToast('Plantilla "' + name + '" guardada', 'success');
+      }
+
+      document.getElementById('filterTemplateSaveConfirm').addEventListener('click', doSave);
+      nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
+      document.getElementById('filterTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+
+    function applyFilterTemplate(id) {
+      var templates = loadFilterTemplates();
+      var t = templates.find(function(x) { return x.id === id; });
+      if (!t) return;
+      // Aplicar filtros
+      if (t.filters) {
+        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
+      }
+      // Aplicar evento (excepto fecha)
+      if (t.event) {
+        if (t.event.title) document.getElementById('eventTitle').value = t.event.title;
+        if (t.event.startTime) document.getElementById('eventStart').value = t.event.startTime;
+        if (t.event.endTime) document.getElementById('eventEnd').value = t.event.endTime;
+        if (t.event.location) document.getElementById('eventLocation').value = t.event.location;
+        if (t.event.body) document.getElementById('eventBody').value = t.event.body;
+        if (t.event.formador) document.getElementById('eventFormador').value = t.event.formador;
+        if (t.event.isTeams) {
+          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+        } else {
+          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+        }
+      }
+      renderFilters();
+      renderTable();
+      showToast('Plantilla "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
+    }
+
+    function deleteFilterTemplate(id) {
+      var templates = loadFilterTemplates();
+      var t = templates.find(function(x) { return x.id === id; });
+      templates = templates.filter(function(x) { return x.id !== id; });
+      saveFilterTemplates(templates);
+      renderFilterTemplateChips();
+      showToast('Plantilla "' + (t ? t.name : '') + '" eliminada', 'info');
+    }
+
+    function renderFilterTemplateChips() {
+      var container = document.getElementById('filterTemplateChips');
+      if (!container) return;
+      var templates = loadFilterTemplates();
+      container.replaceChildren();
+      if (templates.length === 0) return;
+      templates.forEach(function(t) {
+        var chip = document.createElement('span');
+        chip.className = 'preset-chip';
+        chip.style.background = 'var(--accent-subtle)';
+        chip.style.borderColor = 'var(--accent)';
+        chip.style.color = 'var(--accent)';
+        chip.textContent = t.name;
+        chip.onclick = function() { applyFilterTemplate(t.id); };
+        var del = document.createElement('span');
+        del.className = 'preset-delete';
+        del.textContent = '\u00d7';
+        del.style.opacity = '0.6';
+        del.onclick = function(e) { e.stopPropagation(); deleteFilterTemplate(t.id); };
+        chip.appendChild(del);
+        container.appendChild(chip);
+      });
+    }
+
     function substituteTemplateVars(bodyText, event) {
       if (!bodyText) return bodyText;
       return bodyText
@@ -5279,6 +5413,7 @@
 
       saveState();
       renderPresets();
+      renderFilterTemplateChips();
     }
 
     // FILTER PRESETS
