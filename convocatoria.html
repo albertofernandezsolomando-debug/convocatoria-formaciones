@@ -9949,7 +9949,8 @@
 
           html += '<div class="cal-bar' + (isSel ? ' selected' : '') + '" ' +
             'data-codigo="' + esc(item.codigo) + '" ' +
-            'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + barTop + 'px; height:' + barHeight + 'px; line-height:' + barHeight + 'px; background:' + barColor + ';">' +
+            'title="' + esc((item.nombre || item.codigo) + ' \u2014 Doble clic para ver en cat\u00e1logo') + '" ' +
+            'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + barTop + 'px; height:' + barHeight + 'px; line-height:' + barHeight + 'px; background:' + barColor + '; cursor:pointer;">' +
             esc(item.nombre) +
           '</div>';
         });
@@ -10041,6 +10042,11 @@
         bar.addEventListener('click', function() {
           selectAction(bar.dataset.codigo);
         });
+        bar.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          var code = bar.dataset.codigo;
+          if (code) navigateToAction(code);
+        });
       });
 
       bottomPane.querySelectorAll('.cal-list-row').forEach(function(row) {
@@ -10048,6 +10054,11 @@
           selectAction(row.dataset.codigo);
           var bar = topPane.querySelector('.cal-bar[data-codigo="' + row.dataset.codigo + '"]');
           if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        row.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          var code = row.dataset.codigo;
+          if (code) navigateToAction(code);
         });
       });
 
@@ -10105,10 +10116,16 @@
           (tutorName ? '<div><dt>Tutor</dt><dd>' + esc(tutorName) + '</dd></div>' : '') +
           (item.bonificable ? '<div><dt>Bonificable</dt><dd>' + esc(item.bonificable) + '</dd></div>' : '') +
         '</div>' +
+        '<a href="#" id="calDetailOpenCatalog" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--accent); text-decoration:none; margin-top:6px; font-weight:500; cursor:pointer;">Ver en cat\u00e1logo \u2192</a>' +
       '</div>' +
       '<button class="cal-detail-close" id="calDetailClose">\u00d7</button>';
 
       panel.style.display = 'flex';
+
+      document.getElementById('calDetailOpenCatalog').addEventListener('click', function(e) {
+        e.preventDefault();
+        navigateToAction(item.codigo);
+      });
 
       document.getElementById('calDetailClose').addEventListener('click', function() {
         panel.style.display = 'none';
