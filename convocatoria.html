@@ -4497,6 +4497,62 @@
       };
     }
 
+    function checkFundaeReadiness(eventTitle) {
+      var acciones = getCatalog('acciones');
+      var titleNorm = (eventTitle || '').trim().toLowerCase();
+      var accion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (!accion) return { found: false };
+
+      var warnings = [];
+      if (!accion.centroVinculado) warnings.push('Sin centro de impartición vinculado');
+      if (!accion.tutorVinculado) warnings.push('Sin tutor vinculado');
+
+      var participantes = accion.participantes || [];
+      if (participantes.length === 0) {
+        warnings.push('Sin participantes asignados');
+      } else {
+        var emps = state.employees || [];
+        var missing = [];
+        var requiredFields = [
+          { key: '_f_Nombre', label: 'Nombre' },
+          { key: '_f_Apellidos', label: 'Apellidos' },
+          { key: '_f_Numero Seguridad Social', label: 'NSS' },
+          { key: '_f_Sexo', label: 'Sexo' },
+          { key: '_f_CIF', label: 'CIF empresa' }
+        ];
+        participantes.forEach(function(nif) {
+          var emp = emps.find(function(e) { return e.NIF === nif; });
+          if (!emp) {
+            missing.push(nif + ' (no encontrado en organigrama)');
+          } else {
+            var empMissing = [];
+            requiredFields.forEach(function(f) {
+              if (!emp[f.key]) empMissing.push(f.label);
+            });
+            if (empMissing.length > 0) {
+              missing.push((emp.Empleado || nif) + ': faltan ' + empMissing.join(', '));
+            }
+          }
+        });
+        if (missing.length > 0) {
+          warnings.push('Participantes con datos FUNDAE incompletos (' + missing.length + '/' + participantes.length + ')');
+        }
+      }
+
+      return { found: true, accion: accion, warnings: warnings };
+    }
+
+    function buildFundaeWarningHtml(warnings) {
+      if (!warnings || warnings.length === 0) return '';
+      return '<div style="margin-top:12px; padding:10px; background:var(--warning-light); border-radius:var(--radius-sm); border-left:3px solid var(--warning);">' +
+        '<div style="font-size:11px; font-weight:600; color:var(--warning); margin-bottom:4px;">Avisos FUNDAE (no bloqueantes):</div>' +
+        '<ul style="margin:0; padding-left:16px; font-size:12px; color:var(--text-secondary);">' +
+        warnings.map(function(w) { return '<li>' + esc(w) + '</li>'; }).join('') +
+        '</ul></div>';
+    }
+
     function validateEvent() {
       const event = getCurrentEvent();
       let valid = true;
@@ -4532,6 +4588,12 @@
       if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
       if (selected.length > 50) {
         summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 asistentes)</span>';
+      }
+
+      // FUNDAE readiness check — non-blocking warnings
+      const fundaeCheck = checkFundaeReadiness(event.title);
+      if (fundaeCheck.found && fundaeCheck.warnings.length > 0) {
+        summary += buildFundaeWarningHtml(fundaeCheck.warnings);
       }
 
       // Note: innerHTML is used with esc() for all user-supplied values — safe from XSS
@@ -4629,6 +4691,12 @@
       saveQueue();
       renderQueue();
       showToast('Convocatoria añadida a la cola (' + state.queue.length + ' en cola)', 'success');
+
+      // FUNDAE readiness check — non-blocking warning toast
+      const fundaeCheck = checkFundaeReadiness(event.title);
+      if (fundaeCheck.found && fundaeCheck.warnings.length > 0) {
+        showToast('Avisos FUNDAE: ' + fundaeCheck.warnings.join('; '), 'warning', 6000);
+      }
     });
 
     document.getElementById('btnClearQueue').addEventListener('click', () => {
