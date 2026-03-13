@@ -2493,6 +2493,23 @@
         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
       </div>
       <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Empresas del grupo</div>
+        <div id="empresasGrupoSettings" style="max-height:250px; overflow-y:auto;">
+          <table style="width:100%; font-size:12px; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">Razón social</th>
+                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">CIF</th>
+                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">Crédito</th>
+                <th style="width:60px;"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <button class="link-btn link-add" onclick="addEmpresaGrupo()" style="font-size:11px; margin-top:6px;">+ Añadir empresa</button>
+      </div>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
         <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Plantillas guardadas</div>
         <div id="settingsTemplatesList"></div>
       </div>
@@ -3142,8 +3159,8 @@
           return { value: a[0], label: a[0] + ' - ' + a[1] };
         });
 
-        // Build empresa options from EMPRESAS_GRUPO
-        const empresaOpts = EMPRESAS_GRUPO.map(function(e) {
+        // Build empresa options from getEmpresasGrupo()
+        const empresaOpts = getEmpresasGrupo().map(function(e) {
           return { value: e.cif, label: e.razonSocial + ' (' + e.cif + ')' };
         });
 
@@ -6771,6 +6788,7 @@
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
       renderSettingsTemplates();
+      renderEmpresasGrupoSettings();
       document.getElementById('settingsDialog').classList.add('visible');
     });
 
@@ -7178,6 +7196,66 @@
       { cif: 'B62843487', razonSocial: 'RSANTONI39, S.L.', credito: 9543.95 },
     ];
 
+    function getEmpresasGrupo() {
+      var settings = loadSettings();
+      if (settings.empresasGrupo && settings.empresasGrupo.length) return settings.empresasGrupo;
+      return EMPRESAS_GRUPO; // fallback al array hardcodeado
+    }
+
+    function renderEmpresasGrupoSettings() {
+      var container = document.getElementById('empresasGrupoSettings');
+      if (!container) return;
+      var empresas = getEmpresasGrupo();
+      var tbody = container.querySelector('tbody');
+      if (!tbody) return;
+      tbody.innerHTML = empresas.map(function(e, i) {
+        return '<tr>' +
+          '<td><input class="input-field" value="' + esc(e.razonSocial || '') + '" data-idx="' + i + '" data-field="razonSocial" style="width:100%; font-size:12px;"></td>' +
+          '<td><input class="input-field" value="' + esc(e.cif || '') + '" data-idx="' + i + '" data-field="cif" style="width:120px; font-size:12px;"></td>' +
+          '<td><input class="input-field" type="number" value="' + (e.credito || 0) + '" data-idx="' + i + '" data-field="credito" style="width:100px; font-size:12px;" step="0.01"></td>' +
+          '<td><button class="link-btn link-clear" onclick="removeEmpresaGrupo(' + i + ')" style="font-size:11px;">Eliminar</button></td>' +
+        '</tr>';
+      }).join('');
+
+      // Bind input changes
+      tbody.querySelectorAll('input.input-field').forEach(function(input) {
+        input.addEventListener('change', function() {
+          var idx = parseInt(input.dataset.idx, 10);
+          var field = input.dataset.field;
+          var value = input.value;
+          updateEmpresaGrupo(idx, field, value);
+        });
+      });
+    }
+
+    function addEmpresaGrupo() {
+      var empresas = getEmpresasGrupo().slice();
+      empresas.push({ razonSocial: '', cif: '', credito: 0 });
+      var settings = loadSettings();
+      settings.empresasGrupo = empresas;
+      saveSettings(settings);
+      renderEmpresasGrupoSettings();
+    }
+
+    function removeEmpresaGrupo(idx) {
+      var empresas = getEmpresasGrupo().slice();
+      empresas.splice(idx, 1);
+      var settings = loadSettings();
+      settings.empresasGrupo = empresas;
+      saveSettings(settings);
+      renderEmpresasGrupoSettings();
+      showToast('Empresa eliminada', 'info');
+    }
+
+    function updateEmpresaGrupo(idx, field, value) {
+      var empresas = getEmpresasGrupo().slice();
+      if (field === 'credito') value = parseFloat(value) || 0;
+      empresas[idx][field] = value;
+      var settings = loadSettings();
+      settings.empresasGrupo = empresas;
+      saveSettings(settings);
+    }
+
     function downloadXML(content, filename) {
       const blob = new Blob([content], { type: 'application/xml' });
       const url = URL.createObjectURL(blob);
@@ -7435,7 +7513,7 @@
       var errors = [];
       var warnings = [];
       var validAreas = FUNDAE_AREAS.map(function(a) { return a[0]; });
-      var validCifs = EMPRESAS_GRUPO.map(function(e) { return e.cif; });
+      var validCifs = getEmpresasGrupo().map(function(e) { return e.cif; });
       var nifRegex = /^[0-9]{8}[A-Z]$/;
       var nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
 
@@ -8626,7 +8704,7 @@
 
       var totalPresupuesto = acciones.reduce(function(sum, a) { return sum + (Number(a.presupuesto) || 0); }, 0);
 
-      var totalCredito = EMPRESAS_GRUPO.reduce(function(s, e) { return s + e.credito; }, 0);
+      var totalCredito = getEmpresasGrupo().reduce(function(s, e) { return s + e.credito; }, 0);
       var consumido = {};
       bonificables.forEach(function(a) {
         if (a.empresaPagadora && Number(a.presupuesto)) {
@@ -8936,7 +9014,7 @@
       }
 
       // --- Credit chart (two-tone SVG bars) ---
-      var empresasSorted = EMPRESAS_GRUPO.slice().sort(function(a, b) { return b.credito - a.credito; });
+      var empresasSorted = getEmpresasGrupo().slice().sort(function(a, b) { return b.credito - a.credito; });
       var empresasVisible = empresasSorted.filter(function(e) { return e.credito > 1000; });
       var empresasHidden = empresasSorted.length - empresasVisible.length;
       var creditItems = empresasVisible.map(function(e) {
@@ -9783,7 +9861,7 @@
 
       var totalPresupuesto = acciones.reduce(function(sum, a) { return sum + (Number(a.presupuesto) || 0); }, 0);
 
-      var totalCredito = EMPRESAS_GRUPO.reduce(function(s, e) { return s + e.credito; }, 0);
+      var totalCredito = getEmpresasGrupo().reduce(function(s, e) { return s + e.credito; }, 0);
       var consumido = {};
       bonificables.forEach(function(a) {
         if (a.empresaPagadora && Number(a.presupuesto)) {
@@ -9828,7 +9906,7 @@
       });
 
       // --- Sheet 3: Credito FUNDAE ---
-      var creditoData = EMPRESAS_GRUPO.map(function(e) {
+      var creditoData = getEmpresasGrupo().map(function(e) {
         var cons = consumido[e.cif] || 0;
         var disponible = e.credito - cons;
         var pctConsumido = e.credito > 0 ? Math.round((cons / e.credito) * 10000) / 100 : 0;
