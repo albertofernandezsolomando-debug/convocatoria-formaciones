@@ -2174,6 +2174,11 @@
             <option value="modalidad">Por modalidad</option>
           </select>
         </div>
+        <div class="cal-filter-group">
+          <span class="cal-filter-label">Empleado:</span>
+          <input class="input-field" type="text" id="calEmployeeSearch" placeholder="Nombre o NIF" style="font-size:12px; padding:4px 8px; width:180px;">
+          <button class="link-btn link-clear" id="calEmployeeClear" style="font-size:11px; display:none;">Limpiar</button>
+        </div>
         <div class="cal-summary" id="calSummary"></div>
       </div>
       <div class="cal-timeline-wrap" id="calTimelineWrap"></div>
@@ -8027,6 +8032,8 @@
       activeEstados: null,
       groupBy: 'flat',
       selectedCodigo: null,
+      employeeNIFs: null,
+      employeeQuery: '',
       initialized: false
     };
 
@@ -8074,6 +8081,55 @@
 
       document.getElementById('calGroupBy').addEventListener('change', function() {
         calState.groupBy = this.value;
+        renderCalendarTab();
+      });
+
+      var empInput = document.getElementById('calEmployeeSearch');
+      var empClear = document.getElementById('calEmployeeClear');
+
+      function applyEmployeeFilter() {
+        var q = empInput.value.trim().toLowerCase();
+        calState.employeeQuery = q;
+        if (!q) {
+          calState.employeeNIFs = null;
+          empClear.style.display = 'none';
+          renderCalendarTab();
+          return;
+        }
+        empClear.style.display = '';
+        // Match against loaded organigrama
+        var matchedNIFs = [];
+        if (state.employees && state.employees.length > 0) {
+          state.employees.forEach(function(emp) {
+            var name = (emp['Empleado'] || '').toLowerCase();
+            var nif = (emp['NIF'] || '').toLowerCase();
+            if (name.indexOf(q) !== -1 || nif.indexOf(q) !== -1) {
+              matchedNIFs.push(emp['NIF']);
+            }
+          });
+        }
+        // Also match raw NIF typed directly
+        if (matchedNIFs.length === 0) {
+          matchedNIFs = [empInput.value.trim().toUpperCase()];
+        }
+        calState.employeeNIFs = matchedNIFs;
+        renderCalendarTab();
+      }
+
+      empInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') applyEmployeeFilter(); });
+      empInput.addEventListener('input', function() {
+        if (!empInput.value.trim()) {
+          calState.employeeNIFs = null;
+          calState.employeeQuery = '';
+          empClear.style.display = 'none';
+          renderCalendarTab();
+        }
+      });
+      empClear.addEventListener('click', function() {
+        empInput.value = '';
+        calState.employeeNIFs = null;
+        calState.employeeQuery = '';
+        empClear.style.display = 'none';
         renderCalendarTab();
       });
     }
@@ -8148,9 +8204,26 @@
       // Apply estado filter
       var filtered = allWithDates;
       if (calState.activeEstados) {
-        filtered = allWithDates.filter(function(item) {
+        filtered = filtered.filter(function(item) {
           return calState.activeEstados.indexOf(item.estado || '(Sin estado)') !== -1;
         });
+      }
+
+      // Apply employee filter
+      if (calState.employeeNIFs && calState.employeeNIFs.length > 0) {
+        var nifSet = {};
+        calState.employeeNIFs.forEach(function(n) { nifSet[n] = true; });
+        filtered = filtered.filter(function(item) {
+          return item.participantes.some(function(nif) { return nifSet[nif]; });
+        });
+      }
+
+      // Restore search input value (re-rendered by initCalendarTab guard)
+      var empInput = document.getElementById('calEmployeeSearch');
+      var empClear = document.getElementById('calEmployeeClear');
+      if (calState.employeeQuery) {
+        empInput.value = calState.employeeQuery;
+        empClear.style.display = '';
       }
 
       // Calculate visible range
