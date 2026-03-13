@@ -1197,13 +1197,15 @@
       min-width: 0;
       opacity: 0;
       transform: translateY(12px);
+      animation: dashFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.3s;
     }
-    .dash-card-visible {
-      animation: dashCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    @keyframes dashCardIn {
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .dash-chart-row:nth-child(4) .dash-card { animation-delay: 0.35s; }
+    .dash-chart-row:nth-child(4) .dash-card:nth-child(2) { animation-delay: 0.40s; }
+    .dash-chart-row:nth-child(5) .dash-card { animation-delay: 0.45s; }
+    .dash-chart-row:nth-child(5) .dash-card:nth-child(2) { animation-delay: 0.50s; }
+    .dash-chart-row:nth-child(6) .dash-card { animation-delay: 0.55s; }
+    .dash-chart-row:nth-child(6) .dash-card:nth-child(2) { animation-delay: 0.60s; }
 
     .dash-card:hover {
       box-shadow: var(--shadow-lg);
@@ -1956,21 +1958,6 @@
       border-color: var(--accent);
     }
 
-    /* Shared analytics module classes */
-    .dash-module-kpi-row { display: flex; gap: 10px; margin-bottom: 12px; }
-    .dash-module-kpi { flex: 1; text-align: center; padding: 8px; background: var(--bg-input); border-radius: var(--radius-sm); }
-    .dash-module-kpi-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-    .dash-module-kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-    .dash-module-table { width: 100%; font-size: 11px; border-collapse: collapse; }
-    .dash-module-table th { text-align: left; padding: 4px 6px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
-    .dash-module-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
-    .dash-module-summary { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .dash-module-chip { font-size: 10px; padding: 3px 8px; border-radius: var(--radius-lg); background: var(--bg-input); color: var(--text-secondary); }
-    .dash-module-footer { font-size: 10px; color: var(--text-muted); margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
-    .dash-module-empty { text-align: center; color: var(--text-muted); padding: 24px; font-size: 13px; }
-    .dash-module-section { margin-top: 12px; }
-    .dash-module-section-title { font-size: 11px; font-weight: 600; margin-bottom: 6px; }
-
     .dash-section-heading {
       font-size: 11px;
       font-weight: 600;
@@ -1981,25 +1968,6 @@
       padding-bottom: 6px;
       border-bottom: 1px solid var(--border);
       grid-column: 1 / -1;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .dash-kpi, .dash-card {
-        animation: none !important;
-        opacity: 1 !important;
-        transform: none !important;
-      }
-      .dash-completeness-fill.dash-pulse {
-        animation: none !important;
-      }
-      .dash-completeness-fill {
-        transition: none !important;
-      }
-    }
-
-    @media (max-width: 1200px) and (min-width: 901px) {
-      .dash-chart-row { grid-template-columns: 1fr; }
-      .dash-card { padding: 16px; }
     }
 
     @media (max-width: 900px) {
@@ -2822,22 +2790,27 @@
     </div>
     <div class="dash-container" id="dashContainer">
       <!-- Header -->
-      <div class="dash-header" style="flex-wrap:wrap; gap:8px;">
+      <div class="dash-header">
         <h2>Cuadro de Mando</h2>
-        <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px;">
           <div class="dash-mode-toggle" id="dashModeToggle">
             <button class="dash-mode-btn active" data-mode="completo">Completo</button>
             <button class="dash-mode-btn" data-mode="resumen">Resumen</button>
           </div>
-          <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:200px; font-size:12px; padding:4px 10px;">
-          <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:11px; padding:4px 10px;">Buscar</button>
-          <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:11px; padding:4px 10px;">Exportar</button>
           <span class="dash-header-time" id="dashLastUpdate"></span>
         </div>
       </div>
 
       <!-- Sticky section navigator -->
       <div class="dash-nav" id="dashNav"></div>
+
+      <!-- Employee search + Export -->
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+        <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:300px; font-size:13px;">
+        <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
+      </div>
 
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
@@ -2864,6 +2837,42 @@
         <div id="dashCompletenessChart"></div>
       </div>
 
+      <!-- Section: Analytics avanzado -->
+      <div id="dash-group-analytics">
+      <div class="dash-section-heading">Analytics avanzado</div>
+
+      <div class="dash-card" data-card-id="riesgo-fundae" style="margin-bottom:16px;">
+        <div class="dash-card-title">Riesgo de Bonificación FUNDAE</div>
+        <div id="dashRiskScoring"></div>
+      </div>
+
+      <div class="dash-card" data-card-id="roi-formacion" style="margin-bottom:16px;">
+        <div class="dash-card-title">ROI de Formación por Empresa</div>
+        <div id="dashROI"></div>
+      </div>
+
+      <div class="dash-card" data-card-id="cobertura" style="margin-bottom:16px;">
+        <div class="dash-card-title">Cobertura Formativa</div>
+        <div id="dashCoverage"></div>
+      </div>
+
+      <div class="dash-card" data-card-id="equidad" style="margin-bottom:16px;">
+        <div class="dash-card-title">Equidad en Acceso a Formación</div>
+        <div id="dashEquity"></div>
+      </div>
+
+      <div class="dash-card" data-card-id="inversion-manager" style="margin-bottom:16px;">
+        <div class="dash-card-title">Inversión Formativa por Responsable</div>
+        <div id="dashByManager"></div>
+      </div>
+
+      <div class="dash-card" data-card-id="cross-company" style="margin-bottom:16px;">
+        <div class="dash-card-title">Formación Interempresarial</div>
+        <div id="dashCrossCompany"></div>
+      </div>
+
+      </div>
+
       <!-- Section: Vision general -->
       <div id="dash-group-general">
       <div class="dash-section-heading">Vision general</div>
@@ -2873,6 +2882,7 @@
         <div class="dash-card" data-card-id="credito">
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
           <div id="dashCreditChart"></div>
+          <div id="dashCreditProjection" style="margin-top: 12px;"></div>
         </div>
         <div class="dash-card" data-card-id="estado">
           <div class="dash-card-title">Acciones por estado</div>
@@ -2989,7 +2999,6 @@
   </div>
 
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
-  <div id="dashTooltip" style="position:fixed;pointer-events:none;z-index:200;background:var(--bg-panel);border:1px solid var(--border);box-shadow:var(--shadow-lg);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;display:none;color:var(--text-primary);max-width:220px;"></div>
 
   <!-- Series dialog -->
   <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true">
@@ -9283,11 +9292,6 @@
         el.textContent = prefix + end + suffix;
         return;
       }
-      // Respect prefers-reduced-motion
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        el.textContent = prefix + end.toLocaleString('es-ES') + suffix;
-        return;
-      }
       var start = 0;
       var startTime = null;
       function step(timestamp) {
@@ -9331,28 +9335,6 @@
      * @param {Array} items - [{label, value, color?, secondaryValue?, secondaryColor?}]
      * @param {Object} opts - {maxValue, valueFormatter, labelWidth, footnote}
      */
-    function showDashTooltip(e, html) {
-      var tip = document.getElementById('dashTooltip');
-      if (!tip) return;
-      tip.textContent = '';
-      // Use textContent for safety; if caller needs html, they build DOM elements
-      if (typeof html === 'string') {
-        tip.textContent = html;
-      }
-      tip.style.display = 'block';
-      var x = e.clientX + 12;
-      var y = e.clientY - 8;
-      // Keep within viewport
-      if (x + 220 > window.innerWidth) x = e.clientX - 220;
-      if (y + 40 > window.innerHeight) y = e.clientY - 40;
-      tip.style.left = x + 'px';
-      tip.style.top = y + 'px';
-    }
-    function hideDashTooltip() {
-      var tip = document.getElementById('dashTooltip');
-      if (tip) tip.style.display = 'none';
-    }
-
     function renderSvgBarChart(containerId, items, opts) {
       opts = opts || {};
       var container = document.getElementById(containerId);
@@ -9422,19 +9404,6 @@
           val.textContent = formatter(total);
         }
         row.appendChild(val);
-
-        // Tooltip on hover
-        (function(itemRef, total, maxV, fmt) {
-          row.addEventListener('mouseenter', function(e) {
-            var pct = maxV > 0 ? Math.round((total / maxV) * 100) : 0;
-            showDashTooltip(e, itemRef.label + ': ' + fmt(total) + ' (' + pct + '%)');
-          });
-          row.addEventListener('mousemove', function(e) {
-            var pct = maxV > 0 ? Math.round((total / maxV) * 100) : 0;
-            showDashTooltip(e, itemRef.label + ': ' + fmt(total) + ' (' + pct + '%)');
-          });
-          row.addEventListener('mouseleave', hideDashTooltip);
-        })(item, total, maxVal, formatter);
 
         container.appendChild(row);
       });
@@ -9530,20 +9499,8 @@
           'stroke-dasharray': dashLen + ' ' + dashGap,
           'stroke-dashoffset': -offset,
           'class': 'dash-donut-segment',
-          'transform': 'rotate(-90 ' + cx + ' ' + cy + ')',
-          'style': 'cursor:pointer;'
+          'transform': 'rotate(-90 ' + cx + ' ' + cy + ')'
         });
-        // Tooltip on hover
-        (function(it, tot) {
-          var pctStr = tot > 0 ? Math.round((it.value / tot) * 100) + '%' : '0%';
-          circle.addEventListener('mouseenter', function(e) {
-            showDashTooltip(e, it.label + ': ' + it.value + ' (' + pctStr + ')');
-          });
-          circle.addEventListener('mousemove', function(e) {
-            showDashTooltip(e, it.label + ': ' + it.value + ' (' + pctStr + ')');
-          });
-          circle.addEventListener('mouseleave', hideDashTooltip);
-        })(item, total);
         svg.appendChild(circle);
         offset += dashLen;
       });
@@ -9739,9 +9696,7 @@
         // Only draw line chart for multi-session actions
         if (sesiones.length > 1) {
           var chartLabel = document.createElement('div');
-          chartLabel.className = 'dash-module-section-title';
-          chartLabel.style.marginTop = '12px';
-          chartLabel.style.color = 'var(--text-primary)';
+          chartLabel.style.cssText = 'font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:6px; margin-top:12px;';
           chartLabel.textContent = esc(a.nombre || a.codigo || '');
           container.appendChild(chartLabel);
 
@@ -9821,53 +9776,35 @@
       var avgAttendance = totalSesiones > 0 ? Math.round((totalPresentes / totalSesiones) * 100) : 0;
 
       var kpiRow = document.createElement('div');
-      kpiRow.className = 'dash-module-kpi-row';
-
-      function makeModuleKpi(val, label, bgOverride, colorOverride) {
-        var el = document.createElement('div');
-        el.className = 'dash-module-kpi';
-        if (bgOverride) el.style.background = bgOverride;
-        var valEl = document.createElement('div');
-        valEl.className = 'dash-module-kpi-value';
-        if (colorOverride) valEl.style.color = colorOverride;
-        valEl.textContent = val;
-        var lblEl = document.createElement('div');
-        lblEl.className = 'dash-module-kpi-label';
-        lblEl.textContent = label;
-        el.appendChild(valEl);
-        el.appendChild(lblEl);
-        return el;
-      }
-
-      kpiRow.appendChild(makeModuleKpi(avgAttendance + '%', 'Asistencia media'));
-      kpiRow.appendChild(makeModuleKpi(accionesConAsistencia.length, 'Acciones con registro'));
-      kpiRow.appendChild(makeModuleKpi(abandonmentAlerts.length, 'Alertas de abandono',
-        abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)',
-        abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)'));
+      kpiRow.style.cssText = 'display:flex; gap:16px; margin-bottom:12px;';
+      var kpi1 = document.createElement('div');
+      kpi1.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      kpi1.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + avgAttendance + '%</div><div style="font-size:11px; color:var(--text-muted);">Asistencia media</div>';
+      var kpi2 = document.createElement('div');
+      kpi2.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
+      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div style="font-size:11px; color:var(--text-muted);">Acciones con registro</div>';
+      var kpi3 = document.createElement('div');
+      kpi3.style.cssText = 'flex:1; text-align:center; padding:8px; background:' + (abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)') + '; border-radius:var(--radius-sm);';
+      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div style="font-size:11px; color:var(--text-muted);">Alertas de abandono</div>';
+      kpiRow.appendChild(kpi1);
+      kpiRow.appendChild(kpi2);
+      kpiRow.appendChild(kpi3);
       container.insertBefore(kpiRow, container.firstChild);
 
       // Abandonment alerts table
       if (abandonmentAlerts.length > 0) {
         abandonmentAlerts.sort(function(a, b) { return a.pct - b.pct; });
         var alertSection = document.createElement('div');
-        alertSection.className = 'dash-module-section';
+        alertSection.style.cssText = 'margin-top:12px;';
         var alertTitle = document.createElement('div');
-        alertTitle.className = 'dash-module-section-title';
-        alertTitle.style.color = 'var(--danger)';
+        alertTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:6px;';
         alertTitle.textContent = 'Participantes con asistencia < 75%';
         alertSection.appendChild(alertTitle);
 
         var table = document.createElement('table');
-        table.className = 'dash-module-table';
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
         var thead = document.createElement('thead');
-        var headTr = document.createElement('tr');
-        ['Accion', 'NIF', 'Sesiones', '%'].forEach(function(h) {
-          var th = document.createElement('th');
-          th.textContent = h;
-          if (h === 'Sesiones' || h === '%') th.style.textAlign = 'center';
-          headTr.appendChild(th);
-        });
-        thead.appendChild(headTr);
+        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">NIF</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Sesiones</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">%</th></tr>';
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -9875,12 +9812,10 @@
         for (var i = 0; i < maxAlerts; i++) {
           var alert = abandonmentAlerts[i];
           var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var td1 = document.createElement('td');
-          td1.style.maxWidth = '120px';
-          td1.style.overflow = 'hidden';
-          td1.style.textOverflow = 'ellipsis';
-          td1.style.whiteSpace = 'nowrap';
+          td1.style.cssText = 'padding:4px 6px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
           td1.textContent = alert.accion;
           td1.title = alert.accion;
 
@@ -9889,13 +9824,11 @@
           td2.textContent = esc(alert.nif);
 
           var td3 = document.createElement('td');
-          td3.style.textAlign = 'center';
+          td3.style.cssText = 'padding:4px 6px; text-align:center;';
           td3.textContent = alert.attended + '/' + alert.totalSessions;
 
           var td4 = document.createElement('td');
-          td4.style.textAlign = 'center';
-          td4.style.fontWeight = '600';
-          td4.style.color = 'var(--danger)';
+          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:var(--danger);';
           td4.textContent = alert.pct + '%';
 
           tr.appendChild(td1);
@@ -9909,9 +9842,8 @@
 
         if (abandonmentAlerts.length > 10) {
           var more = document.createElement('div');
-          more.className = 'dash-module-footer';
-          more.style.borderTop = 'none';
-          more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' mas)';
+          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+          more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' más)';
           alertSection.appendChild(more);
         }
         container.appendChild(alertSection);
@@ -9991,24 +9923,16 @@
 
       if (worstActions.length > 0) {
         var section = document.createElement('div');
-        section.className = 'dash-module-section';
+        section.style.cssText = 'margin-top:12px;';
         var title = document.createElement('div');
-        title.className = 'dash-module-section-title';
-        title.style.color = 'var(--warning)';
-        title.textContent = 'Acciones con tasa de confirmacion < 80%';
+        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--warning); margin-bottom:6px;';
+        title.textContent = 'Acciones con tasa de confirmación < 80%';
         section.appendChild(title);
 
         var table = document.createElement('table');
-        table.className = 'dash-module-table';
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
         var thead = document.createElement('thead');
-        var htr = document.createElement('tr');
-        ['Accion', 'Conf.', 'Rech.', 'Tasa'].forEach(function(h) {
-          var th = document.createElement('th');
-          th.textContent = h;
-          if (h !== 'Accion') th.style.textAlign = 'center';
-          htr.appendChild(th);
-        });
-        thead.appendChild(htr);
+        thead.innerHTML = '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left; padding:4px 6px; color:var(--text-muted); font-weight:500;">Acción</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Conf.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Rech.</th><th style="text-align:center; padding:4px 6px; color:var(--text-muted); font-weight:500;">Tasa</th></tr>';
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -10016,29 +9940,23 @@
         for (var i = 0; i < maxItems; i++) {
           var st = worstActions[i];
           var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var td1 = document.createElement('td');
-          td1.style.maxWidth = '130px';
-          td1.style.overflow = 'hidden';
-          td1.style.textOverflow = 'ellipsis';
-          td1.style.whiteSpace = 'nowrap';
+          td1.style.cssText = 'padding:4px 6px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
           td1.textContent = st.nombre;
           td1.title = st.nombre;
 
           var td2 = document.createElement('td');
-          td2.style.textAlign = 'center';
-          td2.style.color = 'var(--success)';
+          td2.style.cssText = 'padding:4px 6px; text-align:center; color:var(--success);';
           td2.textContent = st.confirmado;
 
           var td3 = document.createElement('td');
-          td3.style.textAlign = 'center';
-          td3.style.color = 'var(--danger)';
+          td3.style.cssText = 'padding:4px 6px; text-align:center; color:var(--danger);';
           td3.textContent = st.rechazado;
 
           var td4 = document.createElement('td');
-          td4.style.textAlign = 'center';
-          td4.style.fontWeight = '600';
-          td4.style.color = st.confirmRate < 50 ? 'var(--danger)' : 'var(--warning)';
+          td4.style.cssText = 'padding:4px 6px; text-align:center; font-weight:600; color:' + (st.confirmRate < 50 ? 'var(--danger)' : 'var(--warning)') + ';';
           td4.textContent = st.confirmRate + '%';
 
           tr.appendChild(td1);
@@ -10068,11 +9986,10 @@
       var deptKeys = Object.keys(deptConfirm).filter(function(k) { return deptConfirm[k].total > 0; });
       if (deptKeys.length > 1) {
         var deptSection = document.createElement('div');
-        deptSection.className = 'dash-module-section';
+        deptSection.style.cssText = 'margin-top:10px;';
         var deptTitle = document.createElement('div');
-        deptTitle.className = 'dash-module-section-title';
-        deptTitle.style.color = 'var(--text-secondary)';
-        deptTitle.textContent = 'Confirmacion por departamento';
+        deptTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+        deptTitle.textContent = 'Confirmación por departamento';
         deptSection.appendChild(deptTitle);
 
         deptKeys.sort(function(a, b) {
@@ -10234,11 +10151,11 @@
 
       // Summary row
       var summary = document.createElement('div');
-      summary.className = 'dash-module-summary';
+      summary.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
 
       var chips = [
         { label: 'Pico', value: peakMonth.label + ' (' + peakMonth.count + ')', color: 'var(--accent)' },
-        { label: 'Concentracion', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
+        { label: 'Concentración', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
       ];
       if (valleyMonths.length > 0) {
         chips.push({ label: 'Sin actividad', value: valleyMonths.map(function(v) { return v.label; }).join(', '), color: 'var(--text-muted)' });
@@ -10246,12 +10163,8 @@
 
       chips.forEach(function(chip) {
         var el = document.createElement('span');
-        el.className = 'dash-module-chip';
-        var strong = document.createElement('strong');
-        strong.style.color = chip.color;
-        strong.textContent = chip.label + ':';
-        el.appendChild(strong);
-        el.appendChild(document.createTextNode(' ' + chip.value));
+        el.style.cssText = 'font-size:10px; padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
+        el.innerHTML = '<span style="font-weight:600; color:' + chip.color + ';">' + esc(chip.label) + ':</span> ' + esc(chip.value);
         summary.appendChild(el);
       });
       container.appendChild(summary);
@@ -10259,15 +10172,8 @@
       // Totals footer
       var avgHoursPerAction = totalCount > 0 ? (totalHours / totalCount).toFixed(1) : '0';
       var footerRow = document.createElement('div');
-      footerRow.className = 'dash-module-footer';
-      footerRow.style.display = 'flex';
-      footerRow.style.gap = '16px';
-      var footerItems = [totalCount + ' acciones en total', Math.round(totalHours) + 'h totales', 'Media: ' + avgHoursPerAction + 'h/accion'];
-      footerItems.forEach(function(txt) {
-        var sp = document.createElement('span');
-        sp.textContent = txt;
-        footerRow.appendChild(sp);
-      });
+      footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:10px; color:var(--text-muted);';
+      footerRow.innerHTML = '<span>' + totalCount + ' acciones en total</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
       container.appendChild(footerRow);
     }
 
@@ -10338,7 +10244,7 @@
 
       // KPI row
       var kpiRow = document.createElement('div');
-      kpiRow.className = 'dash-module-kpi-row';
+      kpiRow.style.cssText = 'display:flex; gap:10px; margin-bottom:10px;';
 
       var kpiItems = [
         { val: nifs.length, label: 'Participantes', color: 'var(--text-primary)' },
@@ -10347,16 +10253,8 @@
       ];
       kpiItems.forEach(function(kpi) {
         var el = document.createElement('div');
-        el.className = 'dash-module-kpi';
-        var valEl = document.createElement('div');
-        valEl.className = 'dash-module-kpi-value';
-        valEl.style.color = kpi.color;
-        valEl.textContent = kpi.val;
-        var lblEl = document.createElement('div');
-        lblEl.className = 'dash-module-kpi-label';
-        lblEl.textContent = kpi.label;
-        el.appendChild(valEl);
-        el.appendChild(lblEl);
+        el.style.cssText = 'flex:1; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
+        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -10409,23 +10307,6 @@
         svg.appendChild(xAxisLabel);
 
         container.appendChild(svg);
-
-        // Color legend for histogram
-        var legend = document.createElement('div');
-        legend.className = 'dash-module-summary';
-        var legendItems = [
-          { label: '1-2 acc.', color: 'var(--success)' },
-          { label: '3-5 acc.', color: 'var(--accent)' },
-          { label: '6+ acc.', color: '#8B5CF6' }
-        ];
-        legendItems.forEach(function(li) {
-          var chip = document.createElement('span');
-          chip.className = 'dash-module-chip';
-          chip.style.borderLeft = '3px solid ' + li.color;
-          chip.textContent = li.label;
-          legend.appendChild(chip);
-        });
-        container.appendChild(legend);
       }
 
       // Build NIF-to-name map from employees for name resolution
@@ -10443,31 +10324,27 @@
       // Top 10 table
       if (top10.length > 0) {
         var tableSection = document.createElement('div');
-        tableSection.className = 'dash-module-section';
+        tableSection.style.cssText = 'margin-top:8px;';
         var tableTitle = document.createElement('div');
-        tableTitle.className = 'dash-module-section-title';
-        tableTitle.style.color = 'var(--text-primary)';
-        tableTitle.textContent = 'Top 10 mas formados';
+        tableTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:4px;';
+        tableTitle.textContent = 'Top 10 más formados';
         tableSection.appendChild(tableTitle);
 
         var table = document.createElement('table');
-        table.className = 'dash-module-table';
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
         var tbody = document.createElement('tbody');
         top10.forEach(function(item, idx) {
           var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
 
           var tdRank = document.createElement('td');
-          tdRank.style.color = 'var(--text-muted)';
-          tdRank.style.width = '20px';
+          tdRank.style.cssText = 'padding:3px 6px; color:var(--text-muted); width:20px;';
           tdRank.textContent = (idx + 1) + '.';
 
           var tdName = document.createElement('td');
           var resolvedName = nifNameMap[item.nif];
           if (resolvedName) {
-            tdName.style.maxWidth = '140px';
-            tdName.style.overflow = 'hidden';
-            tdName.style.textOverflow = 'ellipsis';
-            tdName.style.whiteSpace = 'nowrap';
+            tdName.style.cssText = 'padding:3px 6px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
             tdName.textContent = esc(resolvedName);
             tdName.title = resolvedName + ' (' + item.nif + ')';
           } else {
@@ -10476,9 +10353,7 @@
           }
 
           var tdCount = document.createElement('td');
-          tdCount.style.textAlign = 'right';
-          tdCount.style.fontWeight = '600';
-          tdCount.style.color = 'var(--accent)';
+          tdCount.style.cssText = 'padding:3px 6px; text-align:right; font-weight:600; color:var(--accent);';
           tdCount.textContent = item.count + ' acc.';
 
           tr.appendChild(tdRank);
@@ -10545,48 +10420,34 @@
 
       // KPI
       var kpiEl = document.createElement('div');
-      kpiEl.className = 'dash-module-kpi';
-      kpiEl.style.marginBottom = '12px';
+      kpiEl.style.cssText = 'text-align:center; margin-bottom:12px; padding:10px; background:var(--bg-input); border-radius:var(--radius-sm);';
       var kpiColor = coveragePct >= 75 ? 'var(--success)' : (coveragePct >= 50 ? 'var(--warning)' : 'var(--danger)');
-      var kpiValEl = document.createElement('div');
-      kpiValEl.className = 'dash-module-kpi-value';
-      kpiValEl.style.fontSize = '28px';
-      kpiValEl.style.color = kpiColor;
-      kpiValEl.textContent = coveragePct + '%';
-      var kpiLblEl = document.createElement('div');
-      kpiLblEl.className = 'dash-module-kpi-label';
-      kpiLblEl.textContent = 'Cobertura de encuestas';
-      kpiEl.appendChild(kpiValEl);
-      kpiEl.appendChild(kpiLblEl);
+      kpiEl.innerHTML = '<div style="font-size:28px; font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:11px; color:var(--text-muted);">Cobertura de encuestas</div>';
       container.appendChild(kpiEl);
 
-      // Compact progress bar instead of donut
-      var progressWrap = document.createElement('div');
-      progressWrap.style.cssText = 'margin-bottom:12px;';
-      var progressTrack = document.createElement('div');
-      progressTrack.style.cssText = 'height:8px; background:var(--bg-input); border-radius:var(--radius-sm); overflow:hidden;';
-      var progressFill = document.createElement('div');
-      progressFill.style.cssText = 'height:100%; border-radius:var(--radius-sm); transition:width 0.8s cubic-bezier(0.4,0,0.2,1); background:' + kpiColor + '; width:' + coveragePct + '%;';
-      progressTrack.appendChild(progressFill);
-      progressWrap.appendChild(progressTrack);
-      var progressLabel = document.createElement('div');
-      progressLabel.style.cssText = 'display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px;';
-      var plLeft = document.createElement('span');
-      plLeft.textContent = withSurvey + ' con encuesta';
-      var plRight = document.createElement('span');
-      plRight.textContent = withoutSurvey.length + ' sin encuesta';
-      progressLabel.appendChild(plLeft);
-      progressLabel.appendChild(plRight);
-      progressWrap.appendChild(progressLabel);
-      container.appendChild(progressWrap);
+      // Donut
+      var donutItems = [
+        { label: 'Con encuesta', value: withSurvey, color: '#10B981' },
+        { label: 'Sin encuesta', value: withoutSurvey.length, color: '#EF4444' }
+      ].filter(function(i) { return i.value > 0; });
+
+      // Create a temp container for the donut
+      var donutWrap = document.createElement('div');
+      donutWrap.id = 'dashSurveyCoverageDonut_' + Date.now();
+      container.appendChild(donutWrap);
+
+      // Render donut using the temp id
+      renderSvgDonut(donutWrap.id, donutItems, {
+        centerLabel: 'Terminadas',
+        centerValue: completedActions.length
+      });
 
       // List of pending actions
       if (withoutSurvey.length > 0) {
         var section = document.createElement('div');
-        section.className = 'dash-module-section';
+        section.style.cssText = 'margin-top:10px;';
         var title = document.createElement('div');
-        title.className = 'dash-module-section-title';
-        title.style.color = 'var(--danger)';
+        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:4px;';
         title.textContent = 'Acciones terminadas sin encuesta (' + withoutSurvey.length + ')';
         section.appendChild(title);
 
@@ -10682,11 +10543,10 @@
 
       // KPI row
       var kpiRow = document.createElement('div');
-      kpiRow.className = 'dash-module-kpi-row';
-      kpiRow.style.flexWrap = 'wrap';
+      kpiRow.style.cssText = 'display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;';
 
       var kpis = [
-        { val: sends.length, label: 'Envios totales', color: 'var(--accent)' },
+        { val: sends.length, label: 'Envíos totales', color: 'var(--accent)' },
         { val: sendsThisWeek, label: 'Esta semana', color: 'var(--success)' },
         { val: avgPerMonth, label: 'Media/mes activo', color: 'var(--text-primary)' },
         { val: activeActions, label: 'Acciones activas', color: 'var(--warning)' }
@@ -10694,17 +10554,8 @@
 
       kpis.forEach(function(kpi) {
         var el = document.createElement('div');
-        el.className = 'dash-module-kpi';
-        el.style.minWidth = '60px';
-        var valEl = document.createElement('div');
-        valEl.className = 'dash-module-kpi-value';
-        valEl.style.color = kpi.color;
-        valEl.textContent = kpi.val;
-        var lblEl = document.createElement('div');
-        lblEl.className = 'dash-module-kpi-label';
-        lblEl.textContent = kpi.label;
-        el.appendChild(valEl);
-        el.appendChild(lblEl);
+        el.style.cssText = 'flex:1; min-width:60px; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
+        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -10753,9 +10604,7 @@
       var totalAttendees = sends.reduce(function(s, h) { return s + (h.attendeeCount || 0); }, 0);
       if (totalAttendees > 0) {
         var footer = document.createElement('div');
-        footer.className = 'dash-module-footer';
-        footer.style.borderTop = 'none';
-        footer.style.paddingTop = '0';
+        footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
         footer.textContent = totalAttendees + ' asistentes procesados en total';
         container.appendChild(footer);
       }
@@ -10779,19 +10628,13 @@
 
         var dayRow = document.createElement('div');
         dayRow.style.cssText = 'display:flex; gap:4px; align-items:flex-end; height:36px;';
-        var lowThreshold = Math.ceil(maxDayCount * 0.33);
-        var midThreshold = Math.ceil(maxDayCount * 0.66);
         dayCounts.forEach(function(count, idx) {
           var col = document.createElement('div');
           col.style.cssText = 'flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;';
           var bar = document.createElement('div');
           var h = maxDayCount > 0 ? Math.max((count / maxDayCount) * 28, count > 0 ? 3 : 1) : 1;
-          // Discrete color levels instead of opacity
-          var bg = count === 0 ? 'var(--bg-input)' :
-                   count <= lowThreshold ? 'var(--accent-light)' :
-                   count <= midThreshold ? 'var(--accent)' : 'var(--accent-hover)';
-          var textColor = count <= lowThreshold ? 'var(--text-primary)' : 'white';
-          bar.style.cssText = 'width:100%; height:' + h + 'px; background:' + bg + '; border-radius:2px;';
+          var opacity = count > 0 ? (0.3 + 0.7 * (count / maxDayCount)) : 0.1;
+          bar.style.cssText = 'width:100%; height:' + h + 'px; background:var(--accent); border-radius:2px; opacity:' + opacity + ';';
           var lbl = document.createElement('div');
           lbl.style.cssText = 'font-size:8px; color:var(--text-muted);';
           lbl.textContent = dayNames[idx];
@@ -10903,17 +10746,17 @@
 
       // Table
       var table = document.createElement('table');
-      table.className = 'dash-module-table';
+      table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
 
       var thead = document.createElement('thead');
       var headerRow = document.createElement('tr');
+      headerRow.style.cssText = 'border-bottom:2px solid var(--border);';
       var headers = ['Proveedor', 'Acciones', 'Presupuesto', 'Asist.', 'Anul.', 'Punt.'];
       var headerWidths = ['auto', '50px', '80px', '50px', '50px', '50px'];
       var headerAligns = ['left', 'center', 'right', 'center', 'center', 'center'];
       headers.forEach(function(h, idx) {
         var th = document.createElement('th');
-        th.style.textAlign = headerAligns[idx];
-        th.style.width = headerWidths[idx];
+        th.style.cssText = 'padding:4px 6px; color:var(--text-muted); font-weight:500; text-align:' + headerAligns[idx] + '; width:' + headerWidths[idx] + ';';
         th.textContent = h;
         headerRow.appendChild(th);
       });
@@ -10923,22 +10766,17 @@
       var tbody = document.createElement('tbody');
       scorecardData.forEach(function(p, idx) {
         var tr = document.createElement('tr');
-        if (idx === 0) tr.style.background = 'var(--success-light)';
-        else if (idx === scorecardData.length - 1 && scorecardData.length > 1) tr.style.background = 'var(--danger-light)';
+        tr.style.cssText = 'border-bottom:1px solid var(--border);' + (idx === 0 ? ' background:var(--success-light);' : (idx === scorecardData.length - 1 && scorecardData.length > 1 ? ' background:var(--danger-light);' : ''));
 
         // Name
         var tdName = document.createElement('td');
-        tdName.style.fontWeight = '500';
-        tdName.style.maxWidth = '120px';
-        tdName.style.overflow = 'hidden';
-        tdName.style.textOverflow = 'ellipsis';
-        tdName.style.whiteSpace = 'nowrap';
+        tdName.style.cssText = 'padding:5px 6px; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
         tdName.textContent = esc(p.nombre);
         tdName.title = p.nombre;
 
         // Actions count
         var tdActions = document.createElement('td');
-        tdActions.style.textAlign = 'center';
+        tdActions.style.cssText = 'padding:5px 6px; text-align:center;';
         tdActions.textContent = p.numActions;
 
         // Budget
@@ -10948,7 +10786,7 @@
 
         // Attendance
         var tdAttendance = document.createElement('td');
-        tdAttendance.style.textAlign = 'center';
+        tdAttendance.style.cssText = 'padding:5px 6px; text-align:center;';
         if (p.attendanceRate !== null) {
           tdAttendance.style.color = p.attendanceRate >= 75 ? 'var(--success)' : (p.attendanceRate >= 50 ? 'var(--warning)' : 'var(--danger)');
           tdAttendance.style.fontWeight = '600';
@@ -10960,14 +10798,14 @@
 
         // Cancellation
         var tdCancel = document.createElement('td');
-        tdCancel.style.textAlign = 'center';
+        tdCancel.style.cssText = 'padding:5px 6px; text-align:center;';
         tdCancel.style.color = p.cancelRate > 20 ? 'var(--danger)' : (p.cancelRate > 0 ? 'var(--warning)' : 'var(--success)');
         tdCancel.style.fontWeight = '600';
         tdCancel.textContent = p.cancelRate + '%';
 
         // Score badge
         var tdScore = document.createElement('td');
-        tdScore.style.textAlign = 'center';
+        tdScore.style.cssText = 'padding:5px 6px; text-align:center;';
         var scoreBadge = document.createElement('span');
         scoreBadge.style.cssText = 'display:inline-block; padding:2px 8px; border-radius:var(--radius-lg); font-weight:700; font-size:11px;';
         if (p.score >= 70) {
@@ -10999,27 +10837,9 @@
       var totalActionsAll = scorecardData.reduce(function(s, p) { return s + p.numActions; }, 0);
       var avgBudgetPerAction = totalActionsAll > 0 ? totalBudgetAll / totalActionsAll : 0;
       var footer = document.createElement('div');
-      footer.className = 'dash-module-footer';
-      footer.style.display = 'flex';
-      footer.style.justifyContent = 'space-between';
-      footer.style.flexWrap = 'wrap';
-      footer.style.gap = '4px';
-      var f1 = document.createElement('span');
-      f1.textContent = scorecardData.length + ' proveedores activos';
-      var f2 = document.createElement('span');
-      f2.textContent = totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll);
-      var f3 = document.createElement('span');
-      f3.textContent = 'Media: ' + formatCurrency(avgBudgetPerAction) + '/accion';
-      footer.appendChild(f1);
-      footer.appendChild(f2);
-      footer.appendChild(f3);
+      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;';
+      footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span><span>Media: ' + formatCurrency(avgBudgetPerAction) + '/acción</span>';
       container.appendChild(footer);
-
-      // Score explanation footnote
-      var scoreFootnote = document.createElement('div');
-      scoreFootnote.className = 'dash-module-footer';
-      scoreFootnote.textContent = 'Puntuacion 0-100: asistencia media (40%) + tasa de no anulacion (40%) + base (20%). >70 bueno, 40-70 mejorable, <40 atencion.';
-      container.appendChild(scoreFootnote);
 
       // Best/worst performers highlight
       if (scorecardData.length >= 2) {
@@ -11055,6 +10875,388 @@
         }
       });
     });
+
+    // ═══════════════════════════════════
+    // ANALYTICS ALTO IMPACTO FUNCTIONS
+    // ═══════════════════════════════════
+    function calcFundaeRiskScore(accion, employees) {
+      var score = 0;
+      var factors = [];
+      // 1. Campos obligatorios de la accion (peso: 5 cada uno, max 35)
+      var required = ['codigo','nombre','modalidad','fechaInicio','fechaFin','empresaPagadora','objetivos'];
+      required.forEach(function(f) {
+        if (!accion[f] || accion[f] === '') {
+          score += 5;
+          factors.push('Falta ' + f);
+        }
+      });
+      // 2. Horas no definidas (peso: 10)
+      var horas = parseFloat(accion.horasPresenciales || 0) + parseFloat(accion.horasTeleformacion || 0);
+      if (horas <= 0) {
+        score += 10;
+        factors.push('Sin horas definidas');
+      }
+      // 3. Sin proveedor/centro/tutor vinculado (peso: 5 cada uno, max 15)
+      if (!accion.proveedorVinculado) { score += 5; factors.push('Sin proveedor'); }
+      if (!accion.centroVinculado) { score += 5; factors.push('Sin centro'); }
+      if (!accion.tutorVinculado) { score += 5; factors.push('Sin tutor'); }
+      // 4. Sin participantes (peso: 15)
+      var parts = accion.participantes || [];
+      if (parts.length === 0) {
+        score += 15;
+        factors.push('Sin participantes');
+      } else {
+        // 5. Participantes con datos FUNDAE incompletos (peso: hasta 10)
+        var incomplete = 0;
+        parts.forEach(function(nif) {
+          var emp = employees.find(function(e) { return (e.NIF || e._f_NIF) === nif; });
+          if (!emp) { incomplete++; return; }
+          var missing = ['Numero Seguridad Social','CIF','Grupo Cotizacion'].filter(function(f) {
+            return !emp['_f_' + f] && !emp[f];
+          });
+          if (missing.length > 0) incomplete++;
+        });
+        if (incomplete > 0) {
+          var pct = incomplete / parts.length;
+          score += Math.round(pct * 10);
+          factors.push(incomplete + ' participante(s) con datos incompletos');
+        }
+      }
+      // 6. Asistencia < 75% (peso: 15)
+      if (accion.asistencia && accion.asistencia.registro) {
+        var reg = accion.asistencia.registro;
+        var sesiones = accion.asistencia.sesiones || [];
+        if (sesiones.length > 0 && parts.length > 0) {
+          var totalChecks = 0, totalPresent = 0;
+          parts.forEach(function(nif) {
+            var r = reg[nif];
+            if (!r) return;
+            sesiones.forEach(function(s) {
+              var fecha = typeof s === 'string' ? s : s.fecha;
+              if (fecha && r[fecha] !== undefined) {
+                totalChecks++;
+                if (r[fecha] === true || r[fecha] === 'Presente') totalPresent++;
+              }
+            });
+          });
+          if (totalChecks > 0 && (totalPresent / totalChecks) < 0.75) {
+            score += 15;
+            factors.push('Asistencia media < 75%');
+          }
+        }
+      }
+      // 7. Plazos sin documentacion (peso: 10)
+      var hoy = new Date();
+      if (accion.fechaInicio) {
+        var fi = new Date(accion.fechaInicio);
+        if (fi <= hoy && !accion.comunicacionInicioEnviada) {
+          score += 10;
+          factors.push('Comunicacion de inicio no enviada');
+        }
+      }
+      if (accion.fechaFin) {
+        var ff = new Date(accion.fechaFin);
+        if (ff <= hoy && !accion.comunicacionFinEnviada) {
+          score += 10;
+          factors.push('Comunicacion de fin no enviada');
+        }
+      }
+      return { score: Math.min(score, 100), factors: factors };
+    }
+
+    function projectCreditUsage(acciones) {
+      var empresas = getEmpresasGrupo().filter(function(e) { return e.credito > 1000; });
+      var hoy = new Date();
+      var inicioAnio = new Date(hoy.getFullYear(), 0, 1);
+      var finAnio = new Date(hoy.getFullYear(), 11, 31);
+      var diasTranscurridos = Math.max(1, Math.floor((hoy - inicioAnio) / 86400000));
+      var diasTotales = Math.floor((finAnio - inicioAnio) / 86400000);
+
+      return empresas.map(function(emp) {
+        // Consumido: acciones completadas o en curso
+        var consumido = 0;
+        var planificado = 0;
+        acciones.forEach(function(a) {
+          if (a.empresaPagadora !== emp.cif || a.bonificable !== 'Si') return;
+          var p = parseFloat(a.presupuesto) || 0;
+          if (a.estado === 'Terminada' || a.estado === 'En marcha') consumido += p;
+          else if (a.estado === 'Pendiente' || a.estado === 'En preparacion') planificado += p;
+        });
+        // Proyeccion lineal
+        var ritmoMensual = consumido / (diasTranscurridos / 30);
+        var mesesRestantes = (diasTotales - diasTranscurridos) / 30;
+        var proyectado = consumido + (ritmoMensual * mesesRestantes);
+        var pctProyectado = emp.credito > 0 ? Math.round((proyectado / emp.credito) * 100) : 0;
+        // Fecha agotamiento
+        var fechaAgotamiento = null;
+        if (ritmoMensual > 0) {
+          var mesesHastaAgotar = (emp.credito - consumido) / ritmoMensual;
+          if (mesesHastaAgotar > 0) {
+            fechaAgotamiento = new Date(hoy);
+            fechaAgotamiento.setDate(fechaAgotamiento.getDate() + Math.round(mesesHastaAgotar * 30));
+          }
+        }
+        return {
+          empresa: emp.razonSocial,
+          cif: emp.cif,
+          credito: emp.credito,
+          consumido: consumido,
+          planificado: planificado,
+          proyectado: proyectado,
+          pctProyectado: pctProyectado,
+          fechaAgotamiento: fechaAgotamiento,
+          riesgo: pctProyectado < 50 ? 'infrauso' : pctProyectado > 100 ? 'sobreuso' : 'ok'
+        };
+      });
+    }
+
+    function calcROI(acciones, employees) {
+      var empMap = {};
+      employees.forEach(function(e) {
+        var nif = e.NIF || '';
+        if (nif) empMap[nif] = e;
+      });
+
+      var result = {};
+      getEmpresasGrupo().forEach(function(eg) {
+        result[eg.cif] = {
+          empresa: eg.razonSocial.replace(/,.*/,''),
+          cif: eg.cif,
+          credito: eg.credito,
+          costeDirecto: 0,
+          costeOportunidad: 0,
+          bonificacion: 0,
+          participantesUnicos: new Set(),
+          acciones: 0
+        };
+      });
+
+      acciones.forEach(function(a) {
+        var cif = a.empresaPagadora;
+        if (!cif || !result[cif]) return;
+        var r = result[cif];
+        r.acciones++;
+        var presupuesto = parseFloat(a.presupuesto) || 0;
+        r.costeDirecto += presupuesto;
+        if (a.bonificable === 'Si') r.bonificacion += presupuesto;
+
+        var horas = parseFloat(a.horasPresenciales || 0) + parseFloat(a.horasTeleformacion || 0);
+        (a.participantes || []).forEach(function(nif) {
+          r.participantesUnicos.add(nif);
+          var emp = empMap[nif];
+          if (emp) {
+            var costeSalarial = parseFloat(emp['_f_Coste Salarial Hora'] || emp['Coste Salarial Hora'] || 0);
+            r.costeOportunidad += costeSalarial * horas;
+          }
+        });
+      });
+
+      return Object.values(result).filter(function(r) {
+        return r.acciones > 0;
+      }).map(function(r) {
+        r.participantesUnicos = r.participantesUnicos.size;
+        r.costeNeto = r.costeDirecto + r.costeOportunidad - r.bonificacion;
+        r.costePerCapita = r.participantesUnicos > 0 ? r.costeNeto / r.participantesUnicos : 0;
+        return r;
+      }).sort(function(a, b) { return b.costeNeto - a.costeNeto; });
+    }
+
+    function calcCoverageIndex(acciones, employees) {
+      // Set de NIFs que han participado en alguna accion
+      var formados = new Set();
+      acciones.forEach(function(a) {
+        (a.participantes || []).forEach(function(nif) { formados.add(nif); });
+      });
+
+      // Tambien contar desde historial (convocatorias enviadas)
+      var history = getHistory();
+      var emailToNif = {};
+      employees.forEach(function(e) {
+        var email = (e['Email trabajo'] || '').toLowerCase();
+        if (email && e.NIF) emailToNif[email] = e.NIF;
+      });
+      history.forEach(function(h) {
+        (h.emails || []).forEach(function(email) {
+          var nif = emailToNif[email.toLowerCase()];
+          if (nif) formados.add(nif);
+        });
+      });
+
+      // Agrupar por departamento x empresa
+      var grid = {}; // { dept: { empresa: { total: N, formados: N } } }
+      var depts = new Set();
+      var empresas = new Set();
+      employees.forEach(function(e) {
+        if (e['Alta/Baja'] === 0 || e['Alta/Baja'] === '0') return; // inactivo
+        var dept = e['Departamento'] || 'Sin dept.';
+        var emp = e['Empresa'] || 'Sin empresa';
+        depts.add(dept);
+        empresas.add(emp);
+        if (!grid[dept]) grid[dept] = {};
+        if (!grid[dept][emp]) grid[dept][emp] = { total: 0, formados: 0 };
+        grid[dept][emp].total++;
+        if (formados.has(e.NIF)) grid[dept][emp].formados++;
+      });
+
+      // Empleados sin formacion
+      var sinFormacion = employees.filter(function(e) {
+        return (e['Alta/Baja'] !== 0 && e['Alta/Baja'] !== '0') && !formados.has(e.NIF);
+      });
+
+      var totalActivos = employees.filter(function(e) {
+        return e['Alta/Baja'] !== 0 && e['Alta/Baja'] !== '0';
+      }).length;
+
+      return {
+        grid: grid,
+        depts: Array.from(depts).sort(),
+        empresas: Array.from(empresas).sort(),
+        formados: formados.size,
+        totalActivos: totalActivos,
+        pctCobertura: totalActivos > 0 ? Math.round((formados.size / totalActivos) * 100) : 0,
+        sinFormacion: sinFormacion
+      };
+    }
+
+    function calcEquityMetrics(acciones, employees) {
+      var formadosNifs = new Set();
+      acciones.forEach(function(a) {
+        (a.participantes || []).forEach(function(nif) { formadosNifs.add(nif); });
+      });
+
+      var dimensions = [
+        { key: 'genero', field: '_f_Sexo', label: 'Genero' },
+        { key: 'discapacidad', field: '_f_DiscapacidadContrib', label: 'Discapacidad' },
+        { key: 'categoria', field: '_f_Categoria profesional', label: 'Categoria Prof.' }
+      ];
+
+      var results = [];
+      dimensions.forEach(function(dim) {
+        var plantilla = {};
+        var formacion = {};
+        employees.forEach(function(e) {
+          if (e['Alta/Baja'] === 0 || e['Alta/Baja'] === '0') return;
+          var val = e[dim.field] || e[dim.field.replace('_f_','')] || 'Sin dato';
+          if (val === '' || val === null || val === undefined) val = 'Sin dato';
+          plantilla[val] = (plantilla[val] || 0) + 1;
+          if (formadosNifs.has(e.NIF)) {
+            formacion[val] = (formacion[val] || 0) + 1;
+          }
+        });
+
+        var totalPlantilla = Object.values(plantilla).reduce(function(s, v) { return s + v; }, 0);
+        var totalFormacion = Object.values(formacion).reduce(function(s, v) { return s + v; }, 0);
+        var categories = Object.keys(plantilla).filter(function(k) { return k !== 'Sin dato'; }).sort();
+
+        var items = categories.map(function(cat) {
+          var pctPlantilla = totalPlantilla > 0 ? Math.round((plantilla[cat] / totalPlantilla) * 100) : 0;
+          var pctFormacion = totalFormacion > 0 ? Math.round(((formacion[cat] || 0) / totalFormacion) * 100) : 0;
+          var gap = pctFormacion - pctPlantilla;
+          return { category: cat, pctPlantilla: pctPlantilla, pctFormacion: pctFormacion, gap: gap };
+        });
+
+        results.push({ dimension: dim.label, items: items });
+      });
+
+      return results;
+    }
+
+    function analyzeByManager(acciones, employees) {
+      // Construir mapa manager -> empleados
+      var managerMap = {};
+      employees.forEach(function(e) {
+        if (e['Alta/Baja'] === 0 || e['Alta/Baja'] === '0') return;
+        var mgr = e['Depende de'] || 'Sin responsable';
+        if (!managerMap[mgr]) managerMap[mgr] = { empleados: [], nifsSet: new Set() };
+        managerMap[mgr].empleados.push(e);
+        if (e.NIF) managerMap[mgr].nifsSet.add(e.NIF);
+      });
+
+      var results = Object.keys(managerMap).map(function(mgr) {
+        var data = managerMap[mgr];
+        var horasTotal = 0;
+        var presupuestoTotal = 0;
+        var accionesCount = 0;
+        var participantesFormados = new Set();
+
+        acciones.forEach(function(a) {
+          var parts = a.participantes || [];
+          var partsDelManager = parts.filter(function(nif) { return data.nifsSet.has(nif); });
+          if (partsDelManager.length === 0) return;
+          accionesCount++;
+          var horas = parseFloat(a.horasPresenciales || 0) + parseFloat(a.horasTeleformacion || 0);
+          horasTotal += horas * partsDelManager.length;
+          var costePorParticipante = parts.length > 0 ? (parseFloat(a.presupuesto) || 0) / parts.length : 0;
+          presupuestoTotal += costePorParticipante * partsDelManager.length;
+          partsDelManager.forEach(function(nif) { participantesFormados.add(nif); });
+        });
+
+        return {
+          manager: mgr,
+          equipo: data.empleados.length,
+          formados: participantesFormados.size,
+          pctFormados: data.empleados.length > 0 ? Math.round((participantesFormados.size / data.empleados.length) * 100) : 0,
+          horasTotal: horasTotal,
+          horasPerCapita: data.empleados.length > 0 ? Math.round(horasTotal / data.empleados.length * 10) / 10 : 0,
+          presupuesto: presupuestoTotal,
+          acciones: accionesCount
+        };
+      }).filter(function(r) { return r.equipo >= 2; }) // Solo managers con 2+ reportes
+        .sort(function(a, b) { return b.horasPerCapita - a.horasPerCapita; });
+
+      return results;
+    }
+
+    function analyzeCrossCompanyTraining(acciones, employees) {
+      var nifToEmpresa = {};
+      employees.forEach(function(e) {
+        if (e.NIF) {
+          nifToEmpresa[e.NIF] = {
+            empresa: e.Empresa || 'Sin empresa',
+            cif: e['_f_CIF'] || e.CIF || ''
+          };
+        }
+      });
+
+      // Matriz: pagadora -> empresa_empleado -> count
+      var flujos = {};
+      var alertas = [];
+
+      acciones.forEach(function(a) {
+        if (!a.empresaPagadora) return;
+        var pagadora = a.empresaPagadora;
+        var pagadoraNombre = '';
+        getEmpresasGrupo().forEach(function(eg) {
+          if (eg.cif === pagadora) pagadoraNombre = eg.razonSocial.replace(/,.*/,'');
+        });
+        if (!pagadoraNombre) pagadoraNombre = pagadora;
+
+        (a.participantes || []).forEach(function(nif) {
+          var emp = nifToEmpresa[nif];
+          if (!emp) return;
+          var cifEmpleado = emp.cif;
+          var empresaEmpleado = emp.empresa;
+
+          if (!flujos[pagadoraNombre]) flujos[pagadoraNombre] = {};
+          if (!flujos[pagadoraNombre][empresaEmpleado]) flujos[pagadoraNombre][empresaEmpleado] = 0;
+          flujos[pagadoraNombre][empresaEmpleado]++;
+
+          // Alerta si CIF no coincide
+          if (cifEmpleado && cifEmpleado !== pagadora) {
+            alertas.push({
+              accion: a.codigo || a.nombre || 'Sin codigo',
+              pagadora: pagadoraNombre,
+              empleado: nif,
+              empresaEmpleado: empresaEmpleado,
+              cifPagadora: pagadora,
+              cifEmpleado: cifEmpleado
+            });
+          }
+        });
+      });
+
+      return { flujos: flujos, alertas: alertas };
+    }
 
     function renderDashboard() {
       autoTransitionEstados();
@@ -11449,23 +11651,14 @@
           var dateStr = p.deadline.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
           var statusColor = p.sent ? 'var(--success)' : (p.daysRemaining < 0 ? 'var(--danger)' : (p.daysRemaining <= 5 ? 'var(--warning)' : 'var(--text-secondary)'));
           var statusLabel = p.sent ? 'Enviada' : (p.daysRemaining < 0 ? 'Vencido hace ' + Math.abs(p.daysRemaining) + 'd' : p.daysRemaining + ' días');
-          // Progress bar: time elapsed toward deadline
-          var elapsed = p.sent ? 100 : Math.max(0, Math.min(100, ((60 - p.daysRemaining) / 60) * 100));
-          var urgencyColor = p.sent ? 'var(--success)' : (elapsed > 80 ? 'var(--danger)' : (elapsed > 50 ? 'var(--warning)' : 'var(--success)'));
-
-          plazosHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;">' +
-            '<div style="display:flex; align-items:center; gap:10px;">' +
-              '<div style="flex:1; min-width:0;">' +
-                '<div style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.accion) + '</div>' +
-                '<div style="color:var(--text-muted); font-size:11px;">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
-              '</div>' +
-              '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
-              (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Marcar enviada</button>') +
-              '<button class="btn btn-secondary btnPlazoXml" data-codigo="' + esc(p.codigo) + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Generar XML</button>' +
+          plazosHtml += '<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;">' +
+            '<div style="flex:1; min-width:0;">' +
+              '<div style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.accion) + '</div>' +
+              '<div style="color:var(--text-muted); font-size:11px;">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
             '</div>' +
-            '<div style="height:3px; background:var(--bg-input); border-radius:2px; margin-top:4px;">' +
-              '<div style="height:100%; border-radius:2px; background:' + urgencyColor + '; width:' + elapsed + '%; transition:width 0.3s;"></div>' +
-            '</div>' +
+            '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
+            (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Marcar enviada</button>') +
+            '<button class="btn btn-secondary btnPlazoXml" data-codigo="' + esc(p.codigo) + '" style="font-size:10px; padding:3px 8px; white-space:nowrap;">Generar XML</button>' +
           '</div>';
         });
         plazosList.innerHTML = plazosHtml;
@@ -11528,6 +11721,73 @@
         valueFormatter: function(v) { return formatCurrency(v); },
         footnote: empresasHidden > 0 ? '(+' + empresasHidden + ' más con crédito < 1.000\u20AC)' : ''
       });
+
+      // --- Credit Projection ---
+      (function() {
+        var projContainer = document.getElementById('dashCreditProjection');
+        if (!projContainer) return;
+        var proj = projectCreditUsage(acciones);
+        var conRiesgo = proj.filter(function(p) { return p.riesgo !== 'ok'; });
+        projContainer.textContent = '';
+
+        if (conRiesgo.length > 0) {
+          var alertDiv = document.createElement('div');
+          alertDiv.style.cssText = 'padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:12px;';
+          var infrauso = conRiesgo.filter(function(p) { return p.riesgo === 'infrauso'; });
+          var sobreuso = conRiesgo.filter(function(p) { return p.riesgo === 'sobreuso'; });
+          if (infrauso.length > 0) {
+            var d = document.createElement('div');
+            d.style.cssText = 'color:var(--warning);margin-bottom:4px;';
+            d.textContent = infrauso.length + ' empresa(s) en riesgo de infrauso (<50% proyectado)';
+            alertDiv.appendChild(d);
+          }
+          if (sobreuso.length > 0) {
+            var d2 = document.createElement('div');
+            d2.style.cssText = 'color:var(--danger);';
+            d2.textContent = sobreuso.length + ' empresa(s) en riesgo de sobreuso (>100% proyectado)';
+            alertDiv.appendChild(d2);
+          }
+          projContainer.appendChild(alertDiv);
+        }
+
+        // Tabla de proyeccion
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%;font-size:11px;border-collapse:collapse;';
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        ['Empresa','Credito','Consumido','Planif.','Proy. Dic','%','Agotam.'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.style.cssText = 'text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:500;';
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        proj.forEach(function(p) {
+          var tr = document.createElement('tr');
+          var rColor = p.riesgo === 'infrauso' ? 'var(--warning)' : p.riesgo === 'sobreuso' ? 'var(--danger)' : 'var(--text-primary)';
+          var cells = [
+            p.empresa.replace(/,.*/,''),
+            p.credito.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' EUR',
+            p.consumido.toLocaleString('es-ES', {maximumFractionDigits:0}),
+            p.planificado.toLocaleString('es-ES', {maximumFractionDigits:0}),
+            p.proyectado.toLocaleString('es-ES', {maximumFractionDigits:0}),
+            p.pctProyectado + '%',
+            p.fechaAgotamiento ? p.fechaAgotamiento.toLocaleDateString('es-ES', {month:'short', year:'2-digit'}) : '-'
+          ];
+          cells.forEach(function(c, i) {
+            var td = document.createElement('td');
+            td.style.cssText = 'padding:4px 6px;border-bottom:1px solid var(--border);color:' + (i >= 4 ? rColor : 'var(--text-primary)') + ';';
+            td.textContent = c;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        projContainer.appendChild(table);
+      })();
 
       // --- Gasto por proveedor chart ---
       var gastoProveedor = {};
@@ -11685,12 +11945,476 @@
       renderGestorActivity('dashGestorActivity', acciones);
       renderProviderScorecard('dashProviderScorecard', acciones);
 
+      // --- Risk Scoring ---
+      (function() {
+        var container = document.getElementById('dashRiskScoring');
+        if (!container) return;
+        var bonificables = acciones.filter(function(a) {
+          return a.bonificable === 'Si' && a.estado !== 'Anulada';
+        });
+        if (!bonificables.length) {
+          container.textContent = '';
+          var p = document.createElement('p');
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.textContent = 'No hay acciones bonificables';
+          container.appendChild(p);
+          return;
+        }
+        var emps = state.employees || [];
+        var scored = bonificables.map(function(a) {
+          var r = calcFundaeRiskScore(a, emps);
+          return { accion: a, score: r.score, factors: r.factors };
+        }).sort(function(a, b) { return b.score - a.score; });
+
+        // KPI resumen
+        var altoRiesgo = scored.filter(function(s) { return s.score >= 50; }).length;
+        var medioRiesgo = scored.filter(function(s) { return s.score >= 25 && s.score < 50; }).length;
+
+        container.textContent = '';
+        var summary = document.createElement('div');
+        summary.style.cssText = 'display:flex;gap:16px;margin-bottom:12px;';
+        var badges = [
+          { label: 'Riesgo alto', count: altoRiesgo, color: 'var(--danger)' },
+          { label: 'Riesgo medio', count: medioRiesgo, color: 'var(--warning)' },
+          { label: 'Riesgo bajo', count: scored.length - altoRiesgo - medioRiesgo, color: 'var(--success)' }
+        ];
+        badges.forEach(function(b) {
+          var d = document.createElement('div');
+          d.style.cssText = 'flex:1;text-align:center;padding:8px;border-radius:var(--radius);background:var(--bg-input);';
+          var n = document.createElement('div');
+          n.style.cssText = 'font-size:24px;font-weight:700;color:' + b.color + ';';
+          n.textContent = b.count;
+          var l = document.createElement('div');
+          l.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+          l.textContent = b.label;
+          d.appendChild(n);
+          d.appendChild(l);
+          summary.appendChild(d);
+        });
+        container.appendChild(summary);
+
+        // Lista de acciones con riesgo
+        scored.forEach(function(s) {
+          if (s.score === 0) return;
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;';
+          // Progress bar
+          var barWrap = document.createElement('div');
+          barWrap.style.cssText = 'width:60px;height:6px;background:var(--bg-input);border-radius:3px;flex-shrink:0;';
+          var bar = document.createElement('div');
+          var barColor = s.score >= 50 ? 'var(--danger)' : s.score >= 25 ? 'var(--warning)' : 'var(--success)';
+          bar.style.cssText = 'height:100%;border-radius:3px;background:' + barColor + ';width:' + s.score + '%;';
+          barWrap.appendChild(bar);
+          // Score
+          var scoreSpan = document.createElement('span');
+          scoreSpan.style.cssText = 'font-weight:600;width:30px;text-align:right;color:' + barColor + ';flex-shrink:0;';
+          scoreSpan.textContent = s.score;
+          // Nombre
+          var nameSpan = document.createElement('span');
+          nameSpan.style.cssText = 'flex:1;color:var(--text-primary);';
+          nameSpan.textContent = (s.accion.codigo || '') + ' ' + (s.accion.nombre || 'Sin nombre');
+          // Factores
+          var factorsSpan = document.createElement('span');
+          factorsSpan.style.cssText = 'color:var(--text-muted);font-size:11px;max-width:300px;text-align:right;';
+          factorsSpan.textContent = s.factors.slice(0, 3).join(', ');
+          row.appendChild(scoreSpan);
+          row.appendChild(barWrap);
+          row.appendChild(nameSpan);
+          row.appendChild(factorsSpan);
+          container.appendChild(row);
+        });
+      })();
+
+      // --- ROI por Empresa ---
+      (function() {
+        var container = document.getElementById('dashROI');
+        if (!container) return;
+        var emps = state.employees || [];
+        var roi = calcROI(acciones, emps);
+        container.textContent = '';
+        if (!roi.length) {
+          var p = document.createElement('p');
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.textContent = 'Sin datos suficientes';
+          container.appendChild(p);
+          return;
+        }
+
+        // KPIs globales
+        var totalDirecto = roi.reduce(function(s, r) { return s + r.costeDirecto; }, 0);
+        var totalOport = roi.reduce(function(s, r) { return s + r.costeOportunidad; }, 0);
+        var totalBonif = roi.reduce(function(s, r) { return s + r.bonificacion; }, 0);
+        var totalNeto = roi.reduce(function(s, r) { return s + r.costeNeto; }, 0);
+
+        var kpiRow = document.createElement('div');
+        kpiRow.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;';
+        var fmt = function(n) { return n.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' EUR'; };
+        [
+          { label: 'Coste directo', val: fmt(totalDirecto), color: 'var(--accent)' },
+          { label: 'Coste oportunidad', val: fmt(totalOport), color: 'var(--warning)' },
+          { label: 'Bonificacion FUNDAE', val: '-' + fmt(totalBonif), color: 'var(--success)' },
+          { label: 'Coste neto', val: fmt(totalNeto), color: 'var(--text-primary)' }
+        ].forEach(function(k) {
+          var d = document.createElement('div');
+          d.style.cssText = 'text-align:center;padding:10px;background:var(--bg-input);border-radius:var(--radius);';
+          var v = document.createElement('div');
+          v.style.cssText = 'font-size:16px;font-weight:700;color:' + k.color + ';';
+          v.textContent = k.val;
+          var l = document.createElement('div');
+          l.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+          l.textContent = k.label;
+          d.appendChild(v);
+          d.appendChild(l);
+          kpiRow.appendChild(d);
+        });
+        container.appendChild(kpiRow);
+
+        // SVG barras apiladas
+        var maxVal = Math.max.apply(null, roi.map(function(r) { return r.costeDirecto + r.costeOportunidad; }));
+        var svgH = roi.length * 32 + 20;
+        var svgW = 500;
+        var svg = '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" style="width:100%;height:auto;">';
+        roi.forEach(function(r, i) {
+          var y = i * 32 + 10;
+          var barMax = svgW - 160;
+          var wDirect = maxVal > 0 ? (r.costeDirecto / maxVal) * barMax : 0;
+          var wOport = maxVal > 0 ? (r.costeOportunidad / maxVal) * barMax : 0;
+          // Label
+          svg += '<text x="0" y="' + (y + 14) + '" font-size="11" fill="var(--text-secondary)">' + esc(r.empresa.substring(0, 18)) + '</text>';
+          // Barra directa
+          svg += '<rect x="130" y="' + (y + 2) + '" width="' + wDirect + '" height="16" rx="2" fill="var(--accent)" opacity="0.8"/>';
+          // Barra oportunidad
+          svg += '<rect x="' + (130 + wDirect) + '" y="' + (y + 2) + '" width="' + wOport + '" height="16" rx="2" fill="var(--warning)" opacity="0.6"/>';
+          // Valor
+          svg += '<text x="' + (130 + wDirect + wOport + 4) + '" y="' + (y + 14) + '" font-size="10" fill="var(--text-muted)">' + fmt(r.costeNeto) + '</text>';
+        });
+        svg += '</svg>';
+        var svgDiv = document.createElement('div');
+        svgDiv.insertAdjacentHTML('beforeend', svg);
+        container.appendChild(svgDiv);
+
+        // Leyenda
+        var legend = document.createElement('div');
+        legend.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px;color:var(--text-muted);';
+        legend.insertAdjacentHTML('beforeend',
+          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px;opacity:0.8;"></span>Directo</span>' +
+          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:2px;margin-right:4px;opacity:0.6;"></span>Oportunidad</span>'
+        );
+        container.appendChild(legend);
+      })();
+
+      // --- Cobertura Formativa ---
+      (function() {
+        var container = document.getElementById('dashCoverage');
+        if (!container || !state.employees || !state.employees.length) return;
+        var cov = calcCoverageIndex(acciones, state.employees);
+        container.textContent = '';
+
+        // KPI
+        var kpi = document.createElement('div');
+        kpi.style.cssText = 'text-align:center;padding:12px;margin-bottom:12px;background:var(--bg-input);border-radius:var(--radius);';
+        var pctColor = cov.pctCobertura >= 80 ? 'var(--success)' : cov.pctCobertura >= 50 ? 'var(--warning)' : 'var(--danger)';
+        kpi.insertAdjacentHTML('beforeend',
+          '<span style="font-size:28px;font-weight:700;color:' + pctColor + ';">' + cov.pctCobertura + '%</span>' +
+          '<span style="font-size:13px;color:var(--text-muted);margin-left:8px;">de la plantilla ha recibido formacion (' + cov.formados + '/' + cov.totalActivos + ')</span>'
+        );
+        container.appendChild(kpi);
+
+        // Heatmap como tabla HTML (mas compatible que canvas)
+        if (cov.depts.length > 0 && cov.empresas.length > 0 && cov.empresas.length <= 20) {
+          var table = document.createElement('table');
+          table.style.cssText = 'width:100%;font-size:10px;border-collapse:collapse;margin-bottom:12px;';
+          var thead = document.createElement('thead');
+          var tr = document.createElement('tr');
+          var th0 = document.createElement('th');
+          th0.style.cssText = 'padding:4px;text-align:left;';
+          tr.appendChild(th0);
+          cov.empresas.forEach(function(emp) {
+            var th = document.createElement('th');
+            th.style.cssText = 'padding:4px;text-align:center;writing-mode:vertical-lr;transform:rotate(180deg);max-width:30px;';
+            th.textContent = emp.substring(0, 15);
+            tr.appendChild(th);
+          });
+          thead.appendChild(tr);
+          table.appendChild(thead);
+          var tbody = document.createElement('tbody');
+          cov.depts.forEach(function(dept) {
+            var row = document.createElement('tr');
+            var tdDept = document.createElement('td');
+            tdDept.style.cssText = 'padding:4px;font-weight:500;white-space:nowrap;';
+            tdDept.textContent = dept.substring(0, 20);
+            row.appendChild(tdDept);
+            cov.empresas.forEach(function(emp) {
+              var cell = (cov.grid[dept] || {})[emp];
+              var td = document.createElement('td');
+              td.style.cssText = 'padding:4px;text-align:center;';
+              if (cell && cell.total > 0) {
+                var pct = Math.round((cell.formados / cell.total) * 100);
+                var bg = pct >= 80 ? 'rgba(22,163,74,0.2)' : pct >= 50 ? 'rgba(217,119,6,0.2)' : pct > 0 ? 'rgba(220,38,38,0.2)' : 'rgba(220,38,38,0.1)';
+                td.style.background = bg;
+                td.style.borderRadius = '2px';
+                td.textContent = pct + '%';
+              }
+              row.appendChild(td);
+            });
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+        }
+
+        // Lista colapsable de empleados sin formacion
+        if (cov.sinFormacion.length > 0) {
+          var details = document.createElement('details');
+          var summary = document.createElement('summary');
+          summary.style.cssText = 'cursor:pointer;font-size:12px;color:var(--text-secondary);padding:4px 0;';
+          summary.textContent = cov.sinFormacion.length + ' empleados sin formacion';
+          details.appendChild(summary);
+          var list = document.createElement('div');
+          list.style.cssText = 'max-height:200px;overflow-y:auto;font-size:11px;margin-top:4px;';
+          cov.sinFormacion.slice(0, 50).forEach(function(e) {
+            var d = document.createElement('div');
+            d.style.cssText = 'padding:2px 0;color:var(--text-muted);';
+            d.textContent = (e['Nombre y apellidos'] || e.Empleado || e.NIF || '?') + ' - ' + (e.Departamento || '') + ' (' + (e.Empresa || '') + ')';
+            list.appendChild(d);
+          });
+          if (cov.sinFormacion.length > 50) {
+            var more = document.createElement('div');
+            more.style.cssText = 'padding:4px 0;color:var(--accent);font-weight:500;';
+            more.textContent = '... y ' + (cov.sinFormacion.length - 50) + ' mas';
+            list.appendChild(more);
+          }
+          details.appendChild(list);
+          container.appendChild(details);
+        }
+      })();
+
+      // --- Equidad Formativa ---
+      (function() {
+        var container = document.getElementById('dashEquity');
+        if (!container || !state.employees || !state.employees.length) return;
+        var equity = calcEquityMetrics(acciones, state.employees);
+        container.textContent = '';
+
+        equity.forEach(function(dim) {
+          if (!dim.items.length) return;
+          var section = document.createElement('div');
+          section.style.cssText = 'margin-bottom:16px;';
+          var title = document.createElement('div');
+          title.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;';
+          title.textContent = dim.dimension;
+          section.appendChild(title);
+
+          dim.items.forEach(function(item) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:grid;grid-template-columns:100px 1fr 1fr 50px;gap:8px;align-items:center;padding:3px 0;font-size:11px;';
+            var label = document.createElement('span');
+            label.style.cssText = 'color:var(--text-primary);';
+            label.textContent = item.category.substring(0, 14);
+            // Barra plantilla
+            var bar1Wrap = document.createElement('div');
+            bar1Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:2px;position:relative;';
+            var bar1 = document.createElement('div');
+            bar1.style.cssText = 'height:100%;border-radius:2px;background:var(--accent);opacity:0.4;width:' + item.pctPlantilla + '%;';
+            var bar1Label = document.createElement('span');
+            bar1Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:9px;color:var(--text-muted);line-height:12px;';
+            bar1Label.textContent = item.pctPlantilla + '%';
+            bar1Wrap.appendChild(bar1);
+            bar1Wrap.appendChild(bar1Label);
+            // Barra formacion
+            var bar2Wrap = document.createElement('div');
+            bar2Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:2px;position:relative;';
+            var bar2 = document.createElement('div');
+            bar2.style.cssText = 'height:100%;border-radius:2px;background:var(--accent);width:' + item.pctFormacion + '%;';
+            var bar2Label = document.createElement('span');
+            bar2Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:9px;color:var(--text-muted);line-height:12px;';
+            bar2Label.textContent = item.pctFormacion + '%';
+            bar2Wrap.appendChild(bar2);
+            bar2Wrap.appendChild(bar2Label);
+            // Gap
+            var gapSpan = document.createElement('span');
+            var gapColor = Math.abs(item.gap) > 20 ? 'var(--danger)' : Math.abs(item.gap) > 10 ? 'var(--warning)' : 'var(--success)';
+            gapSpan.style.cssText = 'text-align:right;font-weight:600;color:' + gapColor + ';';
+            gapSpan.textContent = (item.gap > 0 ? '+' : '') + item.gap + '%';
+
+            row.appendChild(label);
+            row.appendChild(bar1Wrap);
+            row.appendChild(bar2Wrap);
+            row.appendChild(gapSpan);
+            section.appendChild(row);
+          });
+
+          // Leyenda
+          var leg = document.createElement('div');
+          leg.style.cssText = 'display:flex;gap:16px;font-size:10px;color:var(--text-muted);margin-top:4px;';
+          leg.insertAdjacentHTML('beforeend',
+            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);opacity:0.4;border-radius:1px;margin-right:3px;"></span>Plantilla</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:1px;margin-right:3px;"></span>Formacion</span>' +
+            '<span>Gap = diferencia</span>'
+          );
+          section.appendChild(leg);
+          container.appendChild(section);
+        });
+      })();
+
+      // --- Inversion por Manager ---
+      (function() {
+        var container = document.getElementById('dashByManager');
+        if (!container || !state.employees || !state.employees.length) return;
+        var mgrs = analyzeByManager(acciones, state.employees);
+        container.textContent = '';
+        if (!mgrs.length) {
+          var p = document.createElement('p');
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.textContent = 'Sin datos del campo "Depende de"';
+          container.appendChild(p);
+          return;
+        }
+
+        // Top 15 managers
+        var top = mgrs.slice(0, 15);
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%;font-size:11px;border-collapse:collapse;';
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        ['Responsable','Equipo','Formados','%','h/persona','Presup.','Acciones'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.style.cssText = 'text-align:left;padding:4px 6px;border-bottom:2px solid var(--border);color:var(--text-muted);font-weight:500;';
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        top.forEach(function(m) {
+          var tr = document.createElement('tr');
+          var pctColor = m.pctFormados >= 80 ? 'var(--success)' : m.pctFormados >= 50 ? 'var(--warning)' : 'var(--danger)';
+          var cells = [
+            { text: m.manager.substring(0, 25), style: 'font-weight:500;' },
+            { text: m.equipo, style: '' },
+            { text: m.formados + '/' + m.equipo, style: '' },
+            { text: m.pctFormados + '%', style: 'color:' + pctColor + ';font-weight:600;' },
+            { text: m.horasPerCapita + ' h', style: 'font-weight:600;' },
+            { text: m.presupuesto.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' EUR', style: '' },
+            { text: m.acciones, style: '' }
+          ];
+          cells.forEach(function(c) {
+            var td = document.createElement('td');
+            td.style.cssText = 'padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text-primary);' + c.style;
+            td.textContent = c.text;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+
+        if (mgrs.length > 15) {
+          var more = document.createElement('div');
+          more.style.cssText = 'text-align:center;padding:8px;font-size:11px;color:var(--text-muted);';
+          more.textContent = '... y ' + (mgrs.length - 15) + ' responsables mas';
+          container.appendChild(more);
+        }
+      })();
+
+      // --- Cross-Company Training ---
+      (function() {
+        var container = document.getElementById('dashCrossCompany');
+        if (!container || !state.employees || !state.employees.length) return;
+        var cross = analyzeCrossCompanyTraining(acciones, state.employees);
+        container.textContent = '';
+
+        var pagadoras = Object.keys(cross.flujos).sort();
+        if (!pagadoras.length) {
+          var p = document.createElement('p');
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.textContent = 'Sin datos de formacion interempresarial';
+          container.appendChild(p);
+          return;
+        }
+
+        // Alertas de discrepancia CIF
+        if (cross.alertas.length > 0) {
+          var alertDiv = document.createElement('div');
+          alertDiv.style.cssText = 'padding:8px 12px;background:var(--danger-light);border-radius:var(--radius-sm);margin-bottom:12px;font-size:12px;color:var(--danger);';
+          alertDiv.textContent = cross.alertas.length + ' participante(s) con CIF diferente al de la empresa pagadora (riesgo FUNDAE)';
+          container.appendChild(alertDiv);
+
+          var details = document.createElement('details');
+          var summary = document.createElement('summary');
+          summary.style.cssText = 'cursor:pointer;font-size:11px;color:var(--danger);margin-bottom:8px;';
+          summary.textContent = 'Ver detalle de discrepancias';
+          details.appendChild(summary);
+          var alertList = document.createElement('div');
+          alertList.style.cssText = 'font-size:11px;max-height:150px;overflow-y:auto;';
+          cross.alertas.slice(0, 20).forEach(function(a) {
+            var d = document.createElement('div');
+            d.style.cssText = 'padding:2px 0;color:var(--text-muted);';
+            d.textContent = esc(a.accion) + ': ' + esc(a.empleado) + ' (empresa: ' + esc(a.empresaEmpleado) + ', CIF: ' + esc(a.cifEmpleado) + ') != pagadora ' + esc(a.pagadora) + ' (CIF: ' + esc(a.cifPagadora) + ')';
+            alertList.appendChild(d);
+          });
+          details.appendChild(alertList);
+          container.appendChild(details);
+        }
+
+        // Matriz de flujos
+        var empresasReceptoras = new Set();
+        pagadoras.forEach(function(p) {
+          Object.keys(cross.flujos[p]).forEach(function(e) { empresasReceptoras.add(e); });
+        });
+        var receptoras = Array.from(empresasReceptoras).sort();
+
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%;font-size:10px;border-collapse:collapse;';
+        var thead = document.createElement('thead');
+        var hRow = document.createElement('tr');
+        var thCorner = document.createElement('th');
+        thCorner.style.cssText = 'padding:4px;text-align:left;font-size:9px;color:var(--text-muted);';
+        thCorner.textContent = 'Pagadora \\ Empleados';
+        hRow.appendChild(thCorner);
+        receptoras.forEach(function(r) {
+          var th = document.createElement('th');
+          th.style.cssText = 'padding:4px;text-align:center;writing-mode:vertical-lr;transform:rotate(180deg);max-width:25px;font-size:9px;';
+          th.textContent = r.substring(0, 12);
+          hRow.appendChild(th);
+        });
+        thead.appendChild(hRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        pagadoras.forEach(function(p) {
+          var tr = document.createElement('tr');
+          var tdName = document.createElement('td');
+          tdName.style.cssText = 'padding:4px;font-weight:500;white-space:nowrap;';
+          tdName.textContent = p.substring(0, 18);
+          tr.appendChild(tdName);
+          receptoras.forEach(function(r) {
+            var td = document.createElement('td');
+            td.style.cssText = 'padding:4px;text-align:center;';
+            var count = (cross.flujos[p] || {})[r] || 0;
+            if (count > 0) {
+              var isDiagonal = p.toLowerCase().indexOf(r.toLowerCase().substring(0, 5)) >= 0;
+              td.style.background = isDiagonal ? 'rgba(79,70,229,0.1)' : 'rgba(220,38,38,0.15)';
+              td.style.borderRadius = '2px';
+              td.style.fontWeight = isDiagonal ? '400' : '600';
+              td.textContent = count;
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      })();
+
 
       // --- Section navigator ---
       var dashNavEl = document.getElementById('dashNav');
       if (dashNavEl) {
         dashNavEl.textContent = '';
         var navSections = [
+          { id: 'dash-group-analytics', label: 'Analytics' },
           { id: 'dash-group-general', label: 'Vision general' },
           { id: 'dash-group-operativo', label: 'Operativo' },
           { id: 'dash-group-personas', label: 'Personas' },
@@ -11741,7 +12465,7 @@
         });
         // In resumen mode, only show KPIs, alerts, plazos, credito, estado, completitud
         var resumenCards = { plazos: true, credito: true, estado: true, completitud: true };
-        var sectionGroups = ['dash-group-operativo', 'dash-group-personas', 'dash-group-calidad', 'dash-group-gestor'];
+        var sectionGroups = ['dash-group-analytics', 'dash-group-operativo', 'dash-group-personas', 'dash-group-calidad', 'dash-group-gestor'];
 
         if (mode === 'resumen') {
           // Hide section groups that are not in resumen
@@ -11778,7 +12502,7 @@
       var dashCollapsed = {};
       try { dashCollapsed = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
       // Default collapsed cards (secondary/periodic analytics)
-      var defaultCollapsed = { modalidad: true, area: true, departamento: true, recurrencia: true, encuestas: true, gestor: true };
+      var defaultCollapsed = { modalidad: true, area: true, departamento: true, recurrencia: true, encuestas: true, gestor: true, 'roi-formacion': true, cobertura: true, equidad: true, 'inversion-manager': true, 'cross-company': true };
       // On first run (no stored state), use defaults
       var hasStoredCollapsed = localStorage.getItem('convocatoria_dash_collapsed') !== null;
       if (!hasStoredCollapsed) dashCollapsed = defaultCollapsed;
@@ -11802,20 +12526,6 @@
             try { localStorage.setItem('convocatoria_dash_collapsed', JSON.stringify(currentState)); } catch(e) {}
           });
         }
-      });
-
-      // --- IntersectionObserver for card animations ---
-      var dashCardObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('dash-card-visible');
-            dashCardObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1 });
-
-      document.querySelectorAll('#dashContainer .dash-card').forEach(function(card) {
-        dashCardObserver.observe(card);
       });
     }
 
