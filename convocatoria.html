@@ -6464,6 +6464,14 @@
       if (accion.centroVinculado) document.getElementById('xmlCentroSelect').value = accion.centroVinculado;
       if (accion.tutorVinculado) document.getElementById('xmlTutorSelect').value = accion.tutorVinculado;
 
+      // Pre-fill dates from acción
+      if (accion.fechaInicio) document.getElementById('xmlFechaInicio').value = accion.fechaInicio;
+      if (accion.fechaFin) document.getElementById('xmlFechaFin').value = accion.fechaFin;
+
+      // Pre-fill description with action name
+      var xmlDescEl = document.getElementById('xmlDescripcion');
+      if (xmlDescEl && !xmlDescEl.value) xmlDescEl.value = accion.nombre || '';
+
       // Build participant rows from linked NIFs
       const nifs = accion.participantes || [];
       xmlState.participantes = nifs.map(nif => buildParticipantRow(nif));
