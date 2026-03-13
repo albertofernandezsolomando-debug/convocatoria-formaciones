@@ -3017,7 +3017,34 @@
           return { value: e.cif, label: e.razonSocial + ' (' + e.cif + ')' };
         });
 
-        body = field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
+        // --- Count filled fields per section ---
+        function countFilled(fields) {
+          var n = 0;
+          fields.forEach(function(f) { if (record[f]) n++; });
+          return n;
+        }
+
+        var secBasicoFields = ['codigo','nombre','estado','departamento','empresaPagadora','fechaInicio','fechaFin','presupuesto','bonificable'];
+        var secFundaeFields = ['codigoGrupo','areaProfesional','modalidad','horasPresenciales','horasTeleformacion','nivelFormacion','plataformaCif','plataformaRazonSocial','plataformaUri'];
+        var secContenidoFields = ['objetivos','contenidos'];
+        var secVinculacionFields = ['proveedorVinculado','centroVinculado','tutorVinculado'];
+
+        function sectionHeader(id, label, filledCount, totalCount, defaultOpen) {
+          var arrow = defaultOpen ? '\u25BC' : '\u25B6';
+          var badgeText = totalCount > 0 ? filledCount + '/' + totalCount : (filledCount > 0 ? String(filledCount) : '');
+          var badge = badgeText ? '<span class="cfSecBadge" style="font-size:10px; font-weight:500; color:var(--text-muted); margin-left:6px;">' + badgeText + '</span>' : '';
+          return '<div class="cfSectionHeader" data-section="' + id + '" style="display:flex; align-items:center; cursor:pointer; user-select:none; padding:8px 0; border-bottom:1px solid var(--border); margin-bottom:8px;">' +
+            '<span class="cfSectionArrow" style="font-size:10px; color:var(--text-muted); width:16px;">' + arrow + '</span>' +
+            '<span style="font-size:12px; font-weight:600; color:var(--text-primary);">' + esc(label) + '</span>' +
+            badge +
+          '</div>' +
+          '<div class="cfSectionBody" id="cfSection_' + id + '" style="' + (defaultOpen ? '' : 'display:none;') + '">';
+        }
+        var sectionEnd = '</div>';
+
+        // 1. Datos básicos (default: expanded)
+        body = sectionHeader('basico', 'Datos básicos', countFilled(secBasicoFields), secBasicoFields.length, true) +
+          field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
           field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
           select('Estado', 'estado', record.estado || '', [
             { value: 'Pendiente', label: 'Pendiente' },
@@ -3037,6 +3064,10 @@
             { value: 'Sí', label: 'Sí' },
             { value: 'No', label: 'No' }
           ]) +
+          sectionEnd +
+
+        // 2. Datos FUNDAE (default: collapsed)
+        sectionHeader('fundae', 'Datos FUNDAE', countFilled(secFundaeFields), secFundaeFields.length, false) +
           field('Código grupo acción', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
           select('Área profesional', 'areaProfesional', record.areaProfesional || '', areaOpts) +
           select('Modalidad', 'modalidad', modalidad, [
@@ -3053,8 +3084,6 @@
           select('Nivel formación', 'nivelFormacion', String(record.nivelFormacion || ''), [
             { value: '0', label: 'Básico' }, { value: '1', label: 'Superior' }
           ]) +
-          textarea('Objetivos', 'objetivos', v('objetivos')) +
-          textarea('Contenidos', 'contenidos', v('contenidos')) +
           '<div id="cf_plataformaWrap" style="' + (showPlataforma ? '' : 'display:none;') + '">' +
             '<div style="margin-bottom:10px;">' +
               '<div onclick="toggleFundaeSub(\'cf_plataformaInner\')" style="cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); user-select:none; padding:6px 0;">&#9660; Plataforma teleformación</div>' +
@@ -3067,24 +3096,37 @@
               '</div>' +
             '</div>' +
           '</div>' +
+          sectionEnd +
+
+        // 3. Contenido (default: collapsed)
+        sectionHeader('contenido', 'Contenido', countFilled(secContenidoFields), secContenidoFields.length, false) +
+          textarea('Objetivos', 'objetivos', v('objetivos')) +
+          textarea('Contenidos', 'contenidos', v('contenidos')) +
+          sectionEnd +
+
+        // 4. Vinculaciones (default: collapsed)
+        sectionHeader('vinculaciones', 'Vinculaciones', countFilled(secVinculacionFields), secVinculacionFields.length, false) +
           select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+          sectionEnd +
+
+        // 5. Seguimiento (default: expanded)
+        sectionHeader('seguimiento', 'Seguimiento', (record.notas || []).length, 0, true) +
           renderNotasTimelineHtml(record) +
           renderAsistenciaHtml(record) +
           renderConfirmacionesHtml(record) +
-          '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
-            '<div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">' +
-              'Participantes vinculados' +
-              ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);" id="cfParticipantCount"></span>' +
-            '</div>' +
-            '<div id="cfParticipantWarning" style="display:none; font-size:11px; color:var(--warning); margin-bottom:8px;">' +
-              '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
-            '</div>' +
-            '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
-            '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
-            ' <button class="link-btn link-add" id="btnCopyParticipants" style="font-size:11px; margin-left:8px;">Copiar de otra acci\u00F3n</button>' +
-          '</div>';
+          sectionEnd +
+
+        // 6. Participantes (default: collapsed)
+        sectionHeader('participantes', 'Participantes', (record.participantes || []).length, 0, false) +
+          '<div id="cfParticipantWarning" style="display:none; font-size:11px; color:var(--warning); margin-bottom:8px;">' +
+            '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
+          '</div>' +
+          '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
+          '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
+          ' <button class="link-btn link-add" id="btnCopyParticipants" style="font-size:11px; margin-left:8px;">Copiar de otra acci\u00F3n</button>' +
+          sectionEnd;
       }
 
       return '<div style="display:flex; flex-direction:column; height:100%;">' +
@@ -3205,8 +3247,23 @@
         });
       }
 
-      // Modalidad change handler for acciones
+      // Acciones-specific bindings
       if (key === 'acciones') {
+        // Collapsible section headers
+        document.querySelectorAll('.cfSectionHeader').forEach(function(header) {
+          header.addEventListener('click', function() {
+            var sectionId = header.getAttribute('data-section');
+            var body = document.getElementById('cfSection_' + sectionId);
+            var arrow = header.querySelector('.cfSectionArrow');
+            if (body) {
+              var isOpen = body.style.display !== 'none';
+              body.style.display = isOpen ? 'none' : '';
+              if (arrow) arrow.textContent = isOpen ? '\u25B6' : '\u25BC';
+            }
+          });
+        });
+
+        // Modalidad change handler
         const modalidadSelect = document.getElementById('cf_modalidad');
         if (modalidadSelect) {
           modalidadSelect.addEventListener('change', function() {
@@ -3566,7 +3623,7 @@
       const countEl = document.getElementById('cfParticipantCount');
       const assignBtn = document.getElementById('btnAssignParticipants');
       const copyBtn = document.getElementById('btnCopyParticipants');
-      if (!warningEl || !listEl || !countEl || !assignBtn) return;
+      if (!warningEl || !listEl || !assignBtn) return;
 
       if (!state.employees || state.employees.length === 0) {
         warningEl.style.display = '';
@@ -3575,7 +3632,7 @@
         assignBtn.style.cursor = 'not-allowed';
         if (copyBtn) { copyBtn.disabled = true; copyBtn.style.opacity = '0.5'; copyBtn.style.cursor = 'not-allowed'; }
         listEl.innerHTML = '';
-        countEl.textContent = '';
+        if (countEl) countEl.textContent = '';
         return;
       }
 
@@ -3586,7 +3643,7 @@
       if (copyBtn) { copyBtn.disabled = false; copyBtn.style.opacity = ''; copyBtn.style.cursor = ''; }
 
       var participantes = record.participantes || [];
-      countEl.textContent = participantes.length > 0 ? '(' + participantes.length + ')' : '';
+      if (countEl) countEl.textContent = participantes.length > 0 ? '(' + participantes.length + ')' : '';
 
       if (participantes.length === 0) {
         listEl.innerHTML = '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">Sin participantes asignados</div>';
