@@ -371,6 +371,377 @@
       align-items: center;
     }
 
+    /* --- Catalog view mode toggle --- */
+    .catalog-view-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-left: auto;
+    }
+
+    .catalog-view-toggle-btn {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border: none;
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1;
+    }
+
+    .catalog-view-toggle-btn:not(:last-child) {
+      border-right: 1px solid var(--border);
+    }
+
+    .catalog-view-toggle-btn:hover:not(.active) {
+      background: var(--accent-subtle);
+      color: var(--accent);
+    }
+
+    .catalog-view-toggle-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* --- Catalog list view table --- */
+    .catalog-list-view-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-panel);
+    }
+
+    .catalog-list-table-wrapper {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    .catalog-list-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .catalog-list-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .catalog-list-table th {
+      background: var(--bg-input);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 2px solid var(--border-strong);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: color var(--transition);
+      position: relative;
+    }
+
+    .catalog-list-table th:hover {
+      color: var(--accent);
+    }
+
+    .catalog-list-table th.col-checkbox,
+    .catalog-list-table td.col-checkbox {
+      width: 40px;
+      text-align: center;
+      padding: 0 8px;
+    }
+
+    .catalog-list-table th.col-checkbox {
+      cursor: default;
+    }
+
+    .catalog-list-table th .sort-indicator {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 10px;
+      opacity: 0.4;
+      transition: opacity var(--transition);
+    }
+
+    .catalog-list-table th[aria-sort="ascending"] .sort-indicator,
+    .catalog-list-table th[aria-sort="descending"] .sort-indicator {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    /* Filter row */
+    .catalog-list-table .filter-row th {
+      padding: 6px 8px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+
+    .catalog-list-table .filter-row input,
+    .catalog-list-table .filter-row select {
+      font-family: var(--font-body);
+      font-size: 11px;
+      width: 100%;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      transition: border-color var(--transition);
+    }
+
+    .catalog-list-table .filter-row input:focus,
+    .catalog-list-table .filter-row select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+
+    .catalog-list-table .filter-row .filter-date-range {
+      display: flex;
+      gap: 4px;
+    }
+
+    .catalog-list-table .filter-row .filter-date-range input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .catalog-list-table .filter-row .filter-number-range {
+      display: flex;
+      gap: 4px;
+    }
+
+    .catalog-list-table .filter-row .filter-number-range input {
+      flex: 1;
+      min-width: 0;
+      width: 50%;
+    }
+
+    /* Data rows */
+    .catalog-list-table tbody tr {
+      transition: background var(--transition);
+    }
+
+    .catalog-list-table tbody tr:hover {
+      background: var(--accent-subtle);
+    }
+
+    .catalog-list-table tbody tr.selected {
+      background: var(--accent-light);
+    }
+
+    .catalog-list-table tbody tr.selected:hover {
+      background: var(--accent-light);
+    }
+
+    .catalog-list-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .catalog-list-table td.cell-editable {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .catalog-list-table td.cell-editable:hover {
+      background: rgba(79,70,229,0.04);
+    }
+
+    .catalog-list-table td.cell-editing {
+      padding: 4px 6px;
+      background: var(--bg-panel);
+      box-shadow: inset 0 0 0 2px var(--accent);
+      border-radius: 2px;
+      overflow: visible;
+    }
+
+    .catalog-list-table td.cell-error {
+      box-shadow: inset 0 0 0 2px var(--danger);
+    }
+
+    .catalog-list-table td.cell-editing input,
+    .catalog-list-table td.cell-editing select {
+      font-family: var(--font-body);
+      font-size: 13px;
+      width: 100%;
+      padding: 4px 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .catalog-list-table td.cell-editing [contenteditable="true"] {
+      outline: none;
+      min-width: 40px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .catalog-list-table td .cell-count-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 22px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: var(--radius-lg);
+      background: var(--accent-light);
+      color: var(--accent);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .catalog-list-table td .cell-count-chip:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .catalog-list-table td .cell-count-chip.empty {
+      background: var(--bg-input);
+      color: var(--text-muted);
+      cursor: default;
+    }
+
+    .catalog-list-table td .cell-count-chip.empty:hover {
+      background: var(--bg-input);
+      color: var(--text-muted);
+    }
+
+    /* Bulk toolbar */
+    .catalog-bulk-toolbar {
+      display: none;
+      padding: 10px 20px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 5;
+    }
+
+    .catalog-bulk-toolbar.visible {
+      display: flex;
+    }
+
+    .catalog-bulk-toolbar .bulk-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .catalog-bulk-toolbar .bulk-separator {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .catalog-bulk-toolbar select,
+    .catalog-bulk-toolbar input {
+      font-family: var(--font-body);
+      font-size: 12px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+
+    /* New row button */
+    .catalog-list-new-row {
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Back to list button in ficha mode */
+    .catalog-back-to-list {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 0 4px 0;
+      transition: color var(--transition);
+    }
+
+    .catalog-back-to-list:hover {
+      color: var(--accent-hover);
+    }
+
+    /* Checkbox styling in table */
+    .catalog-list-table input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    /* Responsive for list view */
+    @media (max-width: 900px) {
+      .catalog-list-view-container .filter-row {
+        display: none;
+      }
+      .catalog-list-view-container .filter-row.show-mobile {
+        display: table-row;
+      }
+      .catalog-list-table td,
+      .catalog-list-table th {
+        font-size: 12px;
+        padding: 6px 8px;
+      }
+      .catalog-bulk-toolbar {
+        padding: 8px 12px;
+        gap: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .catalog-list-table td.cell-editing,
+      .catalog-list-table tbody tr {
+        transition: none;
+      }
+    }
+
     /* --- Right panel --- */
     .right-panel {
       flex: 1;
@@ -2504,18 +2875,22 @@
 
   <!-- Tab 2: Catálogos FUNDAE -->
   <div class="tab-content" id="tabCatalogos" role="tabpanel">
-    <div class="app">
+    <div class="catalog-header-bar" style="display:flex; align-items:center; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--bg-panel); gap:8px; flex-shrink:0; flex-wrap:wrap;">
+      <span style="font-size:15px; font-weight:600; color:var(--text-primary); margin-right:8px;">Catálogos FUNDAE</span>
+      <div class="catalog-tabs" style="align-items:center; padding:0; margin:0;">
+        <button class="catalog-tab active" data-catalog="proveedores">Proveedores</button>
+        <button class="catalog-tab" data-catalog="centros">Centros</button>
+        <button class="catalog-tab" data-catalog="tutores">Tutores</button>
+        <button class="catalog-tab" data-catalog="acciones">Acciones</button>
+      </div>
+      <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
+        <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
+        <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista">&#9783; Lista</button>
+      </div>
+    </div>
+    <div class="app" style="flex:1; min-height:0;">
       <div class="left-panel" id="catalogListPanel" style="overflow-y:auto;">
-        <div class="app-header">
-          <span class="app-header-title">Catálogos FUNDAE</span>
-        </div>
-        <div class="catalog-tabs">
-          <button class="catalog-tab active" data-catalog="proveedores">Proveedores</button>
-          <button class="catalog-tab" data-catalog="centros">Centros</button>
-          <button class="catalog-tab" data-catalog="tutores">Tutores</button>
-          <button class="catalog-tab" data-catalog="acciones">Acciones</button>
-        </div>
-        <div style="padding: 0 16px 8px;">
+        <div style="padding: 8px 16px;">
           <input class="input-field" type="text" id="catalogSearch" placeholder="Buscar..." style="font-size:12px;">
         </div>
         <div class="catalog-list" id="catalogList"></div>
@@ -2534,6 +2909,11 @@
         <div id="catalogEmpty" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">
           Selecciona un registro del catálogo
         </div>
+      </div>
+      <div class="catalog-list-view-container" id="catalogListViewContainer" style="display:none;">
+        <div class="catalog-bulk-toolbar" id="catalogBulkToolbar"></div>
+        <div class="catalog-list-table-wrapper" id="catalogListTableWrapper"></div>
+        <div class="catalog-list-new-row" id="catalogListNewRow"></div>
       </div>
     </div>
   </div>
@@ -3241,7 +3621,16 @@
         document.getElementById(btn.dataset.tab).classList.add('active');
         if (btn.dataset.tab === 'tabDashboard') renderDashboard();
         if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
-        if (btn.dataset.tab === 'tabCatalogos') renderCatalogList();
+        if (btn.dataset.tab === 'tabCatalogos') {
+          // Restore saved view mode
+          var savedModes = getCatalogViewModes();
+          var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+          toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+          if (savedMode === 'ficha') {
+            renderCatalogList();
+            renderCatalogForm();
+          }
+        }
         if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
     });
@@ -3328,6 +3717,7 @@
           if (data.acciones) saveCatalog('acciones', data.acciones);
           showToast('Catálogos importados correctamente', 'success');
           if (typeof renderCatalogList === 'function') renderCatalogList();
+          if (catalogState.viewMode === 'lista') renderCatalogListView(catalogState.activeCatalog);
         } catch(err) {
           showToast('Error al importar: archivo JSON inválido', 'error');
         }
@@ -3411,6 +3801,7 @@
           });
 
           renderCatalogList();
+          if (catalogState.viewMode === 'lista') renderCatalogListView(catalogState.activeCatalog);
 
           if (errors.length > 0) {
             showToast(imported + ' importados, ' + errors.length + ' errores', imported > 0 ? 'warning' : 'error');
@@ -3437,14 +3828,712 @@
       acciones: { pk: 'codigo', title: r => r.nombre || r.codigo, subtitle: r => 'Código: ' + r.codigo },
     };
 
-    const catalogState = { activeCatalog: 'proveedores', selectedPK: null, dirty: false };
+    const catalogState = { activeCatalog: 'proveedores', selectedPK: null, dirty: false, viewMode: 'ficha', cameFromList: false };
+
+    // ═══════════════════════════════════════════════════
+    // CATALOG LIST VIEW CONFIG & STATE
+    // All user data rendered via esc() for XSS prevention
+    // ═══════════════════════════════════════════════════
+
+    const LIST_VIEW_CONFIG = {
+      acciones: {
+        pkField: 'codigo',
+        columns: [
+          { key: 'codigo',          label: 'Código',       editable: false, type: 'text',   width: '80px' },
+          { key: 'nombre',          label: 'Nombre',       editable: true,  type: 'text',   width: '2fr' },
+          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
+          { key: 'departamento',    label: 'Departamento',  editable: true,  type: 'text',   width: '150px' },
+          { key: 'empresaPagadora', label: 'Empresa',       editable: true,  type: 'select', width: '180px', options: function() { return getEmpresasGrupo().map(function(e) { return e.razonSocial; }); } },
+          { key: 'fechaInicio',     label: 'F. inicio',     editable: true,  type: 'date',   width: '120px' },
+          { key: 'fechaFin',        label: 'F. fin',        editable: true,  type: 'date',   width: '120px' },
+          { key: 'presupuesto',     label: 'Presupuesto',   editable: true,  type: 'number', width: '100px', step: 100, min: 0 },
+          { key: 'bonificable',     label: 'Bonif.',        editable: true,  type: 'select', width: '80px',  options: function() { return ['Sí', 'No']; } },
+          { key: 'modalidad',       label: 'Modalidad',     editable: true,  type: 'select', width: '120px', options: function() { return ['Presencial', 'Teleformación', 'Mixta']; } },
+          { key: 'horasPresenciales',  label: 'H. presenc.',  editable: true,  type: 'number', width: '90px',  step: 0.5, min: 0 },
+          { key: 'horasTeleformacion', label: 'H. telef.',   editable: true,  type: 'number', width: '90px',  step: 0.5, min: 0 },
+          { key: '_participantes',  label: 'Partic.',       editable: false, type: 'count',  width: '80px',  countFn: function(r) { return (r.participantes||[]).length; } },
+          { key: '_notas',          label: 'Notas',         editable: false, type: 'count',  width: '70px',  countFn: function(r) { return (r.notas||[]).length; } },
+        ],
+        defaultSort: { key: 'fechaInicio', dir: 'desc' },
+      },
+      proveedores: {
+        pkField: 'cif',
+        columns: [
+          { key: 'cif',           label: 'CIF',           editable: false, type: 'text',  width: '100px' },
+          { key: 'razonSocial',   label: 'Razón social',  editable: true,  type: 'text',  width: '2fr' },
+          { key: 'email',         label: 'Email',          editable: true,  type: 'text',  width: '200px' },
+          { key: 'telefono',      label: 'Teléfono',       editable: true,  type: 'text',  width: '120px' },
+          { key: 'responsable',   label: 'Responsable',    editable: true,  type: 'text',  width: '180px' },
+          { key: '_acciones',     label: 'Acciones',       editable: false, type: 'count', width: '80px',  countFn: function(r) { return getLinkedAcciones('proveedores', r.cif).length; } },
+        ],
+        defaultSort: { key: 'razonSocial', dir: 'asc' },
+      },
+      centros: {
+        pkField: 'documento',
+        columns: [
+          { key: 'documento', label: 'Documento', editable: false, type: 'text',   width: '120px' },
+          { key: 'nombre',    label: 'Nombre',    editable: true,  type: 'text',   width: '2fr' },
+          { key: 'direccion', label: 'Dirección',  editable: true,  type: 'text',   width: '250px' },
+          { key: 'provincia', label: 'Provincia',  editable: true,  type: 'text',   width: '130px' },
+          { key: 'localidad', label: 'Localidad',  editable: true,  type: 'text',   width: '130px' },
+          { key: '_acciones', label: 'Acciones',   editable: false, type: 'count',  width: '80px', countFn: function(r) { return getLinkedAcciones('centros', r.documento).length; } },
+        ],
+        defaultSort: { key: 'nombre', dir: 'asc' },
+      },
+      tutores: {
+        pkField: 'documento',
+        columns: [
+          { key: 'documento',    label: 'Documento',      editable: false, type: 'text',  width: '120px' },
+          { key: '_nombreCompleto', label: 'Nombre',       editable: false, type: 'text',  width: '2fr',  displayFn: function(r) { return [r.nombre, r.apellido1, r.apellido2].filter(Boolean).join(' '); } },
+          { key: 'email',        label: 'Email',           editable: true,  type: 'text',  width: '200px' },
+          { key: 'telefono',     label: 'Teléfono',        editable: true,  type: 'text',  width: '120px' },
+          { key: 'horasDedicacion', label: 'Horas dedic.',  editable: true,  type: 'number', width: '100px', step: 0.5, min: 0 },
+          { key: '_acciones',    label: 'Acciones',        editable: false, type: 'count', width: '80px', countFn: function(r) { return getLinkedAcciones('tutores', r.documento).length; } },
+        ],
+        defaultSort: { key: '_nombreCompleto', dir: 'asc' },
+      },
+    };
+
+    // List view runtime state
+    var listViewState = {
+      sort: null,        // { key, dir } or null
+      filters: {},       // { columnKey: value }
+      selectedPKs: new Set(),
+      lastClickedPK: null,
+      filterDebounceTimer: null,
+    };
+
+    function getCatalogViewModes() {
+      try { return JSON.parse(localStorage.getItem('convocatoria_catalog_viewMode') || '{}'); }
+      catch(e) { return {}; }
+    }
+
+    function saveCatalogViewModes(modes) {
+      try { localStorage.setItem('convocatoria_catalog_viewMode', JSON.stringify(modes)); }
+      catch(e) {}
+    }
+
+    function toggleCatalogViewMode(catalogKey, mode) {
+      catalogState.viewMode = mode;
+      var modes = getCatalogViewModes();
+      modes[catalogKey] = mode;
+      saveCatalogViewModes(modes);
+
+      var listPanel = document.getElementById('catalogListPanel');
+      var formPanel = document.getElementById('catalogFormPanel');
+      var listViewContainer = document.getElementById('catalogListViewContainer');
+
+      // Update toggle buttons
+      document.querySelectorAll('#catalogViewToggle .catalog-view-toggle-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      if (mode === 'lista') {
+        listPanel.style.display = 'none';
+        formPanel.style.display = 'none';
+        listViewContainer.style.display = 'flex';
+        // Reset selection when switching to list
+        listViewState.selectedPKs = new Set();
+        listViewState.lastClickedPK = null;
+        renderCatalogListView(catalogKey);
+      } else {
+        listPanel.style.display = '';
+        formPanel.style.display = '';
+        listViewContainer.style.display = 'none';
+      }
+    }
+
+    // Bind view toggle buttons
+    document.querySelectorAll('#catalogViewToggle .catalog-view-toggle-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var mode = btn.dataset.mode;
+        if (mode === catalogState.viewMode) return;
+        if (mode === 'ficha' && catalogState.viewMode === 'lista') {
+          catalogState.cameFromList = false;
+        }
+        toggleCatalogViewMode(catalogState.activeCatalog, mode);
+      });
+    });
+
+    // ═══════════════════════════════════
+    // CATALOG LIST VIEW RENDERING
+    // ═══════════════════════════════════
+
+    function renderCatalogListView(catalogKey) {
+      var config = LIST_VIEW_CONFIG[catalogKey];
+      if (!config) return;
+      var data = getCatalog(catalogKey);
+      if (!listViewState.sort) {
+        listViewState.sort = config.defaultSort ? { key: config.defaultSort.key, dir: config.defaultSort.dir } : null;
+      }
+      var filtered = filterListViewData(config, data);
+      var sorted = sortListViewData(config, filtered);
+      var wrapper = document.getElementById('catalogListTableWrapper');
+      var tableHtml = '<table class="catalog-list-table" role="grid">' +
+        renderListViewHeader(config, catalogKey) +
+        renderListViewBody(config, sorted, catalogKey) +
+        '</table>';
+      wrapper.innerHTML = tableHtml;
+      var newRowContainer = document.getElementById('catalogListNewRow');
+      var footerHtml = '<button class="btn btn-secondary" id="btnListViewNewRow" style="font-size:12px;">+ Nueva fila</button>' +
+        '<button class="link-btn link-clear" id="btnListViewClearFilters" style="font-size:11px; margin-left:12px;">Limpiar filtros</button>' +
+        '<span style="margin-left:auto; font-size:11px; color:var(--text-muted);">' + sorted.length + ' de ' + data.length + ' registros</span>';
+      newRowContainer.innerHTML = footerHtml;
+      bindListViewHeaderEvents(config, catalogKey);
+      bindListViewFilterEvents(config, catalogKey);
+      bindListViewBodyEvents(config, catalogKey);
+      updateBulkToolbar(catalogKey);
+      var newRowBtn = document.getElementById('btnListViewNewRow');
+      if (newRowBtn) newRowBtn.addEventListener('click', function() { addNewRow(catalogKey); });
+      var clearBtn = document.getElementById('btnListViewClearFilters');
+      if (clearBtn) clearBtn.addEventListener('click', function() { listViewState.filters = {}; renderCatalogListView(catalogKey); });
+    }
+
+    function renderListViewHeader(config) {
+      var sort = listViewState.sort;
+      var h = '<thead><tr class="header-row">';
+      h += '<th class="col-checkbox"><input type="checkbox" id="listViewSelectAll" title="Seleccionar todos"></th>';
+      config.columns.forEach(function(col) {
+        var ariaSort = 'none';
+        var indicator = '\u2195';
+        if (sort && sort.key === col.key) {
+          if (sort.dir === 'asc') { ariaSort = 'ascending'; indicator = '\u2191'; }
+          else { ariaSort = 'descending'; indicator = '\u2193'; }
+        }
+        h += '<th data-col-key="' + esc(col.key) + '" aria-sort="' + ariaSort + '">';
+        h += esc(col.label);
+        h += ' <span class="sort-indicator">' + indicator + '</span>';
+        h += '</th>';
+      });
+      h += '</tr><tr class="filter-row">';
+      h += '<th class="col-checkbox"></th>';
+      config.columns.forEach(function(col) {
+        h += '<th>';
+        var fv = listViewState.filters[col.key] || '';
+        if (col.type === 'text') {
+          h += '<input type="text" data-filter-key="' + esc(col.key) + '" placeholder="Filtrar..." value="' + esc(typeof fv === 'string' ? fv : '') + '">';
+        } else if (col.type === 'select') {
+          var opts = col.options ? col.options() : [];
+          h += '<select data-filter-key="' + esc(col.key) + '"><option value="">Todos</option>';
+          opts.forEach(function(o) { h += '<option value="' + esc(o) + '"' + (fv === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
+          h += '</select>';
+        } else if (col.type === 'date') {
+          h += '<div class="filter-date-range">';
+          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="from" value="' + esc((fv && fv.from) || '') + '" title="Desde">';
+          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="to" value="' + esc((fv && fv.to) || '') + '" title="Hasta">';
+          h += '</div>';
+        } else if (col.type === 'number') {
+          h += '<div class="filter-number-range">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? fv.min : '') + '" placeholder="Min" step="any">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="max" value="' + ((fv && fv.max != null) ? fv.max : '') + '" placeholder="Max" step="any">';
+          h += '</div>';
+        }
+        h += '</th>';
+      });
+      h += '</tr></thead>';
+      return h;
+    }
+
+    function renderListViewBody(config, data, catalogKey) {
+      var h = '<tbody>';
+      if (data.length === 0) {
+        h += '<tr><td colspan="' + (config.columns.length + 1) + '" style="text-align:center; padding:32px; color:var(--text-muted); font-size:13px;">';
+        h += Object.keys(listViewState.filters).length > 0 ? 'No hay registros con los filtros aplicados' : 'No hay registros';
+        h += '</td></tr>';
+      } else {
+        data.forEach(function(record) {
+          var pk = String(record[config.pkField]);
+          var sel = listViewState.selectedPKs.has(pk);
+          h += '<tr class="data-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '"' + (sel ? ' aria-selected="true"' : '') + '>';
+          h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + '></td>';
+          config.columns.forEach(function(col) { h += renderListViewCell(col, record, config); });
+          h += '</tr>';
+        });
+      }
+      h += '</tbody>';
+      return h;
+    }
+
+    function renderListViewCell(col, record, config) {
+      var pk = String(record[config.pkField]);
+      var editableClass = col.editable ? ' cell-editable' : '';
+      var readonlyAttr = !col.editable ? ' aria-readonly="true"' : '';
+      if (col.type === 'count') {
+        var cnt = col.countFn ? col.countFn(record) : 0;
+        var chipCls = cnt > 0 ? 'cell-count-chip' : 'cell-count-chip empty';
+        return '<td class="cell-data" data-col-key="' + esc(col.key) + '"' + readonlyAttr + '><span class="' + chipCls + '" data-pk="' + esc(pk) + '">' + cnt + '</span></td>';
+      }
+      var value = col.displayFn ? (col.displayFn(record) || '') : (record[col.key] != null ? String(record[col.key]) : '');
+      return '<td class="cell-data' + editableClass + '" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '"' + readonlyAttr + '>' + esc(value) + '</td>';
+    }
+
+    // ═══════════════════════════════════
+    // LIST VIEW SORTING & FILTERING
+    // ═══════════════════════════════════
+
+    function sortListViewData(config, data) {
+      var sort = listViewState.sort;
+      if (!sort || !sort.key) return data.slice();
+      var col = config.columns.find(function(c) { return c.key === sort.key; });
+      if (!col) return data.slice();
+      var sorted = data.slice();
+      sorted.sort(function(a, b) {
+        var va, vb;
+        if (col.displayFn) { va = col.displayFn(a) || ''; vb = col.displayFn(b) || ''; }
+        else if (col.countFn) { va = col.countFn(a); vb = col.countFn(b); }
+        else { va = a[col.key] != null ? a[col.key] : ''; vb = b[col.key] != null ? b[col.key] : ''; }
+        if (col.type === 'number' || col.type === 'count') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; }
+        else if (col.type === 'date') { va = va ? new Date(va).getTime() : 0; vb = vb ? new Date(vb).getTime() : 0; }
+        else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+        var cmp = va < vb ? -1 : (va > vb ? 1 : 0);
+        return sort.dir === 'desc' ? -cmp : cmp;
+      });
+      return sorted;
+    }
+
+    function filterListViewData(config, data) {
+      var filters = listViewState.filters;
+      if (!filters || Object.keys(filters).length === 0) return data;
+      return data.filter(function(record) {
+        for (var key in filters) {
+          if (!filters.hasOwnProperty(key)) continue;
+          var fv = filters[key];
+          if (fv == null || fv === '') continue;
+          var col = config.columns.find(function(c) { return c.key === key; });
+          if (!col) continue;
+          var rv = col.displayFn ? (col.displayFn(record) || '') : (record[col.key] != null ? String(record[col.key]) : '');
+          if (col.type === 'text') { if (!String(rv).toLowerCase().includes(String(fv).toLowerCase())) return false; }
+          else if (col.type === 'select') { if (String(rv) !== String(fv)) return false; }
+          else if (col.type === 'date') {
+            var dv = rv ? new Date(rv).getTime() : 0;
+            if (fv.from && (!dv || dv < new Date(fv.from).getTime())) return false;
+            if (fv.to && (!dv || dv > new Date(fv.to).getTime() + 86399999)) return false;
+          } else if (col.type === 'number') {
+            var nv = parseFloat(rv) || 0;
+            if (fv.min != null && fv.min !== '' && nv < parseFloat(fv.min)) return false;
+            if (fv.max != null && fv.max !== '' && nv > parseFloat(fv.max)) return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    // ═══════════════════════════════════
+    // LIST VIEW EVENT BINDING
+    // ═══════════════════════════════════
+
+    function bindListViewHeaderEvents(config, catalogKey) {
+      document.querySelectorAll('.catalog-list-table .header-row th[data-col-key]').forEach(function(th) {
+        th.addEventListener('click', function() {
+          var key = th.dataset.colKey;
+          var sort = listViewState.sort;
+          if (sort && sort.key === key) {
+            if (sort.dir === 'asc') listViewState.sort = { key: key, dir: 'desc' };
+            else if (sort.dir === 'desc') listViewState.sort = null;
+          } else { listViewState.sort = { key: key, dir: 'asc' }; }
+          renderCatalogListView(catalogKey);
+        });
+      });
+      var selectAll = document.getElementById('listViewSelectAll');
+      if (selectAll) {
+        selectAll.addEventListener('change', function() {
+          var checked = this.checked;
+          document.querySelectorAll('.catalog-list-table .row-checkbox').forEach(function(cb) {
+            var pk = cb.dataset.pk;
+            cb.checked = checked;
+            var row = cb.closest('tr');
+            if (checked) { listViewState.selectedPKs.add(pk); if (row) { row.classList.add('selected'); row.setAttribute('aria-selected', 'true'); } }
+            else { listViewState.selectedPKs.delete(pk); if (row) { row.classList.remove('selected'); row.removeAttribute('aria-selected'); } }
+          });
+          updateBulkToolbar(catalogKey);
+        });
+      }
+    }
+
+    function bindListViewFilterEvents(config, catalogKey) {
+      document.querySelectorAll('.catalog-list-table .filter-row input[type="text"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var key = input.dataset.filterKey;
+          clearTimeout(listViewState.filterDebounceTimer);
+          listViewState.filterDebounceTimer = setTimeout(function() {
+            if (input.value) listViewState.filters[key] = input.value; else delete listViewState.filters[key];
+            renderCatalogListView(catalogKey);
+          }, 300);
+        });
+      });
+      document.querySelectorAll('.catalog-list-table .filter-row select').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var key = sel.dataset.filterKey;
+          if (sel.value) listViewState.filters[key] = sel.value; else delete listViewState.filters[key];
+          renderCatalogListView(catalogKey);
+        });
+      });
+      document.querySelectorAll('.catalog-list-table .filter-row input[type="date"]').forEach(function(input) {
+        input.addEventListener('change', function() {
+          var key = input.dataset.filterKey;
+          var part = input.dataset.filterPart;
+          if (!listViewState.filters[key]) listViewState.filters[key] = {};
+          listViewState.filters[key][part] = input.value;
+          if (!listViewState.filters[key].from && !listViewState.filters[key].to) delete listViewState.filters[key];
+          renderCatalogListView(catalogKey);
+        });
+      });
+      document.querySelectorAll('.catalog-list-table .filter-row input[type="number"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var key = input.dataset.filterKey;
+          var part = input.dataset.filterPart;
+          clearTimeout(listViewState.filterDebounceTimer);
+          listViewState.filterDebounceTimer = setTimeout(function() {
+            if (!listViewState.filters[key]) listViewState.filters[key] = {};
+            listViewState.filters[key][part] = input.value;
+            if (!listViewState.filters[key].min && !listViewState.filters[key].max) delete listViewState.filters[key];
+            renderCatalogListView(catalogKey);
+          }, 300);
+        });
+      });
+    }
+
+    function bindListViewBodyEvents(config, catalogKey) {
+      // Row checkboxes with shift-click range selection
+      document.querySelectorAll('.catalog-list-table .row-checkbox').forEach(function(cb) {
+        cb.addEventListener('click', function(e) {
+          var pk = cb.dataset.pk;
+          if (e.shiftKey && listViewState.lastClickedPK) {
+            var allRows = Array.from(document.querySelectorAll('.catalog-list-table .data-row'));
+            var si = allRows.findIndex(function(r) { return r.dataset.pk === listViewState.lastClickedPK; });
+            var ei = allRows.findIndex(function(r) { return r.dataset.pk === pk; });
+            if (si > -1 && ei > -1) {
+              var lo = Math.min(si, ei), hi = Math.max(si, ei);
+              for (var i = lo; i <= hi; i++) {
+                var rpk = allRows[i].dataset.pk;
+                listViewState.selectedPKs.add(rpk);
+                allRows[i].classList.add('selected');
+                allRows[i].setAttribute('aria-selected', 'true');
+                var rcb = allRows[i].querySelector('.row-checkbox');
+                if (rcb) rcb.checked = true;
+              }
+            }
+          } else {
+            if (cb.checked) listViewState.selectedPKs.add(pk); else listViewState.selectedPKs.delete(pk);
+            var row = cb.closest('tr');
+            if (row) { row.classList.toggle('selected', cb.checked); if (cb.checked) row.setAttribute('aria-selected', 'true'); else row.removeAttribute('aria-selected'); }
+          }
+          listViewState.lastClickedPK = pk;
+          updateBulkToolbar(catalogKey);
+        });
+      });
+      // Double click to open ficha
+      document.querySelectorAll('.catalog-list-table .data-row').forEach(function(row) {
+        row.addEventListener('dblclick', function(e) {
+          if (e.target.matches('input[type="checkbox"]') || e.target.matches('.cell-count-chip')) return;
+          catalogState.selectedPK = row.dataset.pk;
+          catalogState.cameFromList = true;
+          toggleCatalogViewMode(catalogKey, 'ficha');
+          renderCatalogList();
+          renderCatalogForm();
+        });
+      });
+      // Count chip clicks
+      document.querySelectorAll('.catalog-list-table .cell-count-chip:not(.empty)').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          catalogState.selectedPK = chip.dataset.pk;
+          catalogState.cameFromList = true;
+          toggleCatalogViewMode(catalogKey, 'ficha');
+          renderCatalogList();
+          renderCatalogForm();
+        });
+      });
+      // Inline edit on click
+      document.querySelectorAll('.catalog-list-table td.cell-editable').forEach(function(td) {
+        td.addEventListener('click', function() {
+          if (td.classList.contains('cell-editing')) return;
+          var colKey = td.dataset.colKey;
+          var pk = td.dataset.pk;
+          var col = config.columns.find(function(c) { return c.key === colKey; });
+          if (!col || !col.editable) return;
+          var data = getCatalog(catalogKey);
+          var record = data.find(function(r) { return String(r[config.pkField]) === String(pk); });
+          if (!record) return;
+          activateInlineEdit(td, col, record, config, catalogKey);
+        });
+      });
+    }
+
+    // ═══════════════════════════════════
+    // INLINE EDITING
+    // ═══════════════════════════════════
+
+    function activateInlineEdit(td, col, record, config, catalogKey) {
+      var currentValue = record[col.key] != null ? String(record[col.key]) : '';
+      td.classList.add('cell-editing');
+      td.dataset.originalValue = currentValue;
+
+      if (col.type === 'select') {
+        var opts = col.options ? col.options() : [];
+        var sh = '<select><option value="">-- --</option>';
+        opts.forEach(function(o) { sh += '<option value="' + esc(o) + '"' + (o === currentValue ? ' selected' : '') + '>' + esc(o) + '</option>'; });
+        sh += '</select>';
+        td.innerHTML = sh;
+        var sel = td.querySelector('select');
+        sel.focus();
+        sel.addEventListener('change', function() { commitInlineEdit(td, col, record, config, catalogKey, sel.value); });
+        sel.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') cancelInlineEdit(td, col, record);
+          if (e.key === 'Tab') { e.preventDefault(); commitInlineEdit(td, col, record, config, catalogKey, sel.value); moveToNextEditableCell(td, e.shiftKey); }
+        });
+        sel.addEventListener('blur', function() { setTimeout(function() { if (td.classList.contains('cell-editing')) commitInlineEdit(td, col, record, config, catalogKey, sel.value); }, 100); });
+      } else if (col.type === 'date') {
+        td.innerHTML = '<input type="date" value="' + esc(currentValue) + '">';
+        var di = td.querySelector('input');
+        di.focus();
+        di.addEventListener('change', function() { commitInlineEdit(td, col, record, config, catalogKey, di.value); });
+        di.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') cancelInlineEdit(td, col, record);
+          if (e.key === 'Tab') { e.preventDefault(); commitInlineEdit(td, col, record, config, catalogKey, di.value); moveToNextEditableCell(td, e.shiftKey); }
+        });
+        di.addEventListener('blur', function() { setTimeout(function() { if (td.classList.contains('cell-editing')) commitInlineEdit(td, col, record, config, catalogKey, di.value); }, 100); });
+      } else if (col.type === 'number') {
+        var stepA = col.step ? ' step="' + col.step + '"' : '';
+        var minA = col.min != null ? ' min="' + col.min + '"' : '';
+        td.innerHTML = '<input type="number" value="' + esc(currentValue) + '"' + stepA + minA + '>';
+        var ni = td.querySelector('input');
+        ni.focus();
+        ni.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); commitInlineEdit(td, col, record, config, catalogKey, ni.value); moveToNextEditableCellDown(td, col.key); }
+          if (e.key === 'Escape') cancelInlineEdit(td, col, record);
+          if (e.key === 'Tab') { e.preventDefault(); commitInlineEdit(td, col, record, config, catalogKey, ni.value); moveToNextEditableCell(td, e.shiftKey); }
+        });
+        ni.addEventListener('blur', function() { setTimeout(function() { if (td.classList.contains('cell-editing')) commitInlineEdit(td, col, record, config, catalogKey, ni.value); }, 100); });
+      } else {
+        // text type with contenteditable
+        td.setAttribute('contenteditable', 'true');
+        td.focus();
+        var range = document.createRange();
+        range.selectNodeContents(td);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        function textKeyHandler(e) {
+          if (e.key === 'Enter') { e.preventDefault(); td.removeEventListener('keydown', textKeyHandler); commitInlineEdit(td, col, record, config, catalogKey, td.textContent.trim()); moveToNextEditableCellDown(td, col.key); }
+          if (e.key === 'Escape') { td.removeEventListener('keydown', textKeyHandler); cancelInlineEdit(td, col, record); }
+          if (e.key === 'Tab') { e.preventDefault(); td.removeEventListener('keydown', textKeyHandler); commitInlineEdit(td, col, record, config, catalogKey, td.textContent.trim()); moveToNextEditableCell(td, e.shiftKey); }
+        }
+        td.addEventListener('keydown', textKeyHandler);
+        td.addEventListener('blur', function bh() { td.removeEventListener('blur', bh); setTimeout(function() { if (td.classList.contains('cell-editing')) { td.removeEventListener('keydown', textKeyHandler); commitInlineEdit(td, col, record, config, catalogKey, td.textContent.trim()); } }, 100); });
+      }
+    }
+
+    function commitInlineEdit(td, col, record, config, catalogKey, newValue) {
+      td.classList.remove('cell-editing');
+      td.classList.remove('cell-error');
+      td.removeAttribute('contenteditable');
+      var oldValue = td.dataset.originalValue || '';
+      newValue = String(newValue || '').trim();
+      if (oldValue === newValue) { td.textContent = oldValue; return; }
+      // Read full record from storage (not stale reference)
+      var currentData = getCatalog(catalogKey);
+      var pk = record[config.pkField];
+      var fullRecord = currentData.find(function(r) { return String(r[config.pkField]) === String(pk); });
+      if (!fullRecord) { showToast('Registro no encontrado', 'error'); td.textContent = oldValue; return; }
+      // Patch single field — store raw value; esc() only used when rendering HTML
+      fullRecord[col.key] = newValue;
+      // Audit log for audited fields in acciones
+      if (catalogKey === 'acciones') {
+        var auditedFields = ['estado', 'fechaInicio', 'fechaFin', 'presupuesto', 'proveedorVinculado'];
+        if (auditedFields.indexOf(col.key) > -1) {
+          if (!fullRecord.notas) fullRecord.notas = [];
+          fullRecord.notas.push({ id: Date.now(), date: new Date().toISOString(), tag: 'sistema', text: col.label + ': ' + (oldValue || '(vac\u00EDo)') + ' \u2192 ' + (newValue || '(vac\u00EDo)') });
+        }
+      }
+      upsertCatalogRecord(catalogKey, config.pkField, fullRecord);
+      showToast('Campo actualizado', 'success', 2000);
+      // Use textContent (not innerHTML) to safely display the value
+      td.textContent = newValue;
+    }
+
+    function cancelInlineEdit(td, col, record) {
+      td.classList.remove('cell-editing');
+      td.classList.remove('cell-error');
+      td.removeAttribute('contenteditable');
+      td.textContent = td.dataset.originalValue || '';
+    }
+
+    function moveToNextEditableCell(currentTd, reverse) {
+      var row = currentTd.closest('tr');
+      if (!row) return;
+      var allCells = Array.from(row.querySelectorAll('td.cell-editable'));
+      var idx = allCells.indexOf(currentTd);
+      var nextIdx = reverse ? idx - 1 : idx + 1;
+      if (nextIdx >= 0 && nextIdx < allCells.length) allCells[nextIdx].click();
+    }
+
+    function moveToNextEditableCellDown(currentTd, colKey) {
+      var row = currentTd.closest('tr');
+      if (!row) return;
+      var nextRow = row.nextElementSibling;
+      if (nextRow && nextRow.classList.contains('data-row')) {
+        var nextTd = nextRow.querySelector('td[data-col-key="' + colKey + '"].cell-editable');
+        if (nextTd) nextTd.click();
+      }
+    }
+
+    // ═══════════════════════════════════
+    // BULK OPERATIONS
+    // ═══════════════════════════════════
+
+    function updateBulkToolbar(catalogKey) {
+      var toolbar = document.getElementById('catalogBulkToolbar');
+      var count = listViewState.selectedPKs.size;
+      if (count === 0) { toolbar.classList.remove('visible'); toolbar.innerHTML = ''; return; }
+      toolbar.classList.add('visible');
+      var bh = '<span class="bulk-count">' + count + ' seleccionado' + (count !== 1 ? 's' : '') + '</span>';
+      bh += '<div class="bulk-separator"></div>';
+      if (catalogKey === 'acciones') {
+        bh += '<select id="bulkEstado" style="font-size:12px;"><option value="">Cambiar estado...</option>';
+        ['Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
+        bh += '</select>';
+        bh += '<select id="bulkEmpresa" style="font-size:12px;"><option value="">Cambiar empresa...</option>';
+        getEmpresasGrupo().forEach(function(e) { bh += '<option value="' + esc(e.razonSocial) + '">' + esc(e.razonSocial) + '</option>'; });
+        bh += '</select>';
+        bh += '<input type="text" id="bulkDepartamento" placeholder="Departamento..." style="font-size:12px; width:140px;">';
+        bh += '<button class="btn btn-secondary" id="bulkAssignParticipants" style="font-size:11px; padding:5px 10px;">Asignar participantes</button>';
+      }
+      bh += '<div style="margin-left:auto;"><button class="btn btn-secondary" id="bulkDelete" style="font-size:11px; padding:5px 10px; color:var(--danger); border-color:var(--danger);">Eliminar</button></div>';
+      toolbar.innerHTML = bh;
+      // Bind bulk action events
+      if (catalogKey === 'acciones') {
+        var be = document.getElementById('bulkEstado');
+        if (be) be.addEventListener('change', function() { if (be.value) { applyBulkAction(catalogKey, Array.from(listViewState.selectedPKs), 'estado', be.value); be.value = ''; } });
+        var bm = document.getElementById('bulkEmpresa');
+        if (bm) bm.addEventListener('change', function() { if (bm.value) { applyBulkAction(catalogKey, Array.from(listViewState.selectedPKs), 'empresaPagadora', bm.value); bm.value = ''; } });
+        var bd = document.getElementById('bulkDepartamento');
+        if (bd) bd.addEventListener('keydown', function(e) { if (e.key === 'Enter' && bd.value.trim()) { applyBulkAction(catalogKey, Array.from(listViewState.selectedPKs), 'departamento', bd.value.trim()); bd.value = ''; } });
+        var ba = document.getElementById('bulkAssignParticipants');
+        if (ba) ba.addEventListener('click', function() { showBulkParticipantPicker(catalogKey, Array.from(listViewState.selectedPKs)); });
+      }
+      var bdb = document.getElementById('bulkDelete');
+      if (bdb) bdb.addEventListener('click', function() { applyBulkDelete(catalogKey, Array.from(listViewState.selectedPKs)); });
+    }
+
+    function applyBulkAction(catalogKey, pks, field, value) {
+      var config = LIST_VIEW_CONFIG[catalogKey];
+      var auditedFields = ['estado', 'fechaInicio', 'fechaFin', 'presupuesto', 'proveedorVinculado'];
+      var count = 0;
+      pks.forEach(function(pk) {
+        var data = getCatalog(catalogKey);
+        var record = data.find(function(r) { return String(r[config.pkField]) === String(pk); });
+        if (!record) return;
+        var oldVal = String(record[field] || '');
+        var newVal = String(value);
+        if (oldVal === newVal) return;
+        record[field] = newVal;
+        if (catalogKey === 'acciones' && auditedFields.indexOf(field) > -1) {
+          if (!record.notas) record.notas = [];
+          record.notas.push({ id: Date.now() + count, date: new Date().toISOString(), tag: 'sistema', text: field + ': ' + (oldVal || '(vac\u00EDo)') + ' \u2192 ' + (newVal || '(vac\u00EDo)') });
+        }
+        upsertCatalogRecord(catalogKey, config.pkField, record);
+        count++;
+      });
+      if (count > 0) { showToast(count + ' registro' + (count !== 1 ? 's' : '') + ' actualizado' + (count !== 1 ? 's' : ''), 'success'); renderCatalogListView(catalogKey); }
+    }
+
+    function applyBulkDelete(catalogKey, pks) {
+      var config = LIST_VIEW_CONFIG[catalogKey];
+      var linkedWarnings = [];
+      if (catalogKey !== 'acciones') {
+        pks.forEach(function(pk) {
+          var linked = getLinkedAcciones(catalogKey, pk);
+          if (linked.length > 0) linkedWarnings.push(pk + ' (' + linked.length + ' acciones vinculadas)');
+        });
+      }
+      var msg = '\u00BFEliminar ' + pks.length + ' registro' + (pks.length !== 1 ? 's' : '') + '?';
+      if (linkedWarnings.length > 0) msg += '\n\n\u26A0 Registros con acciones vinculadas:\n' + linkedWarnings.join('\n') + '\n\nSe limpiar\u00E1n las vinculaciones.';
+      showCatalogConfirm('Eliminar registros', msg, function() {
+        var count = 0;
+        pks.forEach(function(pk) {
+          if (catalogKey !== 'acciones') {
+            var linked = getLinkedAcciones(catalogKey, pk);
+            linked.forEach(function(accion) {
+              var lf = catalogKey === 'proveedores' ? 'proveedorVinculado' : (catalogKey === 'centros' ? 'centroVinculado' : 'tutorVinculado');
+              if (accion[lf] === pk) { accion[lf] = ''; upsertCatalogRecord('acciones', 'codigo', accion); }
+            });
+          }
+          deleteCatalogRecord(catalogKey, config.pkField, pk);
+          count++;
+        });
+        listViewState.selectedPKs = new Set();
+        listViewState.lastClickedPK = null;
+        showToast(count + ' registro' + (count !== 1 ? 's' : '') + ' eliminado' + (count !== 1 ? 's' : ''), 'success');
+        renderCatalogListView(catalogKey);
+      });
+    }
+
+    function showBulkParticipantPicker(catalogKey, pks) {
+      showParticipantPicker([], function(selectedNIFs) {
+        if (!selectedNIFs || selectedNIFs.length === 0) return;
+        var count = 0;
+        pks.forEach(function(pk) {
+          var data = getCatalog(catalogKey);
+          var record = data.find(function(r) { return String(r.codigo) === String(pk); });
+          if (!record) return;
+          var existing = record.participantes || [];
+          var merged = {};
+          existing.forEach(function(n) { merged[n] = true; });
+          selectedNIFs.forEach(function(n) { merged[n] = true; });
+          var newList = Object.keys(merged);
+          if (newList.length !== existing.length) {
+            if (!record.notas) record.notas = [];
+            record.notas.push({ id: Date.now() + count, date: new Date().toISOString(), tag: 'sistema', text: 'Participantes: ' + existing.length + ' \u2192 ' + newList.length + ' (asignaci\u00F3n masiva)' });
+            record.participantes = newList;
+            upsertCatalogRecord(catalogKey, 'codigo', record);
+            count++;
+          }
+        });
+        if (count > 0) { showToast('Participantes asignados a ' + count + ' acci\u00F3n' + (count !== 1 ? 'es' : ''), 'success'); renderCatalogListView(catalogKey); }
+      });
+    }
+
+    // ═══════════════════════════════════
+    // NEW ROW
+    // ═══════════════════════════════════
+
+    function addNewRow(catalogKey) {
+      var config = LIST_VIEW_CONFIG[catalogKey];
+      var emptyRecord = {};
+      if (catalogKey === 'acciones') {
+        var existing = getCatalog('acciones');
+        var maxCode = 0;
+        existing.forEach(function(r) { var num = parseInt(r.codigo, 10); if (!isNaN(num) && num > maxCode) maxCode = num; });
+        emptyRecord.codigo = String(maxCode + 1);
+        emptyRecord.estado = 'Pendiente';
+        emptyRecord.participantes = [];
+        emptyRecord.notas = [];
+        emptyRecord.asistencia = { sesiones: [], registro: {} };
+        emptyRecord.confirmaciones = {};
+        upsertCatalogRecord(catalogKey, config.pkField, emptyRecord);
+        renderCatalogListView(catalogKey);
+        setTimeout(function() {
+          var newRow = document.querySelector('.catalog-list-table tr[data-pk="' + emptyRecord.codigo + '"]');
+          if (newRow) {
+            var nombreTd = newRow.querySelector('td[data-col-key="nombre"]');
+            if (nombreTd) nombreTd.click();
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      } else {
+        catalogState.selectedPK = null;
+        toggleCatalogViewMode(catalogKey, 'ficha');
+        var panel = document.getElementById('catalogFormPanel');
+        panel.innerHTML = getCatalogFormHtml(catalogKey, emptyRecord, true);
+        bindCatalogFormEvents(catalogKey, emptyRecord);
+      }
+    }
+
+    // ═══════════════════════════════════
+    // CATALOG LIST (ficha mode sidebar)
+    // ═══════════════════════════════════
 
     function renderCatalogList() {
-      const key = catalogState.activeCatalog;
-      const cfg = CATALOG_CONFIG[key];
-      const data = getCatalog(key);
-      const search = (document.getElementById('catalogSearch').value || '').toLowerCase();
-      const container = document.getElementById('catalogList');
 
       const filtered = data.filter(r => {
         const title = cfg.title(r) || '';
@@ -3489,9 +4578,21 @@
           btn.classList.add('active');
           catalogState.activeCatalog = btn.dataset.catalog;
           catalogState.selectedPK = null;
+          catalogState.cameFromList = false;
           document.getElementById('catalogSearch').value = '';
-          renderCatalogList();
-          renderCatalogForm();
+          // Reset list view state for new catalog
+          listViewState.sort = null;
+          listViewState.filters = {};
+          listViewState.selectedPKs = new Set();
+          listViewState.lastClickedPK = null;
+          // Restore saved view mode for this catalog
+          var savedModes = getCatalogViewModes();
+          var savedMode = savedModes[btn.dataset.catalog] || 'ficha';
+          toggleCatalogViewMode(btn.dataset.catalog, savedMode);
+          if (savedMode === 'ficha') {
+            renderCatalogList();
+            renderCatalogForm();
+          }
         });
       });
     });
@@ -3894,6 +4995,7 @@
 
       return '<div style="display:flex; flex-direction:column; height:100%;">' +
         '<div style="padding:20px; overflow-y:auto; flex:1;">' +
+        (catalogState.cameFromList ? '<button class="catalog-back-to-list" id="btnBackToList">\u2190 Volver a lista</button>' : '') +
         '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">' +
           '<h3 style="margin:0; font-size:15px; font-weight:600; color:var(--text-primary);">' + title + '</h3>' +
         '</div>' +
@@ -3955,6 +5057,17 @@
     function bindCatalogFormEvents(key, record) {
       const saveBtn = document.getElementById('btnSaveCatalog');
       if (saveBtn) saveBtn.addEventListener('click', function() { saveCatalogForm(key); });
+
+      // "Back to list" button
+      var backBtn = document.getElementById('btnBackToList');
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          checkDirtyBeforeNavigation(function() {
+            catalogState.cameFromList = false;
+            toggleCatalogViewMode(key, 'lista');
+          });
+        });
+      }
 
       // Track dirty state on form inputs
       var formPanel = document.getElementById('catalogFormPanel');
@@ -4997,8 +6110,9 @@
       if (accionesTab) accionesTab.classList.add('active');
       catalogState.activeCatalog = 'acciones';
 
-      // Select the action
+      // Select the action - force ficha mode
       catalogState.selectedPK = code;
+      toggleCatalogViewMode('acciones', 'ficha');
       renderCatalogList();
       renderCatalogForm();
       showToast('Accion ' + code + ' abierta', 'success');
