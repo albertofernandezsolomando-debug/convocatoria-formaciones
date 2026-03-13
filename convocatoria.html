@@ -2349,6 +2349,14 @@
         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
       </div>
       <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Sincronización</div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-primary); cursor:pointer;">
+          <input type="checkbox" id="settingsSyncConvocatoria" checked style="accent-color:var(--accent);">
+          Sincronizar convocatoria con acción formativa
+        </label>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
+      </div>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
         <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Plantillas guardadas</div>
         <div id="settingsTemplatesList"></div>
       </div>
@@ -5527,6 +5535,62 @@
       return event;
     }
 
+    function syncConvocatoriaWithAccion(event, emails) {
+      var settings = loadSettings();
+      if (settings.syncConvocatoriaAccion === false) return;
+
+      var acciones = getCatalog('acciones');
+      var titleNorm = (event.title || '').trim().toLowerCase();
+      var accion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (!accion) return;
+
+      // Build NIF list from emails
+      var attendeeNIFs = [];
+      if (state.employees && state.employees.length > 0) {
+        var emailSet = {};
+        emails.forEach(function(e) { emailSet[e] = true; });
+        state.employees.forEach(function(emp) {
+          if (emailSet[emp['Email trabajo']]) attendeeNIFs.push(emp.NIF);
+        });
+      }
+      if (attendeeNIFs.length === 0) return;
+
+      // Add participants if not already present
+      if (!accion.participantes) accion.participantes = [];
+      var added = 0;
+      attendeeNIFs.forEach(function(nif) {
+        if (accion.participantes.indexOf(nif) === -1) {
+          accion.participantes.push(nif);
+          added++;
+        }
+      });
+
+      // Create asistencia session if event has a date
+      if (event.date) {
+        if (!accion.asistencia) accion.asistencia = { sesiones: [], registro: {} };
+        if (!accion.asistencia.sesiones) accion.asistencia.sesiones = [];
+        if (!accion.asistencia.registro) accion.asistencia.registro = {};
+        if (accion.asistencia.sesiones.indexOf(event.date) === -1) {
+          accion.asistencia.sesiones.push(event.date);
+          accion.asistencia.sesiones.sort();
+        }
+        // Ensure registro arrays match sesiones length
+        accion.participantes.forEach(function(nif) {
+          if (!accion.asistencia.registro[nif]) accion.asistencia.registro[nif] = [];
+          while (accion.asistencia.registro[nif].length < accion.asistencia.sesiones.length) {
+            accion.asistencia.registro[nif].push(false);
+          }
+        });
+      }
+
+      if (added > 0) {
+        upsertCatalogRecord('acciones', 'codigo', accion);
+        showToast('Sincronizado con ' + accion.codigo + ': ' + added + ' participantes añadidos', 'info', 4000);
+      }
+    }
+
     function checkFundaeReadiness(eventTitle) {
       var acciones = getCatalog('acciones');
       var titleNorm = (eventTitle || '').trim().toLowerCase();
@@ -5693,6 +5757,8 @@
           if (document.getElementById('surveyCheck').checked) {
             sendSurveyEmail(event, emails);
           }
+          // Sync with matching acción formativa
+          syncConvocatoriaWithAccion(event, emails);
         }
 
         // Duplicate detection
@@ -6195,6 +6261,7 @@
       document.getElementById('settingsFormsQuestionId').value = settings.formsQuestionId || '';
       document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
+      document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
       renderSettingsTemplates();
       document.getElementById('settingsDialog').classList.add('visible');
     });
@@ -6226,7 +6293,8 @@
         showToast('Ambas URLs son necesarias para enviar encuestas', 'warning');
       }
 
-      saveSettings({ webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin });
+      const syncConvocatoriaAccion = document.getElementById('settingsSyncConvocatoria').checked;
+      saveSettings({ webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion });
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
     });
