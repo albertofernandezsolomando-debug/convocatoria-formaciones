@@ -1727,6 +1727,9 @@
               <button class="btn btn-primary" id="btnGenXmlAccion" style="font-size:12px;">Acción Formativa (AAFF)</button>
               <button class="btn btn-secondary" id="btnGenXmlInicio" style="font-size:12px;">Inicio de Grupo</button>
               <button class="btn btn-secondary" id="btnGenXmlFin" style="font-size:12px;">Finalización de Grupo</button>
+              <div style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">
+                <button class="btn btn-primary" id="btnGenXmlBatch" style="font-size:12px; width:100%;">Generar los 3 XMLs (ZIP)</button>
+              </div>
             </div>
           </div>
         </div>
@@ -5514,88 +5517,92 @@
       });
     });
 
+    // ═══════════════════════════════════
+    // ZIP BUILDER (reusable)
+    // ═══════════════════════════════════
+
+    var crcTable = (function() {
+      var table = new Uint32Array(256);
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        table[n] = c;
+      }
+      return table;
+    })();
+
+    function crc32(bytes) {
+      var crc = 0xFFFFFFFF;
+      for (var i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    /** Minimal ZIP builder (STORE, no compression). files = [{name, content}] */
+    function buildZip(files) {
+      var enc = new TextEncoder();
+      var entries = [];
+      var offset = 0;
+      var localParts = [];
+
+      files.forEach(function(f) {
+        var nameBytes = enc.encode(f.name);
+        var dataBytes = enc.encode(f.content);
+        var crcVal = crc32(dataBytes);
+        var size = dataBytes.length;
+
+        var hdr = new Uint8Array(30 + nameBytes.length);
+        var hv = new DataView(hdr.buffer);
+        hv.setUint32(0, 0x04034b50, true);
+        hv.setUint16(4, 20, true);
+        hv.setUint16(8, 0, true);
+        hv.setUint32(14, crcVal, true);
+        hv.setUint32(18, size, true);
+        hv.setUint32(22, size, true);
+        hv.setUint16(26, nameBytes.length, true);
+        hdr.set(nameBytes, 30);
+
+        entries.push({ nameBytes: nameBytes, crc: crcVal, size: size, offset: offset });
+        localParts.push(hdr, dataBytes);
+        offset += hdr.length + size;
+      });
+
+      var cdParts = [];
+      var cdSize = 0;
+      entries.forEach(function(e) {
+        var cd = new Uint8Array(46 + e.nameBytes.length);
+        var cv = new DataView(cd.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint32(16, e.crc, true);
+        cv.setUint32(20, e.size, true);
+        cv.setUint32(24, e.size, true);
+        cv.setUint16(28, e.nameBytes.length, true);
+        cv.setUint32(42, e.offset, true);
+        cd.set(e.nameBytes, 46);
+        cdParts.push(cd);
+        cdSize += cd.length;
+      });
+
+      var eocd = new Uint8Array(22);
+      var ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(8, entries.length, true);
+      ev.setUint16(10, entries.length, true);
+      ev.setUint32(12, cdSize, true);
+      ev.setUint32(16, offset, true);
+
+      var total = offset + cdSize + 22;
+      var zip = new Uint8Array(total);
+      var pos = 0;
+      localParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
+      cdParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
+      zip.set(eocd, pos);
+      return zip;
+    }
+
     document.getElementById('btnDownloadFlow').addEventListener('click', function() {
-      // --- CRC-32 ---
-      var crcTable = (function() {
-        var table = new Uint32Array(256);
-        for (var n = 0; n < 256; n++) {
-          var c = n;
-          for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-          table[n] = c;
-        }
-        return table;
-      })();
-      function crc32(bytes) {
-        var crc = 0xFFFFFFFF;
-        for (var i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
-        return (crc ^ 0xFFFFFFFF) >>> 0;
-      }
-
-      // --- Minimal ZIP builder (STORE, no compression) ---
-      function buildZip(files) {
-        var enc = new TextEncoder();
-        var entries = [];
-        var offset = 0;
-        var localParts = [];
-
-        files.forEach(function(f) {
-          var nameBytes = enc.encode(f.name);
-          var dataBytes = enc.encode(f.content);
-          var crcVal = crc32(dataBytes);
-          var size = dataBytes.length;
-
-          var hdr = new Uint8Array(30 + nameBytes.length);
-          var hv = new DataView(hdr.buffer);
-          hv.setUint32(0, 0x04034b50, true);
-          hv.setUint16(4, 20, true);
-          hv.setUint16(8, 0, true);
-          hv.setUint32(14, crcVal, true);
-          hv.setUint32(18, size, true);
-          hv.setUint32(22, size, true);
-          hv.setUint16(26, nameBytes.length, true);
-          hdr.set(nameBytes, 30);
-
-          entries.push({ nameBytes: nameBytes, crc: crcVal, size: size, offset: offset });
-          localParts.push(hdr, dataBytes);
-          offset += hdr.length + size;
-        });
-
-        var cdParts = [];
-        var cdSize = 0;
-        entries.forEach(function(e) {
-          var cd = new Uint8Array(46 + e.nameBytes.length);
-          var cv = new DataView(cd.buffer);
-          cv.setUint32(0, 0x02014b50, true);
-          cv.setUint16(4, 20, true);
-          cv.setUint16(6, 20, true);
-          cv.setUint16(10, 0, true);
-          cv.setUint32(16, e.crc, true);
-          cv.setUint32(20, e.size, true);
-          cv.setUint32(24, e.size, true);
-          cv.setUint16(28, e.nameBytes.length, true);
-          cv.setUint32(42, e.offset, true);
-          cd.set(e.nameBytes, 46);
-          cdParts.push(cd);
-          cdSize += cd.length;
-        });
-
-        var eocd = new Uint8Array(22);
-        var ev = new DataView(eocd.buffer);
-        ev.setUint32(0, 0x06054b50, true);
-        ev.setUint16(8, entries.length, true);
-        ev.setUint16(10, entries.length, true);
-        ev.setUint32(12, cdSize, true);
-        ev.setUint32(16, offset, true);
-
-        var total = offset + cdSize + 22;
-        var zip = new Uint8Array(total);
-        var pos = 0;
-        localParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
-        cdParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
-        zip.set(eocd, pos);
-        return zip;
-      }
-
       // --- Power Automate flow definition (Logic Apps format) ---
       var flowId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
@@ -6233,7 +6240,7 @@
 
     // ─── 1. genXmlAccionFormativa ───
 
-    function doGenXmlAccionFormativa(accion) {
+    function doGenXmlAccionFormativa(accion, returnOnly) {
       const e = v => esc(String(v || ''));
       const mod = accion.modalidad;
       const horasPr = accion.horasPresenciales || '0';
@@ -6293,6 +6300,7 @@
         '  </AccionFormativa>\n' +
         '</AccionesFormativas>';
 
+      if (returnOnly) return xml;
       downloadXML(xml, 'AccionFormativa_' + accion.codigo + '.xml');
       showToast('XML Accion Formativa generado', 'success');
     }
@@ -6318,7 +6326,7 @@
 
     // ─── 2. genXmlInicioGrupo ───
 
-    function doGenXmlInicioGrupo(accion, grupoData) {
+    function doGenXmlInicioGrupo(accion, grupoData, returnOnly) {
       const e = v => esc(String(v || ''));
       const mod = accion.modalidad;
       const isPresencial = mod === 'Presencial' || mod === 'Mixta';
@@ -6444,6 +6452,7 @@
         '  </grupo>\n' +
         '</grupos>';
 
+      if (returnOnly) return xml;
       downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + grupoData.idGrupo + '.xml');
       showToast('XML Inicio de Grupo generado', 'success');
     }
@@ -6510,7 +6519,7 @@
 
     // ─── 3. genXmlFinalizacion ───
 
-    function doGenXmlFinalizacion(accion, idGrupo) {
+    function doGenXmlFinalizacion(accion, idGrupo, returnOnly) {
       const e = v => esc(String(v || ''));
 
       const participantesXml = xmlState.participantes.map(p =>
@@ -6547,6 +6556,7 @@
         '  </grupo>\n' +
         '</grupos>';
 
+      if (returnOnly) return xml;
       downloadXML(xml, 'Finalizacion_' + accion.codigo + '_G' + idGrupo + '.xml');
       showToast('XML Finalizacion de Grupo generado', 'success');
     }
@@ -6577,6 +6587,116 @@
     document.getElementById('btnGenXmlAccion').addEventListener('click', genXmlAccionFormativa);
     document.getElementById('btnGenXmlInicio').addEventListener('click', genXmlInicioGrupo);
     document.getElementById('btnGenXmlFin').addEventListener('click', genXmlFinalizacion);
+
+    // ─── Batch XML generation (3 XMLs in ZIP) ───
+
+    document.getElementById('btnGenXmlBatch').addEventListener('click', function() {
+      // 1. Gather accion data
+      var accion = getXmlAccion();
+      if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
+      if (!accion.modalidad) { showToast('La accion no tiene modalidad definida', 'error'); return; }
+      if (!accion.objetivos) { showToast('La accion no tiene objetivos definidos', 'error'); return; }
+      if (!accion.contenidos) { showToast('La accion no tiene contenidos definidos', 'error'); return; }
+
+      // 2. Gather grupo data (same as genXmlInicioGrupo)
+      var idGrupo = document.getElementById('xmlIdGrupo').value;
+      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
+
+      var descripcion = document.getElementById('xmlDescripcion').value;
+      if (!descripcion) { showToast('Indica la descripcion del grupo', 'warning'); return; }
+
+      var responsable = document.getElementById('xmlResponsable').value;
+      if (!responsable) { showToast('Indica el responsable', 'warning'); return; }
+
+      var telefonoContacto = document.getElementById('xmlTelefono').value;
+      if (!telefonoContacto) { showToast('Indica el telefono de contacto', 'warning'); return; }
+
+      var mod = accion.modalidad;
+      var isPresencial = mod === 'Presencial' || mod === 'Mixta';
+
+      var centro = getXmlCentro();
+      if (isPresencial && !centro) { showToast('Selecciona un centro de imparticion para modalidad presencial/mixta', 'warning'); return; }
+
+      var tutor = getXmlTutor();
+      if (!tutor) { showToast('Selecciona un tutor', 'warning'); return; }
+
+      var fechaInicio = document.getElementById('xmlFechaInicio').value;
+      var fechaFin = document.getElementById('xmlFechaFin').value;
+      var horaInicio = document.getElementById('xmlHoraInicio').value;
+      var horaFin = document.getElementById('xmlHoraFin').value;
+
+      if (!fechaInicio || !fechaFin) { showToast('Indica fechas de inicio y fin', 'warning'); return; }
+      if (isPresencial && (!horaInicio || !horaFin)) { showToast('Indica horario de inicio y fin para presencial', 'warning'); return; }
+      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
+
+      var grupoData = {
+        idGrupo: idGrupo,
+        descripcion: descripcion,
+        responsable: responsable,
+        telefonoContacto: telefonoContacto,
+        centro: centro,
+        tutor: tutor,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+        horaInicio: horaInicio,
+        horaFin: horaFin
+      };
+
+      // 3. Validate all three types, collect all errors/warnings
+      var r1 = validateXmlData('accionFormativa', accion, null, xmlState.participantes);
+      var r2 = validateXmlData('inicioGrupo', accion, grupoData, xmlState.participantes);
+      var r3 = validateXmlData('finalizacion', accion, null, xmlState.participantes);
+
+      var allErrors = r1.errors.concat(r2.errors).concat(r3.errors);
+      var allWarnings = r1.warnings.concat(r2.warnings).concat(r3.warnings);
+
+      // Deduplicate by field+message
+      function dedup(arr) {
+        var seen = {};
+        return arr.filter(function(item) {
+          var key = item.field + '|' + item.message + '|' + (item.participantNif || '');
+          if (seen[key]) return false;
+          seen[key] = true;
+          return true;
+        });
+      }
+      allErrors = dedup(allErrors);
+      allWarnings = dedup(allWarnings);
+
+      function doBatchGenerate() {
+        var xmlAccion = doGenXmlAccionFormativa(accion, true);
+        var xmlInicio = doGenXmlInicioGrupo(accion, grupoData, true);
+        var xmlFin = doGenXmlFinalizacion(accion, idGrupo, true);
+
+        var zipBytes = buildZip([
+          { name: 'AAFF_' + accion.codigo + '.xml', content: xmlAccion },
+          { name: 'InicioGrupo_' + accion.codigo + '.xml', content: xmlInicio },
+          { name: 'Finalizacion_' + accion.codigo + '.xml', content: xmlFin }
+        ]);
+
+        var blob = new Blob([zipBytes], { type: 'application/zip' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'FUNDAE_' + accion.codigo + '_G' + idGrupo + '.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('3 XMLs generados y descargados', 'success');
+      }
+
+      // 4. Show errors or warnings, or proceed
+      if (allErrors.length > 0) {
+        showValidationDialog(allErrors, allWarnings);
+        return;
+      }
+      if (allWarnings.length > 0) {
+        showValidationDialog(allErrors, allWarnings, doBatchGenerate);
+        return;
+      }
+      doBatchGenerate();
+    });
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
