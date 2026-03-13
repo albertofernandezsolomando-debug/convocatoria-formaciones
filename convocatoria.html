@@ -5828,6 +5828,16 @@
           dialog.classList.add('visible');
         } else {
           document.getElementById('seriesDialog').classList.remove('visible');
+          // Sync series sessions with acción formativa
+          var attendeeNIFs = [];
+          if (state.employees && state.employees.length > 0) {
+            var emailSet = {};
+            emails.forEach(function(e) { emailSet[e] = true; });
+            state.employees.forEach(function(emp) {
+              if (emailSet[emp['Email trabajo']]) attendeeNIFs.push(emp.NIF);
+            });
+          }
+          syncSeriesWithAccion(baseEvent.title, state.seriesDates, attendeeNIFs);
         }
 
         index++;
@@ -5839,6 +5849,55 @@
       document.getElementById('dialogCancel').onclick = () => {
         document.getElementById('seriesDialog').classList.remove('visible');
       };
+    }
+
+    function syncSeriesWithAccion(eventTitle, seriesDates, attendeeNIFs) {
+      var acciones = getCatalog('acciones');
+      var titleNorm = (eventTitle || '').trim().toLowerCase();
+      var accion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (!accion) return;
+
+      // Ensure asistencia structure
+      if (!accion.asistencia) accion.asistencia = { sesiones: [], registro: {} };
+      if (!accion.asistencia.sesiones) accion.asistencia.sesiones = [];
+      if (!accion.asistencia.registro) accion.asistencia.registro = {};
+
+      // Add participants if not already present
+      if (!accion.participantes) accion.participantes = [];
+      var addedParts = 0;
+      attendeeNIFs.forEach(function(nif) {
+        if (accion.participantes.indexOf(nif) === -1) {
+          accion.participantes.push(nif);
+          addedParts++;
+        }
+      });
+
+      // Add sessions for each series date
+      var addedSessions = 0;
+      seriesDates.forEach(function(dateStr) {
+        if (accion.asistencia.sesiones.indexOf(dateStr) === -1) {
+          accion.asistencia.sesiones.push(dateStr);
+          addedSessions++;
+        }
+      });
+      accion.asistencia.sesiones.sort();
+
+      // Ensure registro arrays match sesiones length
+      accion.participantes.forEach(function(nif) {
+        if (!accion.asistencia.registro[nif]) {
+          accion.asistencia.registro[nif] = [];
+        }
+        while (accion.asistencia.registro[nif].length < accion.asistencia.sesiones.length) {
+          accion.asistencia.registro[nif].push(false);
+        }
+      });
+
+      upsertCatalogRecord('acciones', 'codigo', accion);
+      if (addedSessions > 0 || addedParts > 0) {
+        showToast('Sesiones de asistencia creadas en ' + accion.codigo + ' (' + addedSessions + ' sesiones, ' + addedParts + ' participantes nuevos)', 'success', 5000);
+      }
     }
 
     // ═══════════════════════════════════
