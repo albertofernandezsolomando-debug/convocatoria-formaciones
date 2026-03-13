@@ -2037,6 +2037,7 @@
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
         </div>
+        <a href="#" class="link-btn link-add" id="btnDemoData" onclick="loadDemoData(); return false;" style="margin-top:8px; display:block; text-align:center; font-size:12px;">Probar con datos de ejemplo</a>
       </div>
 
       <!-- 2. Filtros -->
@@ -5654,6 +5655,59 @@
           '<br><span style="font-size:11px; color: var(--text-muted);">Último: ' + lastFile + '</span>';
       }
     } catch(e) {}
+
+    // ═══════════════════════════════════
+    // DEMO DATA
+    // ═══════════════════════════════════
+    function loadDemoData() {
+      var depts = ['IT', 'RRHH', 'Comercial', 'Finanzas', 'Operaciones', 'Marketing', 'Legal'];
+      var locs = ['Madrid', 'Zaragoza', 'Barcelona', 'Valencia'];
+      var nombres = ['Ana Garcia', 'Carlos Lopez', 'Maria Rodriguez', 'Pedro Martinez', 'Laura Fernandez', 'Jorge Sanchez', 'Elena Gomez', 'David Perez', 'Sofia Torres', 'Miguel Diaz', 'Carmen Ruiz', 'Antonio Moreno', 'Isabel Alvarez', 'Francisco Romero', 'Lucia Navarro', 'Javier Gil', 'Paula Molina', 'Alberto Serrano', 'Marta Ortega', 'Raul Delgado', 'Cristina Ramos', 'Fernando Castro', 'Natalia Ortiz', 'Diego Marin', 'Eva Iglesias'];
+      var empresas = getEmpresasGrupo().slice(0, 5);
+
+      var employees = nombres.map(function(nombre, i) {
+        var nif = String(10000000 + i * 1234567 % 90000000) + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i % 26];
+        var empresa = empresas[i % empresas.length];
+        return {
+          _id: i + 1,
+          'Nombre y apellidos': nombre,
+          'Empleado': nombre,
+          'NIF': nif,
+          'Email trabajo': nombre.toLowerCase().replace(/ /g, '.') + '@ejemplo.com',
+          'Empresa': empresa.razonSocial,
+          'Departamento': depts[i % depts.length],
+          'Ubicacion': locs[i % locs.length],
+          'Alta/Baja': 1,
+          'Puesto': 'Especialista ' + depts[i % depts.length],
+          '_f_CIF': empresa.cif,
+          '_f_Sexo': i % 2 === 0 ? 'M' : 'H',
+          '_f_Nombre': nombre.split(' ')[0],
+          '_f_Apellidos': nombre.split(' ').slice(1).join(' ')
+        };
+      });
+
+      state.employees = employees;
+      state.activeFilters = {};
+      state.excludedNIFs = new Set();
+      state.externalEmployees = [];
+
+      uploadZone.classList.add('loaded');
+      uploadPrompt.style.display = 'none';
+      uploadInfo.style.display = 'block';
+      fileNameEl.textContent = 'datos-ejemplo.xlsx';
+      fileStats.textContent = employees.length + ' empleados de ejemplo';
+
+      document.getElementById('filtrosSection').style.display = '';
+      document.getElementById('eventoSection').style.display = '';
+      document.getElementById('summaryBar').style.display = '';
+      document.getElementById('actionBar').style.display = '';
+      document.getElementById('tableSearch').style.display = '';
+      document.getElementById('btnDemoData').style.display = 'none';
+
+      renderFilters();
+      renderTable();
+      showToast('Datos de ejemplo cargados (25 empleados). Reemplazalos con tu organigrama real.', 'info', 6000);
+    }
 
     // ═══════════════════════════════════
     // AUTOSAVE STATE
