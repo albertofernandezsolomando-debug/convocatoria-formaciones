@@ -3355,7 +3355,7 @@
     function saveHistory(history) {
       try { localStorage.setItem('convocatoria_history', JSON.stringify(history)); } catch(e) {}
     }
-    function logToHistory(event, attendeeCount, emails, filters) {
+    function logToHistory(event, attendeeCount, emails, filters, status) {
       const history = getHistory();
       history.unshift({
         id: Date.now(),
@@ -3369,7 +3369,9 @@
         body: event.body,
         attendeeCount: attendeeCount,
         emails: emails,
-        filters: JSON.parse(JSON.stringify(filters))
+        filters: JSON.parse(JSON.stringify(filters)),
+        status: status || 'completed',
+        surveyScheduled: false
       });
       // Keep last 50 entries
       if (history.length > 50) history.length = 50;
@@ -3893,6 +3895,7 @@
       }).then(function(r) {
         if (r.ok || r.status === 202) {
           showToast('Encuesta programada para las ' + endTime, 'success');
+          markSurveyScheduled(event.title, event.date);
         } else {
           showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
         }
@@ -3903,10 +3906,20 @@
           body: JSON.stringify(payload)
         }).then(function() {
           showToast('Encuesta enviada a Power Automate (sin confirmación)', 'success');
+          markSurveyScheduled(event.title, event.date);
         }).catch(function() {
           showToast('No se pudo conectar con Power Automate. Verifica la URL del webhook', 'error', 6000);
         });
       });
+    }
+
+    function markSurveyScheduled(title, eventDate) {
+      const history = getHistory();
+      const entry = history.find(h => h.title === title && h.eventDate === eventDate);
+      if (entry) {
+        entry.surveyScheduled = true;
+        saveHistory(history);
+      }
     }
 
     function getGreeting() {
@@ -5171,6 +5184,11 @@
           };
           document.getElementById('dialogCancel').onclick = () => {
             dialog.classList.remove('visible');
+            // Log remaining unprocessed items as cancelled
+            const remaining = state.queue.slice(index);
+            remaining.forEach(qi => {
+              logToHistory(qi.event, qi.attendeeCount, qi.emails, qi.filters, 'cancelled');
+            });
             // Keep remaining items in queue
             state.queue = state.queue.slice(index);
             saveQueue();
@@ -5724,17 +5742,36 @@
           .map(([k,v]) => k + ': ' + v.join(', '))
           .join(' · ') || 'Sin filtros';
 
+        const status = h.status || 'completed';
+        var statusBadge = '';
+        if (status === 'completed') {
+          statusBadge = '<span class="chip" style="background:var(--success-light); color:var(--success); font-size:10px;">Enviada</span>';
+        } else if (status === 'cancelled') {
+          statusBadge = '<span class="chip" style="background:var(--danger-light); color:var(--danger); font-size:10px;">Cancelada</span>';
+        } else if (status === 'partial') {
+          statusBadge = '<span class="chip" style="background:var(--warning-light); color:var(--warning); font-size:10px;">Parcial</span>';
+        }
+
+        var surveyBadge = '';
+        if (h.surveyScheduled === true) {
+          surveyBadge = '<span class="chip" style="background:var(--accent-subtle); color:var(--accent); font-size:10px;">Encuesta \u2713</span>';
+        } else {
+          surveyBadge = '<span style="font-size:10px; color:var(--text-muted);">Sin encuesta</span>';
+        }
+
         return '<div class="history-item" style="padding:12px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px;">' +
           '<div style="display:flex; justify-content:space-between; align-items:start;">' +
             '<div>' +
               '<div style="font-weight:600; font-size:13px;">' + esc(h.title) + '</div>' +
               '<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">' +
-                eventDate + ' · ' + (h.startTime||'') + '–' + (h.endTime||'') + ' · ' + type +
+                eventDate + ' · ' + (h.startTime||'') + '\u2013' + (h.endTime||'') + ' · ' + type +
               '</div>' +
               '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' +
                 h.attendeeCount + ' asistentes · ' + esc(filterSummary) +
               '</div>' +
-              '<div style="font-size:10px; color:var(--text-muted); margin-top:4px;">Enviado: ' + date + '</div>' +
+              '<div style="font-size:10px; color:var(--text-muted); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">' +
+                'Enviado: ' + date + ' ' + statusBadge + ' ' + surveyBadge +
+              '</div>' +
             '</div>' +
             '<button class="link-btn link-add" data-repeat="' + i + '" style="font-size:11px; white-space:nowrap;">Repetir</button>' +
           '</div>' +
