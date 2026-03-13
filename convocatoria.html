@@ -2112,7 +2112,10 @@
               </div>
               <div style="flex:1;">
                 <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Salariales (€)</label>
-                <input class="input-field" type="number" id="xmlCostesSalariales" style="font-size:13px;" step="0.01" value="0">
+                <div style="display:flex; gap:4px; align-items:center;">
+                  <input class="input-field" type="number" id="xmlCostesSalariales" style="font-size:13px; flex:1;" step="0.01" value="0">
+                  <button class="btn btn-secondary" id="btnCalcCostesSalariales" style="font-size:11px; padding:6px 8px; white-space:nowrap;" title="Calcular desde coste/hora de participantes">Calc.</button>
+                </div>
               </div>
             </div>
           </div>
@@ -6578,6 +6581,41 @@
       xmlState.participantes.forEach(p => { p.diploma = this.value; });
       renderXmlParticipants();
       this.value = '';
+    });
+
+    // Auto-calculate salary costs from participant coste/hora
+    document.getElementById('btnCalcCostesSalariales').addEventListener('click', function() {
+      if (xmlState.participantes.length === 0) {
+        showToast('No hay participantes para calcular', 'warning');
+        return;
+      }
+      var accion = getXmlAccion();
+      if (!accion) {
+        showToast('Selecciona una acción formativa', 'warning');
+        return;
+      }
+      var totalHoras = (Number(accion.horasPresenciales) || 0) + (Number(accion.horasTeleformacion) || 0);
+      if (totalHoras <= 0) {
+        showToast('La acción no tiene horas definidas', 'warning');
+        return;
+      }
+      var totalCoste = 0;
+      var breakdown = [];
+      var sinCoste = 0;
+      xmlState.participantes.forEach(function(p) {
+        var costeHora = parseFloat(p.costeHora);
+        if (!isNaN(costeHora) && costeHora > 0) {
+          var costeParticipante = costeHora * totalHoras;
+          totalCoste += costeParticipante;
+          breakdown.push(esc(p.empleado) + ': ' + costeHora.toFixed(2) + ' x ' + totalHoras + 'h = ' + costeParticipante.toFixed(2) + ' €');
+        } else {
+          sinCoste++;
+        }
+      });
+      document.getElementById('xmlCostesSalariales').value = totalCoste.toFixed(2);
+      var msg = 'Costes salariales: ' + totalCoste.toFixed(2) + ' € (' + (xmlState.participantes.length - sinCoste) + ' participantes x ' + totalHoras + 'h)';
+      if (sinCoste > 0) msg += ' · ' + sinCoste + ' sin coste/hora';
+      showToast(msg, 'success', 6000);
     });
 
     // ─── XML helper getters ───
