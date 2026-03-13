@@ -9800,7 +9800,8 @@
       var withoutSurvey = [];
       completedActions.forEach(function(a) {
         var code = a.codigo || '';
-        if (surveyScheduled[code]) {
+        // Check both history surveyScheduled and action-level encuestaEnviada
+        if (surveyScheduled[code] || a.encuestaEnviada === true) {
           withSurvey++;
         } else {
           withoutSurvey.push(a);
