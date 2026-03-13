@@ -2761,7 +2761,8 @@
         proveedor: 'var(--chart-2)',
         FUNDAE: 'var(--accent)',
         interno: 'var(--chart-3)',
-        empleado: 'var(--chart-4)'
+        empleado: 'var(--chart-4)',
+        sistema: 'var(--text-muted)'
       };
       // Sort newest first
       var sorted = notas.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
@@ -3766,6 +3767,43 @@
         const firstEl = document.getElementById('cf_' + errorFields[0]);
         if (firstEl) firstEl.focus();
         return;
+      }
+
+      // Audit log for acciones: auto-add notas for field changes
+      if (key === 'acciones') {
+        var existingForAudit = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
+        if (existingForAudit) {
+          var auditFields = [
+            { field: 'estado', label: 'Estado' },
+            { field: 'fechaInicio', label: 'Fecha inicio' },
+            { field: 'fechaFin', label: 'Fecha fin' },
+            { field: 'presupuesto', label: 'Presupuesto' },
+            { field: 'proveedorVinculado', label: 'Proveedor vinculado' }
+          ];
+          var auditChanges = [];
+          auditFields.forEach(function(af) {
+            var oldVal = String(existingForAudit[af.field] || '');
+            var newVal = String(record[af.field] || '');
+            if (oldVal !== newVal) {
+              auditChanges.push(af.label + ': ' + (oldVal || '(vacío)') + ' → ' + (newVal || '(vacío)'));
+            }
+          });
+          // Check participantes count change
+          var oldPartCount = (existingForAudit.participantes || []).length;
+          var newPartCount = (record.participantes || []).length;
+          if (oldPartCount !== newPartCount) {
+            auditChanges.push('Participantes: ' + oldPartCount + ' → ' + newPartCount);
+          }
+          if (auditChanges.length > 0) {
+            if (!record.notas) record.notas = [];
+            record.notas.push({
+              id: Date.now(),
+              date: new Date().toISOString(),
+              tag: 'sistema',
+              text: auditChanges.join(' | ')
+            });
+          }
+        }
       }
 
       upsertCatalogRecord(key, cfg.pk, record);
