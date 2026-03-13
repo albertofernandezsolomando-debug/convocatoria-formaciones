@@ -9361,6 +9361,57 @@
         section.appendChild(table);
         container.appendChild(section);
       }
+
+      // Department grouping if actions have department data
+      var deptConfirm = {};
+      accionesConConfirm.forEach(function(a) {
+        var dept = a.departamento || '(Sin departamento)';
+        if (!deptConfirm[dept]) deptConfirm[dept] = { total: 0, confirmado: 0 };
+        var confs = a.confirmaciones;
+        Object.keys(confs).forEach(function(nif) {
+          deptConfirm[dept].total++;
+          var status = (confs[nif] || '').toLowerCase().replace(/ /g, '_');
+          if (status === 'confirmado') deptConfirm[dept].confirmado++;
+        });
+      });
+
+      var deptKeys = Object.keys(deptConfirm).filter(function(k) { return deptConfirm[k].total > 0; });
+      if (deptKeys.length > 1) {
+        var deptSection = document.createElement('div');
+        deptSection.style.cssText = 'margin-top:10px;';
+        var deptTitle = document.createElement('div');
+        deptTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+        deptTitle.textContent = 'Confirmación por departamento';
+        deptSection.appendChild(deptTitle);
+
+        deptKeys.sort(function(a, b) {
+          var rateA = deptConfirm[a].total > 0 ? deptConfirm[a].confirmado / deptConfirm[a].total : 0;
+          var rateB = deptConfirm[b].total > 0 ? deptConfirm[b].confirmado / deptConfirm[b].total : 0;
+          return rateA - rateB;
+        });
+        deptKeys.slice(0, 5).forEach(function(dept) {
+          var rate = Math.round((deptConfirm[dept].confirmado / deptConfirm[dept].total) * 100);
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0; font-size:10px;';
+          var lbl = document.createElement('span');
+          lbl.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary);';
+          lbl.textContent = esc(dept);
+          lbl.title = dept;
+          var bar = document.createElement('div');
+          bar.style.cssText = 'width:60px; height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden;';
+          var fill = document.createElement('div');
+          fill.style.cssText = 'height:100%; border-radius:3px; background:' + (rate >= 70 ? 'var(--success)' : (rate >= 40 ? 'var(--warning)' : 'var(--danger)')) + '; width:' + rate + '%;';
+          bar.appendChild(fill);
+          var val = document.createElement('span');
+          val.style.cssText = 'font-weight:600; min-width:30px; text-align:right; color:' + (rate >= 70 ? 'var(--success)' : (rate >= 40 ? 'var(--warning)' : 'var(--danger)')) + ';';
+          val.textContent = rate + '%';
+          row.appendChild(lbl);
+          row.appendChild(bar);
+          row.appendChild(val);
+          deptSection.appendChild(row);
+        });
+        container.appendChild(deptSection);
+      }
     }
 
     // ═══════════════════════════════════
