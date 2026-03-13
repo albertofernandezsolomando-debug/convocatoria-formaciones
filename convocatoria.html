@@ -3062,6 +3062,7 @@
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           renderNotasTimelineHtml(record) +
           renderAsistenciaHtml(record) +
+          renderConfirmacionesHtml(record) +
           '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
             '<div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">' +
               'Participantes vinculados' +
@@ -3193,6 +3194,9 @@
 
         // Attendance tracking
         bindAsistenciaEvents(record);
+
+        // Confirmation tracking
+        bindConfirmacionesEvents(record);
 
         // Participant linking
         renderAccionParticipants(record);
@@ -3367,6 +3371,67 @@
           printSignSheet(record);
         });
       }
+    }
+
+    function renderConfirmacionesHtml(record) {
+      var participantes = record.participantes || [];
+      var confirmaciones = record.confirmaciones || {};
+
+      if (participantes.length === 0) {
+        return '';
+      }
+
+      var counts = { confirmado: 0, pendiente: 0, rechazado: 0, sin_respuesta: 0 };
+      participantes.forEach(function(nif) {
+        var status = confirmaciones[nif] || 'pendiente';
+        if (counts[status] !== undefined) counts[status]++;
+        else counts.pendiente++;
+      });
+
+      var summaryParts = [];
+      if (counts.confirmado > 0) summaryParts.push('<span style="color:var(--success);">' + counts.confirmado + ' confirmados</span>');
+      if (counts.pendiente > 0) summaryParts.push('<span style="color:var(--warning);">' + counts.pendiente + ' pendientes</span>');
+      if (counts.rechazado > 0) summaryParts.push('<span style="color:var(--danger);">' + counts.rechazado + ' rechazados</span>');
+      if (counts.sin_respuesta > 0) summaryParts.push('<span style="color:var(--text-muted);">' + counts.sin_respuesta + ' sin respuesta</span>');
+
+      var innerHtml = '<div style="font-size:12px; margin-bottom:8px;">' + summaryParts.join(' · ') + '</div>';
+
+      innerHtml += '<div style="max-height:200px; overflow-y:auto;">';
+      participantes.forEach(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        var empName = emp ? emp.Empleado : nif;
+        var status = confirmaciones[nif] || 'pendiente';
+        innerHtml += '<div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:12px; color:var(--text-primary); flex:1;">' + esc(empName) + '</span>' +
+          '<select class="input-field cfConfirmacionSelect" data-nif="' + esc(nif) + '" style="font-size:11px; padding:3px 6px; width:auto;">' +
+            '<option value="pendiente"' + (status === 'pendiente' ? ' selected' : '') + '>Pendiente</option>' +
+            '<option value="confirmado"' + (status === 'confirmado' ? ' selected' : '') + '>Confirmado</option>' +
+            '<option value="rechazado"' + (status === 'rechazado' ? ' selected' : '') + '>Rechazado</option>' +
+            '<option value="sin_respuesta"' + (status === 'sin_respuesta' ? ' selected' : '') + '>Sin respuesta</option>' +
+          '</select>' +
+        '</div>';
+      });
+      innerHtml += '</div>';
+
+      return '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">' +
+        '<div onclick="toggleFundaeSub(\'cfConfirmacionesInner\')" style="cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); user-select:none; padding:0 0 8px 0;">' +
+          '&#9660; Estado de confirmación' +
+          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + participantes.length + ' participantes)</span>' +
+        '</div>' +
+        '<div id="cfConfirmacionesInner">' + innerHtml + '</div>' +
+      '</div>';
+    }
+
+    function bindConfirmacionesEvents(record) {
+      document.querySelectorAll('.cfConfirmacionSelect').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var nif = this.getAttribute('data-nif');
+          if (!record.confirmaciones) record.confirmaciones = {};
+          record.confirmaciones[nif] = this.value;
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+        });
+      });
     }
 
     function printSignSheet(record) {
@@ -3819,11 +3884,12 @@
         record.centroVinculado = val('centroVinculado');
         record.tutorVinculado = val('tutorVinculado');
 
-        // Preserve participantes, notas and asistencia from existing record (managed by their own UI, not form inputs)
+        // Preserve participantes, notas, asistencia, and confirmaciones from existing record (managed by their own UI, not form inputs)
         var existingAccion = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
         record.participantes = existingAccion ? (existingAccion.participantes || []) : [];
         record.notas = existingAccion ? (existingAccion.notas || []) : [];
         record.asistencia = existingAccion ? (existingAccion.asistencia || { sesiones: [], registro: {} }) : { sesiones: [], registro: {} };
+        record.confirmaciones = existingAccion ? (existingAccion.confirmaciones || {}) : {};
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
