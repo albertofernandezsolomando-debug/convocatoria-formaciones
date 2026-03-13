@@ -4701,6 +4701,43 @@
         '</ul></div>';
     }
 
+    function detectConflicts(emails, eventDate, startTime, endTime) {
+      var history = getHistory();
+      var conflicts = [];
+      for (var i = 0; i < history.length; i++) {
+        var entry = history[i];
+        if (entry.eventDate !== eventDate) continue;
+        // Check time overlap: ranges overlap if NOT (end1 <= start2 OR end2 <= start1)
+        var eStart = entry.startTime || '';
+        var eEnd = entry.endTime || '';
+        if (!eStart || !eEnd || !startTime || !endTime) continue;
+        if (!(endTime <= eStart || eEnd <= startTime)) {
+          // Time overlap found — find overlapping emails
+          var entryEmails = entry.emails || [];
+          var overlapping = emails.filter(function(em) { return entryEmails.indexOf(em) !== -1; });
+          if (overlapping.length > 0) {
+            conflicts.push({ title: entry.title, emails: overlapping });
+          }
+        }
+      }
+      return conflicts;
+    }
+
+    function buildConflictWarningHtml(conflicts) {
+      if (!conflicts || conflicts.length === 0) return '';
+      var html = '<div style="margin-top:12px; padding:10px; background:var(--warning-light); border-radius:var(--radius-sm); border-left:3px solid var(--warning);">' +
+        '<div style="font-size:11px; font-weight:600; color:var(--warning); margin-bottom:4px;">Conflictos de agenda detectados:</div>';
+      for (var i = 0; i < conflicts.length; i++) {
+        var c = conflicts[i];
+        html += '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">' +
+          esc(String(c.emails.length)) + ' asistentes ya convocados a \u00ab' + esc(c.title) + '\u00bb el mismo dia/hora: ' +
+          '<span style="font-size:11px; color:var(--text-muted);">' + c.emails.map(function(e) { return esc(e); }).join(', ') + '</span>' +
+          '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
     function validateEvent() {
       const event = getCurrentEvent();
       let valid = true;
@@ -4736,6 +4773,12 @@
       if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
       if (selected.length > 50) {
         summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 asistentes)</span>';
+      }
+
+      // Schedule conflict detection — non-blocking warnings
+      const conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
+      if (conflicts.length > 0) {
+        summary += buildConflictWarningHtml(conflicts);
       }
 
       // FUNDAE readiness check — non-blocking warnings
@@ -4839,6 +4882,13 @@
       saveQueue();
       renderQueue();
       showToast('Convocatoria añadida a la cola (' + state.queue.length + ' en cola)', 'success');
+
+      // Schedule conflict detection — non-blocking warning toast
+      const conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
+      if (conflicts.length > 0) {
+        const conflictNames = conflicts.map(function(c) { return c.emails.length + ' en \u00ab' + c.title + '\u00bb'; }).join('; ');
+        showToast('Conflictos de agenda: ' + conflictNames, 'warning', 6000);
+      }
 
       // FUNDAE readiness check — non-blocking warning toast
       const fundaeCheck = checkFundaeReadiness(event.title);
