@@ -1112,6 +1112,7 @@
       flex: 1;
       overflow: hidden;
       background: var(--bg-panel);
+      position: relative;
     }
     .cal-toolbar {
       display: flex;
@@ -1230,6 +1231,11 @@
       overflow: auto;
       position: relative;
       min-height: 80px;
+      cursor: grab;
+    }
+    .cal-split-top.grabbing {
+      cursor: grabbing;
+      user-select: none;
     }
     .cal-split-bottom {
       flex: 1;
@@ -1354,11 +1360,16 @@
       border-top: 2px solid var(--accent);
       padding: 16px 24px;
       background: var(--bg-panel);
-      flex-shrink: 0;
       display: flex;
       gap: 24px;
       align-items: flex-start;
       animation: calSlideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      box-shadow: 0 -4px 12px rgba(15,23,42,0.1);
     }
     @keyframes calSlideUp {
       from { transform: translateY(10px); opacity: 0; }
@@ -1441,6 +1452,16 @@
       position: sticky;
       top: 0;
       z-index: 5;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cal-split-bottom th:hover {
+      color: var(--text-secondary);
+    }
+    .cal-sort-arrow {
+      font-size: 9px;
+      margin-left: 3px;
+      opacity: 0.7;
     }
     .cal-split-bottom td {
       padding: 7px 12px;
@@ -8055,6 +8076,8 @@
       selectedCodigo: null,
       employeeNIFs: null,
       employeeQuery: '',
+      sortCol: 'fechaInicio',
+      sortDir: 'asc',
       initialized: false
     };
 
@@ -8132,6 +8155,7 @@
           document.body.style.cursor = '';
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          renderCalendarTab();
         }
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -8143,6 +8167,35 @@
         splitTop.style.height = '';
         splitBottom.style.flex = '1';
         splitBottom.style.height = '';
+        renderCalendarTab();
+      });
+
+      // Drag-to-pan on Gantt chart
+      var _panState = { active: false, startX: 0, startY: 0, scrollX: 0, scrollY: 0, moved: false };
+      splitTop.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.cal-bar')) return;
+        _panState.active = true;
+        _panState.moved = false;
+        _panState.startX = e.clientX;
+        _panState.startY = e.clientY;
+        _panState.scrollX = splitTop.scrollLeft;
+        _panState.scrollY = splitTop.scrollTop;
+        splitTop.classList.add('grabbing');
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!_panState.active) return;
+        var dx = e.clientX - _panState.startX;
+        var dy = e.clientY - _panState.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) _panState.moved = true;
+        splitTop.scrollLeft = _panState.scrollX - dx;
+        splitTop.scrollTop = _panState.scrollY - dy;
+      });
+      document.addEventListener('mouseup', function() {
+        if (_panState.active) {
+          _panState.active = false;
+          splitTop.classList.remove('grabbing');
+        }
       });
 
       var empInput = document.getElementById('calEmployeeSearch');
@@ -8381,8 +8434,10 @@
         });
       }
 
-      // Build HTML
-      var html = '<div class="cal-timeline-inner">';
+      // Build HTML — min-width enables horizontal scroll + drag-to-pan
+      var pxPerDay = calState.zoom === 'year' ? 8 : calState.zoom === 'quarter' ? 15 : 20;
+      var ganttMinWidth = totalDays * pxPerDay;
+      var html = '<div class="cal-timeline-inner" style="min-width:' + ganttMinWidth + 'px;">';
 
       // Time header
       html += '<div class="cal-time-header">';
@@ -8411,14 +8466,8 @@
         html += '<div class="cal-today-line" style="left:' + todayPct + '%;"><span class="cal-today-label">HOY</span></div>';
       }
 
-      // Render groups
-      var rowHeight = 36;
+      // First pass: compute swim-lanes for all groups
       groups.forEach(function(group) {
-        if (group.label) {
-          html += '<div class="cal-group-label">' + esc(group.label) + ' (' + group.items.length + ')</div>';
-        }
-
-        // Swim-lane assignment
         var lanes = [];
         group.items.forEach(function(item) {
           var assigned = false;
@@ -8442,8 +8491,27 @@
             item._lane = lanes.length - 1;
           }
         });
+        group._laneCount = lanes.length;
+      });
 
-        var groupHeight = lanes.length * rowHeight;
+      // Dynamic row height — bars expand when bottom pane shrinks
+      var totalLanes = groups.reduce(function(s, g) { return s + g._laneCount; }, 0);
+      var rowHeight = 36;
+      var barHeight = 26;
+      var topHeight = topPane.offsetHeight;
+      if (topHeight > 0 && totalLanes > 0) {
+        var availH = topHeight - 40;
+        rowHeight = Math.min(64, Math.max(28, Math.floor(availH / totalLanes)));
+        barHeight = rowHeight - 10;
+      }
+
+      // Render groups
+      groups.forEach(function(group) {
+        if (group.label) {
+          html += '<div class="cal-group-label">' + esc(group.label) + ' (' + group.items.length + ')</div>';
+        }
+
+        var groupHeight = group._laneCount * rowHeight;
         html += '<div style="position:relative; height:' + groupHeight + 'px;">';
 
         group.items.forEach(function(item) {
@@ -8455,10 +8523,11 @@
           var widthPct = (dur / totalDays) * 100;
           var barColor = CAL_ESTADO_COLORS[item.estado] || '#4F46E5';
           var isSel = calState.selectedCodigo === item.codigo;
+          var barTop = item._lane * rowHeight + Math.floor((rowHeight - barHeight) / 2);
 
           html += '<div class="cal-bar' + (isSel ? ' selected' : '') + '" ' +
             'data-codigo="' + esc(item.codigo) + '" ' +
-            'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + (item._lane * rowHeight + 5) + 'px; background:' + barColor + ';">' +
+            'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + barTop + 'px; height:' + barHeight + 'px; line-height:' + barHeight + 'px; background:' + barColor + ';">' +
             esc(item.nombre) +
           '</div>';
         });
@@ -8469,18 +8538,54 @@
       html += '</div>'; // cal-rows
       topPane.innerHTML = html;
 
-      // List table in bottom pane
+      // List table in bottom pane (sortable columns)
       var formatShort = function(raw) {
         if (!raw) return '\u2014';
         var d = new Date(raw);
         return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
       };
 
-      var listHtml = '<table><thead><tr>' +
-        '<th>Acci\u00f3n</th><th>Estado</th><th>Inicio</th><th>Fin</th>' +
-        '<th>Modalidad</th><th>Horas</th><th>Participantes</th><th>Departamento</th>' +
-      '</tr></thead><tbody>';
-      visible.forEach(function(item) {
+      // Sort for table
+      var sortedForTable = visible.slice();
+      if (calState.sortCol) {
+        sortedForTable.sort(function(a, b) {
+          var va, vb;
+          switch (calState.sortCol) {
+            case 'nombre': va = a.nombre.toLowerCase(); vb = b.nombre.toLowerCase(); break;
+            case 'estado': va = (a.estado || '').toLowerCase(); vb = (b.estado || '').toLowerCase(); break;
+            case 'fechaInicio': va = a.fechaInicio.getTime(); vb = b.fechaInicio.getTime(); break;
+            case 'fechaFin': va = a.fechaFin.getTime(); vb = b.fechaFin.getTime(); break;
+            case 'modalidad': va = (a.modalidad || '').toLowerCase(); vb = (b.modalidad || '').toLowerCase(); break;
+            case 'horas': va = a.horas; vb = b.horas; break;
+            case 'participantes': va = a.participantes.length; vb = b.participantes.length; break;
+            case 'departamento': va = (a.departamento || '').toLowerCase(); vb = (b.departamento || '').toLowerCase(); break;
+            default: return 0;
+          }
+          if (va < vb) return calState.sortDir === 'asc' ? -1 : 1;
+          if (va > vb) return calState.sortDir === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      var calCols = [
+        { key: 'nombre', label: 'Acci\u00f3n' },
+        { key: 'estado', label: 'Estado' },
+        { key: 'fechaInicio', label: 'Inicio' },
+        { key: 'fechaFin', label: 'Fin' },
+        { key: 'modalidad', label: 'Modalidad' },
+        { key: 'horas', label: 'Horas' },
+        { key: 'participantes', label: 'Participantes' },
+        { key: 'departamento', label: 'Departamento' },
+      ];
+      var listHtml = '<table><thead><tr>';
+      calCols.forEach(function(col) {
+        var arrow = calState.sortCol === col.key
+          ? '<span class="cal-sort-arrow">' + (calState.sortDir === 'asc' ? '\u25B2' : '\u25BC') + '</span>'
+          : '';
+        listHtml += '<th data-sortkey="' + col.key + '">' + col.label + arrow + '</th>';
+      });
+      listHtml += '</tr></thead><tbody>';
+      sortedForTable.forEach(function(item) {
         var color = CAL_ESTADO_COLORS[item.estado] || '#94a3b8';
         var isSel = calState.selectedCodigo === item.codigo;
         listHtml += '<tr class="cal-list-row' + (isSel ? ' selected' : '') + '" data-codigo="' + esc(item.codigo) + '">' +
@@ -8521,6 +8626,20 @@
           selectAction(row.dataset.codigo);
           var bar = topPane.querySelector('.cal-bar[data-codigo="' + row.dataset.codigo + '"]');
           if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      });
+
+      // Sort column click handlers
+      bottomPane.querySelectorAll('th[data-sortkey]').forEach(function(th) {
+        th.addEventListener('click', function() {
+          var key = th.dataset.sortkey;
+          if (calState.sortCol === key) {
+            calState.sortDir = calState.sortDir === 'asc' ? 'desc' : 'asc';
+          } else {
+            calState.sortCol = key;
+            calState.sortDir = 'asc';
+          }
+          renderCalendarTab();
         });
       });
     }
