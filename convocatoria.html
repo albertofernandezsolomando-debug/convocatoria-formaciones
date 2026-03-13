@@ -510,6 +510,21 @@
 
     .upload-zone.loaded::before { display: none; }
 
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .upload-zone.loading::after {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 24px;
+      margin: 8px auto 0;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
     .filter-row {
       display: flex;
       align-items: center;
@@ -5447,9 +5462,19 @@
     function handleFile(file) {
       const reader = new FileReader();
       reader.onload = e => {
+        // Show loading state
+        uploadZone.classList.add('loading');
+        var promptDiv = document.getElementById('uploadPrompt');
+        var origPromptHTML = promptDiv.innerHTML;
+        promptDiv.querySelector('div:nth-child(2)').textContent = 'Procesando...';
+
+        setTimeout(function() {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const result = parseOrgSheet(workbook);
+
+        uploadZone.classList.remove('loading');
+        promptDiv.innerHTML = origPromptHTML;
 
         if (result.errors.length > 0) {
           result.errors.forEach(err => showToast(err, 'error', 6000));
@@ -5515,6 +5540,7 @@
         renderFilters();
         renderTable();
         checkOrphanParticipants();
+        }, 50); // setTimeout to let DOM update with loading state
       };
       reader.readAsArrayBuffer(file);
     }
