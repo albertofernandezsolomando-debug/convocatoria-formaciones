@@ -2433,6 +2433,12 @@
         </div>
       </div>
 
+      <!-- Training load chart -->
+      <div class="dash-card" style="margin-bottom:16px;">
+        <div class="dash-card-title">Carga formativa por mes</div>
+        <canvas id="trainingLoadCanvas" height="200" style="width: 100%; background: var(--bg-panel); border-radius: var(--radius);"></canvas>
+      </div>
+
     </div>
   </div>
 
@@ -8367,6 +8373,96 @@
      * Main dashboard render function. Computes all stats from catalogs
      * and renders KPIs, alerts, and charts using inline SVG.
      */
+    function renderTrainingLoadChart() {
+      var canvas = document.getElementById('trainingLoadCanvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      // Agrupar acciones por mes
+      var acciones = getCatalog('acciones');
+      var monthData = {};
+      acciones.forEach(function(a) {
+        var fecha = a.fechaInicio;
+        if (!fecha) return;
+        var d = new Date(fecha);
+        if (isNaN(d.getTime())) return;
+        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        if (!monthData[key]) monthData[key] = { count: 0, hours: 0 };
+        monthData[key].count++;
+        monthData[key].hours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+      });
+
+      var months = Object.keys(monthData).sort();
+      if (!months.length) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sin datos de acciones formativas', rect.width / 2, rect.height / 2);
+        return;
+      }
+
+      var maxCount = Math.max.apply(null, months.map(function(m) { return monthData[m].count; }));
+      var padding = { top: 20, right: 20, bottom: 40, left: 50 };
+      var chartW = rect.width - padding.left - padding.right;
+      var chartH = rect.height - padding.top - padding.bottom;
+      var barW = Math.min(40, chartW / months.length * 0.6);
+      var gap = chartW / months.length;
+      var monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+      // Ejes
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, padding.top);
+      ctx.lineTo(padding.left, padding.top + chartH);
+      ctx.lineTo(padding.left + chartW, padding.top + chartH);
+      ctx.stroke();
+
+      // Barras
+      months.forEach(function(m, i) {
+        var d = monthData[m];
+        var h = maxCount > 0 ? (d.count / maxCount) * chartH : 0;
+        var x = padding.left + i * gap + gap / 2 - barW / 2;
+        var y = padding.top + chartH - h;
+
+        // Bar with rounded top
+        ctx.fillStyle = '#4F46E5';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, barW, h, [4, 4, 0, 0]);
+        } else {
+          ctx.rect(x, y, barW, h);
+        }
+        ctx.fill();
+
+        // Label mes
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        var parts = m.split('-');
+        ctx.fillText(monthNames[parseInt(parts[1], 10) - 1], x + barW / 2, padding.top + chartH + 16);
+
+        // Valor encima
+        ctx.fillStyle = '#475569';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText(String(d.count), x + barW / 2, y - 6);
+      });
+
+      // Label eje Y
+      ctx.save();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.translate(14, padding.top + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Acciones', 0, 0);
+      ctx.restore();
+    }
+
     function renderDashboard() {
       autoTransitionEstados();
       var acciones = getCatalog('acciones');
@@ -8860,6 +8956,9 @@
       if (exportBtn) {
         exportBtn.onclick = function() { exportAnnualReport(); };
       }
+
+      // Render training load chart
+      renderTrainingLoadChart();
     }
 
     // ═══════════════════════════════════
