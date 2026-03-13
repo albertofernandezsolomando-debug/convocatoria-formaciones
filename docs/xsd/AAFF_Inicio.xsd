@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- TIPOS SIMPLES -->
+  <xs:annotation>
+    <xs:documentation>Esquema XML para la carga masiva de Acciones Formativas.</xs:documentation>
+  </xs:annotation>
+
+  <xs:simpleType name="t_cadena255_vacia">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="255"/>
+      <xs:minLength value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena255">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="255"/>
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena50_vacia">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50"/>
+      <xs:minLength value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena20_vacia">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+      <xs:minLength value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena5">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="5"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+      <xs:pattern value="[0-9]{1,5}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena255_llena">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="255"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena_llena">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena55_llena">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="55"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena50_llena">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena20_llena">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena6">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="6"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+      <xs:pattern value="[0-9]{3}[-][0-9]{2}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_horas">
+    <xs:restriction base="xs:nonNegativeInteger">
+      <xs:totalDigits value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena4">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="4"/>
+      <xs:minLength value="4"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena9">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="9"/>
+      <xs:minLength value="9"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Tipos Complejos -->
+  <xs:complexType name="t_modalidadMixta">
+    <xs:sequence>
+      <xs:element name="horasPr" type="t_horas"/>
+      <xs:element name="horasTe" type="t_horas"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_modalidadPresencial">
+    <xs:sequence>
+      <xs:element name="horasPr" type="t_horas"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_modalidadTeleformacion">
+    <xs:sequence>
+      <xs:element name="horasPr" type="t_horas"  minOccurs="0"/>
+      <xs:element name="horasTe" type="t_horas"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="t_cif">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(([a-zA-Z]{1}\d{7}[a-zA-Z0-9]{1})|(\d{8}[a-zA-Z]{1}))"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_SINO">
+    <xs:restriction base="xs:string">
+      <xs:annotation>
+        <xs:documentation>Los posibles valores que toma este elemento son: B = no aporta informacion;  N = No ; S = Si</xs:documentation>
+      </xs:annotation>
+      <xs:pattern value="[BbSsNn]{1}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_fecha">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_valorinf">
+    <xs:restriction base="xs:string">
+      <xs:annotation>
+        <xs:documentation>Los posibles valores que toma este elemento son: B = no aporta informacion; N = No informa; F = Favorable; D = Discrepancia.</xs:documentation>
+      </xs:annotation>
+      <xs:pattern value="[BbNnFfDd]{1}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="t_discrepancia">
+    <xs:sequence>
+      <xs:element name="fechaDis" type="t_fecha"/>
+      <xs:element name="resuelto15" type="t_SINO"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_informe">
+    <xs:sequence>
+      <xs:element name="valorinf" type="t_valorinf"/>
+      <xs:element name="discrepancia" type="t_discrepancia" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_rlt">
+    <xs:sequence>
+      <xs:element name="informaRLT" type="t_SINO"/>
+      <xs:element name="informe" type="t_informe" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_emp_participante">
+    <xs:sequence>
+      <xs:element name="cif" type="t_cif"/>
+      <xs:element name="infRLT" type="t_rlt" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AccionesFormativas">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="AccionFormativa" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:annotation>
+                <xs:documentation>El campo nivelFormacion debe tener uno de los siguientes valores: 0 = BASICO; 1 = SUPERIOR</xs:documentation>
+                <xs:documentation>El campo acceso debe tener uno de los siguientes valores: 0 = NO Exige uri ni tampoco password; 1 = Si exige valores</xs:documentation>
+                <xs:documentation>
+                  El campo codAreaProfesional debe tener uno de los siguientes valores (sólo el código):
+                  ADGD	ADMINISTRACIÓN Y AUDITORÍA
+                  ADGG	GESTIÓN DE LA INFORMACIÓN Y COMUNICACIÓN
+                  ADGN	FINANZAS Y SEGUROS
+                  AFDA	ACTIVIDADES FÍSICO DEPORTIVAS RECREATIVAS
+                  AFDP	PREVENCIÓN Y RECUPERACION
+                  AGAJ	JARDINERÍA
+                  AGAN	GANADERÍA
+                  AGAR	FORESTAL
+                  AGAU	AGRICULTURA
+                  ARGA	ACTIVIDADES Y TÉCNICAS GRÁFICAS ARTÍSTICAS
+                  ARGC	ENCUADERNACIÓN INDUSTRIAL
+                  ARGG	DISEÑO GRÁFICO Y MULTIMEDIA
+                  ARGI	IMPRESIÓN
+                  ARGN	EDICIÓN
+                  ARGP	PREIMPRESIÓN
+                  ARGT	TRANSFORMACION Y CONVERSIÓN EN INDUSTRIAS GRÁFICAS
+                  ARTA	ARTESANÍA TRADICIONAL
+                  ARTB	JOYERÍA Y ORFEBRERÍA
+                  ARTG	FABRICACIÓN Y MANTENIMIENTO DE INSTRUMENTOS MUSICALES
+                  ARTN	VIDRIO Y CERÁMICA ARTESANAL
+                  ARTR	RECUPERACIÓN, REPARACIÓN Y MANTENIMIENTO ARTÍSTICOS
+                  ARTU	ARTES ESCÉNICAS
+                  COML	LOGÍSTICA COMERCIAL Y GESTIÓN DEL TRANSPORTE
+                  COMM	MARKETING Y RELACIONES PÚBLICAS
+                  COMT	COMPRAVENTA
+                  ELEE	INSTALACIONES ELÉCTRICAS
+                  ELEQ	EQUIPOS ELECTRÓNICOS
+                  ENAA	AGUA
+                  ENAE	ENERGÍAS RENOVABLES
+                  ENAL	ENERGÍA ELÉCTRICA
+                  ENAS	GAS
+                  EOCB	ALBAÑILERÍA Y ACABADOS
+                  EOCE	ESTRUCTURAS
+                  EOCJ	COLOCACIÓN Y MONTAJE
+                  EOCO	PROYECTOS Y SEGUIMIENTO DE OBRAS
+                  EOCQ	MAQUINARIA DE CONSTRUCCIÓN
+                  FCOA	ASPECTOS MEDIOAMBIENTALES
+                  FCOE	LENGUAS EXTRANJERAS
+                  FCOL	LENGUAS Y DIALECTOS ESPAÑOLES
+                  FCOV	COMPETENCIAS CLAVE
+                  FMEC	CONSTRUCCIONES METÁLICAS
+                  FMEF	FUNDICIÓN
+                  FMEH	OPERACIONES MECÁNICAS
+                  FMEM	PRODUCCIÓN MECÁNICA
+                  HOTA	ALOJAMIENTO
+                  HOTJ	JUEGOS DE AZAR
+                  HOTR	RESTAURACIÓN
+                  HOTT	TURISMO
+                  HOTU	AGROTURISMO
+                  IEXD	PIEDRA NATURAL
+                  IEXM	MINERÍA
+                  IFCD	DESARROLLO
+                  IFCM	COMUNICACIONES
+                  IFCT	SISTEMAS Y TELEMÁTICA
+                  IMAI	MONTAJE Y MANTENIMIENTO DE INSTALACIONES
+                  IMAQ	MAQUINARIA Y EQUIPO INDUSTRIAL
+                  IMAR	FRÍO Y CLIMATIZACIÓN
+                  IMPE	ESTÉTICA
+                  IMPQ	PELUQUERÍA
+                  IMSE	ESPECTACULOS EN VIVO
+                  IMST	PRODUCCIONES FOTOGRÁFICAS
+                  IMSV	PRODUCCIÓN AUDIOVISUAL
+                  INAD	ALIMENTOS DIVERSOS
+                  INAE	LÁCTEOS
+                  INAF	PANADERÍA, PASTELERÍA, CONFITERÍA Y MOLINERÍA
+                  INAH	BEBIDAS
+                  INAI	CÁRNICAS
+                  INAJ	PRODUCTOS DE LA PESCA
+                  INAK	ACEITES Y GRASAS
+                  INAV	CONSERVAS VEGETALES
+                  MAMA	TRANSFORMACIÓN MADERA Y CORCHO
+                  MAMB	INSTALACIÓN Y AMUEBLAMIENTO
+                  MAMD	PRODUCCION CARPINTERÍA Y MUEBLE
+                  MAPB	BUCEO
+                  MAPN	PESCA Y NAVEGACION
+                  MAPU	ACUICULTURA
+                  QUIA	ANÁLISIS Y CONTROL
+                  QUIE	PROCESO QUÍMICO
+                  QUIM	FARMAQUÍMICA
+                  QUIO	PASTA, PAPEL Y CARTÓN
+                  QUIT	TRANSFORMACIÓN DE POLÍMEROS
+                  SANP	SERVICIOS Y PRODUCTOS SANITARIOS
+                  SANS	SOPORTE Y AYUDA AL DIAGNÓSTICO
+                  SANT	ATENCIÓN SANITARIA
+                  SEAD	SEGURIDAD Y PREVENCIÓN
+                  SEAG	GESTIÓN AMBIENTAL
+                  SSCB	ACTIVIDADES CULTURALES Y RECREATIVAS
+                  SSCE	FORMACIÓN Y EDUCACIÓN
+                  SSCG	ATENCIÓN SOCIAL
+                  SSCI	SERVICIOS AL CONSUMIDOR
+                  TCPC	CALZADO
+                  TCPF	CONFECCIÓN EN TEXTIL Y PIEL
+                  TCPN	ENNOBLECIMIENTO DE MATERIAS TEXTILES Y PIELES
+                  TCPP	PRODUCCIÓN DE HILOS Y TEJIDOS
+                  TMVB	FERROCARRIL Y CABLE
+                  TMVG	ELECTROMECÁNICA DE VEHÍCULOS
+                  TMVI	CONDUCCION DE VEHÍCULOS POR CARRETERA
+                  TMVL	CARROCERÍA DE VEHÍCULOS
+                  TMVO	AERONÁUTICA
+                  TMVU	NÁUTICA
+                  VICF	FABRICACIÓN CERÁMICA
+                  VICI	VIDRIO INDUSTRIAL
+                  FCOA	Aspectos medioambientales
+                  FCOV	Competencias clave
+                  FCOI	Informática complementaria
+                  FCOE	Lenguas extranjeras
+                  FCOL	Lenguas y dialectos españoles
+                  FCOM	Manipulación alimentaria
+                  FCOO	Orientación laboral
+                  FCOS	Seguridad y salud laboral
+                </xs:documentation>
+              </xs:annotation>
+              <xs:element name="codAccion" type="t_cadena5"/>
+              <xs:element name="nombreAccion" type="t_cadena255"/>
+              <xs:element name="codGrupoAccion" type="t_cadena6"/>
+              <xs:element name="codAreaProfesional" type="t_cadena4" minOccurs="0"/>
+              <xs:choice>
+                <xs:element name="modalidadPresencial" type="t_modalidadPresencial"/>
+                <xs:element name="modalidadTeleformacion" type="t_modalidadTeleformacion"/>
+                <xs:element name="modalidadMixta" type="t_modalidadMixta"/>
+              </xs:choice>
+              <xs:element name="cifPlataforma" type="t_cadena9" minOccurs="0"/>
+              <xs:element name="razonSocialPlataforma" type="t_cadena55_llena" minOccurs="0"/>
+              <xs:element name="uri" type="t_cadena255_llena" minOccurs="0"/>
+              <xs:element name="usuario" type="t_cadena50_llena" minOccurs="0"/>
+              <xs:element name="password" type="t_cadena50_llena" minOccurs="0"/>
+              <xs:element name="observaciones" type="xs:string" minOccurs="0"/>
+              <xs:element name="nivelFormacion" type="xs:boolean" minOccurs="0"/>
+              <xs:element name="objetivos" type="t_cadena_llena"/>
+              <xs:element name="contenidos" type="t_cadena_llena"/>
+              <xs:element name="empParticipantes" type="t_emp_participante" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

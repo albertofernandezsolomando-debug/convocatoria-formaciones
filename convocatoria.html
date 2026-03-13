@@ -37,6 +37,14 @@
       --shadow-lg: 0 8px 24px rgba(15,23,42,0.12);
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --chart-1: #4F46E5;
+      --chart-2: #0EA5E9;
+      --chart-3: #10B981;
+      --chart-4: #F59E0B;
+      --chart-5: #EF4444;
+      --chart-6: #8B5CF6;
+      --chart-7: #EC4899;
+      --chart-8: #6366F1;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -956,10 +964,423 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(40px); }
     }
+    /* --- Cuadro de Mando --- */
+    .dash-container {
+      padding: 24px 28px;
+      overflow-y: auto;
+      max-height: calc(100vh - 50px);
+      background: var(--bg-primary);
+    }
+
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 24px;
+    }
+    .dash-header h2 {
+      margin: 0;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .dash-header-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* KPI Cards */
+    .dash-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .dash-kpi {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition), transform var(--transition);
+      opacity: 0;
+      transform: translateY(12px);
+      animation: dashFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .dash-kpi:nth-child(1) { animation-delay: 0.05s; }
+    .dash-kpi:nth-child(2) { animation-delay: 0.10s; }
+    .dash-kpi:nth-child(3) { animation-delay: 0.15s; }
+    .dash-kpi:nth-child(4) { animation-delay: 0.20s; }
+    .dash-kpi:nth-child(5) { animation-delay: 0.25s; }
+
+    .dash-kpi:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-1px);
+    }
+
+    .dash-kpi[data-color="1"] { border-left-color: var(--chart-1); }
+    .dash-kpi[data-color="2"] { border-left-color: var(--chart-2); }
+    .dash-kpi[data-color="3"] { border-left-color: var(--chart-3); }
+    .dash-kpi[data-color="4"] { border-left-color: var(--chart-4); }
+    .dash-kpi[data-color="5"] { border-left-color: var(--chart-5); }
+
+    .dash-kpi-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .dash-kpi-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dash-kpi-value {
+      font-family: var(--font-body);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dash-kpi-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    /* Chart cards */
+    .dash-chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .dash-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition);
+      min-width: 0;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: dashFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.3s;
+    }
+    .dash-chart-row:nth-child(4) .dash-card { animation-delay: 0.35s; }
+    .dash-chart-row:nth-child(4) .dash-card:nth-child(2) { animation-delay: 0.40s; }
+    .dash-chart-row:nth-child(5) .dash-card { animation-delay: 0.45s; }
+    .dash-chart-row:nth-child(5) .dash-card:nth-child(2) { animation-delay: 0.50s; }
+    .dash-chart-row:nth-child(6) .dash-card { animation-delay: 0.55s; }
+    .dash-chart-row:nth-child(6) .dash-card:nth-child(2) { animation-delay: 0.60s; }
+
+    .dash-card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+
+    .dash-card-title {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Alerts widget (collapsible) */
+    .dash-alerts-widget {
+      margin-bottom: 16px;
+    }
+    .dash-alerts-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      transition: background var(--transition);
+    }
+    .dash-alerts-toggle:hover {
+      background: var(--bg-input);
+    }
+    .dash-alerts-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      border-radius: var(--radius-lg);
+      background: var(--warning);
+      color: var(--bg-panel);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 5px;
+    }
+    .dash-alerts-badge.dash-badge-danger {
+      background: var(--danger);
+    }
+    .dash-alerts-summary {
+      font-weight: 500;
+    }
+    .dash-alerts-arrow {
+      font-size: 10px;
+      transition: transform var(--transition);
+    }
+    .dash-alerts-arrow.open {
+      transform: rotate(180deg);
+    }
+    .dash-alerts-body {
+      margin-top: 8px;
+    }
+    .dash-alert {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      margin-bottom: 4px;
+      line-height: 1.4;
+      background: var(--bg-input);
+      color: var(--text-secondary);
+    }
+    .dash-alert-dismiss {
+      margin-left: auto;
+      flex-shrink: 0;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: none;
+      transition: color var(--transition);
+    }
+    .dash-alert-dismiss:hover {
+      color: var(--text-primary);
+    }
+    .dash-alert-type {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .dash-alert-type-danger { color: var(--danger); }
+    .dash-alert-type-warning { color: var(--warning); }
+    .dash-alert-action { font-weight: 600; }
+
+    /* Gauge-row bar charts (HTML-based) */
+    .dash-gauge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .dash-gauge-label {
+      width: 180px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+    .dash-gauge-bar-bg {
+      flex: 1;
+      height: 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      position: relative;
+    }
+    .dash-gauge-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-sm);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dash-gauge-bar-secondary {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: var(--radius-sm);
+      opacity: 0.3;
+    }
+    .dash-gauge-value {
+      min-width: 140px;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .dash-gauge-footnote {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Donut */
+    .dash-donut-segment {
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dash-donut-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    .dash-donut-container svg {
+      width: 100%;
+      max-width: 220px;
+    }
+    .dash-donut-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      justify-content: center;
+    }
+    .dash-donut-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .dash-donut-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .dash-donut-legend-val {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Completeness gauge rows */
+    .dash-completeness-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .dash-completeness-label {
+      width: 140px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dash-completeness-track {
+      flex: 1;
+      height: 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .dash-completeness-fill {
+      height: 100%;
+      border-radius: var(--radius-sm);
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dash-completeness-pct {
+      min-width: 40px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    @keyframes dashPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    .dash-completeness-fill.dash-pulse {
+      animation: dashPulse 2s ease-in-out infinite;
+    }
+
+    /* Empty state */
+    .dash-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 16px;
+      color: var(--text-muted);
+      text-align: center;
+      gap: 10px;
+    }
+    .dash-empty-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .dash-empty-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .dash-empty-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      max-width: 220px;
+    }
+
+    /* Animations */
+    @keyframes dashFadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .dash-chart-row { grid-template-columns: 1fr; }
+      .dash-kpi-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+      .dash-container { padding: 20px 16px; }
+    }
   </style>
 </head>
 <body>
   <div class="tab-bar">
+    <button class="tab-btn" data-tab="tabDashboard">Cuadro de Mando</button>
     <button class="tab-btn active" data-tab="tabConvocatoria">Convocatoria</button>
     <button class="tab-btn" data-tab="tabCatalogos">Catálogos FUNDAE</button>
     <button class="tab-btn" data-tab="tabXml">Generar XML FUNDAE</button>
@@ -1354,6 +1775,66 @@
     </div>
   </div>
 
+  <!-- Tab 4: Cuadro de Mando -->
+  <div class="tab-content" id="tabDashboard">
+    <div class="dash-container">
+      <!-- Header -->
+      <div class="dash-header">
+        <h2>Cuadro de Mando</h2>
+        <span class="dash-header-time" id="dashLastUpdate"></span>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="dash-kpi-row" id="dashKpis"></div>
+
+      <!-- Alerts (collapsible) -->
+      <div class="dash-alerts-widget" id="dashAlertsWidget" style="display:none;">
+        <div class="dash-alerts-toggle" id="dashAlertsToggle">
+          <span class="dash-alerts-badge" id="dashAlertsBadge">0</span>
+          <span class="dash-alerts-summary" id="dashAlertsSummary">avisos pendientes</span>
+          <span class="dash-alerts-arrow" id="dashAlertsArrow">&#9662;</span>
+        </div>
+        <div class="dash-alerts-body" id="dashAlertsBody" style="display:none;"></div>
+      </div>
+
+      <!-- Charts row 1: Credit + Estado donut -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Crédito FUNDAE por empresa</div>
+          <div id="dashCreditChart"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Acciones por estado</div>
+          <div id="dashEstadoChart"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 2: Modalidad + Area -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Horas por modalidad</div>
+          <div id="dashModalidadChart"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Acciones por área profesional</div>
+          <div id="dashAreaChart"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 3: Department + Completeness -->
+      <div class="dash-chart-row">
+        <div class="dash-card">
+          <div class="dash-card-title">Acciones por departamento</div>
+          <div id="dashDeptChart"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Completitud del catálogo</div>
+          <div id="dashCompletenessChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
 
   <!-- Series dialog -->
@@ -1376,8 +1857,12 @@
       <input type="url" class="input-field" id="settingsWebhookUrl" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/...">
       <label for="settingsFormsUrl">URL formulario Microsoft Forms</label>
       <input type="url" class="input-field" id="settingsFormsUrl" placeholder="https://forms.office.com/Pages/ResponsePage.aspx?id=...">
-      <div style="margin-top:14px;">
+      <label for="settingsFormsQuestionId" style="margin-top:10px;">ID pregunta «Nombre de la formación» <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label>
+      <input type="text" class="input-field" id="settingsFormsQuestionId" placeholder="r0123456789abcdef (ver instrucciones)">
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
+      <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
+        <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
       </div>
       <div class="dialog-buttons" style="margin-top:20px;">
         <button class="btn btn-secondary" id="settingsCancel">Cancelar</button>
@@ -1389,12 +1874,20 @@
   <!-- Instructions dialog -->
   <div class="dialog-overlay" id="instructionsDialog">
     <div class="dialog-box dialog-box-wide">
-      <h3>Configurar flujo de Power Automate</h3>
+      <h3>Configurar encuestas de satisfacción</h3>
       <div class="instructions-content">
+        <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--text-primary);">Opción A: Importar flujo (recomendado)</h4>
         <ol>
-          <li>Abre <strong>Power Automate</strong> (make.powerautomate.com) e inicia sesión con tu cuenta corporativa.</li>
-          <li>Crea un nuevo flujo: <strong>Flujo de nube automatizado → En blanco</strong>.</li>
-          <li>Añade el trigger <strong>«Cuando se recibe una solicitud HTTP»</strong>. En el campo «Esquema JSON del cuerpo de la solicitud», pega el siguiente esquema:
+          <li>Pulsa <strong>«Descargar flujo Power Automate»</strong> en la pantalla de Ajustes.</li>
+          <li>Ve a <strong>Power Automate</strong> (make.powerautomate.com) → Mis flujos → <strong>Importar</strong> → <strong>Importar paquete (heredado)</strong>.</li>
+          <li>Selecciona el fichero <code>.zip</code> descargado. En «Configuración de importación», junto a la conexión de Office 365, pulsa <strong>«Seleccionar durante la importación»</strong> y elige tu cuenta de correo.</li>
+          <li>Completa la importación. Abre el flujo importado y copia la <strong>URL del trigger HTTP</strong> del paso 1.</li>
+          <li>Pega la URL en el campo «URL webhook» de esta pantalla.</li>
+        </ol>
+        <h4 style="margin:16px 0 8px 0; font-size:13px; color:var(--text-primary);">Opción B: Crear flujo manualmente</h4>
+        <ol>
+          <li>Abre <strong>Power Automate</strong> → Flujo de nube automatizado → En blanco.</li>
+          <li>Trigger: <strong>«Cuando se recibe una solicitud HTTP»</strong>. Pega este esquema:
             <pre id="jsonSchemaBlock"><button class="copy-btn" id="btnCopySchema">Copiar</button>{
   "type": "object",
   "properties": {
@@ -1405,9 +1898,17 @@
   }
 }</pre>
           </li>
-          <li>Añade la acción <strong>«Retrasar hasta»</strong>. En el campo «Marca de tiempo», selecciona el campo dinámico <code>scheduledTime</code>.</li>
-          <li>Añade la acción <strong>«Enviar un correo electrónico (V2)»</strong>. En «Para», selecciona <code>to</code>. En «Asunto», selecciona <code>subject</code>. En «Cuerpo», selecciona <code>body</code> y activa la vista HTML.</li>
-          <li>Guarda el flujo. Copia la <strong>URL del trigger HTTP</strong> que aparece en el paso 1 del flujo y pégala en el campo «URL webhook» de la pantalla de Ajustes.</li>
+          <li>Acción: <strong>«Retrasar hasta»</strong> → campo dinámico <code>scheduledTime</code>.</li>
+          <li>Acción: <strong>«Enviar un correo electrónico (V2)»</strong> → Para: <code>join(triggerBody()?['to'],';')</code>, Asunto: <code>subject</code>, Cuerpo: <code>body</code> (vista HTML).</li>
+          <li>Guarda y copia la URL del trigger HTTP.</li>
+        </ol>
+        <h4 style="margin:16px 0 8px 0; font-size:13px; color:var(--text-primary);">Vincular encuesta a formación (opcional)</h4>
+        <ol>
+          <li>En tu formulario de Microsoft Forms, añade una pregunta de <strong>texto</strong>: «¿Qué formación has recibido?».</li>
+          <li>Abre el formulario en modo edición. Haz clic en la pregunta creada.</li>
+          <li>Mira la URL del navegador: busca el parámetro <code>qid=r<em>XXXX</em></code>. Ese valor (por ejemplo <code>r0123456789abcdef</code>) es el ID de la pregunta.</li>
+          <li>Pégalo en el campo «ID pregunta» de esta pantalla de Ajustes.</li>
+          <li>A partir de ahora, cada encuesta incluirá automáticamente el nombre de la formación y las respuestas quedarán vinculadas.</li>
         </ol>
       </div>
       <div class="dialog-buttons">
@@ -1451,6 +1952,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'tabDashboard') renderDashboard();
         if (btn.dataset.tab === 'tabCatalogos') renderCatalogList();
         if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
@@ -1840,8 +2342,31 @@
           return { value: a[0], label: a[0] + ' - ' + a[1] };
         });
 
+        // Build empresa options from EMPRESAS_GRUPO
+        const empresaOpts = EMPRESAS_GRUPO.map(function(e) {
+          return { value: e.cif, label: e.razonSocial + ' (' + e.cif + ')' };
+        });
+
         body = field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
           field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
+          select('Estado', 'estado', record.estado || '', [
+            { value: 'Pendiente', label: 'Pendiente' },
+            { value: 'Buscando', label: 'Buscando' },
+            { value: 'En preparación', label: 'En preparación' },
+            { value: 'En marcha', label: 'En marcha' },
+            { value: 'Terminada', label: 'Terminada' },
+            { value: 'Anulada', label: 'Anulada' },
+            { value: 'Retrasada', label: 'Retrasada' }
+          ]) +
+          field('Departamento', 'departamento', v('departamento')) +
+          select('Empresa pagadora', 'empresaPagadora', record.empresaPagadora || '', empresaOpts) +
+          field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
+          field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' }) +
+          field('Presupuesto', 'presupuesto', v('presupuesto'), { type: 'number' }) +
+          select('Bonificable', 'bonificable', record.bonificable || '', [
+            { value: 'Sí', label: 'Sí' },
+            { value: 'No', label: 'No' }
+          ]) +
           field('Código grupo acción', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
           select('Área profesional', 'areaProfesional', record.areaProfesional || '', areaOpts) +
           select('Modalidad', 'modalidad', modalidad, [
@@ -2255,6 +2780,13 @@
       } else if (key === 'acciones') {
         record.codigo = val('codigo');
         record.nombre = val('nombre');
+        record.estado = val('estado');
+        record.departamento = val('departamento');
+        record.empresaPagadora = val('empresaPagadora');
+        record.fechaInicio = val('fechaInicio');
+        record.fechaFin = val('fechaFin');
+        record.presupuesto = val('presupuesto');
+        record.bonificable = val('bonificable');
         record.codigoGrupo = val('codigoGrupo');
         record.areaProfesional = val('areaProfesional');
         record.modalidad = val('modalidad');
@@ -2683,7 +3215,7 @@
     // SURVEY EMAIL
     // ═══════════════════════════════════
 
-    function buildSurveyEmailBody(event, formsUrl) {
+    function buildSurveyEmailBody(event, formsUrl, formsQuestionId) {
       const eventName = esc(event.title || 'la formación');
       const formador = esc(event.formador || '');
       const dateObj = event.date ? new Date(event.date) : null;
@@ -2691,11 +3223,20 @@
         ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
         : '';
 
-      const surveyLink = formsUrl +
-        (formsUrl.includes('?') ? '&' : '?') +
-        'accion=' + encodeURIComponent(event.title || '') +
-        '&fecha=' + encodeURIComponent(dateStr) +
-        '&formador=' + encodeURIComponent(event.formador || '');
+      // Build survey link with training identification
+      var surveyLink = formsUrl;
+      var sep = formsUrl.includes('?') ? '&' : '?';
+      // If Forms question ID is configured, use the correct response_ format
+      if (formsQuestionId) {
+        var trainingLabel = (event.title || '') + (dateStr ? ' (' + dateStr + ')' : '');
+        surveyLink += sep + formsQuestionId + '=' + encodeURIComponent(trainingLabel);
+      } else {
+        // Fallback: pass as generic params (Forms ignores them, but keeps them in URL for reference)
+        surveyLink += sep +
+          'accion=' + encodeURIComponent(event.title || '') +
+          '&fecha=' + encodeURIComponent(dateStr) +
+          '&formador=' + encodeURIComponent(event.formador || '');
+      }
 
       return '<div style="font-family:Calibri,Arial,sans-serif; font-size:14px; color:#0f172a; line-height:1.6;">' +
         '<p>Hola,</p>' +
@@ -2710,9 +3251,9 @@
         '</div>';
     }
 
-    function buildSurveyPayload(event, emails, formsUrl) {
+    function buildSurveyPayload(event, emails, formsUrl, formsQuestionId) {
       const subject = 'Tu opinión sobre la formación \u00AB' + (event.title || 'reciente') + '\u00BB';
-      const body = buildSurveyEmailBody(event, formsUrl);
+      const body = buildSurveyEmailBody(event, formsUrl, formsQuestionId);
       const scheduledTime = new Date(event.date + 'T' + event.endTime + ':00').toISOString();
 
       return {
@@ -2735,7 +3276,7 @@
         return;
       }
 
-      const payload = buildSurveyPayload(event, emails, settings.formsUrl);
+      const payload = buildSurveyPayload(event, emails, settings.formsUrl, settings.formsQuestionId);
       const endTime = event.endTime || '??:??';
 
       fetch(settings.webhookUrl, {
@@ -3998,6 +4539,7 @@
       const settings = loadSettings();
       document.getElementById('settingsWebhookUrl').value = settings.webhookUrl || '';
       document.getElementById('settingsFormsUrl').value = settings.formsUrl || '';
+      document.getElementById('settingsFormsQuestionId').value = settings.formsQuestionId || '';
       document.getElementById('settingsDialog').classList.add('visible');
     });
 
@@ -4008,8 +4550,8 @@
     document.getElementById('settingsSave').addEventListener('click', () => {
       const webhookUrl = document.getElementById('settingsWebhookUrl').value.trim();
       const formsUrl = document.getElementById('settingsFormsUrl').value.trim();
+      const formsQuestionId = document.getElementById('settingsFormsQuestionId').value.trim();
 
-      // Both URLs are optional (allow clearing), but if provided must be https
       if (webhookUrl && !webhookUrl.startsWith('https://')) {
         showToast('La URL del webhook debe empezar por https://', 'warning');
         return;
@@ -4018,12 +4560,15 @@
         showToast('La URL del formulario debe empezar por https://', 'warning');
         return;
       }
-      // Warn if only one is set (both needed for survey to work)
+      if (formsQuestionId && !/^r[0-9a-f]+$/i.test(formsQuestionId)) {
+        showToast('El ID de pregunta debe empezar por "r" seguido de caracteres hexadecimales', 'warning');
+        return;
+      }
       if ((webhookUrl && !formsUrl) || (!webhookUrl && formsUrl)) {
         showToast('Ambas URLs son necesarias para enviar encuestas', 'warning');
       }
 
-      saveSettings({ webhookUrl, formsUrl });
+      saveSettings({ webhookUrl, formsUrl, formsQuestionId });
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
     });
@@ -4041,6 +4586,194 @@
       copyToClipboard(schema).then(() => {
         showToast('Esquema copiado al portapapeles', 'success');
       });
+    });
+
+    document.getElementById('btnDownloadFlow').addEventListener('click', function() {
+      // --- CRC-32 ---
+      var crcTable = (function() {
+        var table = new Uint32Array(256);
+        for (var n = 0; n < 256; n++) {
+          var c = n;
+          for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          table[n] = c;
+        }
+        return table;
+      })();
+      function crc32(bytes) {
+        var crc = 0xFFFFFFFF;
+        for (var i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+      }
+
+      // --- Minimal ZIP builder (STORE, no compression) ---
+      function buildZip(files) {
+        var enc = new TextEncoder();
+        var entries = [];
+        var offset = 0;
+        var localParts = [];
+
+        files.forEach(function(f) {
+          var nameBytes = enc.encode(f.name);
+          var dataBytes = enc.encode(f.content);
+          var crcVal = crc32(dataBytes);
+          var size = dataBytes.length;
+
+          var hdr = new Uint8Array(30 + nameBytes.length);
+          var hv = new DataView(hdr.buffer);
+          hv.setUint32(0, 0x04034b50, true);
+          hv.setUint16(4, 20, true);
+          hv.setUint16(8, 0, true);
+          hv.setUint32(14, crcVal, true);
+          hv.setUint32(18, size, true);
+          hv.setUint32(22, size, true);
+          hv.setUint16(26, nameBytes.length, true);
+          hdr.set(nameBytes, 30);
+
+          entries.push({ nameBytes: nameBytes, crc: crcVal, size: size, offset: offset });
+          localParts.push(hdr, dataBytes);
+          offset += hdr.length + size;
+        });
+
+        var cdParts = [];
+        var cdSize = 0;
+        entries.forEach(function(e) {
+          var cd = new Uint8Array(46 + e.nameBytes.length);
+          var cv = new DataView(cd.buffer);
+          cv.setUint32(0, 0x02014b50, true);
+          cv.setUint16(4, 20, true);
+          cv.setUint16(6, 20, true);
+          cv.setUint16(10, 0, true);
+          cv.setUint32(16, e.crc, true);
+          cv.setUint32(20, e.size, true);
+          cv.setUint32(24, e.size, true);
+          cv.setUint16(28, e.nameBytes.length, true);
+          cv.setUint32(42, e.offset, true);
+          cd.set(e.nameBytes, 46);
+          cdParts.push(cd);
+          cdSize += cd.length;
+        });
+
+        var eocd = new Uint8Array(22);
+        var ev = new DataView(eocd.buffer);
+        ev.setUint32(0, 0x06054b50, true);
+        ev.setUint16(8, entries.length, true);
+        ev.setUint16(10, entries.length, true);
+        ev.setUint32(12, cdSize, true);
+        ev.setUint32(16, offset, true);
+
+        var total = offset + cdSize + 22;
+        var zip = new Uint8Array(total);
+        var pos = 0;
+        localParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
+        cdParts.forEach(function(p) { zip.set(p, pos); pos += p.length; });
+        zip.set(eocd, pos);
+        return zip;
+      }
+
+      // --- Power Automate flow definition (Logic Apps format) ---
+      var flowId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+      var flowDefinition = {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+          "manual": {
+            "type": "Request",
+            "kind": "Http",
+            "inputs": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to": { "type": "array", "items": { "type": "string" } },
+                  "subject": { "type": "string" },
+                  "body": { "type": "string" },
+                  "scheduledTime": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "actions": {
+          "Esperar_hasta_hora_programada": {
+            "type": "Wait",
+            "inputs": {
+              "until": {
+                "timestamp": "@triggerBody()?['scheduledTime']"
+              }
+            },
+            "runAfter": {}
+          },
+          "Enviar_email_encuesta": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connectionName": "shared_office365",
+                "operationId": "SendEmailV2",
+                "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+              },
+              "parameters": {
+                "emailMessage/To": "@{join(triggerBody()?['to'],';')}",
+                "emailMessage/Subject": "@triggerBody()?['subject']",
+                "emailMessage/Body": "@triggerBody()?['body']",
+                "emailMessage/Importance": "Normal"
+              }
+            },
+            "runAfter": {
+              "Esperar_hasta_hora_programada": ["Succeeded"]
+            }
+          }
+        }
+      };
+
+      var manifest = {
+        "schema": "1.0.0.0",
+        "details": {
+          "displayName": "Encuesta Satisfaccion Formacion",
+          "description": "Recibe webhook con datos de encuesta, espera hasta la hora programada y envia email con enlace a la encuesta de satisfaccion.",
+          "createdTime": new Date().toISOString(),
+          "packageType": "Flow"
+        },
+        "resources": {}
+      };
+      manifest.resources[flowId] = {
+        "type": "Microsoft.Flow/flows",
+        "suggestedCreationType": "New",
+        "creationType": "New",
+        "details": { "displayName": "Encuesta Satisfaccion Formacion" }
+      };
+      manifest.resources["shared_office365"] = {
+        "type": "Microsoft.PowerApps/apis/connections",
+        "connectionName": "shared_office365",
+        "apiDefinition": { "name": "shared_office365" },
+        "details": {
+          "displayName": "Office 365 Outlook",
+          "iconUri": "https://connectoricons-prod.azureedge.net/releases/v1.0.1654/1.0.1654.3404/office365/icon.png"
+        },
+        "configurableBy": "User",
+        "creationType": "Existing"
+      };
+
+      var zipBytes = buildZip([
+        {
+          name: 'Microsoft.Flow/flows/' + flowId + '/definition.json',
+          content: JSON.stringify(flowDefinition, null, 2)
+        },
+        {
+          name: 'manifest.json',
+          content: JSON.stringify(manifest, null, 2)
+        }
+      ]);
+
+      var blob = new Blob([zipBytes], { type: 'application/zip' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'EncuestaSatisfaccionFormacion.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Flujo descargado. Impórtalo en Power Automate \u2192 Mis flujos \u2192 Importar', 'success', 6000);
     });
 
     // ═══════════════════════════════════
@@ -4168,6 +4901,24 @@
       ['TMVB','Ferrocarril y Cable'],['TMVG','Electromecánica Vehículos'],['TMVI','Conducción por Carretera'],
       ['TMVL','Carrocería Vehículos'],['TMVO','Aeronáutica'],['TMVU','Náutica'],
       ['VICF','Fabricación Cerámica'],['VICI','Vidrio Industrial'],
+    ];
+
+    const EMPRESAS_GRUPO = [
+      { cif: 'A28070795', razonSocial: 'AGORA, S.A.', credito: 9013.10 },
+      { cif: 'B50073535', razonSocial: 'ARADIS, S.L.', credito: 1527.49 },
+      { cif: 'A50109479', razonSocial: 'BEBINTER, S.A.', credito: 49697.79 },
+      { cif: 'A61812897', razonSocial: 'CERVEZAS MORITZ, S.A.', credito: 6988.28 },
+      { cif: 'A50005891', razonSocial: 'CONCESIONES Y B. CARBONICAS, S.A.', credito: 4885.31 },
+      { cif: 'B60038775', razonSocial: 'DISTRIBUCIONES E. POZO, S.L.', credito: 585.09 },
+      { cif: 'B66335142', razonSocial: 'DISTRIBUCIONS 972, S.L.', credito: 1562.29 },
+      { cif: 'B81175234', razonSocial: 'ENVASADORA DE MIRAFLORES, S.L.', credito: 3141.84 },
+      { cif: 'B50182674', razonSocial: 'EXCLUSIVAS DE REPARTO Y SERVICIOS, S.L.', credito: 420.00 },
+      { cif: 'A50002955', razonSocial: 'LA ZARAGOZANA, S.A.', credito: 15383.36 },
+      { cif: 'B50119981', razonSocial: 'LOGISTICA REPARTO Y SERVICIOS, S.L.', credito: 1978.18 },
+      { cif: 'B62613062', razonSocial: 'MUNTANER 213, S.L.', credito: 3993.66 },
+      { cif: 'B50658103', razonSocial: 'NEW CABMA, S.L.', credito: 9535.84 },
+      { cif: 'A63520514', razonSocial: 'NOEDA DISTRIBUCIONES, S.A.', credito: 2828.11 },
+      { cif: 'B62843487', razonSocial: 'RSANTONI39, S.L.', credito: 9543.95 },
     ];
 
     function downloadXML(content, filename) {
@@ -4688,6 +5439,671 @@
 
     loadQueue();
     renderQueue();
+
+    // ═══════════════════════════════════
+    // TAB 4: CUADRO DE MANDO
+    // ═══════════════════════════════════
+
+    /**
+     * Render a horizontal bar chart using CSS-based bars.
+     * All user-supplied strings are sanitized via esc() before insertion.
+     * @param {string} containerId - DOM id of the container element
+     * @param {Array} items - [{label, value, color, secondaryValue, secondaryColor}]
+     * @param {Object} options - {maxValue, showPercent, valueFormatter, labelWidth, footnote}
+     */
+    /**
+     * SVG namespace constant.
+     */
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+
+    /**
+     * Chart palette colors (resolved values for inline SVG).
+     */
+    var CHART_PALETTE = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'];
+
+    /**
+     * Helper: create an SVG element with attributes.
+     */
+    function svgEl(tag, attrs) {
+      var el = document.createElementNS(SVG_NS, tag);
+      if (attrs) {
+        Object.keys(attrs).forEach(function(k) {
+          el.setAttribute(k, attrs[k]);
+        });
+      }
+      return el;
+    }
+
+    /**
+     * Animate a numeric value counting up from 0 to end.
+     */
+    function animateValue(el, end, duration, prefix, suffix) {
+      prefix = prefix || '';
+      suffix = suffix || '';
+      if (typeof end !== 'number' || isNaN(end) || end === 0) {
+        el.textContent = prefix + end + suffix;
+        return;
+      }
+      var start = 0;
+      var startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        var current = Math.round(start + (end - start) * eased);
+        el.textContent = prefix + current.toLocaleString('es-ES') + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    /**
+     * Render empty state placeholder inside a container.
+     */
+    function renderEmptyState(container, hint) {
+      container.textContent = '';
+      var wrap = document.createElement('div');
+      wrap.className = 'dash-empty';
+      var icon = document.createElement('div');
+      icon.className = 'dash-empty-icon';
+      icon.textContent = '?';
+      var txt = document.createElement('div');
+      txt.className = 'dash-empty-text';
+      txt.textContent = 'Sin datos disponibles';
+      wrap.appendChild(icon);
+      wrap.appendChild(txt);
+      if (hint) {
+        var h = document.createElement('div');
+        h.className = 'dash-empty-hint';
+        h.textContent = hint;
+        wrap.appendChild(h);
+      }
+      container.appendChild(wrap);
+    }
+
+    /**
+     * Render an HTML gauge-row bar chart.
+     * @param {string} containerId
+     * @param {Array} items - [{label, value, color?, secondaryValue?, secondaryColor?}]
+     * @param {Object} opts - {maxValue, valueFormatter, labelWidth, footnote}
+     */
+    function renderSvgBarChart(containerId, items, opts) {
+      opts = opts || {};
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      if (!items || items.length === 0) {
+        renderEmptyState(container, 'Añade acciones en el catálogo para ver estadísticas');
+        return;
+      }
+
+      var formatter = opts.valueFormatter || function(v) { return v; };
+      var maxVal = opts.maxValue || Math.max.apply(null, items.map(function(i) { return i.value + (i.secondaryValue || 0); })) || 1;
+      var labelW = opts.labelWidth ? (opts.labelWidth + 'px') : '180px';
+
+      items.forEach(function(item, idx) {
+        var total = item.value + (item.secondaryValue || 0);
+        var pctTotal = Math.min((total / maxVal) * 100, 100);
+        var pctPrimary = Math.min((item.value / maxVal) * 100, 100);
+        var itemColor = item.color || CHART_PALETTE[idx % CHART_PALETTE.length];
+
+        var row = document.createElement('div');
+        row.className = 'dash-gauge-row';
+
+        var lbl = document.createElement('span');
+        lbl.className = 'dash-gauge-label';
+        lbl.style.width = labelW;
+        lbl.textContent = item.label;
+        lbl.title = item.label;
+        row.appendChild(lbl);
+
+        var barBg = document.createElement('div');
+        barBg.className = 'dash-gauge-bar-bg';
+
+        if (item.secondaryValue !== undefined && item.secondaryValue > 0) {
+          // Two-tone: secondary (total) background + primary fill
+          var secFill = document.createElement('div');
+          secFill.className = 'dash-gauge-bar-secondary';
+          secFill.style.width = pctTotal + '%';
+          secFill.style.background = item.secondaryColor || 'var(--accent-light)';
+          secFill.style.opacity = '1';
+          barBg.appendChild(secFill);
+
+          if (pctPrimary > 0) {
+            var priFill = document.createElement('div');
+            priFill.className = 'dash-gauge-bar-fill';
+            priFill.style.width = pctPrimary + '%';
+            priFill.style.background = itemColor;
+            priFill.style.position = 'relative';
+            priFill.style.zIndex = '1';
+            barBg.appendChild(priFill);
+          }
+        } else {
+          var fill = document.createElement('div');
+          fill.className = 'dash-gauge-bar-fill';
+          fill.style.width = pctTotal + '%';
+          fill.style.background = itemColor;
+          barBg.appendChild(fill);
+        }
+        row.appendChild(barBg);
+
+        var val = document.createElement('span');
+        val.className = 'dash-gauge-value';
+        if (item.secondaryValue !== undefined && item.secondaryValue > 0) {
+          val.textContent = formatter(item.value) + ' / ' + formatter(total);
+        } else {
+          val.textContent = formatter(total);
+        }
+        row.appendChild(val);
+
+        container.appendChild(row);
+      });
+
+      if (opts.footnote) {
+        var fn = document.createElement('div');
+        fn.className = 'dash-gauge-footnote';
+        fn.textContent = opts.footnote;
+        container.appendChild(fn);
+      }
+    }
+
+    /**
+     * Render an SVG donut chart.
+     * @param {string} containerId
+     * @param {Array} items - [{label, value, color}]
+     * @param {Object} opts - {centerLabel, centerValue}
+     */
+    function renderSvgDonut(containerId, items, opts) {
+      opts = opts || {};
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      if (!items || items.length === 0) {
+        renderEmptyState(container, 'Añade acciones en el catálogo para ver estadísticas');
+        return;
+      }
+
+      var total = items.reduce(function(s, i) { return s + i.value; }, 0);
+      if (total === 0) {
+        renderEmptyState(container, 'Todas las acciones tienen valor cero');
+        return;
+      }
+
+      // Group items < 2% into "Otros"
+      var threshold = total * 0.02;
+      var mainItems = [];
+      var otrosVal = 0;
+      items.forEach(function(item) {
+        if (item.value < threshold && item.value > 0) {
+          otrosVal += item.value;
+        } else {
+          mainItems.push(item);
+        }
+      });
+      if (otrosVal > 0) {
+        mainItems.push({ label: 'Otros', value: otrosVal, color: '#94a3b8' });
+      }
+
+      // Donut params
+      var size = 200;
+      var cx = size / 2;
+      var cy = size / 2;
+      var strokeW = 28;
+      var r = (size - strokeW) / 2;
+      var circumference = 2 * Math.PI * r;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'dash-donut-container';
+
+      // SVG — responsive via CSS (.dash-donut-container svg)
+      var svg = svgEl('svg', {
+        'viewBox': '0 0 ' + size + ' ' + size,
+        'preserveAspectRatio': 'xMidYMid meet'
+      });
+      svg.style.display = 'block';
+
+      // Background circle (track)
+      svg.appendChild(svgEl('circle', {
+        'cx': cx, 'cy': cy, 'r': r,
+        'fill': 'none',
+        'stroke': '#f1f5f9',
+        'stroke-width': strokeW
+      }));
+
+      // Segments
+      var offset = 0;
+      mainItems.forEach(function(item, idx) {
+        var pct = item.value / total;
+        var dashLen = pct * circumference;
+        var dashGap = circumference - dashLen;
+        var segColor = item.color || CHART_PALETTE[idx % CHART_PALETTE.length];
+
+        // Store resolved color for legend
+        item._resolvedColor = segColor;
+
+        var circle = svgEl('circle', {
+          'cx': cx, 'cy': cy, 'r': r,
+          'fill': 'none',
+          'stroke': segColor,
+          'stroke-width': strokeW,
+          'stroke-dasharray': dashLen + ' ' + dashGap,
+          'stroke-dashoffset': -offset,
+          'class': 'dash-donut-segment',
+          'transform': 'rotate(-90 ' + cx + ' ' + cy + ')'
+        });
+        svg.appendChild(circle);
+        offset += dashLen;
+      });
+
+      // Center text
+      var centerVal = opts.centerValue !== undefined ? opts.centerValue : total;
+      var centerLbl = opts.centerLabel || 'Total';
+
+      var cvText = svgEl('text', {
+        'x': cx, 'y': cy - 4,
+        'text-anchor': 'middle',
+        'fill': '#0f172a',
+        'font-size': '34',
+        'font-weight': '700',
+        'font-family': "Inter, -apple-system, sans-serif"
+      });
+      cvText.textContent = centerVal;
+      svg.appendChild(cvText);
+
+      var clText = svgEl('text', {
+        'x': cx, 'y': cy + 18,
+        'text-anchor': 'middle',
+        'fill': '#94a3b8',
+        'font-size': '10',
+        'font-weight': '500',
+        'font-family': 'Inter, -apple-system, sans-serif'
+      });
+      clText.textContent = centerLbl;
+      svg.appendChild(clText);
+
+      wrap.appendChild(svg);
+
+      // Legend
+      var legend = document.createElement('div');
+      legend.className = 'dash-donut-legend';
+      mainItems.forEach(function(item, idx) {
+        var li = document.createElement('div');
+        li.className = 'dash-donut-legend-item';
+        var dot = document.createElement('span');
+        dot.className = 'dash-donut-legend-dot';
+        dot.style.background = item._resolvedColor || CHART_PALETTE[idx % CHART_PALETTE.length];
+        var lbl = document.createElement('span');
+        lbl.textContent = item.label;
+        var val = document.createElement('span');
+        val.className = 'dash-donut-legend-val';
+        val.textContent = item.value;
+        li.appendChild(dot);
+        li.appendChild(lbl);
+        li.appendChild(val);
+        legend.appendChild(li);
+      });
+      wrap.appendChild(legend);
+
+      container.appendChild(wrap);
+    }
+
+    /**
+     * Render completeness progress bars.
+     * @param {string} containerId
+     * @param {Array} items - [{label, pct}]
+     */
+    function renderCompleteness(containerId, items) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      if (!items || items.length === 0) {
+        renderEmptyState(container, 'No hay acciones bonificables para medir completitud.');
+        return;
+      }
+
+      items.forEach(function(item) {
+        var pct = Math.round(item.pct);
+        var color = pct >= 75 ? 'var(--success)' : (pct >= 40 ? 'var(--warning)' : 'var(--danger)');
+
+        var row = document.createElement('div');
+        row.className = 'dash-completeness-row';
+
+        var lbl = document.createElement('span');
+        lbl.className = 'dash-completeness-label';
+        lbl.textContent = item.label;
+
+        var track = document.createElement('div');
+        track.className = 'dash-completeness-track';
+        var fill = document.createElement('div');
+        fill.className = 'dash-completeness-fill';
+        if (pct < 40) fill.classList.add('dash-pulse');
+        fill.style.width = pct + '%';
+        fill.style.background = color;
+        track.appendChild(fill);
+
+        var pctSpan = document.createElement('span');
+        pctSpan.className = 'dash-completeness-pct';
+        pctSpan.textContent = pct + '%';
+
+        row.appendChild(lbl);
+        row.appendChild(track);
+        row.appendChild(pctSpan);
+        container.appendChild(row);
+      });
+    }
+
+    /**
+     * Format a number as Spanish currency.
+     */
+    function formatCurrency(num) {
+      return num.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+    }
+
+    /**
+     * Main dashboard render function. Computes all stats from catalogs
+     * and renders KPIs, alerts, and charts using inline SVG.
+     */
+    function renderDashboard() {
+      var acciones = getCatalog('acciones');
+      var proveedores = getCatalog('proveedores');
+      var centros = getCatalog('centros');
+      var tutores = getCatalog('tutores');
+
+      // --- Computed stats ---
+      var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
+
+      var totalHorasP = 0, totalHorasT = 0;
+      acciones.forEach(function(a) {
+        totalHorasP += (Number(a.horasPresenciales) || 0);
+        totalHorasT += (Number(a.horasTeleformacion) || 0);
+      });
+      var totalHoras = totalHorasP + totalHorasT;
+
+      var allNifs = {};
+      var accionesConParticipantes = 0;
+      acciones.forEach(function(a) {
+        var parts = a.participantes || [];
+        if (parts.length > 0) accionesConParticipantes++;
+        parts.forEach(function(n) { allNifs[n] = true; });
+      });
+      var totalParticipantes = Object.keys(allNifs).length;
+
+      var totalPresupuesto = acciones.reduce(function(sum, a) { return sum + (Number(a.presupuesto) || 0); }, 0);
+
+      var totalCredito = EMPRESAS_GRUPO.reduce(function(s, e) { return s + e.credito; }, 0);
+      var consumido = {};
+      bonificables.forEach(function(a) {
+        if (a.empresaPagadora && Number(a.presupuesto)) {
+          consumido[a.empresaPagadora] = (consumido[a.empresaPagadora] || 0) + Number(a.presupuesto);
+        }
+      });
+      var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+
+      // --- KPI Cards ---
+      var kpisEl = document.getElementById('dashKpis');
+      kpisEl.textContent = '';
+
+      var kpiColors = ['1', '2', '3', '4', '5'];
+      var kpiColorHex = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444'];
+      var kpiIdx = 0;
+
+      function addKpi(label, value, sub) {
+        var card = document.createElement('div');
+        card.className = 'dash-kpi';
+        card.setAttribute('data-color', kpiColors[kpiIdx % kpiColors.length]);
+
+        var lblWrap = document.createElement('div');
+        lblWrap.className = 'dash-kpi-label';
+        var dot = document.createElement('span');
+        dot.className = 'dash-kpi-dot';
+        dot.style.background = kpiColorHex[kpiIdx % kpiColorHex.length];
+        var lblText = document.createElement('span');
+        lblText.textContent = label;
+        lblWrap.appendChild(dot);
+        lblWrap.appendChild(lblText);
+
+        var valEl = document.createElement('div');
+        valEl.className = 'dash-kpi-value';
+
+        // Animate if numeric
+        if (typeof value === 'number' && !isNaN(value)) {
+          valEl.textContent = '0';
+          setTimeout(function() { animateValue(valEl, value, 800, '', ''); }, kpiIdx * 80);
+        } else {
+          valEl.textContent = value;
+        }
+
+        var subEl = document.createElement('div');
+        subEl.className = 'dash-kpi-sub';
+        subEl.textContent = sub;
+
+        card.appendChild(lblWrap);
+        card.appendChild(valEl);
+        card.appendChild(subEl);
+        kpisEl.appendChild(card);
+        kpiIdx++;
+      }
+
+      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables');
+      addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación');
+      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes');
+      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables');
+      var creditoDisponible = totalCredito - totalConsumido;
+      addKpi('Crédito FUNDAE', formatCurrency(totalConsumido), formatCurrency(creditoDisponible) + ' disponible / ' + formatCurrency(totalCredito) + ' total');
+
+      // --- Alerts (collapsible, dismissible) ---
+      var alertsWidget = document.getElementById('dashAlertsWidget');
+      var alertsBody = document.getElementById('dashAlertsBody');
+      var alertsBadge = document.getElementById('dashAlertsBadge');
+      var alertsSummary = document.getElementById('dashAlertsSummary');
+      var alertsArrow = document.getElementById('dashAlertsArrow');
+      alertsBody.textContent = '';
+
+      // Dismissed alerts persistence
+      var dismissedKey = 'convocatoria_dismissed_alerts';
+      var dismissed = {};
+      try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}'); } catch(e) {}
+
+      function dismissAlert(alertId, el) {
+        dismissed[alertId] = Date.now();
+        try { localStorage.setItem(dismissedKey, JSON.stringify(dismissed)); } catch(e) {}
+        el.remove();
+        updateAlertCount();
+      }
+
+      function updateAlertCount() {
+        var remaining = alertsBody.querySelectorAll('.dash-alert').length;
+        alertsBadge.textContent = remaining;
+        alertsSummary.textContent = remaining === 1 ? 'aviso pendiente' : 'avisos pendientes';
+        alertsWidget.style.display = remaining > 0 ? '' : 'none';
+        var hasDanger = alertsBody.querySelector('.dash-alert-type-danger');
+        alertsBadge.className = 'dash-alerts-badge' + (hasDanger ? ' dash-badge-danger' : '');
+      }
+
+      var pendingAlerts = [];
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      bonificables.forEach(function(a) {
+        if (a.fechaFin && a.estado !== 'Terminada' && a.estado !== 'Anulada') {
+          var fechaFin = new Date(a.fechaFin + 'T00:00:00');
+          if (fechaFin < today) {
+            var diffDays = Math.floor((today - fechaFin) / (1000 * 60 * 60 * 24));
+            var type = diffDays > 30 ? 'danger' : 'warning';
+            var alertId = 'vencida_' + (a.codigo || a.nombre);
+            var actionLabel = (a.codigo || '') + ' \u2014 ' + (a.nombre || '');
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: diffDays + ' días vencida' });
+          }
+        }
+      });
+
+      var sinEmpresa = bonificables.filter(function(a) { return !a.empresaPagadora; });
+      if (sinEmpresa.length > 0) {
+        pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora' });
+      }
+
+      pendingAlerts.forEach(function(alert) {
+        if (dismissed[alert.id]) return;
+        var div = document.createElement('div');
+        div.className = 'dash-alert';
+
+        var typeSpan = document.createElement('span');
+        typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
+        typeSpan.textContent = alert.type === 'danger' ? 'urgente' : 'aviso';
+        div.appendChild(typeSpan);
+
+        var textSpan = document.createElement('span');
+        if (alert.action) {
+          var bold = document.createElement('strong');
+          bold.className = 'dash-alert-action';
+          bold.textContent = alert.action;
+          textSpan.appendChild(bold);
+          textSpan.appendChild(document.createTextNode(' \u2014 ' + alert.msg));
+        } else {
+          textSpan.textContent = alert.msg;
+        }
+        div.appendChild(textSpan);
+
+        var btn = document.createElement('button');
+        btn.className = 'dash-alert-dismiss';
+        btn.textContent = '\u00D7';
+        btn.title = 'Descartar aviso';
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dismissAlert(alert.id, div);
+        });
+        div.appendChild(btn);
+
+        alertsBody.appendChild(div);
+      });
+
+      updateAlertCount();
+
+      // --- Credit chart (two-tone SVG bars) ---
+      var empresasSorted = EMPRESAS_GRUPO.slice().sort(function(a, b) { return b.credito - a.credito; });
+      var empresasVisible = empresasSorted.filter(function(e) { return e.credito > 1000; });
+      var empresasHidden = empresasSorted.length - empresasVisible.length;
+      var creditItems = empresasVisible.map(function(e) {
+        var cons = consumido[e.cif] || 0;
+        var avail = Math.max(e.credito - cons, 0);
+        return {
+          label: e.razonSocial,
+          value: cons,
+          secondaryValue: avail,
+          color: '#4F46E5',
+          secondaryColor: '#E0E7FF'
+        };
+      });
+      var creditMax = empresasVisible.length > 0 ? empresasVisible[0].credito : 1;
+      renderSvgBarChart('dashCreditChart', creditItems, {
+        maxValue: creditMax,
+        labelWidth: 200,
+        valueFormatter: function(v) { return formatCurrency(v); },
+        footnote: empresasHidden > 0 ? '(+' + empresasHidden + ' más con crédito < 1.000\u20AC)' : ''
+      });
+
+      // --- Estado chart (donut) ---
+      var estadoCounts = {};
+      acciones.forEach(function(a) {
+        var est = a.estado || '(Sin estado)';
+        estadoCounts[est] = (estadoCounts[est] || 0) + 1;
+      });
+      var estadoColorMap = {
+        'En marcha': '#4F46E5',
+        'Terminada': '#10B981',
+        'Anulada': '#EF4444',
+        'Retrasada': '#EF4444',
+        'Pendiente': '#94a3b8',
+        'Buscando': '#F59E0B',
+        'En preparación': '#0EA5E9',
+        '(Sin estado)': '#cbd5e1'
+      };
+      var estadoItems = Object.keys(estadoCounts).map(function(k) {
+        return { label: k, value: estadoCounts[k], color: estadoColorMap[k] || '#94a3b8' };
+      }).sort(function(a, b) { return b.value - a.value; });
+      renderSvgDonut('dashEstadoChart', estadoItems, {
+        centerLabel: 'Acciones',
+        centerValue: acciones.length
+      });
+
+      // --- Modalidad chart ---
+      var modalidadHoras = {};
+      var modalidadColorMap = {
+        'Presencial': '#4F46E5',
+        'Teleformación': '#0EA5E9',
+        'Mixta': '#10B981'
+      };
+      acciones.forEach(function(a) {
+        var mod = a.modalidad || '(Sin modalidad)';
+        var horas = (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+        modalidadHoras[mod] = (modalidadHoras[mod] || 0) + horas;
+      });
+      var modalidadItems = Object.keys(modalidadHoras).map(function(k) {
+        return { label: k, value: modalidadHoras[k], color: modalidadColorMap[k] || '#94a3b8' };
+      }).sort(function(a, b) { return b.value - a.value; });
+      renderSvgBarChart('dashModalidadChart', modalidadItems, {
+        valueFormatter: function(v) { return v + 'h'; }
+      });
+
+      // --- Area chart ---
+      var areaCounts = {};
+      acciones.forEach(function(a) {
+        var area = a.areaProfesional || '(Sin área)';
+        areaCounts[area] = (areaCounts[area] || 0) + 1;
+      });
+      var areaItems = Object.keys(areaCounts).map(function(k, idx) {
+        return { label: k, value: areaCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
+      }).sort(function(a, b) { return b.value - a.value; });
+      renderSvgBarChart('dashAreaChart', areaItems, {
+        valueFormatter: function(v) { return v; }
+      });
+
+      // --- Department chart ---
+      var deptCounts = {};
+      acciones.forEach(function(a) {
+        var dept = a.departamento || '(Sin departamento)';
+        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+      });
+      var deptItems = Object.keys(deptCounts).map(function(k, idx) {
+        return { label: k, value: deptCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
+      }).sort(function(a, b) { return b.value - a.value; });
+      renderSvgBarChart('dashDeptChart', deptItems, {
+        valueFormatter: function(v) { return v; }
+      });
+
+      // --- Completeness ---
+      if (bonificables.length === 0) {
+        renderCompleteness('dashCompletenessChart', []);
+      } else {
+        var tot = bonificables.length;
+        renderCompleteness('dashCompletenessChart', [
+          { label: 'Estado', pct: (bonificables.filter(function(a) { return !!a.estado; }).length / tot) * 100 },
+          { label: 'Empresa pagadora', pct: (bonificables.filter(function(a) { return !!a.empresaPagadora; }).length / tot) * 100 },
+          { label: 'Fechas (inicio y fin)', pct: (bonificables.filter(function(a) { return !!a.fechaInicio && !!a.fechaFin; }).length / tot) * 100 },
+          { label: 'Área profesional', pct: (bonificables.filter(function(a) { return !!a.areaProfesional; }).length / tot) * 100 },
+          { label: 'Centro vinculado', pct: (bonificables.filter(function(a) { return !!a.centroVinculado; }).length / tot) * 100 },
+          { label: 'Tutor vinculado', pct: (bonificables.filter(function(a) { return !!a.tutorVinculado; }).length / tot) * 100 },
+          { label: 'Participantes', pct: (bonificables.filter(function(a) { return (a.participantes || []).length > 0; }).length / tot) * 100 }
+        ]);
+      }
+
+      // Update timestamp
+      document.getElementById('dashLastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleString('es-ES');
+
+      // Wire alerts toggle
+      var toggle = document.getElementById('dashAlertsToggle');
+      toggle.onclick = function() {
+        var body = document.getElementById('dashAlertsBody');
+        var arrow = document.getElementById('dashAlertsArrow');
+        var open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : '';
+        arrow.className = 'dash-alerts-arrow' + (open ? '' : ' open');
+      };
+    }
+
   </script>
 </body>
 </html>
