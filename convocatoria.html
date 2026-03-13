@@ -2672,7 +2672,7 @@
       acciones: { pk: 'codigo', title: r => r.nombre || r.codigo, subtitle: r => 'Código: ' + r.codigo },
     };
 
-    const catalogState = { activeCatalog: 'proveedores', selectedPK: null };
+    const catalogState = { activeCatalog: 'proveedores', selectedPK: null, dirty: false };
 
     function renderCatalogList() {
       const key = catalogState.activeCatalog;
@@ -2703,9 +2703,11 @@
       // Click handler for list items
       container.querySelectorAll('.catalog-list-item').forEach(item => {
         item.addEventListener('click', () => {
-          catalogState.selectedPK = item.dataset.pk;
-          renderCatalogList();
-          renderCatalogForm();
+          checkDirtyBeforeNavigation(function() {
+            catalogState.selectedPK = item.dataset.pk;
+            renderCatalogList();
+            renderCatalogForm();
+          });
         });
       });
     }
@@ -2713,13 +2715,15 @@
     // Sub-tab switching
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.catalog-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        catalogState.activeCatalog = btn.dataset.catalog;
-        catalogState.selectedPK = null;
-        document.getElementById('catalogSearch').value = '';
-        renderCatalogList();
-        renderCatalogForm();
+        checkDirtyBeforeNavigation(function() {
+          document.querySelectorAll('.catalog-tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          catalogState.activeCatalog = btn.dataset.catalog;
+          catalogState.selectedPK = null;
+          document.getElementById('catalogSearch').value = '';
+          renderCatalogList();
+          renderCatalogForm();
+        });
       });
     });
 
@@ -3077,15 +3081,18 @@
           '</div>';
       }
 
-      return '<div style="padding:20px; overflow-y:auto; flex:1;">' +
+      return '<div style="display:flex; flex-direction:column; height:100%;">' +
+        '<div style="padding:20px; overflow-y:auto; flex:1;">' +
         '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">' +
           '<h3 style="margin:0; font-size:15px; font-weight:600; color:var(--text-primary);">' + title + '</h3>' +
         '</div>' +
         body +
-        '<div style="display:flex; gap:10px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">' +
-          '<button class="btn btn-primary" id="btnSaveCatalog" style="font-size:12px;">Guardar</button>' +
+        '</div>' +
+        '<div id="catalogStickyBar" style="display:flex; gap:10px; padding:12px 20px; border-top:1px solid var(--border); background:var(--bg-panel); flex-shrink:0; align-items:center;">' +
+          '<button class="btn btn-primary" id="btnSaveCatalog" style="font-size:12px; position:relative;">Guardar<span id="catalogDirtyDot" style="display:none; position:absolute; top:-2px; right:-2px; width:8px; height:8px; border-radius:50%; background:var(--warning);"></span></button>' +
           (isNew ? '' : '<button class="btn btn-secondary" id="btnDeleteCatalog" style="font-size:12px; color:var(--danger); border-color:var(--danger);">Eliminar</button>') +
           (!isNew && key === 'acciones' ? '<button class="btn btn-secondary" id="btnDuplicateCatalog" style="font-size:12px;">Duplicar</button>' : '') +
+          '<span id="catalogDirtyLabel" style="display:none; font-size:11px; color:var(--warning); margin-left:auto;">Cambios sin guardar</span>' +
         '</div>' +
       '</div>';
     }
@@ -3095,9 +3102,57 @@
       if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
     }
 
+    function markCatalogDirty() {
+      catalogState.dirty = true;
+      var dot = document.getElementById('catalogDirtyDot');
+      var label = document.getElementById('catalogDirtyLabel');
+      if (dot) dot.style.display = '';
+      if (label) label.style.display = '';
+    }
+
+    function clearCatalogDirty() {
+      catalogState.dirty = false;
+      var dot = document.getElementById('catalogDirtyDot');
+      var label = document.getElementById('catalogDirtyLabel');
+      if (dot) dot.style.display = 'none';
+      if (label) label.style.display = 'none';
+    }
+
+    function checkDirtyBeforeNavigation(callback) {
+      if (!catalogState.dirty) {
+        callback();
+        return;
+      }
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Cambios sin guardar</h3>' +
+        '<p style="font-size:13px; color:var(--text-secondary);">Hay cambios sin guardar. ¿Descartar?</p>' +
+        '<div class="dialog-buttons" style="margin-top:16px;">' +
+          '<button class="btn btn-secondary" id="dirtyCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="dirtyDiscard" style="background:var(--warning);">Descartar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+      document.getElementById('dirtyCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('dirtyDiscard').addEventListener('click', function() {
+        overlay.remove();
+        clearCatalogDirty();
+        callback();
+      });
+    }
+
     function bindCatalogFormEvents(key, record) {
       const saveBtn = document.getElementById('btnSaveCatalog');
       if (saveBtn) saveBtn.addEventListener('click', function() { saveCatalogForm(key); });
+
+      // Track dirty state on form inputs
+      var formPanel = document.getElementById('catalogFormPanel');
+      if (formPanel) {
+        formPanel.querySelectorAll('input.input-field, select.input-field, textarea.input-field').forEach(function(el) {
+          el.addEventListener('input', markCatalogDirty);
+          el.addEventListener('change', markCatalogDirty);
+        });
+      }
 
       const deleteBtn = document.getElementById('btnDeleteCatalog');
       if (deleteBtn) {
@@ -3957,6 +4012,7 @@
 
       upsertCatalogRecord(key, cfg.pk, record);
       catalogState.selectedPK = record[cfg.pk];
+      clearCatalogDirty();
       renderCatalogList();
       renderCatalogForm();
       showToast('Registro guardado', 'success');
