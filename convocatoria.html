@@ -3803,6 +3803,47 @@
       });
     }
 
+    // ═══════════════════════════════════
+    // AUTO TRANSITION ESTADOS
+    // ═══════════════════════════════════
+
+    var _autoTransitionRan = false;
+
+    function autoTransitionEstados() {
+      if (_autoTransitionRan) return;
+      _autoTransitionRan = true;
+
+      var acciones = getCatalog('acciones');
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+      var transitions = [];
+
+      acciones.forEach(function(a) {
+        if (!a.fechaInicio || !a.fechaFin) return;
+        var fi = new Date(a.fechaInicio + 'T00:00:00');
+        var ff = new Date(a.fechaFin + 'T00:00:00');
+        if (isNaN(fi.getTime()) || isNaN(ff.getTime())) return;
+
+        var oldEstado = a.estado || '';
+
+        if (ff < today && oldEstado !== 'Terminada' && oldEstado !== 'Anulada') {
+          a.estado = 'Terminada';
+          transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' → Terminada');
+        } else if (fi <= today && today <= ff && oldEstado !== 'En marcha' && oldEstado !== 'Terminada' && oldEstado !== 'Anulada') {
+          a.estado = 'En marcha';
+          transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' → En marcha');
+        } else if (fi > today && oldEstado === '') {
+          a.estado = 'Pendiente';
+          transitions.push(esc(a.codigo) + ': (vacío) → Pendiente');
+        }
+      });
+
+      if (transitions.length > 0) {
+        saveCatalog('acciones', acciones);
+        showToast(transitions.length + ' accion(es) actualizadas automáticamente', 'info', 5000);
+      }
+    }
+
     // "Nuevo" button handler
     document.getElementById('btnNewCatalog').addEventListener('click', function() {
       const key = catalogState.activeCatalog;
@@ -7720,6 +7761,7 @@
      * and renders KPIs, alerts, and charts using inline SVG.
      */
     function renderDashboard() {
+      autoTransitionEstados();
       var acciones = getCatalog('acciones');
       var proveedores = getCatalog('proveedores');
       var centros = getCatalog('centros');
@@ -8296,6 +8338,7 @@
 
     function renderCalendarTab() {
       initCalendarTab();
+      autoTransitionEstados();
 
       var acciones = getCatalog('acciones');
       var topPane = document.getElementById('calSplitTop');
