@@ -4269,8 +4269,38 @@
         renderTable();
         overlay.remove();
 
+        // ── Auto-fill event fields from acción formativa ──
+        if (accion.nombre) {
+          document.getElementById('eventTitle').value = accion.nombre;
+          document.getElementById('eventTitle').classList.remove('error');
+        }
+
+        // Set Teams / Presencial based on modalidad
+        const modalidad = (accion.modalidad || '').toLowerCase();
+        if (modalidad === 'teleformación' || modalidad === 'teleformacion') {
+          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+        } else if (modalidad === 'presencial') {
+          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+        }
+        // Trigger the change handler so location field updates accordingly
+        const checkedRadio = document.querySelector('input[name="eventType"]:checked');
+        if (checkedRadio) checkedRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+        // Set formador from linked tutor
+        if (accion.tutorVinculado) {
+          const tutores = getCatalog('tutores');
+          const tutor = tutores.find(t => t.documento === accion.tutorVinculado);
+          if (tutor) {
+            const tutorName = [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
+            document.getElementById('eventFormador').value = tutorName;
+          }
+        }
+
+        saveState();
+
         const matched = state.employees.filter(emp => nifSet.has(emp.NIF)).length;
-        showToast(matched + ' participantes de "' + (accion.nombre || accion.codigo) + '" seleccionados', 'success');
+        const accionLabel = accion.nombre || accion.codigo;
+        showToast('Datos de "' + accionLabel + '" cargados (' + matched + ' participantes). Completa fecha y sala.', 'success');
       });
     });
 
