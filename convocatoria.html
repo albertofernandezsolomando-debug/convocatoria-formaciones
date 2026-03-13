@@ -10000,6 +10000,43 @@
         footer.textContent = totalAttendees + ' asistentes procesados en total';
         container.appendChild(footer);
       }
+
+      // Day-of-week activity distribution
+      if (sends.length > 0) {
+        var dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        var dayCounts = [0, 0, 0, 0, 0, 0, 0];
+        sends.forEach(function(h) {
+          var ts = new Date(h.timestamp);
+          if (!isNaN(ts.getTime())) dayCounts[ts.getDay()]++;
+        });
+        var maxDayCount = Math.max.apply(null, dayCounts) || 1;
+
+        var daySection = document.createElement('div');
+        daySection.style.cssText = 'margin-top:10px; padding-top:8px; border-top:1px solid var(--border);';
+        var dayTitle = document.createElement('div');
+        dayTitle.style.cssText = 'font-size:10px; font-weight:600; color:var(--text-muted); margin-bottom:6px;';
+        dayTitle.textContent = 'Actividad por día de la semana';
+        daySection.appendChild(dayTitle);
+
+        var dayRow = document.createElement('div');
+        dayRow.style.cssText = 'display:flex; gap:4px; align-items:flex-end; height:36px;';
+        dayCounts.forEach(function(count, idx) {
+          var col = document.createElement('div');
+          col.style.cssText = 'flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;';
+          var bar = document.createElement('div');
+          var h = maxDayCount > 0 ? Math.max((count / maxDayCount) * 28, count > 0 ? 3 : 1) : 1;
+          var opacity = count > 0 ? (0.3 + 0.7 * (count / maxDayCount)) : 0.1;
+          bar.style.cssText = 'width:100%; height:' + h + 'px; background:var(--accent); border-radius:2px; opacity:' + opacity + ';';
+          var lbl = document.createElement('div');
+          lbl.style.cssText = 'font-size:8px; color:var(--text-muted);';
+          lbl.textContent = dayNames[idx];
+          col.appendChild(bar);
+          col.appendChild(lbl);
+          dayRow.appendChild(col);
+        });
+        daySection.appendChild(dayRow);
+        container.appendChild(daySection);
+      }
     }
 
     // ═══════════════════════════════════
