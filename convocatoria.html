@@ -2043,10 +2043,11 @@
       <!-- Queue bar -->
       <div id="queueBar" style="display:none; padding:12px 28px; border-bottom:1px solid var(--border); background:var(--accent-subtle);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:13px; font-weight:600; color:var(--accent);">
-            Cola de convocatorias (<span id="queueCount">0</span>)
+          <span style="font-size:13px; font-weight:600; color:var(--accent); cursor:pointer;" onclick="toggleQueuePanel()">
+            Cola de convocatorias (<span id="queueCount">0</span>) &#9654;
           </span>
           <div style="display:flex; gap:8px;">
+            <button class="link-btn link-add" onclick="toggleQueuePanel()" style="font-size:11px;">Ver detalle</button>
             <button class="link-btn link-clear" id="btnClearQueue">Vaciar cola</button>
             <button class="btn btn-primary" id="btnLaunchQueue" style="font-size:12px; padding:6px 14px;">Lanzar cola</button>
           </div>
@@ -2448,6 +2449,20 @@
         <canvas id="trainingLoadCanvas" height="200" style="width: 100%; background: var(--bg-panel); border-radius: var(--radius);"></canvas>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Queue panel (lateral) -->
+  <div class="queue-panel-overlay" id="queueOverlay" onclick="toggleQueuePanel()"></div>
+  <div class="queue-panel" id="queuePanel">
+    <div class="queue-panel-header">
+      <h3>Cola de envios (<span id="queuePanelCount">0</span>)</h3>
+      <button class="link-btn link-clear" onclick="toggleQueuePanel()">Cerrar</button>
+    </div>
+    <div class="queue-panel-body" id="queuePanelBody"></div>
+    <div class="queue-panel-footer" style="display:flex; gap:8px;">
+      <button class="btn btn-primary" style="flex:1;" id="btnLaunchQueuePanel" onclick="document.getElementById('btnLaunchQueue').click(); toggleQueuePanel();">Enviar cola</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('btnClearQueue').click(); renderQueuePanel();">Vaciar</button>
     </div>
   </div>
 
@@ -6097,6 +6112,113 @@
           renderTable();
           showToast('Editando convocatoria. Añade de nuevo a la cola cuando termines.', 'info', 5000);
         });
+      });
+    }
+
+    // ═══════════════════════════════════
+    // QUEUE PANEL (lateral)
+    // ═══════════════════════════════════
+
+    function toggleQueuePanel() {
+      var panel = document.getElementById('queuePanel');
+      var overlay = document.getElementById('queueOverlay');
+      var isOpen = panel.classList.contains('open');
+      panel.classList.toggle('open');
+      overlay.classList.toggle('open');
+      if (!isOpen) renderQueuePanel();
+    }
+
+    function renderQueuePanel() {
+      var body = document.getElementById('queuePanelBody');
+      var queue = state.queue || [];
+      var countEl = document.getElementById('queuePanelCount');
+      if (countEl) countEl.textContent = queue.length;
+      if (!queue.length) {
+        body.replaceChildren();
+        var empty = document.createElement('p');
+        empty.style.cssText = 'text-align:center; color: var(--text-muted); padding: 40px 0; font-size: 13px;';
+        empty.textContent = 'La cola esta vacia';
+        body.appendChild(empty);
+        return;
+      }
+      body.replaceChildren();
+      queue.forEach(function(item, i) {
+        var div = document.createElement('div');
+        div.className = 'queue-item';
+        div.draggable = true;
+        div.dataset.idx = i;
+        var nameDiv = document.createElement('div');
+        nameDiv.className = 'queue-item-name';
+        nameDiv.textContent = item.event ? item.event.title : 'Sin nombre';
+        var metaDiv = document.createElement('div');
+        metaDiv.className = 'queue-item-meta';
+        var type = item.event && item.event.isTeams ? 'Teams' : 'Presencial';
+        metaDiv.textContent = (item.event ? item.event.date : 'Sin fecha') + ' | ' + (item.attendeeCount || 0) + ' asistentes | ' + type;
+        var actionsDiv = document.createElement('div');
+        actionsDiv.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+        var editBtn = document.createElement('button');
+        editBtn.className = 'link-btn link-add';
+        editBtn.textContent = 'Editar';
+        editBtn.style.fontSize = '11px';
+        editBtn.onclick = function(e) {
+          e.stopPropagation();
+          // Load back to form
+          var queueBtn = document.querySelector('[data-edit-queue="' + i + '"]');
+          if (queueBtn) queueBtn.click();
+          else {
+            // Fallback inline edit
+            state.activeFilters = JSON.parse(JSON.stringify(item.filters));
+            if (item.event) {
+              document.getElementById('eventTitle').value = item.event.title || '';
+              document.getElementById('eventDate').value = item.event.date || '';
+              document.getElementById('eventStart').value = item.event.startTime || '';
+              document.getElementById('eventEnd').value = item.event.endTime || '';
+              document.getElementById('eventLocation').value = item.event.location || '';
+            }
+            state.queue.splice(i, 1);
+            saveQueue();
+            renderQueue();
+            renderFilters();
+            renderTable();
+            showToast('Editando convocatoria.', 'info');
+          }
+          toggleQueuePanel();
+        };
+        var delBtn = document.createElement('button');
+        delBtn.className = 'link-btn link-clear';
+        delBtn.textContent = 'Quitar';
+        delBtn.style.fontSize = '11px';
+        delBtn.onclick = function(e) {
+          e.stopPropagation();
+          state.queue.splice(i, 1);
+          saveQueue();
+          renderQueue();
+          renderQueuePanel();
+        };
+        actionsDiv.appendChild(editBtn);
+        actionsDiv.appendChild(delBtn);
+        div.appendChild(nameDiv);
+        div.appendChild(metaDiv);
+        div.appendChild(actionsDiv);
+        // Drag events
+        div.addEventListener('dragstart', function(e) {
+          div.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', String(i));
+        });
+        div.addEventListener('dragend', function() { div.classList.remove('dragging'); });
+        div.addEventListener('dragover', function(e) { e.preventDefault(); });
+        div.addEventListener('drop', function(e) {
+          e.preventDefault();
+          var from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+          var to = i;
+          if (from !== to) {
+            var moved = state.queue.splice(from, 1)[0];
+            state.queue.splice(to, 0, moved);
+            saveQueue();
+            renderQueuePanel();
+          }
+        });
+        body.appendChild(div);
       });
     }
 
