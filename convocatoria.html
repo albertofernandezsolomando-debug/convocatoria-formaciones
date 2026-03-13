@@ -6720,6 +6720,7 @@
 
     document.getElementById('btnClearQueue').addEventListener('click', () => {
       if (state.queue.length === 0) return;
+      if (!confirm('Se eliminarán ' + state.queue.length + ' convocatoria' + (state.queue.length > 1 ? 's' : '') + ' de la cola. ¿Continuar?')) return;
       state.queue = [];
       saveQueue();
       renderQueue();
