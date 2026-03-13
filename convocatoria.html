@@ -1868,6 +1868,20 @@
       <label for="settingsFormsQuestionId" style="margin-top:10px;">ID pregunta «Nombre de la formación» <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label>
       <input type="text" class="input-field" id="settingsFormsQuestionId" placeholder="r0123456789abcdef (ver instrucciones)">
       <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Alertas FUNDAE</div>
+        <div style="display:flex; gap:16px;">
+          <div style="flex:1;">
+            <label for="settingsDiasAvisoInicio">Días aviso previo para inicio</label>
+            <input type="number" class="input-field" id="settingsDiasAvisoInicio" min="1" max="90" value="10" placeholder="10">
+          </div>
+          <div style="flex:1;">
+            <label for="settingsDiasAvisoFin">Días aviso para finalización</label>
+            <input type="number" class="input-field" id="settingsDiasAvisoFin" min="1" max="90" value="5" placeholder="5">
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
+      </div>
       <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
         <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
@@ -5170,6 +5184,8 @@
       document.getElementById('settingsWebhookUrl').value = settings.webhookUrl || '';
       document.getElementById('settingsFormsUrl').value = settings.formsUrl || '';
       document.getElementById('settingsFormsQuestionId').value = settings.formsQuestionId || '';
+      document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
+      document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsDialog').classList.add('visible');
     });
 
@@ -5181,6 +5197,8 @@
       const webhookUrl = document.getElementById('settingsWebhookUrl').value.trim();
       const formsUrl = document.getElementById('settingsFormsUrl').value.trim();
       const formsQuestionId = document.getElementById('settingsFormsQuestionId').value.trim();
+      const diasAvisoInicio = parseInt(document.getElementById('settingsDiasAvisoInicio').value, 10) || 10;
+      const diasAvisoFin = parseInt(document.getElementById('settingsDiasAvisoFin').value, 10) || 5;
 
       if (webhookUrl && !webhookUrl.startsWith('https://')) {
         showToast('La URL del webhook debe empezar por https://', 'warning');
@@ -5198,7 +5216,7 @@
         showToast('Ambas URLs son necesarias para enviar encuestas', 'warning');
       }
 
-      saveSettings({ webhookUrl, formsUrl, formsQuestionId });
+      saveSettings({ webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin });
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
     });
@@ -6785,6 +6803,51 @@
       if (sinEmpresa.length > 0) {
         pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora' });
       }
+
+      // --- FUNDAE deadline alerts ---
+      var fundaeSettings = loadSettings();
+      var diasAvisoInicio = (fundaeSettings.diasAvisoInicio != null) ? Number(fundaeSettings.diasAvisoInicio) : 10;
+      var diasAvisoFin = (fundaeSettings.diasAvisoFin != null) ? Number(fundaeSettings.diasAvisoFin) : 5;
+      if (isNaN(diasAvisoInicio) || diasAvisoInicio < 1) diasAvisoInicio = 10;
+      if (isNaN(diasAvisoFin) || diasAvisoFin < 1) diasAvisoFin = 5;
+
+      bonificables.forEach(function(a) {
+        var actionLabel = (a.codigo || '') + ' «' + (a.nombre || '') + '»';
+
+        // Alert: acciones en preparación próximas a iniciar
+        if (a.estado === 'En preparación' && a.fechaInicio) {
+          var fechaInicio = new Date(a.fechaInicio + 'T00:00:00');
+          var diasHastaInicio = Math.ceil((fechaInicio - today) / 86400000);
+          if (diasHastaInicio >= 0 && diasHastaInicio <= diasAvisoInicio) {
+            var type = diasHastaInicio <= 3 ? 'danger' : 'warning';
+            var alertId = 'fundae_inicio_' + (a.codigo || a.nombre);
+            var msg = 'empieza en ' + diasHastaInicio + ' día' + (diasHastaInicio !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE';
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: msg });
+          }
+        }
+
+        // Alert: acciones en marcha próximas a finalizar o ya finalizadas
+        if (a.estado === 'En marcha' && a.fechaFin) {
+          var fechaFin = new Date(a.fechaFin + 'T00:00:00');
+          var diasHastaFin = Math.ceil((fechaFin - today) / 86400000);
+          if (diasHastaFin < 0) {
+            var diasPasados = Math.abs(diasHastaFin);
+            var alertId = 'fundae_fin_pasado_' + (a.codigo || a.nombre);
+            var msg = 'finalizó hace ' + diasPasados + ' día' + (diasPasados !== 1 ? 's' : '') + ' — genera XML de finalización';
+            pendingAlerts.push({ id: alertId, type: 'danger', action: actionLabel, msg: msg });
+          } else if (diasHastaFin <= diasAvisoFin) {
+            var alertId = 'fundae_fin_proximo_' + (a.codigo || a.nombre);
+            var msg = 'finaliza en ' + diasHastaFin + ' día' + (diasHastaFin !== 1 ? 's' : '');
+            pendingAlerts.push({ id: alertId, type: 'warning', action: actionLabel, msg: msg });
+          }
+        }
+      });
+
+      // Sort alerts by priority: danger first, then warning, then info
+      var priorityOrder = { danger: 0, warning: 1, info: 2 };
+      pendingAlerts.sort(function(a, b) {
+        return (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99);
+      });
 
       pendingAlerts.forEach(function(alert) {
         if (dismissed[alert.id]) return;
