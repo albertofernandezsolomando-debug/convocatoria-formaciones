@@ -9701,6 +9701,18 @@
         container.appendChild(svg);
       }
 
+      // Build NIF-to-name map from employees for name resolution
+      var nifNameMap = {};
+      if (allEmployees.length > 0) {
+        allEmployees.forEach(function(emp) {
+          var empNif = (emp.NIF || emp.nif || '').toString().trim();
+          if (empNif) {
+            var name = [emp.Nombre || emp.nombre || '', emp.Apellidos || emp.apellidos || ''].filter(Boolean).join(' ').trim();
+            if (name) nifNameMap[empNif] = name;
+          }
+        });
+      }
+
       // Top 10 table
       if (top10.length > 0) {
         var tableSection = document.createElement('div');
@@ -9721,16 +9733,23 @@
           tdRank.style.cssText = 'padding:3px 6px; color:var(--text-muted); width:20px;';
           tdRank.textContent = (idx + 1) + '.';
 
-          var tdNif = document.createElement('td');
-          tdNif.style.cssText = 'padding:3px 6px; font-family:monospace; font-size:10px;';
-          tdNif.textContent = esc(item.nif);
+          var tdName = document.createElement('td');
+          var resolvedName = nifNameMap[item.nif];
+          if (resolvedName) {
+            tdName.style.cssText = 'padding:3px 6px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+            tdName.textContent = esc(resolvedName);
+            tdName.title = resolvedName + ' (' + item.nif + ')';
+          } else {
+            tdName.style.cssText = 'padding:3px 6px; font-family:monospace; font-size:10px;';
+            tdName.textContent = esc(item.nif);
+          }
 
           var tdCount = document.createElement('td');
           tdCount.style.cssText = 'padding:3px 6px; text-align:right; font-weight:600; color:var(--accent);';
           tdCount.textContent = item.count + ' acc.';
 
           tr.appendChild(tdRank);
-          tr.appendChild(tdNif);
+          tr.appendChild(tdName);
           tr.appendChild(tdCount);
           tbody.appendChild(tr);
         });
