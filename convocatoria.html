@@ -1983,14 +1983,14 @@
   </style>
 </head>
 <body>
-  <div class="tab-bar">
-    <button class="tab-btn" data-tab="tabDashboard">Cuadro de Mando</button>
-    <button class="tab-btn" data-tab="tabCalendario">Calendario</button>
-    <button class="tab-btn active" data-tab="tabConvocatoria">Convocatoria</button>
-    <button class="tab-btn" data-tab="tabCatalogos">Catálogos FUNDAE</button>
-    <button class="tab-btn" data-tab="tabXml">Generar XML FUNDAE</button>
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabDashboard">Cuadro de Mando</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCalendario">Calendario</button>
+    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tabConvocatoria">Convocatoria</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCatalogos">Catálogos FUNDAE</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabXml">Generar XML FUNDAE</button>
   </div>
-  <div class="tab-content active" id="tabConvocatoria">
+  <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
   <div class="app">
     <!-- LEFT PANEL -->
     <div class="left-panel">
@@ -2005,8 +2005,8 @@
           <div class="workflow-step pending" id="wfStep3" title="Datos del evento">3</div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button class="settings-btn" id="btnSettings" title="Ajustes">&#9881;</button>
-          <button class="link-btn link-add" id="btnHistory" style="font-size:13px; padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
+          <button class="settings-btn" id="btnSettings" title="Ajustes" aria-label="Abrir ajustes">&#9881;</button>
+          <button class="link-btn link-add" id="btnHistory" aria-label="Ver historial" style="font-size:13px; padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
         </div>
       </div>
 
@@ -2163,14 +2163,14 @@
       <!-- Attendee table -->
       <div class="attendee-table-wrap" id="tableWrap">
         <div class="empty-state" id="emptyState"></div>
-        <table class="attendee-table" id="attendeeTable" style="display:none;">
+        <table class="attendee-table" id="attendeeTable" role="table" style="display:none;">
           <thead>
-            <tr>
-              <th style="width:40px;"><input type="checkbox" id="selectAll" checked></th>
-              <th style="width:25%;" class="sortable" data-sort="Empleado">Empleado <span class="sort-arrow active">▲</span></th>
-              <th style="width:25%;" class="sortable" data-sort="Puesto">Puesto <span class="sort-arrow">▲</span></th>
-              <th style="width:20%;" class="sortable" data-sort="Ubicación">Ubicación <span class="sort-arrow">▲</span></th>
-              <th style="width:30%;" class="sortable" data-sort="Email trabajo">Email <span class="sort-arrow">▲</span></th>
+            <tr role="row">
+              <th scope="col" style="width:40px;"><input type="checkbox" id="selectAll" checked aria-label="Seleccionar todos"></th>
+              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado">Empleado <span class="sort-arrow active">▲</span></th>
+              <th scope="col" style="width:25%;" class="sortable" data-sort="Puesto">Puesto <span class="sort-arrow">▲</span></th>
+              <th scope="col" style="width:20%;" class="sortable" data-sort="Ubicación">Ubicación <span class="sort-arrow">▲</span></th>
+              <th scope="col" style="width:30%;" class="sortable" data-sort="Email trabajo">Email <span class="sort-arrow">▲</span></th>
             </tr>
           </thead>
           <tbody id="attendeeBody"></tbody>
@@ -2195,7 +2195,7 @@
   </div>
 
   <!-- Tab 2: Catálogos FUNDAE -->
-  <div class="tab-content" id="tabCatalogos">
+  <div class="tab-content" id="tabCatalogos" role="tabpanel">
     <div class="app">
       <div class="left-panel" id="catalogListPanel" style="overflow-y:auto;">
         <div class="app-header">
@@ -2231,7 +2231,7 @@
   </div>
 
   <!-- Tab 3: Generar XML FUNDAE -->
-  <div class="tab-content" id="tabXml">
+  <div class="tab-content" id="tabXml" role="tabpanel">
     <div class="app">
       <div class="left-panel" id="xmlConfigPanel" style="overflow-y:auto;">
         <div class="app-header">
@@ -2416,7 +2416,7 @@
   </div>
 
   <!-- Tab: Calendario -->
-  <div class="tab-content" id="tabCalendario">
+  <div class="tab-content" id="tabCalendario" role="tabpanel">
     <div class="cal-empty-state" id="calEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
       <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
@@ -2428,9 +2428,9 @@
     <div class="cal-container" id="calContainer">
       <div class="cal-toolbar">
         <div class="cal-nav">
-          <button class="btn btn-secondary cal-nav-btn" id="calPrev" title="Anterior">&#8249;</button>
+          <button class="btn btn-secondary cal-nav-btn" id="calPrev" title="Anterior" aria-label="Periodo anterior">&#8249;</button>
           <button class="btn btn-secondary cal-nav-btn" id="calToday">Hoy</button>
-          <button class="btn btn-secondary cal-nav-btn" id="calNext" title="Siguiente">&#8250;</button>
+          <button class="btn btn-secondary cal-nav-btn" id="calNext" title="Siguiente" aria-label="Periodo siguiente">&#8250;</button>
           <span class="cal-period" id="calPeriodLabel"></span>
         </div>
         <div class="cal-zoom">
@@ -2469,7 +2469,7 @@
   </div>
 
   <!-- Tab: Cuadro de Mando -->
-  <div class="tab-content" id="tabDashboard">
+  <div class="tab-content" id="tabDashboard" role="tabpanel">
     <div class="dash-empty-state" id="dashEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
       <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
@@ -2624,7 +2624,7 @@
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
 
   <!-- Series dialog -->
-  <div class="dialog-overlay" id="seriesDialog">
+  <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true">
     <div class="dialog-box">
       <h3 id="dialogTitle">Sesión 1 de 3</h3>
       <p id="dialogBody">Se ha abierto la invitación en Outlook. Cuando hayas enviado, pulsa "Siguiente".</p>
@@ -2636,7 +2636,7 @@
   </div>
 
   <!-- Settings dialog -->
-  <div class="dialog-overlay" id="settingsDialog">
+  <div class="dialog-overlay" id="settingsDialog" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-wide">
       <h3>Ajustes</h3>
       <label for="settingsWebhookUrl">URL webhook Power Automate</label>
@@ -2701,7 +2701,7 @@
   </div>
 
   <!-- Instructions dialog -->
-  <div class="dialog-overlay" id="instructionsDialog">
+  <div class="dialog-overlay" id="instructionsDialog" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-wide">
       <h3>Configurar encuestas de satisfacción</h3>
       <div class="instructions-content">
@@ -2747,7 +2747,7 @@
   </div>
 
   <!-- Confirmation dialog -->
-  <div class="dialog-overlay" id="confirmDialog">
+  <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
     <div class="dialog-box">
       <h3>Confirmar convocatoria</h3>
       <div id="confirmBody" style="text-align:left; margin-bottom:20px; color:var(--text-secondary); font-size:14px; line-height:1.6;"></div>
@@ -2759,11 +2759,11 @@
   </div>
 
   <!-- History panel -->
-  <div class="dialog-overlay" id="historyPanel">
+  <div class="dialog-overlay" id="historyPanel" role="dialog" aria-modal="true">
     <div class="dialog-box" style="max-width:600px; max-height:80vh; overflow-y:auto; text-align:left;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h3 style="margin:0;">Historial de convocatorias</h3>
-        <button class="link-btn link-clear" id="historyClose">&times;</button>
+        <button class="link-btn link-clear" id="historyClose" aria-label="Cerrar">&times;</button>
       </div>
       <input class="input-field" type="text" id="historySearch" placeholder="Buscar por título..." style="margin-bottom:12px; font-size:12px;">
       <div id="historyList"></div>
@@ -2772,7 +2772,7 @@
   </div>
 
   <!-- Employee report dialog -->
-  <div class="dialog-overlay" id="employeeReportDialog">
+  <div class="dialog-overlay" id="employeeReportDialog" role="dialog" aria-modal="true">
     <div class="dialog-box" style="max-width:700px; width:95%; max-height:85vh; overflow-y:auto; text-align:left; padding:24px;">
       <div id="employeeReportContent"></div>
       <div class="dialog-buttons" style="margin-top:16px;">
@@ -2783,7 +2783,7 @@
   </div>
 
   <!-- Employee selection dialog (multiple matches) -->
-  <div class="dialog-overlay" id="employeeSelectDialog">
+  <div class="dialog-overlay" id="employeeSelectDialog" role="dialog" aria-modal="true">
     <div class="dialog-box" style="max-width:500px; width:95%; max-height:70vh; overflow-y:auto; text-align:left; padding:24px;">
       <h3 style="margin:0 0 12px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Selecciona un empleado</h3>
       <div id="employeeSelectList"></div>
@@ -2794,7 +2794,7 @@
   </div>
 
   <!-- Onboarding overlay -->
-  <div class="dialog-overlay" id="onboardingOverlay">
+  <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
     <div class="dialog-box" style="max-width:480px; text-align:left;">
       <h3 style="margin-bottom:4px;">Bienvenido a Convocatoria de Formaciones</h3>
       <p style="margin-bottom:16px; font-size:13px;">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
@@ -2829,9 +2829,10 @@
     // ═══════════════════════════════════
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
         document.getElementById(btn.dataset.tab).classList.add('active');
         if (btn.dataset.tab === 'tabDashboard') renderDashboard();
         if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
@@ -5154,6 +5155,8 @@
         del.className = 'preset-delete';
         del.textContent = '\u00d7';
         del.style.opacity = '0.6';
+        del.setAttribute('aria-label', 'Eliminar');
+        del.setAttribute('role', 'button');
         del.onclick = function(e) { e.stopPropagation(); deleteFilterTemplate(t.id); };
         chip.appendChild(del);
         container.appendChild(chip);
@@ -5870,7 +5873,7 @@
       list.innerHTML = presets.map((p, i) =>
         '<span class="preset-chip" data-index="' + i + '">' +
           esc(p.name) +
-          ' <span class="preset-delete" data-delete="' + i + '">&times;</span>' +
+          ' <span class="preset-delete" data-delete="' + i + '" role="button" aria-label="Eliminar">&times;</span>' +
         '</span>'
       ).join('');
 
