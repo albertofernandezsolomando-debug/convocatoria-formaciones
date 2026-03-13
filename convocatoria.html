@@ -1793,6 +1793,12 @@
         <span class="dash-header-time" id="dashLastUpdate"></span>
       </div>
 
+      <!-- Employee search -->
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+        <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:300px; font-size:13px;">
+        <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
+      </div>
+
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
 
@@ -1974,6 +1980,28 @@
       <input class="input-field" type="text" id="historySearch" placeholder="Buscar por título..." style="margin-bottom:12px; font-size:12px;">
       <div id="historyList"></div>
       <div id="historyEmpty" style="text-align:center; color:var(--text-muted); padding:20px; font-size:13px;">No hay convocatorias en el historial</div>
+    </div>
+  </div>
+
+  <!-- Employee report dialog -->
+  <div class="dialog-overlay" id="employeeReportDialog">
+    <div class="dialog-box" style="max-width:700px; width:95%; max-height:85vh; overflow-y:auto; text-align:left; padding:24px;">
+      <div id="employeeReportContent"></div>
+      <div class="dialog-buttons" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="employeeReportExport" style="font-size:12px;">Exportar ficha</button>
+        <button class="btn btn-secondary" id="employeeReportClose" style="font-size:12px;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee selection dialog (multiple matches) -->
+  <div class="dialog-overlay" id="employeeSelectDialog">
+    <div class="dialog-box" style="max-width:500px; width:95%; max-height:70vh; overflow-y:auto; text-align:left; padding:24px;">
+      <h3 style="margin:0 0 12px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Selecciona un empleado</h3>
+      <div id="employeeSelectList"></div>
+      <div class="dialog-buttons" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="employeeSelectCancel" style="font-size:12px;">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -7443,6 +7471,252 @@
         body.style.display = open ? 'none' : '';
         arrow.className = 'dash-alerts-arrow' + (open ? '' : ' open');
       };
+
+      // Wire employee search
+      var searchInput = document.getElementById('dashEmployeeSearch');
+      var searchBtn = document.getElementById('btnDashEmployeeSearch');
+      if (searchBtn) {
+        searchBtn.onclick = function() { searchEmployee(); };
+      }
+      if (searchInput) {
+        searchInput.onkeydown = function(e) { if (e.key === 'Enter') searchEmployee(); };
+      }
+    }
+
+    // ═══════════════════════════════════
+    // EMPLOYEE TRAINING REPORT
+    // ═══════════════════════════════════
+
+    function searchEmployee() {
+      var query = (document.getElementById('dashEmployeeSearch').value || '').trim();
+      if (!query) return;
+
+      if (!state.employees || state.employees.length === 0) {
+        showToast('Carga el organigrama primero', 'warning');
+        return;
+      }
+
+      var queryLower = query.toLowerCase();
+      var matches = state.employees.filter(function(e) {
+        if ((e.NIF || '').toLowerCase() === queryLower) return true;
+        if ((e.Empleado || '').toLowerCase().indexOf(queryLower) !== -1) return true;
+        return false;
+      });
+
+      if (matches.length === 0) {
+        showToast('Empleado no encontrado', 'warning');
+        return;
+      }
+
+      if (matches.length === 1) {
+        showEmployeeReport(matches[0]);
+      } else {
+        showEmployeeSelectionDialog(matches);
+      }
+    }
+
+    function showEmployeeSelectionDialog(matches) {
+      var listEl = document.getElementById('employeeSelectList');
+      var html = '';
+      matches.forEach(function(emp) {
+        html += '<div class="empSelectItem" data-nif="' + esc(emp.NIF) + '" style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border); cursor:pointer; font-size:12px; font-family:var(--font-body);" ' +
+          'onmouseover="this.style.background=\'var(--accent-subtle)\'" onmouseout="this.style.background=\'\'">' +
+          '<span style="color:var(--text-primary); font-weight:600;">' + esc(emp.Empleado || '') + '</span>' +
+          '<span style="color:var(--text-secondary);">' + esc(emp.NIF || '') + ' · ' + esc(emp.Empresa || '') + '</span>' +
+        '</div>';
+      });
+      listEl.innerHTML = html;
+
+      var overlay = document.getElementById('employeeSelectDialog');
+      overlay.classList.add('visible');
+
+      // Bind clicks on items
+      listEl.querySelectorAll('.empSelectItem').forEach(function(item) {
+        item.onclick = function() {
+          var nif = item.getAttribute('data-nif');
+          overlay.classList.remove('visible');
+          var emp = state.employees.find(function(e) { return e.NIF === nif; });
+          if (emp) showEmployeeReport(emp);
+        };
+      });
+
+      document.getElementById('employeeSelectCancel').onclick = function() {
+        overlay.classList.remove('visible');
+      };
+    }
+
+    function showEmployeeReport(emp) {
+      var acciones = getCatalog('acciones');
+      var nif = emp.NIF;
+
+      // Find acciones where this NIF is a participant
+      var empAcciones = acciones.filter(function(a) {
+        return (a.participantes || []).indexOf(nif) !== -1;
+      });
+
+      var contentEl = document.getElementById('employeeReportContent');
+
+      // Header
+      var html = '<div style="margin-bottom:16px;">' +
+        '<div style="font-size:15px; font-weight:700; color:var(--text-primary); font-family:var(--font-body);">' + esc(emp.Empleado || '') + '</div>' +
+        '<div style="font-size:12px; color:var(--text-secondary); font-family:var(--font-body); margin-top:4px;">' +
+          'NIF: ' + esc(nif) + ' · ' + esc(emp.Empresa || '') +
+          (emp.Departamento ? ' · ' + esc(emp.Departamento) : '') +
+          (emp.Puesto ? ' · ' + esc(emp.Puesto) : '') +
+        '</div>' +
+      '</div>';
+
+      if (empAcciones.length === 0) {
+        html += '<div style="font-size:13px; color:var(--text-muted); padding:20px 0; text-align:center;">Este empleado no tiene acciones formativas asignadas.</div>';
+      } else {
+        // Table
+        html += '<div style="width:100%; overflow-x:auto;">' +
+          '<table style="width:100%; font-size:12px; border-collapse:collapse; font-family:var(--font-body);">' +
+          '<thead><tr>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Código</th>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Nombre</th>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Estado</th>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Modalidad</th>' +
+            '<th style="text-align:right; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Horas</th>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">F. inicio</th>' +
+            '<th style="text-align:left; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">F. fin</th>' +
+            '<th style="text-align:right; padding:6px 8px; border:1px solid var(--border); background:var(--bg-input); font-weight:600;">Asistencia</th>' +
+          '</tr></thead><tbody>';
+
+        var totalHoras = 0;
+        var asistenciaPcts = [];
+
+        empAcciones.forEach(function(a) {
+          var hP = Number(a.horasPresenciales) || 0;
+          var hT = Number(a.horasTeleformacion) || 0;
+          var horas = hP + hT;
+          totalHoras += horas;
+
+          // Calculate attendance for this NIF
+          var asistPct = '';
+          var asistencia = a.asistencia || { sesiones: [], registro: {} };
+          var sesiones = asistencia.sesiones || [];
+          var registro = asistencia.registro || {};
+          if (sesiones.length > 0 && registro[nif]) {
+            var attended = 0;
+            var nifRegistro = registro[nif] || [];
+            for (var i = 0; i < sesiones.length; i++) {
+              if (nifRegistro[i] === true) attended++;
+            }
+            var pct = Math.round((attended / sesiones.length) * 100);
+            asistPct = pct + '%';
+            asistenciaPcts.push(pct);
+          }
+
+          var pctColor = '';
+          if (asistPct) {
+            var pctVal = parseInt(asistPct, 10);
+            pctColor = pctVal < 75 ? ' color:var(--danger);' : '';
+          }
+
+          html += '<tr>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap;">' + esc(a.codigo || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border);">' + esc(a.nombre || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap;">' + esc(a.estado || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap;">' + esc(a.modalidad || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); text-align:right; font-variant-numeric:tabular-nums;">' + (horas > 0 ? horas : '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap;">' + esc(a.fechaInicio || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); white-space:nowrap;">' + esc(a.fechaFin || '') + '</td>' +
+            '<td style="padding:6px 8px; border:1px solid var(--border); text-align:right; font-variant-numeric:tabular-nums; font-weight:600;' + pctColor + '">' + esc(asistPct) + '</td>' +
+          '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+
+        // Summary
+        var mediaAsist = asistenciaPcts.length > 0
+          ? Math.round(asistenciaPcts.reduce(function(s, v) { return s + v; }, 0) / asistenciaPcts.length)
+          : null;
+        html += '<div style="font-size:12px; color:var(--text-secondary); margin-top:12px; font-family:var(--font-body);">' +
+          'Total: ' + empAcciones.length + ' acciones | ' + totalHoras + ' horas' +
+          (mediaAsist !== null ? ' | Asistencia media: ' + mediaAsist + '%' : '') +
+        '</div>';
+      }
+
+      contentEl.innerHTML = html;
+
+      // Show dialog
+      var overlay = document.getElementById('employeeReportDialog');
+      overlay.classList.add('visible');
+
+      // Store reference for export
+      overlay._empData = { emp: emp, acciones: empAcciones };
+
+      // Close button
+      document.getElementById('employeeReportClose').onclick = function() {
+        overlay.classList.remove('visible');
+      };
+
+      // Export button
+      document.getElementById('employeeReportExport').onclick = function() {
+        exportEmployeeReport(overlay._empData.emp, overlay._empData.acciones);
+      };
+    }
+
+    function exportEmployeeReport(emp, empAcciones) {
+      var nif = emp.NIF;
+      var rows = empAcciones.map(function(a) {
+        var hP = Number(a.horasPresenciales) || 0;
+        var hT = Number(a.horasTeleformacion) || 0;
+
+        var asistPct = '';
+        var asistencia = a.asistencia || { sesiones: [], registro: {} };
+        var sesiones = asistencia.sesiones || [];
+        var registro = asistencia.registro || {};
+        if (sesiones.length > 0 && registro[nif]) {
+          var attended = 0;
+          var nifRegistro = registro[nif] || [];
+          for (var i = 0; i < sesiones.length; i++) {
+            if (nifRegistro[i] === true) attended++;
+          }
+          asistPct = Math.round((attended / sesiones.length) * 100) + '%';
+        }
+
+        return {
+          'Empleado': emp.Empleado || '',
+          'NIF': nif,
+          'Empresa': emp.Empresa || '',
+          'Departamento': emp.Departamento || '',
+          'Puesto': emp.Puesto || '',
+          'Código acción': a.codigo || '',
+          'Nombre acción': a.nombre || '',
+          'Estado': a.estado || '',
+          'Modalidad': a.modalidad || '',
+          'Horas': hP + hT,
+          'Fecha inicio': a.fechaInicio || '',
+          'Fecha fin': a.fechaFin || '',
+          'Asistencia': asistPct
+        };
+      });
+
+      if (rows.length === 0) {
+        rows.push({
+          'Empleado': emp.Empleado || '',
+          'NIF': nif,
+          'Empresa': emp.Empresa || '',
+          'Departamento': emp.Departamento || '',
+          'Puesto': emp.Puesto || '',
+          'Código acción': '',
+          'Nombre acción': '',
+          'Estado': '',
+          'Modalidad': '',
+          'Horas': '',
+          'Fecha inicio': '',
+          'Fecha fin': '',
+          'Asistencia': ''
+        });
+      }
+
+      var ws = XLSX.utils.json_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Ficha empleado');
+      XLSX.writeFile(wb, 'Ficha_' + nif + '.xlsx');
+      showToast('Ficha exportada: Ficha_' + nif + '.xlsx', 'success');
     }
 
   </script>
