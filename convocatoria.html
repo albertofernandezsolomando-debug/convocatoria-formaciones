@@ -55,6 +55,10 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    .tabnum,
+    .dash-container td,
+    .dash-alerts-badge,
+    .dash-kpi-sub { font-variant-numeric: tabular-nums; }
 
     *:focus-visible {
       outline: 2px solid var(--accent);
@@ -739,6 +743,29 @@
       .catalog-list-table td.cell-editing,
       .catalog-list-table tbody tr {
         transition: none;
+      }
+      /* Dashboard animations */
+      .dash-kpi, .dash-card {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .dash-donut-segment {
+        transition: none !important;
+      }
+      .dash-gauge-bar-fill,
+      .dash-gauge-bar-secondary {
+        transition: none !important;
+      }
+      .dash-completeness-fill {
+        transition: none !important;
+        animation: none !important;
+      }
+      .dash-completeness-fill.dash-pulse {
+        animation: none !important;
+      }
+      .dash-skeleton {
+        animation: none !important;
       }
     }
 
@@ -1515,6 +1542,19 @@
     .dash-kpi[data-color="4"] { border-left-color: var(--chart-4); }
     .dash-kpi[data-color="5"] { border-left-color: var(--chart-5); }
 
+    .dash-kpi--success {
+      background: var(--success-light);
+      border-left-color: var(--success) !important;
+    }
+    .dash-kpi--warning {
+      background: var(--warning-light);
+      border-left-color: var(--warning) !important;
+    }
+    .dash-kpi--danger {
+      background: var(--danger-light);
+      border-left-color: var(--danger) !important;
+    }
+
     .dash-kpi-label {
       display: flex;
       align-items: center;
@@ -1612,8 +1652,13 @@
       padding-bottom: 0;
       border-bottom: none;
     }
-    .dash-card.collapsed > *:not(.dash-card-title) {
-      display: none;
+    .dash-card-body {
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+    }
+    .dash-card.collapsed .dash-card-body {
+      max-height: 0 !important;
+      opacity: 0;
     }
 
     /* ═══ Calendar Tab ═══ */
@@ -2107,6 +2152,8 @@
       gap: 10px;
       margin-bottom: 8px;
       font-size: 12px;
+      cursor: pointer;
+      transition: opacity var(--transition);
     }
     .dash-gauge-label {
       width: 180px;
@@ -2148,6 +2195,13 @@
       text-align: right;
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
+    }
+    .dash-gauge-row:hover .dash-gauge-bar-fill {
+      filter: brightness(1.1);
+    }
+    .dash-card:has(.dash-gauge-row:hover) .dash-gauge-row:not(:hover) {
+      opacity: 0.5;
+      transition: opacity var(--transition);
     }
     .dash-gauge-footnote {
       font-size: 11px;
@@ -2272,6 +2326,215 @@
       max-width: 220px;
     }
 
+    /* Analytics module reusable classes */
+    .dash-mini-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+    .dash-mini-table th {
+      text-align: left;
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .dash-mini-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .dash-mini-kpi-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .dash-mini-kpi {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      border-radius: var(--radius);
+      background: var(--bg-input);
+    }
+    .dash-mini-kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .dash-mini-kpi-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .dash-mini-chart-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+    .dash-mini-alert {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .dash-mini-kpi-row {
+        flex-wrap: wrap;
+      }
+      .dash-mini-kpi {
+        min-width: 80px;
+      }
+      .dash-mini-table {
+        font-size: 10px;
+      }
+      .dash-mini-table th,
+      .dash-mini-table td {
+        padding: 3px 4px;
+      }
+    }
+
+    /* Dashboard filters */
+    .dash-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 10px 0;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dash-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dash-filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .dash-filter-select {
+      font-family: var(--font-body);
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      cursor: pointer;
+      max-width: 200px;
+    }
+    .dash-filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+      outline: none;
+    }
+    .dash-status-pills {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .dash-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--radius-lg);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .dash-status-pill.active {
+      color: var(--text-primary);
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    .dash-status-pill:hover {
+      border-color: var(--border-strong);
+    }
+    .dash-filter-clear {
+      font-family: var(--font-body);
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      font-weight: 500;
+    }
+    .dash-filter-clear:hover {
+      text-decoration: underline;
+    }
+
+    /* Skeleton loading */
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .dash-skeleton {
+      background: linear-gradient(90deg, var(--bg-input) 25%, var(--border) 50%, var(--bg-input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: var(--radius);
+    }
+    .dash-skeleton-kpi {
+      height: 100px;
+    }
+    .dash-skeleton-card {
+      height: 180px;
+      margin-bottom: 16px;
+    }
+    .dash-skeleton-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .dash-skeleton-chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    /* Dashboard tooltip */
+    .dash-tooltip {
+      position: fixed;
+      z-index: 1100;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      max-width: 260px;
+      line-height: 1.4;
+    }
+    .dash-tooltip.visible { opacity: 1; }
+    .dash-tooltip-label {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .dash-tooltip-value {
+      font-variant-numeric: tabular-nums;
+    }
+
     /* Animations */
     @keyframes dashFadeUp {
       from { opacity: 0; transform: translateY(12px); }
@@ -2329,14 +2592,36 @@
       border-color: var(--accent);
     }
 
+    /* Scroll progress indicator */
+    .dash-nav-progress {
+      display: flex;
+      height: 2px;
+      background: var(--bg-input);
+      margin-bottom: 8px;
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .dash-nav-progress-seg {
+      flex: 1;
+      background: transparent;
+      transition: background var(--transition);
+    }
+    .dash-nav-progress-seg.active {
+      background: var(--accent);
+    }
+    .dash-nav-progress-seg.passed {
+      background: var(--accent-light);
+    }
+
     .dash-section-heading {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin: 24px 0 12px;
-      padding-bottom: 6px;
+      margin: 32px 0 14px;
+      padding-top: 8px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
       grid-column: 1 / -1;
     }
@@ -2345,6 +2630,13 @@
       .dash-chart-row { grid-template-columns: 1fr; }
       .dash-kpi-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
       .dash-container { padding: 20px 16px; }
+    }
+    @media (max-width: 600px) {
+      .dash-kpi-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .dash-kpi { padding: 12px; }
+      .dash-kpi-value { font-size: 20px; }
+      .dash-gauge-label { width: 120px !important; font-size: 11px; }
+      .dash-gauge-value { min-width: 80px; font-size: 10px; }
     }
 
     /* ── Certificate print styles ── */
@@ -3183,6 +3475,29 @@
 
       <!-- Sticky section navigator -->
       <div class="dash-nav" id="dashNav"></div>
+      <div class="dash-nav-progress" id="dashNavProgress"></div>
+
+      <!-- Dashboard filters -->
+      <div class="dash-filters" id="dashFilters">
+        <div class="dash-filter-group">
+          <span class="dash-filter-label">Empresa</span>
+          <select class="dash-filter-select" id="dashFilterEmpresa" multiple></select>
+        </div>
+        <div class="dash-filter-group">
+          <span class="dash-filter-label">Periodo</span>
+          <select class="dash-filter-select" id="dashFilterPeriodo">
+            <option value="">Todo</option>
+            <option value="mes">Mes actual</option>
+            <option value="trimestre">Trimestre actual</option>
+            <option value="anio">Año actual</option>
+          </select>
+        </div>
+        <div class="dash-filter-group">
+          <span class="dash-filter-label">Estado</span>
+          <div class="dash-status-pills" id="dashFilterEstado"></div>
+        </div>
+        <button class="dash-filter-clear" id="dashFilterClear" style="display:none;">Limpiar filtros</button>
+      </div>
 
       <!-- Employee search + Export -->
       <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
@@ -3211,10 +3526,104 @@
         <div id="dashPlazosList"></div>
       </div>
 
-      <!-- Completeness (actionable, right after plazos) -->
+      <!-- Section: Vision general -->
+      <div id="dash-group-general">
+      <div class="dash-section-heading">Vision general</div>
+
+      <!-- Charts row 1: Credit + Estado donut -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="credito">
+          <div class="dash-card-title">Crédito FUNDAE por empresa</div>
+          <div id="dashCreditChart"></div>
+          <div id="dashCreditProjection" style="margin-top: 12px;"></div>
+        </div>
+        <div class="dash-card" data-card-id="estado">
+          <div class="dash-card-title">Acciones por estado</div>
+          <div id="dashEstadoChart"></div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Completeness -->
       <div class="dash-card" data-card-id="completitud" style="margin-bottom:16px;">
         <div class="dash-card-title">Completitud del catálogo</div>
         <div id="dashCompletenessChart"></div>
+      </div>
+
+      <!-- Section: Distribucion operativa -->
+      <div id="dash-group-operativo">
+      <div class="dash-section-heading">Distribucion operativa</div>
+
+      <!-- Charts row 2: Gasto por proveedor + Modalidad -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="proveedor">
+          <div class="dash-card-title">Gasto por proveedor</div>
+          <div id="dashProveedorChart"></div>
+        </div>
+        <div class="dash-card" data-card-id="modalidad">
+          <div class="dash-card-title">Horas por modalidad</div>
+          <div id="dashModalidadChart"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 3: Area + Department -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="area">
+          <div class="dash-card-title">Acciones por área profesional</div>
+          <div id="dashAreaChart"></div>
+        </div>
+        <div class="dash-card" data-card-id="departamento">
+          <div class="dash-card-title">Acciones por departamento</div>
+          <div id="dashDeptChart"></div>
+        </div>
+      </div>
+
+      </div>
+
+      <!-- Section: Personas y participacion -->
+      <div id="dash-group-personas">
+      <div class="dash-section-heading">Personas y participacion</div>
+
+      <!-- Charts row 4: Attendance + Confirmations -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="asistencia">
+          <div class="dash-card-title">Monitor de asistencia y abandono</div>
+          <div id="dashAttendance"></div>
+        </div>
+        <div class="dash-card" data-card-id="confirmaciones">
+          <div class="dash-card-title">Efectividad de confirmaciones</div>
+          <div id="dashConfirmations"></div>
+        </div>
+      </div>
+
+      <!-- Charts row 5: Seasonality + Recurrence -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="estacionalidad">
+          <div class="dash-card-title">Estacionalidad formativa</div>
+          <div id="dashSeasonality"></div>
+        </div>
+        <div class="dash-card" data-card-id="recurrencia">
+          <div class="dash-card-title">Recurrencia de participantes</div>
+          <div id="dashRecurrence"></div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Section: Calidad y proveedores -->
+      <div id="dash-group-calidad">
+      <div class="dash-section-heading">Calidad y proveedores</div>
+
+      <!-- Charts row 6: Survey Coverage + Scorecard -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="encuestas">
+          <div class="dash-card-title">Cobertura de encuestas</div>
+          <div id="dashSurveyCoverage"></div>
+        </div>
+        <div class="dash-card" data-card-id="scorecard">
+          <div class="dash-card-title">Scorecard de proveedores</div>
+          <div id="dashProviderScorecard"></div>
+        </div>
+      </div>
       </div>
 
       <!-- Section: Analytics avanzado -->
@@ -3253,100 +3662,6 @@
 
       </div>
 
-      <!-- Section: Vision general -->
-      <div id="dash-group-general">
-      <div class="dash-section-heading">Vision general</div>
-
-      <!-- Charts row 1: Credit + Estado donut -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="credito">
-          <div class="dash-card-title">Crédito FUNDAE por empresa</div>
-          <div id="dashCreditChart"></div>
-          <div id="dashCreditProjection" style="margin-top: 12px;"></div>
-        </div>
-        <div class="dash-card" data-card-id="estado">
-          <div class="dash-card-title">Acciones por estado</div>
-          <div id="dashEstadoChart"></div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Section: Distribucion operativa -->
-      <div id="dash-group-operativo">
-      <div class="dash-section-heading">Distribucion operativa</div>
-
-      <!-- Charts row 2: Gasto por proveedor + Modalidad -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="proveedor">
-          <div class="dash-card-title">Gasto por proveedor</div>
-          <div id="dashProveedorChart"></div>
-        </div>
-        <div class="dash-card" data-card-id="modalidad">
-          <div class="dash-card-title">Horas por modalidad</div>
-          <div id="dashModalidadChart"></div>
-        </div>
-      </div>
-
-      <!-- Charts row 3: Area + Department -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="area">
-          <div class="dash-card-title">Acciones por área profesional</div>
-          <div id="dashAreaChart"></div>
-        </div>
-        <div class="dash-card" data-card-id="departamento">
-          <div class="dash-card-title">Acciones por departamento</div>
-          <div id="dashDeptChart"></div>
-        </div>
-      </div>
-
-      </div>
-
-      <!-- Section: Personas y participacion -->
-      <div id="dash-group-personas">
-      <div class="dash-section-heading">Personas y participacion</div>
-
-      <!-- Charts row 5: Attendance + Confirmations -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="asistencia">
-          <div class="dash-card-title">Monitor de asistencia y abandono</div>
-          <div id="dashAttendance"></div>
-        </div>
-        <div class="dash-card" data-card-id="confirmaciones">
-          <div class="dash-card-title">Efectividad de confirmaciones</div>
-          <div id="dashConfirmations"></div>
-        </div>
-      </div>
-
-      <!-- Charts row 6: Seasonality + Recurrence -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="estacionalidad">
-          <div class="dash-card-title">Estacionalidad formativa</div>
-          <div id="dashSeasonality"></div>
-        </div>
-        <div class="dash-card" data-card-id="recurrencia">
-          <div class="dash-card-title">Recurrencia de participantes</div>
-          <div id="dashRecurrence"></div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Section: Calidad y proveedores -->
-      <div id="dash-group-calidad">
-      <div class="dash-section-heading">Calidad y proveedores</div>
-
-      <!-- Charts row 7: Survey Coverage + Scorecard -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="encuestas">
-          <div class="dash-card-title">Cobertura de encuestas</div>
-          <div id="dashSurveyCoverage"></div>
-        </div>
-        <div class="dash-card" data-card-id="scorecard">
-          <div class="dash-card-title">Scorecard de proveedores</div>
-          <div id="dashProviderScorecard"></div>
-        </div>
-      </div>
-      </div>
-
       <!-- Section: Actividad del gestor -->
       <div id="dash-group-gestor">
       <div class="dash-section-heading">Actividad del gestor</div>
@@ -3379,6 +3694,7 @@
   </div>
 
   <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
+  <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
   <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true">
@@ -3619,7 +3935,7 @@
         btn.classList.add('active');
         btn.setAttribute('aria-selected', 'true');
         document.getElementById(btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'tabDashboard') renderDashboard();
+        if (btn.dataset.tab === 'tabDashboard') { showDashboardSkeleton(); requestAnimationFrame(function() { renderDashboard(); }); }
         if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
         if (btn.dataset.tab === 'tabCatalogos') {
           // Restore saved view mode
@@ -10384,6 +10700,76 @@
     var CHART_PALETTE = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5, DS.chart6, DS.chart7, DS.chart8];
 
     /**
+     * Dashboard tooltip helpers — single reusable tooltip for all charts.
+     */
+    var dashTooltipEl = document.getElementById('dashTooltip');
+
+    function showDashTooltip(evt, html) {
+      if (!dashTooltipEl) return;
+      dashTooltipEl.innerHTML = html;
+      var target = evt.target || evt.currentTarget;
+      var rect = target.getBoundingClientRect();
+      // Measure tooltip after setting content
+      dashTooltipEl.style.left = '-9999px';
+      dashTooltipEl.style.top = '-9999px';
+      dashTooltipEl.classList.add('visible');
+      var tipRect = dashTooltipEl.getBoundingClientRect();
+      var tipW = tipRect.width || 180;
+      var tipH = tipRect.height || 36;
+      var x = rect.left + rect.width / 2 - tipW / 2;
+      var y = rect.top - tipH - 8;
+      dashTooltipEl.style.left = Math.max(8, Math.min(x, window.innerWidth - tipW - 8)) + 'px';
+      dashTooltipEl.style.top = (y < 8 ? rect.bottom + 8 : y) + 'px';
+    }
+
+    function hideDashTooltip() {
+      if (dashTooltipEl) dashTooltipEl.classList.remove('visible');
+    }
+
+    function attachTooltipListeners(el, html) {
+      el.addEventListener('mouseenter', function(e) { showDashTooltip(e, html); });
+      el.addEventListener('mouseleave', hideDashTooltip);
+      el.addEventListener('touchstart', function(e) { showDashTooltip(e, html); }, { passive: true });
+      el.addEventListener('touchend', hideDashTooltip, { passive: true });
+    }
+
+    /**
+     * SVG pattern definitions for accessible donuts.
+     * Patterns are activated by prefers-contrast: more or manual toggle.
+     */
+    var DONUT_PATTERNS = [
+      { id: 'pat-stripe', markup: '<line x1="0" y1="0" x2="6" y2="6" stroke="currentColor" stroke-width="1.5"/>' },
+      { id: 'pat-dots', markup: '<circle cx="3" cy="3" r="1.5" fill="currentColor"/>' },
+      { id: 'pat-cross', markup: '<line x1="0" y1="3" x2="6" y2="3" stroke="currentColor" stroke-width="1"/><line x1="3" y1="0" x2="3" y2="6" stroke="currentColor" stroke-width="1"/>' },
+      { id: 'pat-hatch', markup: '<line x1="0" y1="6" x2="6" y2="0" stroke="currentColor" stroke-width="1.5"/>' },
+      { id: 'pat-wave', markup: '<path d="M0 3 Q1.5 0 3 3 T6 3" fill="none" stroke="currentColor" stroke-width="1.2"/>' },
+      { id: 'pat-diamond', markup: '<polygon points="3,0 6,3 3,6 0,3" fill="none" stroke="currentColor" stroke-width="1"/>' },
+      { id: 'pat-grid', markup: '<line x1="0" y1="3" x2="6" y2="3" stroke="currentColor" stroke-width="0.8"/><line x1="3" y1="0" x2="3" y2="6" stroke="currentColor" stroke-width="0.8"/>' },
+      { id: 'pat-zigzag', markup: '<polyline points="0,6 3,0 6,6" fill="none" stroke="currentColor" stroke-width="1.2"/>' }
+    ];
+
+    var donutPatternsActive = window.matchMedia && window.matchMedia('(prefers-contrast: more)').matches;
+
+    function appendDonutPatterns(svg) {
+      var defs = svgEl('defs');
+      DONUT_PATTERNS.forEach(function(p) {
+        var pat = svgEl('pattern', {
+          'id': p.id,
+          'patternUnits': 'userSpaceOnUse',
+          'width': '6',
+          'height': '6'
+        });
+        pat.innerHTML = p.markup;
+        defs.appendChild(pat);
+      });
+      svg.insertBefore(defs, svg.firstChild);
+    }
+
+    function getPatternId(idx) {
+      return DONUT_PATTERNS[idx % DONUT_PATTERNS.length].id;
+    }
+
+    /**
      * Helper: create an SVG element with attributes.
      */
     function svgEl(tag, attrs) {
@@ -10404,6 +10790,11 @@
       suffix = suffix || '';
       if (typeof end !== 'number' || isNaN(end) || end === 0) {
         el.textContent = prefix + end + suffix;
+        return;
+      }
+      // Respect prefers-reduced-motion
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.textContent = prefix + end.toLocaleString('es-ES') + suffix;
         return;
       }
       var start = 0;
@@ -10464,6 +10855,14 @@
       var maxVal = opts.maxValue || Math.max.apply(null, items.map(function(i) { return i.value + (i.secondaryValue || 0); })) || 1;
       var labelW = opts.labelWidth ? (opts.labelWidth + 'px') : '180px';
 
+      // ARIA: add role and label to container
+      var ariaBarDesc = items.map(function(item) {
+        var total = item.value + (item.secondaryValue || 0);
+        return item.label + ': ' + formatter(total);
+      }).join(', ');
+      container.setAttribute('role', 'img');
+      container.setAttribute('aria-label', ariaBarDesc);
+
       items.forEach(function(item, idx) {
         var total = item.value + (item.secondaryValue || 0);
         var pctTotal = Math.min((total / maxVal) * 100, 100);
@@ -10472,6 +10871,9 @@
 
         var row = document.createElement('div');
         row.className = 'dash-gauge-row';
+        row.setAttribute('tabindex', '0');
+        row.setAttribute('role', 'listitem');
+        row.setAttribute('aria-label', item.label + ': ' + formatter(total));
 
         var lbl = document.createElement('span');
         lbl.className = 'dash-gauge-label';
@@ -10506,6 +10908,18 @@
           fill.className = 'dash-gauge-bar-fill';
           fill.style.width = pctTotal + '%';
           fill.style.background = itemColor;
+          // Inline label when bar is wide enough
+          if (pctTotal > 30) {
+            fill.style.position = 'relative';
+            fill.style.display = 'flex';
+            fill.style.alignItems = 'center';
+            fill.style.justifyContent = 'flex-end';
+            fill.style.paddingRight = '6px';
+            var inlineLabel = document.createElement('span');
+            inlineLabel.style.cssText = 'font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+            inlineLabel.textContent = formatter(total);
+            fill.appendChild(inlineLabel);
+          }
           barBg.appendChild(fill);
         }
         row.appendChild(barBg);
@@ -10518,6 +10932,17 @@
           val.textContent = formatter(total);
         }
         row.appendChild(val);
+
+        // Tooltip on hover
+        var barTooltipHtml = '<div class="dash-tooltip-label">' + esc(item.label) + '</div>' +
+          '<div class="dash-tooltip-value">' + esc(String(formatter(item.value)));
+        if (item.secondaryValue !== undefined && item.secondaryValue > 0) {
+          barTooltipHtml += ' / ' + esc(String(formatter(total)));
+        }
+        barTooltipHtml += ' (' + Math.round(pctTotal) + '%)</div>';
+        attachTooltipListeners(row, barTooltipHtml);
+        row.addEventListener('focus', function(e) { showDashTooltip(e, barTooltipHtml); });
+        row.addEventListener('blur', hideDashTooltip);
 
         container.appendChild(row);
       });
@@ -10580,19 +11005,29 @@
       wrap.className = 'dash-donut-container';
 
       // SVG — responsive via CSS (.dash-donut-container svg)
+      // Build ARIA label from data
+      var ariaDesc = (opts.centerLabel || 'Total') + ': ' + (opts.centerValue !== undefined ? opts.centerValue : total) + '. ';
+      ariaDesc += mainItems.map(function(item) {
+        var pct = Math.round((item.value / total) * 100);
+        return item.label + ' ' + item.value + ' (' + pct + '%)';
+      }).join(', ') + '.';
       var svg = svgEl('svg', {
         'viewBox': '0 0 ' + size + ' ' + size,
-        'preserveAspectRatio': 'xMidYMid meet'
+        'preserveAspectRatio': 'xMidYMid meet',
+        'role': 'img',
+        'aria-label': ariaDesc
       });
       svg.style.display = 'block';
 
       // Background circle (track)
-      svg.appendChild(svgEl('circle', {
+      var bgCircle = svgEl('circle', {
         'cx': cx, 'cy': cy, 'r': r,
         'fill': 'none',
         'stroke': DS.bgInput,
-        'stroke-width': strokeW
-      }));
+        'stroke-width': strokeW,
+        'aria-hidden': 'true'
+      });
+      svg.appendChild(bgCircle);
 
       // Segments
       var offset = 0;
@@ -10615,9 +11050,39 @@
           'class': 'dash-donut-segment',
           'transform': 'rotate(-90 ' + cx + ' ' + cy + ')'
         });
+        circle.style.cursor = 'pointer';
+        circle.setAttribute('tabindex', '0');
+        circle.setAttribute('role', 'listitem');
+        circle.setAttribute('aria-label', item.label + ': ' + item.value + ' (' + Math.round(pct * 100) + '%)');
+        // Tooltip on hover and focus
+        var tooltipHtml = '<div class="dash-tooltip-label">' + esc(item.label) + '</div>' +
+          '<div class="dash-tooltip-value">' + esc(String(item.value)) + ' (' + Math.round(pct * 100) + '%)</div>';
+        attachTooltipListeners(circle, tooltipHtml);
+        circle.addEventListener('focus', function(e) { showDashTooltip(e, tooltipHtml); });
+        circle.addEventListener('blur', hideDashTooltip);
         svg.appendChild(circle);
+
+        // Pattern overlay for accessibility (prefers-contrast: more)
+        if (donutPatternsActive) {
+          var patCircle = svgEl('circle', {
+            'cx': cx, 'cy': cy, 'r': r,
+            'fill': 'none',
+            'stroke': 'url(#' + getPatternId(idx) + ')',
+            'stroke-width': strokeW,
+            'stroke-dasharray': dashLen + ' ' + dashGap,
+            'stroke-dashoffset': -offset,
+            'transform': 'rotate(-90 ' + cx + ' ' + cy + ')',
+            'pointer-events': 'none',
+            'opacity': '0.5'
+          });
+          svg.appendChild(patCircle);
+        }
+
         offset += dashLen;
       });
+
+      // Add pattern defs if active
+      if (donutPatternsActive) appendDonutPatterns(svg);
 
       // Center text
       var centerVal = opts.centerValue !== undefined ? opts.centerValue : total;
@@ -10685,6 +11150,13 @@
         renderEmptyState(container, 'No hay acciones bonificables para medir completitud.');
         return;
       }
+
+      // ARIA: describe completeness data
+      var ariaCompDesc = items.map(function(item) {
+        return item.label + ': ' + Math.round(item.pct) + '%';
+      }).join(', ');
+      container.setAttribute('role', 'img');
+      container.setAttribute('aria-label', 'Completitud del catálogo. ' + ariaCompDesc);
 
       items.forEach(function(item) {
         var pct = Math.round(item.pct);
@@ -10820,21 +11292,25 @@
           var chartW = svgW - padL - padR;
           var chartH = svgH - padT - padB;
 
-          var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+          // Build ARIA label for attendance chart
+          var attendAriaLabel = 'Tendencia de asistencia para ' + esc(a.nombre || a.codigo || '') + '. ' +
+            sessionData.map(function(d) { return d.fecha + ': ' + d.pct + '%'; }).join(', ');
+          var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet', 'role': 'img', 'aria-label': attendAriaLabel });
           svg.style.cssText = 'width:100%; max-width:320px; display:block;';
 
-          // Y axis labels
+          // Y axis labels (decorative)
           [0, 50, 100].forEach(function(v) {
             var y = padT + chartH - (v / 100) * chartH;
-            svg.appendChild(svgEl('line', { x1: padL, y1: y, x2: svgW - padR, y2: y, stroke: DS.border, 'stroke-width': '0.5' }));
-            var txt = svgEl('text', { x: padL - 4, y: y + 3, 'text-anchor': 'end', fill: DS.textMuted, 'font-size': '8', 'font-family': 'Inter, sans-serif' });
+            var gridLine = svgEl('line', { x1: padL, y1: y, x2: svgW - padR, y2: y, stroke: DS.border, 'stroke-width': '0.5', 'aria-hidden': 'true' });
+            svg.appendChild(gridLine);
+            var txt = svgEl('text', { x: padL - 4, y: y + 3, 'text-anchor': 'end', fill: DS.textMuted, 'font-size': '8', 'font-family': 'Inter, sans-serif', 'aria-hidden': 'true' });
             txt.textContent = v + '%';
             svg.appendChild(txt);
           });
 
-          // 75% threshold line
+          // 75% threshold line (decorative)
           var threshY = padT + chartH - (75 / 100) * chartH;
-          svg.appendChild(svgEl('line', { x1: padL, y1: threshY, x2: svgW - padR, y2: threshY, stroke: DS.danger, 'stroke-width': '0.5', 'stroke-dasharray': '4,3' }));
+          svg.appendChild(svgEl('line', { x1: padL, y1: threshY, x2: svgW - padR, y2: threshY, stroke: DS.danger, 'stroke-width': '0.5', 'stroke-dasharray': '4,3', 'aria-hidden': 'true' }));
 
           // Plot points and lines
           var points = sessionData.map(function(d, i) {
@@ -10850,8 +11326,21 @@
           }
 
           // Dots and labels
-          points.forEach(function(p) {
+          points.forEach(function(p, pIdx) {
             var dotColor = p.pct < 75 ? DS.danger : DS.accent;
+            // Larger invisible hit area for tooltip
+            var hitCircle = svgEl('circle', { cx: p.x, cy: p.y, r: '8', fill: 'transparent', 'class': 'dash-chart-hit' });
+            hitCircle.style.cursor = 'pointer';
+            hitCircle.setAttribute('tabindex', '0');
+            hitCircle.setAttribute('role', 'listitem');
+            hitCircle.setAttribute('aria-label', p.fecha + ': ' + p.pct + '% asistencia');
+            var sd = sessionData[pIdx];
+            var dotTipHtml = '<div class="dash-tooltip-label">' + esc(p.fecha) + '</div>' +
+              '<div class="dash-tooltip-value">' + p.pct + '% asistencia' + (sd ? ' (' + sd.present + '/' + sd.total + ')' : '') + '</div>';
+            attachTooltipListeners(hitCircle, dotTipHtml);
+            hitCircle.addEventListener('focus', function(e) { showDashTooltip(e, dotTipHtml); });
+            hitCircle.addEventListener('blur', hideDashTooltip);
+            svg.appendChild(hitCircle);
             svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '3', fill: dotColor }));
             var valTxt = svgEl('text', { x: p.x, y: p.y - 6, 'text-anchor': 'middle', fill: dotColor, 'font-size': '7', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
             valTxt.textContent = p.pct + '%';
@@ -12372,17 +12861,207 @@
       return { flujos: flujos, alertas: alertas };
     }
 
+    function showDashboardSkeleton() {
+      var container = document.getElementById('dashContainer');
+      if (!container) return;
+      var existing = container.querySelector('.dash-skeleton-wrap');
+      if (existing) return; // already showing
+
+      var wrap = document.createElement('div');
+      wrap.className = 'dash-skeleton-wrap';
+
+      // KPI row skeleton
+      var kpiRow = document.createElement('div');
+      kpiRow.className = 'dash-skeleton-row';
+      for (var i = 0; i < 5; i++) {
+        var kpi = document.createElement('div');
+        kpi.className = 'dash-skeleton dash-skeleton-kpi';
+        kpiRow.appendChild(kpi);
+      }
+      wrap.appendChild(kpiRow);
+
+      // Alert skeleton
+      var alertSk = document.createElement('div');
+      alertSk.className = 'dash-skeleton';
+      alertSk.style.height = '40px';
+      alertSk.style.marginBottom = '16px';
+      wrap.appendChild(alertSk);
+
+      // Two chart card rows
+      for (var r = 0; r < 2; r++) {
+        var chartRow = document.createElement('div');
+        chartRow.className = 'dash-skeleton-chart-row';
+        for (var c = 0; c < 2; c++) {
+          var card = document.createElement('div');
+          card.className = 'dash-skeleton dash-skeleton-card';
+          chartRow.appendChild(card);
+        }
+        wrap.appendChild(chartRow);
+      }
+
+      // Hide real content, show skeleton
+      var kpis = document.getElementById('dashKpis');
+      if (kpis) kpis.style.display = 'none';
+      container.insertBefore(wrap, container.querySelector('.dash-kpi-row'));
+    }
+
+    function hideDashboardSkeleton() {
+      var container = document.getElementById('dashContainer');
+      if (!container) return;
+      var wrap = container.querySelector('.dash-skeleton-wrap');
+      if (wrap) wrap.remove();
+      var kpis = document.getElementById('dashKpis');
+      if (kpis) kpis.style.display = '';
+    }
+
+    /**
+     * Initialize and manage dashboard global filters.
+     * Filters persist in sessionStorage (not localStorage).
+     */
+    function getDashFilters() {
+      try {
+        return JSON.parse(sessionStorage.getItem('convocatoria_dash_filters') || '{}');
+      } catch(e) { return {}; }
+    }
+
+    function saveDashFilters(filters) {
+      try { sessionStorage.setItem('convocatoria_dash_filters', JSON.stringify(filters)); } catch(e) {}
+    }
+
+    function initDashFilters(acciones) {
+      var filters = getDashFilters();
+
+      // Empresa select
+      var empresaSelect = document.getElementById('dashFilterEmpresa');
+      if (empresaSelect) {
+        var empresas = {};
+        acciones.forEach(function(a) {
+          if (a.empresaPagadora) {
+            var emps = getEmpresasGrupo();
+            emps.forEach(function(e) {
+              if (e.cif === a.empresaPagadora) empresas[e.cif] = e.razonSocial;
+            });
+          }
+        });
+        empresaSelect.innerHTML = '<option value="">Todas</option>';
+        Object.keys(empresas).forEach(function(cif) {
+          var opt = document.createElement('option');
+          opt.value = cif;
+          opt.textContent = empresas[cif];
+          if (filters.empresas && filters.empresas.indexOf(cif) > -1) opt.selected = true;
+          empresaSelect.appendChild(opt);
+        });
+        empresaSelect.onchange = function() {
+          var f = getDashFilters();
+          var sel = Array.from(empresaSelect.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
+          f.empresas = sel.length > 0 ? sel : null;
+          saveDashFilters(f);
+          renderDashboard();
+        };
+      }
+
+      // Periodo select
+      var periodoSelect = document.getElementById('dashFilterPeriodo');
+      if (periodoSelect) {
+        periodoSelect.value = filters.periodo || '';
+        periodoSelect.onchange = function() {
+          var f = getDashFilters();
+          f.periodo = periodoSelect.value || null;
+          saveDashFilters(f);
+          renderDashboard();
+        };
+      }
+
+      // Estado pills
+      var estadoPills = document.getElementById('dashFilterEstado');
+      if (estadoPills) {
+        var estados = {};
+        acciones.forEach(function(a) { estados[a.estado || '(Sin estado)'] = true; });
+        estadoPills.innerHTML = '';
+        var activeEstados = filters.estados || [];
+        Object.keys(estados).sort().forEach(function(est) {
+          var pill = document.createElement('button');
+          pill.className = 'dash-status-pill' + (activeEstados.indexOf(est) > -1 ? ' active' : '');
+          pill.textContent = est;
+          pill.addEventListener('click', function() {
+            pill.classList.toggle('active');
+            var f = getDashFilters();
+            var sel = Array.from(estadoPills.querySelectorAll('.active')).map(function(p) { return p.textContent; });
+            f.estados = sel.length > 0 ? sel : null;
+            saveDashFilters(f);
+            renderDashboard();
+          });
+          estadoPills.appendChild(pill);
+        });
+      }
+
+      // Clear button
+      var clearBtn = document.getElementById('dashFilterClear');
+      if (clearBtn) {
+        var hasFilter = (filters.empresas && filters.empresas.length > 0) || filters.periodo || (filters.estados && filters.estados.length > 0);
+        clearBtn.style.display = hasFilter ? '' : 'none';
+        clearBtn.onclick = function() {
+          sessionStorage.removeItem('convocatoria_dash_filters');
+          renderDashboard();
+        };
+      }
+    }
+
+    function applyDashFilters(acciones) {
+      var filters = getDashFilters();
+
+      if (filters.empresas && filters.empresas.length > 0) {
+        acciones = acciones.filter(function(a) {
+          return filters.empresas.indexOf(a.empresaPagadora) > -1;
+        });
+      }
+
+      if (filters.periodo) {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth();
+        acciones = acciones.filter(function(a) {
+          if (!a.fechaInicio) return true;
+          var d = new Date(a.fechaInicio + 'T00:00:00');
+          if (isNaN(d.getTime())) return true;
+          if (filters.periodo === 'mes') return d.getFullYear() === year && d.getMonth() === month;
+          if (filters.periodo === 'trimestre') {
+            var q = Math.floor(month / 3);
+            var dq = Math.floor(d.getMonth() / 3);
+            return d.getFullYear() === year && dq === q;
+          }
+          if (filters.periodo === 'anio') return d.getFullYear() === year;
+          return true;
+        });
+      }
+
+      if (filters.estados && filters.estados.length > 0) {
+        acciones = acciones.filter(function(a) {
+          return filters.estados.indexOf(a.estado || '(Sin estado)') > -1;
+        });
+      }
+
+      return acciones;
+    }
+
     function renderDashboard() {
+      hideDashboardSkeleton();
       autoTransitionEstados();
-      var acciones = getCatalog('acciones');
+      var allAcciones = getCatalog('acciones');
       var proveedores = getCatalog('proveedores');
       var centros = getCatalog('centros');
       var tutores = getCatalog('tutores');
 
+      // Initialize filters (before filtering, so all empresas/estados are shown)
+      initDashFilters(allAcciones);
+
+      // Apply global filters
+      var acciones = applyDashFilters(allAcciones);
+
       // Empty state
       var dashEmpty = document.getElementById('dashEmptyState');
       var dashContainer = document.getElementById('dashContainer');
-      if (acciones.length === 0) {
+      if (allAcciones.length === 0) {
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
@@ -12436,6 +13115,8 @@
         var svg = document.createElementNS(ns, 'svg');
         svg.setAttribute('width', width);
         svg.setAttribute('height', height);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', 'Tendencia: ' + values.join(', '));
         svg.style.cssText = 'margin-top:4px;display:block;';
         var polyline = document.createElementNS(ns, 'polyline');
         polyline.setAttribute('points', points);
@@ -12494,9 +13175,12 @@
       var kpiColorHex = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5];
       var kpiIdx = 0;
 
-      function addKpi(label, value, sub, sparkData) {
+      function addKpi(label, value, sub, sparkData, thresholdStatus) {
         var card = document.createElement('div');
         card.className = 'dash-kpi';
+        if (thresholdStatus === 'success') card.classList.add('dash-kpi--success');
+        else if (thresholdStatus === 'warning') card.classList.add('dash-kpi--warning');
+        else if (thresholdStatus === 'danger') card.classList.add('dash-kpi--danger');
         card.setAttribute('data-color', kpiColors[kpiIdx % kpiColors.length]);
 
         var lblWrap = document.createElement('div');
@@ -12549,11 +13233,15 @@
 
       addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones);
       addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación', sparkHoras);
-      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes);
+      // Conditional status for participants KPI
+      var partStatus = totalParticipantes === 0 ? 'danger' : (accionesConParticipantes < acciones.length * 0.5 ? 'warning' : null);
+      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes, partStatus);
       addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto);
       var creditoDisponible = totalCredito - totalConsumido;
       var creditoPct = totalCredito > 0 ? Math.round((totalConsumido / totalCredito) * 100) : 0;
-      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total');
+      // Conditional status for FUNDAE credit KPI
+      var creditStatus = creditoPct > 95 ? 'danger' : (creditoPct > 80 ? 'warning' : (totalCredito > 0 ? 'success' : null));
+      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total', null, creditStatus);
 
       // --- Alerts (collapsible, dismissible) ---
       var alertsWidget = document.getElementById('dashAlertsWidget');
@@ -13050,14 +13738,23 @@
         exportBtn.onclick = function() { exportAnnualReport(); };
       }
 
-      // Render analytics modules
-      renderAttendanceMonitor('dashAttendance', acciones);
-      renderConfirmationEffectiveness('dashConfirmations', acciones);
-      renderSeasonality('dashSeasonality', acciones);
-      renderParticipantRecurrence('dashRecurrence', acciones);
-      renderSurveyCoverage('dashSurveyCoverage', acciones);
-      renderGestorActivity('dashGestorActivity', acciones);
-      renderProviderScorecard('dashProviderScorecard', acciones);
+      // Phase 2: Render analytics modules incrementally
+      requestAnimationFrame(function() {
+        renderAttendanceMonitor('dashAttendance', acciones);
+        renderConfirmationEffectiveness('dashConfirmations', acciones);
+
+        // Phase 3: Remaining analytics
+        requestAnimationFrame(function() {
+          renderSeasonality('dashSeasonality', acciones);
+          renderParticipantRecurrence('dashRecurrence', acciones);
+          renderSurveyCoverage('dashSurveyCoverage', acciones);
+          renderGestorActivity('dashGestorActivity', acciones);
+          renderProviderScorecard('dashProviderScorecard', acciones);
+        });
+      });
+
+      // Phase 4: Heavy analytics (deferred for perceived speed)
+      requestAnimationFrame(function() {
 
       // --- Risk Scoring ---
       (function() {
@@ -13086,7 +13783,7 @@
 
         container.textContent = '';
         var summary = document.createElement('div');
-        summary.style.cssText = 'display:flex;gap:16px;margin-bottom:12px;';
+        summary.className = 'dash-mini-kpi-row';
         var badges = [
           { label: 'Riesgo alto', count: altoRiesgo, color: 'var(--danger)' },
           { label: 'Riesgo medio', count: medioRiesgo, color: 'var(--warning)' },
@@ -13094,12 +13791,13 @@
         ];
         badges.forEach(function(b) {
           var d = document.createElement('div');
-          d.style.cssText = 'flex:1;text-align:center;padding:8px;border-radius:var(--radius);background:var(--bg-input);';
+          d.className = 'dash-mini-kpi';
           var n = document.createElement('div');
-          n.style.cssText = 'font-size:24px;font-weight:700;color:' + b.color + ';';
+          n.className = 'dash-mini-kpi-value';
+          n.style.color = b.color;
           n.textContent = b.count;
           var l = document.createElement('div');
-          l.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+          l.className = 'dash-mini-kpi-label';
           l.textContent = b.label;
           d.appendChild(n);
           d.appendChild(l);
@@ -13161,7 +13859,7 @@
         var totalNeto = roi.reduce(function(s, r) { return s + r.costeNeto; }, 0);
 
         var kpiRow = document.createElement('div');
-        kpiRow.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;';
+        kpiRow.className = 'dash-mini-kpi-row';
         var fmt = function(n) { return n.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' EUR'; };
         [
           { label: 'Coste directo', val: fmt(totalDirecto), color: 'var(--accent)' },
@@ -13170,12 +13868,14 @@
           { label: 'Coste neto', val: fmt(totalNeto), color: 'var(--text-primary)' }
         ].forEach(function(k) {
           var d = document.createElement('div');
-          d.style.cssText = 'text-align:center;padding:10px;background:var(--bg-input);border-radius:var(--radius);';
+          d.className = 'dash-mini-kpi';
           var v = document.createElement('div');
-          v.style.cssText = 'font-size:16px;font-weight:700;color:' + k.color + ';';
+          v.className = 'dash-mini-kpi-value';
+          v.style.fontSize = '16px';
+          v.style.color = k.color;
           v.textContent = k.val;
           var l = document.createElement('div');
-          l.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+          l.className = 'dash-mini-kpi-label';
           l.textContent = k.label;
           d.appendChild(v);
           d.appendChild(l);
@@ -13522,19 +14222,25 @@
         container.appendChild(table);
       })();
 
+      }); // end Phase 4 requestAnimationFrame
+
 
       // --- Section navigator ---
       var dashNavEl = document.getElementById('dashNav');
       if (dashNavEl) {
         dashNavEl.textContent = '';
         var navSections = [
-          { id: 'dash-group-analytics', label: 'Analytics' },
           { id: 'dash-group-general', label: 'Vision general' },
           { id: 'dash-group-operativo', label: 'Operativo' },
           { id: 'dash-group-personas', label: 'Personas' },
           { id: 'dash-group-calidad', label: 'Calidad' },
+          { id: 'dash-group-analytics', label: 'Analytics' },
           { id: 'dash-group-gestor', label: 'Gestor' }
         ];
+        // Create progress bar segments
+        var progressBar = document.getElementById('dashNavProgress');
+        if (progressBar) progressBar.innerHTML = '';
+
         navSections.forEach(function(sec) {
           var btn = document.createElement('button');
           btn.className = 'dash-nav-btn';
@@ -13545,9 +14251,18 @@
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
           });
           dashNavEl.appendChild(btn);
+
+          // Add progress segment
+          if (progressBar) {
+            var seg = document.createElement('div');
+            seg.className = 'dash-nav-progress-seg';
+            seg.setAttribute('data-target', sec.id);
+            progressBar.appendChild(seg);
+          }
         });
 
-        // IntersectionObserver for active state
+        // IntersectionObserver for active state + progress bar
+        var activeIndex = -1;
         var navObserver = new IntersectionObserver(function(entries) {
           entries.forEach(function(entry) {
             var btn = dashNavEl.querySelector('[data-target="' + entry.target.id + '"]');
@@ -13555,6 +14270,17 @@
               if (entry.isIntersecting) {
                 dashNavEl.querySelectorAll('.dash-nav-btn').forEach(function(b) { b.classList.remove('active'); });
                 btn.classList.add('active');
+                // Update progress bar
+                var idx = navSections.findIndex(function(s) { return s.id === entry.target.id; });
+                if (idx >= 0 && progressBar) {
+                  activeIndex = idx;
+                  var segs = progressBar.querySelectorAll('.dash-nav-progress-seg');
+                  segs.forEach(function(s, i) {
+                    s.classList.remove('active', 'passed');
+                    if (i < idx) s.classList.add('passed');
+                    else if (i === idx) s.classList.add('active');
+                  });
+                }
               }
             }
           });
@@ -13565,6 +14291,22 @@
           if (el) navObserver.observe(el);
         });
       }
+
+      // --- Lazy rendering for below-the-fold sections ---
+      var lazyRendered = {};
+      var lazyObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !lazyRendered[entry.target.id]) {
+            lazyRendered[entry.target.id] = true;
+            lazyObserver.unobserve(entry.target);
+          }
+        });
+      }, { root: document.getElementById('dashContainer'), rootMargin: '100px' });
+      // Observe all section groups for potential lazy rendering
+      ['dash-group-personas', 'dash-group-calidad', 'dash-group-analytics', 'dash-group-gestor'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) lazyObserver.observe(el);
+      });
 
       // --- Executive mode toggle ---
       var dashMode = localStorage.getItem('convocatoria_dash_mode') || 'completo';
@@ -13623,13 +14365,49 @@
 
       document.querySelectorAll('#dashContainer .dash-card[data-card-id]').forEach(function(card) {
         var cardId = card.getAttribute('data-card-id');
+
+        // Wrap non-title children in a .dash-card-body for smooth collapse
+        if (!card.querySelector('.dash-card-body')) {
+          var body = document.createElement('div');
+          body.className = 'dash-card-body';
+          var children = Array.from(card.children);
+          children.forEach(function(child) {
+            if (!child.classList.contains('dash-card-title')) {
+              body.appendChild(child);
+            }
+          });
+          card.appendChild(body);
+          // Set initial max-height from content
+          if (!card.classList.contains('collapsed')) {
+            body.style.maxHeight = body.scrollHeight + 'px';
+          }
+        }
+
         if (dashCollapsed[cardId]) {
           card.classList.add('collapsed');
         }
         var title = card.querySelector('.dash-card-title');
         if (title) {
           title.addEventListener('click', function() {
-            card.classList.toggle('collapsed');
+            var cardBody = card.querySelector('.dash-card-body');
+            if (card.classList.contains('collapsed')) {
+              // Expand
+              card.classList.remove('collapsed');
+              if (cardBody) {
+                cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
+                cardBody.style.opacity = '1';
+              }
+            } else {
+              // Collapse
+              if (cardBody) {
+                cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
+                // Force reflow then set to 0
+                cardBody.offsetHeight;
+                cardBody.style.maxHeight = '0';
+                cardBody.style.opacity = '0';
+              }
+              card.classList.add('collapsed');
+            }
             var currentState = {};
             try { currentState = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
             if (card.classList.contains('collapsed')) {
