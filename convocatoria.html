@@ -2409,6 +2409,7 @@
             '</div>' +
             '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
             '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
+            ' <button class="link-btn link-add" id="btnCopyParticipants" style="font-size:11px; margin-left:8px;">Copiar de otra acci\u00F3n</button>' +
           '</div>';
       }
 
@@ -2532,6 +2533,7 @@
       const listEl = document.getElementById('cfParticipantList');
       const countEl = document.getElementById('cfParticipantCount');
       const assignBtn = document.getElementById('btnAssignParticipants');
+      const copyBtn = document.getElementById('btnCopyParticipants');
       if (!warningEl || !listEl || !countEl || !assignBtn) return;
 
       if (!state.employees || state.employees.length === 0) {
@@ -2539,6 +2541,7 @@
         assignBtn.disabled = true;
         assignBtn.style.opacity = '0.5';
         assignBtn.style.cursor = 'not-allowed';
+        if (copyBtn) { copyBtn.disabled = true; copyBtn.style.opacity = '0.5'; copyBtn.style.cursor = 'not-allowed'; }
         listEl.innerHTML = '';
         countEl.textContent = '';
         return;
@@ -2548,6 +2551,7 @@
       assignBtn.disabled = false;
       assignBtn.style.opacity = '';
       assignBtn.style.cursor = '';
+      if (copyBtn) { copyBtn.disabled = false; copyBtn.style.opacity = ''; copyBtn.style.cursor = ''; }
 
       var participantes = record.participantes || [];
       countEl.textContent = participantes.length > 0 ? '(' + participantes.length + ')' : '';
@@ -2593,6 +2597,82 @@
           var cfg = CATALOG_CONFIG['acciones'];
           upsertCatalogRecord('acciones', cfg.pk, record);
           renderAccionParticipants(record);
+        });
+      });
+
+      // Bind copy-from-another-action button
+      if (copyBtn) {
+        var newCopyBtn = copyBtn.cloneNode(true);
+        copyBtn.parentNode.replaceChild(newCopyBtn, copyBtn);
+        newCopyBtn.addEventListener('click', function() {
+          showCopyParticipantsDialog(record);
+        });
+      }
+    }
+
+    function showCopyParticipantsDialog(record) {
+      var existing = document.getElementById('copyParticipantsOverlay');
+      if (existing) existing.remove();
+
+      var allAcciones = getCatalog('acciones');
+      var currentCodigo = record.codigo || '';
+      var candidates = allAcciones.filter(function(a) {
+        return a.codigo !== currentCodigo && a.participantes && a.participantes.length > 0;
+      });
+
+      var overlay = document.createElement('div');
+      overlay.id = 'copyParticipantsOverlay';
+      overlay.className = 'dialog-overlay visible';
+
+      var html = '<div class="dialog-box" style="max-width:480px; max-height:70vh; display:flex; flex-direction:column;">' +
+        '<h3 style="margin:0 0 12px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Copiar participantes de otra acci\u00F3n</h3>';
+
+      if (candidates.length === 0) {
+        html += '<p style="font-size:13px; color:var(--text-muted); margin:12px 0;">No hay otras acciones con participantes asignados.</p>';
+      } else {
+        html += '<div style="overflow-y:auto; flex:1; margin-bottom:12px;">';
+        candidates.forEach(function(a, i) {
+          var label = esc(a.codigo) + ' - ' + esc(a.nombre || 'Sin nombre') + ' (' + a.participantes.length + ' participantes)';
+          html += '<button class="btn btn-secondary copyParticipantSource" data-idx="' + i + '" style="display:block; width:100%; text-align:left; font-size:12px; margin-bottom:6px; padding:8px 12px; white-space:normal; word-break:break-word;">' + label + '</button>';
+        });
+        html += '</div>';
+      }
+
+      html += '<div class="dialog-buttons">' +
+        '<button class="btn btn-secondary" id="copyParticipantsCancel">Cancelar</button>' +
+        '</div></div>';
+
+      overlay.innerHTML = html;
+      document.body.appendChild(overlay);
+
+      // Cancel
+      document.getElementById('copyParticipantsCancel').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+      // Source selection
+      overlay.querySelectorAll('.copyParticipantSource').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(this.getAttribute('data-idx'), 10);
+          var source = candidates[idx];
+          if (!source) return;
+
+          // Merge using a Set for deduplication
+          var currentSet = {};
+          (record.participantes || []).forEach(function(nif) { currentSet[nif] = true; });
+          var imported = 0;
+          source.participantes.forEach(function(nif) {
+            if (!currentSet[nif]) {
+              imported++;
+              currentSet[nif] = true;
+            }
+          });
+          record.participantes = Object.keys(currentSet);
+
+          var cfg = CATALOG_CONFIG['acciones'];
+          upsertCatalogRecord('acciones', cfg.pk, record);
+          renderAccionParticipants(record);
+          overlay.remove();
+          showToast(imported + ' participantes importados desde ' + source.codigo, 'success');
         });
       });
     }
