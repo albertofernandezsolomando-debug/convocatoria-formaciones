@@ -525,6 +525,35 @@
       animation: spin 0.6s linear infinite;
     }
 
+    .onboarding-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+    }
+    .onboarding-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .onboarding-step-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      padding-top: 3px;
+    }
+    .onboarding-step-text strong {
+      color: var(--text-primary);
+    }
+
     .filter-row {
       display: flex;
       align-items: center;
@@ -2718,6 +2747,36 @@
       <div id="employeeSelectList"></div>
       <div class="dialog-buttons" style="margin-top:16px;">
         <button class="btn btn-secondary" id="employeeSelectCancel" style="font-size:12px;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding overlay -->
+  <div class="dialog-overlay" id="onboardingOverlay">
+    <div class="dialog-box" style="max-width:480px; text-align:left;">
+      <h3 style="margin-bottom:4px;">Bienvenido a Convocatoria de Formaciones</h3>
+      <p style="margin-bottom:16px; font-size:13px;">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">1</div>
+        <div class="onboarding-step-text"><strong>Carga tu organigrama Excel</strong> con los datos de empleados (nombre, NIF, email, departamento).</div>
+      </div>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">2</div>
+        <div class="onboarding-step-text"><strong>Filtra y selecciona asistentes</strong> por empresa, departamento, ubicacion o puesto.</div>
+      </div>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">3</div>
+        <div class="onboarding-step-text"><strong>Rellena los datos del evento</strong> (titulo, fecha, hora, lugar y cuerpo del email).</div>
+      </div>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">4</div>
+        <div class="onboarding-step-text"><strong>Envia desde Outlook</strong> con un clic. La convocatoria se abre lista para enviar.</div>
+      </div>
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--text-muted);">
+        Para configurar encuestas de satisfaccion automaticas, abre <a href="#" class="link-btn link-add" style="font-size:12px;" onclick="document.getElementById('onboardingOverlay').classList.remove('visible'); document.getElementById('btnSettings').click(); return false;">Ajustes</a>.
+      </div>
+      <div class="dialog-buttons" style="margin-top:16px;">
+        <button class="btn btn-primary" id="onboardingStart">Empezar</button>
       </div>
     </div>
   </div>
@@ -11878,6 +11937,25 @@
       XLSX.writeFile(wb, 'Ficha_' + nif + '.xlsx');
       showToast('Ficha exportada: Ficha_' + nif + '.xlsx', 'success');
     }
+
+    // ═══════════════════════════════════
+    // ONBOARDING TOUR
+    // ═══════════════════════════════════
+    function showOnboarding() {
+      document.getElementById('onboardingOverlay').classList.add('visible');
+    }
+
+    document.getElementById('onboardingStart').addEventListener('click', function() {
+      document.getElementById('onboardingOverlay').classList.remove('visible');
+      try { localStorage.setItem('convocatoria_onboarding_done', 'true'); } catch(e) {}
+    });
+
+    // Show onboarding on first visit
+    try {
+      if (!localStorage.getItem('convocatoria_onboarding_done')) {
+        showOnboarding();
+      }
+    } catch(e) {}
 
     // ═══════════════════════════════════
     // ESCAPE KEY CLOSES DIALOGS
