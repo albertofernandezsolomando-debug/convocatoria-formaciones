@@ -1259,14 +1259,6 @@
     .cal-rows {
       position: relative;
       padding: 8px 0;
-      flex: 1;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 35px,
-        var(--bg-primary) 35px,
-        var(--bg-primary) 36px
-      );
     }
     .cal-group-label {
       padding: 8px 24px 4px;
@@ -1407,6 +1399,53 @@
       height: 10px;
       border-radius: 2px;
       flex-shrink: 0;
+    }
+    .cal-list {
+      flex: 1;
+      border-top: 2px solid var(--border);
+    }
+    .cal-list table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .cal-list th {
+      background: var(--bg-primary);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .cal-list td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--bg-primary);
+      color: var(--text-secondary);
+    }
+    .cal-list tr.cal-list-row { cursor: pointer; }
+    .cal-list tr.cal-list-row:hover td {
+      background: var(--accent-subtle);
+    }
+    .cal-list tr.cal-list-row.selected td {
+      background: var(--accent-light);
+    }
+    .cal-list-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .cal-list-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
     }
     .cal-empty {
       display: flex;
@@ -8292,18 +8331,62 @@
       });
 
       html += '</div>'; // cal-rows
+
+      // List table below timeline
+      var formatShort = function(raw) {
+        if (!raw) return '\u2014';
+        var d = new Date(raw);
+        return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+      };
+
+      html += '<div class="cal-list">';
+      html += '<table><thead><tr>' +
+        '<th>Acci\u00f3n</th><th>Estado</th><th>Inicio</th><th>Fin</th>' +
+        '<th>Modalidad</th><th>Horas</th><th>Participantes</th><th>Departamento</th>' +
+      '</tr></thead><tbody>';
+      visible.forEach(function(item) {
+        var color = CAL_ESTADO_COLORS[item.estado] || '#94a3b8';
+        var isSel = calState.selectedCodigo === item.codigo;
+        html += '<tr class="cal-list-row' + (isSel ? ' selected' : '') + '" data-codigo="' + esc(item.codigo) + '">' +
+          '<td class="cal-list-name">' + esc(item.nombre) + '</td>' +
+          '<td><span class="cal-list-dot" style="background:' + color + ';"></span>' + esc(item.estado || '\u2014') + '</td>' +
+          '<td>' + formatShort(item.rawInicio) + '</td>' +
+          '<td>' + formatShort(item.rawFin) + '</td>' +
+          '<td>' + esc(item.modalidad || '\u2014') + '</td>' +
+          '<td>' + item.horas + 'h</td>' +
+          '<td>' + item.participantes.length + '</td>' +
+          '<td>' + esc(item.departamento || '\u2014') + '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table></div>';
+
       html += '</div>'; // cal-timeline-inner
       container.innerHTML = html;
 
       // Bind bar clicks
+      function selectAction(codigo) {
+        calState.selectedCodigo = codigo;
+        container.querySelectorAll('.cal-bar').forEach(function(b) { b.classList.remove('selected'); });
+        container.querySelectorAll('.cal-list-row').forEach(function(r) { r.classList.remove('selected'); });
+        var bar = container.querySelector('.cal-bar[data-codigo="' + codigo + '"]');
+        if (bar) bar.classList.add('selected');
+        var row = container.querySelector('.cal-list-row[data-codigo="' + codigo + '"]');
+        if (row) row.classList.add('selected');
+        var item = visible.find(function(p) { return p.codigo === codigo; });
+        if (item) showCalDetail(item);
+      }
+
       container.querySelectorAll('.cal-bar').forEach(function(bar) {
         bar.addEventListener('click', function() {
-          var codigo = bar.dataset.codigo;
-          calState.selectedCodigo = codigo;
-          container.querySelectorAll('.cal-bar').forEach(function(b) { b.classList.remove('selected'); });
-          bar.classList.add('selected');
-          var item = visible.find(function(p) { return p.codigo === codigo; });
-          if (item) showCalDetail(item);
+          selectAction(bar.dataset.codigo);
+        });
+      });
+
+      container.querySelectorAll('.cal-list-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+          selectAction(row.dataset.codigo);
+          var bar = container.querySelector('.cal-bar[data-codigo="' + row.dataset.codigo + '"]');
+          if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
       });
     }
