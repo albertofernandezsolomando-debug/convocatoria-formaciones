@@ -1772,6 +1772,125 @@
       .dash-kpi-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
       .dash-container { padding: 20px 16px; }
     }
+
+    /* ── Certificate print styles ── */
+    .cert-page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 40mm 30mm;
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      page-break-after: always;
+    }
+    .cert-page .cert-title {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 40px;
+      color: var(--accent);
+    }
+    .cert-page .cert-body {
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .cert-page .cert-signature {
+      margin-top: 80px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ── Filter badge ── */
+    .filter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: var(--radius-lg);
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    /* ── Queue panel (lateral) ── */
+    .queue-panel {
+      position: fixed;
+      top: 0;
+      right: -380px;
+      width: 380px;
+      height: 100vh;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      transition: right var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+    .queue-panel.open {
+      right: 0;
+    }
+    .queue-panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .queue-panel-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .queue-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .queue-item {
+      padding: 12px;
+      background: var(--bg-input);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      cursor: grab;
+      transition: background var(--transition);
+    }
+    .queue-item:hover {
+      background: var(--accent-subtle);
+    }
+    .queue-item.dragging {
+      opacity: 0.5;
+    }
+    .queue-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .queue-item-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .queue-panel-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .queue-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.3);
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition);
+    }
+    .queue-panel-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -1957,6 +2076,8 @@
         <div style="display: flex; gap: 10px;">
           <button class="btn btn-secondary" id="btnExport">Exportar</button>
           <button class="btn btn-secondary" id="btnCopyEmails" style="display:none;">Copiar emails</button>
+          <button class="btn btn-secondary" onclick="generateCertificates('asistencia')" title="Certificado de asistencia">Cert. Asistencia</button>
+          <button class="btn btn-secondary" onclick="generateCertificates('aprovechamiento')" title="Certificado de aprovechamiento">Cert. Aprovechamiento</button>
           <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
@@ -5694,6 +5815,65 @@
           showToast('Editando convocatoria. Añade de nuevo a la cola cuando termines.', 'info', 5000);
         });
       });
+    }
+
+    // ═══════════════════════════════════
+    // CERTIFICATES
+    // ═══════════════════════════════════
+
+    function generateCertificates(type) {
+      // type: 'asistencia' | 'aprovechamiento'
+      const selected = getSelectedAttendees();
+      if (!selected.length) {
+        showToast('Selecciona al menos un participante', 'warning');
+        return;
+      }
+      const ev = getCurrentEvent();
+      if (!ev.title) {
+        showToast('Completa los datos del evento primero', 'warning');
+        return;
+      }
+      const win = window.open('', '_blank');
+      const doc = win.document;
+      doc.open();
+      const pages = selected.map(function(emp) {
+        var nombre = esc(emp['Empleado'] || '');
+        var nif = esc(emp['NIF'] || '');
+        var titulo = type === 'asistencia'
+          ? 'CERTIFICADO DE ASISTENCIA'
+          : 'CERTIFICADO DE APROVECHAMIENTO';
+        var duracion = '';
+        // Try to find hours from catalog action matching event title
+        var acciones = getCatalog('acciones');
+        var titleNorm = (ev.title || '').trim().toLowerCase();
+        var accion = acciones.find(function(a) { return (a.nombre || '').trim().toLowerCase() === titleNorm; });
+        if (accion) {
+          duracion = String((parseFloat(accion.horasPresenciales) || 0) + (parseFloat(accion.horasTeleformacion) || 0));
+        }
+        var texto = type === 'asistencia'
+          ? 'Que D./Da. ' + nombre + ', con NIF ' + nif + ', ha asistido a la accion formativa "' + esc(ev.title) + '" celebrada el dia ' + esc(ev.date) + ', con una duracion de ' + esc(duracion || 'N/A') + ' horas.'
+          : 'Que D./Da. ' + nombre + ', con NIF ' + nif + ', ha participado y superado con aprovechamiento la accion formativa "' + esc(ev.title) + '" celebrada el dia ' + esc(ev.date) + ', con una duracion de ' + esc(duracion || 'N/A') + ' horas.';
+        return '<div class="cert-page">' +
+          '<div class="cert-title">' + titulo + '</div>' +
+          '<div class="cert-body"><p>' + texto + '</p></div>' +
+          '<div class="cert-signature">' +
+            '<div>Firma del responsable</div>' +
+            '<div>Fecha: ' + new Date().toLocaleDateString('es-ES') + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      doc.write('<!DOCTYPE html><html><head>' +
+        '<style>' +
+          'body { margin: 0; font-family: "Inter", sans-serif; }' +
+          '.cert-page { width: 210mm; min-height: 297mm; padding: 40mm 30mm; page-break-after: always; }' +
+          '.cert-title { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 40px; color: #4F46E5; }' +
+          '.cert-body { font-size: 14px; line-height: 1.8; }' +
+          '.cert-signature { margin-top: 80px; display: flex; justify-content: space-between; }' +
+          '@media print { body { margin: 0; } }' +
+        '</style>' +
+        '</head><body>' + pages + '</body></html>');
+      doc.close();
+      showToast(selected.length + ' certificado(s) generado(s)', 'success');
     }
 
     // ═══════════════════════════════════
