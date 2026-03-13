@@ -49,6 +49,17 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    *:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+    .tab-btn:focus-visible {
+      background: var(--accent-subtle);
+    }
+
     body {
       font-family: var(--font-body);
       background: var(--bg-primary);
