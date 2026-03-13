@@ -10227,10 +10227,33 @@
       // Summary footer
       var totalBudgetAll = scorecardData.reduce(function(s, p) { return s + p.totalBudget; }, 0);
       var totalActionsAll = scorecardData.reduce(function(s, p) { return s + p.numActions; }, 0);
+      var avgBudgetPerAction = totalActionsAll > 0 ? totalBudgetAll / totalActionsAll : 0;
       var footer = document.createElement('div');
-      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between;';
-      footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span>';
+      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;';
+      footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span><span>Media: ' + formatCurrency(avgBudgetPerAction) + '/acción</span>';
       container.appendChild(footer);
+
+      // Best/worst performers highlight
+      if (scorecardData.length >= 2) {
+        var best = scorecardData[0];
+        var worst = scorecardData[scorecardData.length - 1];
+        var highlightRow = document.createElement('div');
+        highlightRow.style.cssText = 'display:flex; gap:8px; margin-top:8px;';
+
+        var bestEl = document.createElement('div');
+        bestEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--success-light); border-radius:var(--radius-sm); font-size:10px;';
+        bestEl.innerHTML = '<div style="font-weight:600; color:var(--success); margin-bottom:2px;">Mejor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(best.nombre) + ' — Punt. ' + best.score + '</div>';
+        highlightRow.appendChild(bestEl);
+
+        if (worst.score < best.score) {
+          var worstEl = document.createElement('div');
+          worstEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--danger-light); border-radius:var(--radius-sm); font-size:10px;';
+          worstEl.innerHTML = '<div style="font-weight:600; color:var(--danger); margin-bottom:2px;">Peor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(worst.nombre) + ' — Punt. ' + worst.score + '</div>';
+          highlightRow.appendChild(worstEl);
+        }
+
+        container.appendChild(highlightRow);
+      }
     }
 
     function renderDashboard() {
