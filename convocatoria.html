@@ -2884,7 +2884,9 @@
           '&#9660; Control de asistencia' +
           ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
         '</div>' +
-        '<div id="cfAsistenciaInner">' + innerHtml + '</div>' +
+        '<div id="cfAsistenciaInner">' + innerHtml +
+          (participantes.length > 0 ? '<div style="margin-top:10px;"><button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button></div>' : '') +
+        '</div>' +
       '</div>';
     }
 
@@ -3349,6 +3351,79 @@
           upsertCatalogRecord('acciones', 'codigo', record);
         });
       });
+
+      // Print sign sheet button
+      var printBtn = document.getElementById('btnPrintSignSheet');
+      if (printBtn) {
+        printBtn.addEventListener('click', function() {
+          printSignSheet(record);
+        });
+      }
+    }
+
+    function printSignSheet(record) {
+      var participantes = record.participantes || [];
+      if (participantes.length === 0) {
+        showToast('No hay participantes para la hoja de firmas', 'warning');
+        return;
+      }
+      var proveedorName = '';
+      if (record.proveedorVinculado) {
+        var provs = getCatalog('proveedores');
+        var prov = provs.find(function(p) { return p.cif === record.proveedorVinculado; });
+        if (prov) proveedorName = prov.razonSocial || prov.cif;
+      }
+      var rows = participantes.map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        return {
+          nombre: emp ? (emp.Empleado || nif) : nif,
+          nif: nif,
+          empresa: emp ? (emp.Empresa || '') : ''
+        };
+      });
+      var accionName = esc(record.nombre || record.codigo || '');
+      var fechaStr = '';
+      if (record.fechaInicio) {
+        var fi = new Date(record.fechaInicio + 'T00:00:00');
+        fechaStr = fi.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        if (record.fechaFin && record.fechaFin !== record.fechaInicio) {
+          var ff = new Date(record.fechaFin + 'T00:00:00');
+          fechaStr += ' - ' + ff.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+      }
+      var tableRows = '';
+      rows.forEach(function(r, i) {
+        tableRows += '<tr><td>' + (i + 1) + '</td><td>' + esc(r.nombre) + '</td><td>' + esc(r.nif) + '</td><td>' + esc(r.empresa) + '</td><td class="firma"></td></tr>';
+      });
+      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de Firmas</title>' +
+        '<style>' +
+          'body { font-family: Georgia, "Times New Roman", serif; margin: 40px; color: #0f172a; }' +
+          'h1 { font-size: 18px; margin-bottom: 4px; }' +
+          '.meta { font-size: 13px; color: #475569; margin-bottom: 20px; }' +
+          'table { width: 100%; border-collapse: collapse; margin-top: 10px; }' +
+          'th, td { border: 1px solid #333; padding: 10px 12px; text-align: left; font-size: 13px; }' +
+          'th { background: #f1f5f9; font-weight: 600; font-size: 12px; }' +
+          'td.firma { width: 180px; min-height: 40px; }' +
+          '@media print { body { margin: 20px; } @page { size: A4; margin: 15mm; } }' +
+        '</style></head><body>' +
+        '<h1>Hoja de Firmas</h1>' +
+        '<div class="meta">' +
+          '<strong>' + accionName + '</strong><br>' +
+          (fechaStr ? esc(fechaStr) + '<br>' : '') +
+          (proveedorName ? 'Proveedor: ' + esc(proveedorName) : '') +
+        '</div>' +
+        '<table><thead><tr><th>#</th><th>Nombre</th><th>NIF</th><th>Empresa</th><th>Firma</th></tr></thead><tbody>' +
+        tableRows +
+        '</tbody></table></body></html>';
+      var blob = new Blob([html], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var w = window.open(url, '_blank');
+      if (w) {
+        w.onload = function() {
+          URL.revokeObjectURL(url);
+          w.print();
+        };
+      }
     }
 
     function renderAccionParticipants(record) {
