@@ -4357,6 +4357,15 @@
     }
     function logToHistory(event, attendeeCount, emails, filters, status) {
       const history = getHistory();
+      // Try to find matching action code by event title
+      var actionCode = '';
+      var acciones = getCatalog('acciones');
+      var titleNorm = (event.title || '').trim().toLowerCase();
+      var matchedAccion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (matchedAccion) actionCode = matchedAccion.codigo || '';
+
       history.unshift({
         id: Date.now(),
         timestamp: new Date().toISOString(),
@@ -4371,11 +4380,33 @@
         emails: emails,
         filters: JSON.parse(JSON.stringify(filters)),
         status: status || 'completed',
-        surveyScheduled: false
+        surveyScheduled: false,
+        actionCode: actionCode
       });
       // Keep last 50 entries
       if (history.length > 50) history.length = 50;
       saveHistory(history);
+    }
+
+    function navigateToAction(code) {
+      // Switch to catalog tab
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      var catalogBtn = document.querySelector('.tab-btn[data-tab="tabCatalogos"]');
+      if (catalogBtn) catalogBtn.classList.add('active');
+      document.getElementById('tabCatalogos').classList.add('active');
+
+      // Switch to acciones sub-tab
+      document.querySelectorAll('.catalog-tab').forEach(function(b) { b.classList.remove('active'); });
+      var accionesTab = document.querySelector('.catalog-tab[data-catalog="acciones"]');
+      if (accionesTab) accionesTab.classList.add('active');
+      catalogState.activeCatalog = 'acciones';
+
+      // Select the action
+      catalogState.selectedPK = code;
+      renderCatalogList();
+      renderCatalogForm();
+      showToast('Accion ' + code + ' abierta', 'success');
     }
 
     // ═══════════════════════════════════
@@ -7340,6 +7371,11 @@
           surveyBadge = '<span style="font-size:10px; color:var(--text-muted);">Sin encuesta</span>';
         }
 
+        var actionBadge = '';
+        if (h.actionCode) {
+          actionBadge = '<a href="#" class="history-action-link" data-action-code="' + esc(h.actionCode) + '" style="font-size:10px; color:var(--accent); text-decoration:none; cursor:pointer; font-weight:500;" title="Ver acci\u00f3n en cat\u00e1logo">\ud83d\udccc ' + esc(h.actionCode) + '</a>';
+        }
+
         return '<div class="history-item" style="padding:12px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px;">' +
           '<div style="display:flex; justify-content:space-between; align-items:start;">' +
             '<div>' +
@@ -7351,7 +7387,7 @@
                 h.attendeeCount + ' asistentes · ' + esc(filterSummary) +
               '</div>' +
               '<div style="font-size:10px; color:var(--text-muted); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">' +
-                'Enviado: ' + date + ' ' + statusBadge + ' ' + surveyBadge +
+                'Enviado: ' + date + ' ' + statusBadge + ' ' + surveyBadge + ' ' + actionBadge +
               '</div>' +
             '</div>' +
             '<button class="link-btn link-add" data-repeat="' + i + '" style="font-size:11px; white-space:nowrap;">Repetir</button>' +
@@ -7384,6 +7420,18 @@
           renderTable();
           document.getElementById('historyPanel').classList.remove('visible');
           showToast('Configuración de "' + h.title + '" restaurada. Ajusta la fecha.', 'info', 5000);
+        });
+      });
+
+      // Action code links — navigate to catalog
+      list.querySelectorAll('.history-action-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          var code = link.dataset.actionCode;
+          if (code) {
+            document.getElementById('historyPanel').classList.remove('visible');
+            navigateToAction(code);
+          }
         });
       });
     }
