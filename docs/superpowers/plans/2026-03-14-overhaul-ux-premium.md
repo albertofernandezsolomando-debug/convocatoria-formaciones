@@ -2247,7 +2247,1225 @@ Edicion inline de emails y NIFs con persistencia en localStorage."
 
 ---
 
-<!-- F2.2-PLACEHOLDER -->
+### Task F2.2: Panel inline checklist narrativo FUNDAE
+
+**Lane:** H (Catalogos)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — nuevas clases `.fundae-readiness`)
+- Modify: `convocatoria.html:3228` (HTML — insertar panel en pestana XML)
+- Modify: `convocatoria.html:~8600` (JS — nueva funcion `checkFundaeReadinessDetailed()`)
+- Modify: `convocatoria.html:9772-9800` (JS — vincular panel al select de accion XML)
+
+- [ ] **Paso 1: Anadir CSS del panel readiness**
+
+Insertar antes de `/* --- Cuadro de Mando --- */` (linea ~1481):
+
+```css
+/* --- Panel readiness FUNDAE --- */
+.fundae-readiness {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.fundae-readiness-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.fundae-readiness-ok { color: var(--text-secondary); }
+.fundae-readiness-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+.fundae-readiness-list li {
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fundae-readiness-list li::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.fundae-readiness-list li.missing::before {
+  background: var(--danger);
+}
+.fundae-readiness-link {
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+}
+.fundae-readiness-link:hover { text-decoration: underline; }
+```
+
+- [ ] **Paso 2: Insertar contenedor HTML en pestana XML**
+
+Despues de `<div id="xmlAccionInfo" class="text-sm text-muted mt-sm"></div>` (linea 3228):
+
+```html
+<div id="fundaeReadinessPanel" class="fundae-readiness" style="display:none;"></div>
+```
+
+- [ ] **Paso 3: Crear funcion checkFundaeReadinessDetailed()**
+
+Insertar despues de `checkFundaeReadiness()` (tras linea ~8600):
+
+```javascript
+function checkFundaeReadinessDetailed(actionCode) {
+  var acciones = getCatalog('acciones');
+  var accion = acciones.find(function(a) { return a.codigo === actionCode; });
+  if (!accion) return { complete: true, items: [], narrative: '' };
+
+  var items = [];
+  if (!accion.nombre) items.push({ field: 'nombre', message: 'Nombre de la accion', missing: true });
+  if (!accion.fechaInicio) items.push({ field: 'fechaInicio', message: 'Fecha de inicio', missing: true });
+  if (!accion.fechaFin) items.push({ field: 'fechaFin', message: 'Fecha de fin', missing: true });
+  if (!accion.modalidad) items.push({ field: 'modalidad', message: 'Modalidad', missing: true });
+  if (!accion.horasPresenciales && !accion.horasTeleformacion) items.push({ field: 'horas', message: 'Horas', missing: true });
+  if (!accion.areaProfesional) items.push({ field: 'areaProfesional', message: 'Area profesional', missing: true });
+
+  if (accion.modalidad === 'Presencial' || accion.modalidad === 'Mixta') {
+    var centro = accion.centroVinculado ? getCatalog('centros').find(function(c) { return c.documento === accion.centroVinculado; }) : null;
+    if (!centro) items.push({ field: 'centro', message: 'Centro de imparticion', missing: true });
+    else {
+      if (!centro.nombre) items.push({ field: 'centro.nombre', message: 'Nombre del centro', missing: true });
+      if (!centro.direccion) items.push({ field: 'centro.direccion', message: 'Direccion del centro', missing: true });
+    }
+  }
+
+  var tutor = accion.tutorVinculado ? getCatalog('tutores').find(function(t) { return t.documento === accion.tutorVinculado; }) : null;
+  if (!tutor) items.push({ field: 'tutor', message: 'Tutor/a', missing: true });
+  else {
+    if (!tutor.nombre) items.push({ field: 'tutor.nombre', message: 'Nombre del tutor/a', missing: true });
+    if (!tutor.email) items.push({ field: 'tutor.email', message: 'Email del tutor/a', missing: true });
+  }
+
+  var participantes = accion.participantes || [];
+  if (participantes.length === 0) items.push({ field: 'participantes', message: 'Participantes (0 registrados)', missing: true });
+  else {
+    var sinNSS = 0;
+    participantes.forEach(function(nif) {
+      var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+      if (emp && (!emp['_f_NSS'] || emp['_f_NSS'] === '')) sinNSS++;
+    });
+    if (sinNSS > 0) items.push({ field: 'nss', message: 'NSS de ' + sinNSS + ' participante' + (sinNSS > 1 ? 's' : ''), missing: true });
+  }
+
+  var missingItems = items.filter(function(i) { return i.missing; });
+  var narrative = missingItems.length === 0
+    ? 'Todos los datos listos para generar XML.'
+    : 'Faltan ' + missingItems.length + ' dato' + (missingItems.length > 1 ? 's' : '') + ': ' + missingItems.map(function(i) { return i.message; }).join(', ') + '.';
+
+  return { complete: missingItems.length === 0, items: items, narrative: narrative };
+}
+```
+
+- [ ] **Paso 4: Crear funcion renderFundaeReadinessPanel()**
+
+```javascript
+function renderFundaeReadinessPanel(actionCode) {
+  var panel = document.getElementById('fundaeReadinessPanel');
+  if (!panel) return;
+  if (!actionCode) { panel.style.display = 'none'; return; }
+  var result = checkFundaeReadinessDetailed(actionCode);
+  panel.style.display = '';
+
+  if (result.complete) {
+    panel.innerHTML = '<div class="fundae-readiness-title">Readiness FUNDAE</div>' +
+      '<div class="fundae-readiness-ok">' + esc(result.narrative) + '</div>';
+    return;
+  }
+
+  var listHtml = result.items.filter(function(i) { return i.missing; }).map(function(i) {
+    return '<li class="missing">' + esc(i.message) + '</li>';
+  }).join('');
+
+  panel.innerHTML = '<div class="fundae-readiness-title">Readiness FUNDAE</div>' +
+    '<div>' + esc(result.narrative) + '</div>' +
+    '<ul class="fundae-readiness-list">' + listHtml + '</ul>' +
+    '<a class="fundae-readiness-link" onclick="document.querySelector(\'.tab-btn[data-tab=&quot;tabCatalogos&quot;]\').click();">Completar datos en Catalogos</a>';
+}
+```
+
+- [ ] **Paso 5: Vincular al select de accion XML**
+
+En `xmlAccionSelect change` (linea 9772), anadir `renderFundaeReadinessPanel(codigo);` al final del handler y `renderFundaeReadinessPanel(null);` en el bloque `if (!codigo)`.
+
+- [ ] **Paso 6: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.2): panel inline checklist narrativo FUNDAE
+
+Panel de readiness en pestana XML con texto narrativo.
+Lista detallada de datos faltantes con links a Catalogos."
+```
+
+---
+
+### Task F2.3: Dialogo preview + confirmacion fusionado
+
+**Lane:** F (Dialogos + envio)
+
+**Files:**
+- Modify: `convocatoria.html:~1380-1450` (CSS — `.confirm-preview`, `.confirm-alerts`, `.confirm-dialog-enter`)
+- Modify: `convocatoria.html:3823-3832` (HTML — reestructurar `#confirmDialog`)
+- Modify: `convocatoria.html:8653-8690` (JS — construir preview en el dialogo)
+
+- [ ] **Paso 1: Anadir CSS del dialogo fusionado**
+
+Insertar antes de `/* --- Cuadro de Mando --- */`:
+
+```css
+/* --- Dialogo preview + confirmacion --- */
+.confirm-preview { padding: 16px; border-bottom: 1px solid var(--border); }
+.confirm-preview-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.confirm-preview-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.confirm-preview-meta span { display: inline-block; margin-right: 12px; }
+.confirm-preview-count {
+  display: inline-block; padding: 2px 10px;
+  background: var(--accent-light); color: var(--accent);
+  border-radius: var(--radius-lg); font-weight: 600; font-size: 13px;
+}
+.confirm-attendee-list { margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+.confirm-attendee-more { color: var(--text-muted); font-style: italic; }
+.confirm-alerts { padding: 12px 16px; }
+.confirm-alert-card {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 6px;
+  font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+}
+.confirm-alert-icon { flex-shrink: 0; font-size: 14px; }
+.confirm-dialog-enter { animation: confirmEnter 0.25s ease-out; }
+@keyframes confirmEnter {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+```
+
+- [ ] **Paso 2: Reestructurar HTML del dialogo**
+
+Reemplazar `#confirmDialog` (lineas 3823-3832):
+
+```html
+<div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
+  <div class="dialog-box confirm-dialog-enter" style="max-width:520px; padding:0; border-top:3px solid var(--accent);">
+    <div class="confirm-preview" id="confirmPreview"></div>
+    <div class="confirm-alerts" id="confirmAlerts"></div>
+    <div class="dialog-buttons" style="padding:12px 16px; border-top:1px solid var(--border);">
+      <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+      <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
+    </div>
+  </div>
+</div>
+```
+
+- [ ] **Paso 3: Refactorizar construccion del summary en btnOpenOutlook**
+
+Reemplazar lineas 8661-8690 (construccion de `summary` y asignacion a `confirmBody`) por:
+
+```javascript
+var dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+  weekday: 'long', day: 'numeric', month: 'long'
+});
+var typeLabel = event.isTeams ? 'Teams' : 'Presencial';
+
+var previewHtml = '<div class="confirm-preview-title">' + esc(event.title) + '</div>' +
+  '<div class="confirm-preview-meta">' +
+    '<span>' + dateStr + '</span><span>' + event.startTime + ' - ' + event.endTime + '</span>' +
+    '<span>' + typeLabel + (event.location && !event.isTeams ? ' · ' + esc(event.location) : '') + '</span>' +
+  '</div>' +
+  '<div style="margin-top:8px;"><span class="confirm-preview-count">' + selected.length + '</span>' +
+    '<span style="font-size:12px;color:var(--text-muted);margin-left:6px;">personas destinatarias</span></div>';
+
+var attendeeListHtml = '<div class="confirm-attendee-list">';
+var showCount = Math.min(5, selected.length);
+for (var ai = 0; ai < showCount; ai++) attendeeListHtml += esc(selected[ai].Empleado) + '<br>';
+if (selected.length > 5) attendeeListHtml += '<span class="confirm-attendee-more">y ' + (selected.length - 5) + ' mas</span>';
+attendeeListHtml += '</div>';
+if (isSeries) attendeeListHtml += '<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">' + state.seriesDates.length + ' sesiones (serie)</div>';
+previewHtml += attendeeListHtml;
+
+document.getElementById('confirmPreview').innerHTML = previewHtml;
+
+var alertsHtml = '';
+if (selected.length > 50) alertsHtml += '<div class="confirm-alert-card"><span class="confirm-alert-icon">&#9888;</span><span>Se copiaran los emails al portapapeles (&gt;50 personas destinatarias)</span></div>';
+var conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
+if (conflicts.length > 0) alertsHtml += '<div class="confirm-alert-card"><span class="confirm-alert-icon">&#9888;</span><span>' + buildConflictWarningHtml(conflicts) + '</span></div>';
+var fundaeCheck = checkFundaeReadiness(event.title);
+if (fundaeCheck.found && fundaeCheck.warnings.length > 0) alertsHtml += '<div class="confirm-alert-card"><span class="confirm-alert-icon">&#8505;</span><span>' + buildFundaeWarningHtml(fundaeCheck.warnings) + '</span></div>';
+document.getElementById('confirmAlerts').innerHTML = alertsHtml;
+document.getElementById('confirmDialog').classList.add('visible');
+```
+
+- [ ] **Paso 4: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.3): dialogo preview + confirmacion fusionado
+
+Preview con titulo, fecha, tipo, chip de conteo, lista truncada.
+Alertas como cards. Borde superior accent, animacion de entrada."
+```
+
+---
+
+### Task F2.4: Barra de progreso en cola
+
+**Lane:** G (Cola + progreso)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — `.queue-progress`)
+- Modify: `convocatoria.html:3112-3124` (HTML — insertar barra en `#queueBar`)
+- Modify: `convocatoria.html:8822-8900` (JS — actualizar barra en `launchNext()`)
+
+- [ ] **Paso 1: Anadir CSS**
+
+Insertar antes de `/* --- Cuadro de Mando --- */`:
+
+```css
+/* --- Barra de progreso cola --- */
+.queue-progress { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+.queue-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.3s ease-out; }
+.queue-status-text { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.queue-item-done { opacity: 0.5; position: relative; }
+.queue-item-done::after { content: '\2713'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+.queue-item-failed { opacity: 0.5; border-color: var(--danger) !important; }
+.queue-item-failed::after { content: '\2717'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 14px; }
+```
+
+- [ ] **Paso 2: Insertar barra en HTML de queueBar**
+
+Despues de la linea de controles (linea ~3122, antes de `<div id="queueList"`):
+
+```html
+<div class="queue-progress" id="queueProgress" style="display:none;">
+  <div class="queue-progress-fill" id="queueProgressFill"></div>
+</div>
+<div class="queue-status-text" id="queueStatusText" style="display:none;"></div>
+```
+
+- [ ] **Paso 3: Actualizar launchNext() con progreso**
+
+Al inicio de `launchNext()` (linea 8828), antes del check `if (index >= state.queue.length)`:
+
+```javascript
+var progressFill = document.getElementById('queueProgressFill');
+var statusText = document.getElementById('queueStatusText');
+document.getElementById('queueProgress').style.display = '';
+statusText.style.display = '';
+progressFill.style.width = Math.round((index / total) * 100) + '%';
+statusText.textContent = 'Procesando ' + (index + 1) + ' de ' + total + '...';
+```
+
+Al inicio del listener `btnLaunchQueue` (linea 8822, tras `let index = 0;`):
+
+```javascript
+document.getElementById('queueProgress').style.display = '';
+document.getElementById('queueStatusText').style.display = '';
+document.getElementById('queueProgressFill').style.width = '0%';
+```
+
+Donde la cola se completa (lineas 8831-8835 y 8892-8895), anadir:
+
+```javascript
+document.getElementById('queueProgressFill').style.width = '100%';
+document.getElementById('queueStatusText').textContent = total + ' convocatorias procesadas';
+setTimeout(function() {
+  document.getElementById('queueProgress').style.display = 'none';
+  document.getElementById('queueStatusText').style.display = 'none';
+}, 3000);
+```
+
+- [ ] **Paso 4: Marcar items procesados**
+
+Tras abrir el deep link en `launchNext()` (~linea 8850), anadir:
+
+```javascript
+var queueItems = document.querySelectorAll('#queueList > div');
+if (queueItems[index - 1]) {
+  queueItems[index - 1].classList.add('queue-item-done');
+  queueItems[index - 1].style.position = 'relative';
+}
+```
+
+- [ ] **Paso 5: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.4): barra de progreso en cola con tracking
+
+Barra proporcional, texto de estado, items atenuados al procesarse."
+```
+
+---
+
+### Task F2.5: Resumen post-envio accionable
+
+**Lane:** F (Dialogos + envio)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — `.post-send-*`)
+- Modify: `convocatoria.html:~3832` (HTML — nuevo dialogo `#postSendDialog`)
+- Modify: `convocatoria.html:8695-8714` (JS — invocar resumen tras doSend)
+
+- [ ] **Paso 1: Anadir CSS**
+
+```css
+/* --- Resumen post-envio --- */
+.post-send-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.post-send-check { width: 40px; height: 40px; flex-shrink: 0; }
+.post-send-check circle { fill: var(--accent-light); }
+.post-send-check polyline {
+  fill: none; stroke: var(--accent); stroke-width: 2.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 24; stroke-dashoffset: 24;
+  animation: postSendDraw 0.5s ease-out 0.2s forwards;
+}
+@keyframes postSendDraw { to { stroke-dashoffset: 0; } }
+.post-send-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.post-send-details { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; padding-left: 52px; }
+.post-send-detail-item { display: flex; align-items: center; gap: 6px; }
+.post-send-detail-label { color: var(--text-muted); min-width: 80px; }
+```
+
+- [ ] **Paso 2: Insertar HTML del dialogo**
+
+Despues del cierre de `#confirmDialog` (linea ~3832):
+
+```html
+<div class="dialog-overlay" id="postSendDialog" role="dialog" aria-modal="true">
+  <div class="dialog-box" style="max-width:460px; text-align:left;">
+    <div id="postSendContent"></div>
+    <div class="dialog-buttons">
+      <button class="btn btn-secondary" id="postSendClose">Cerrar</button>
+      <button class="btn btn-primary" id="postSendNext">Preparar siguiente</button>
+    </div>
+  </div>
+</div>
+```
+
+- [ ] **Paso 3: Crear funcion showPostSendSummary()**
+
+Insertar despues de `syncConvocatoriaWithAccion` (~linea 8544):
+
+```javascript
+function showPostSendSummary(event, attendeeCount, emails) {
+  var content = document.getElementById('postSendContent');
+  var html = '<div class="post-send-header">' +
+    '<svg class="post-send-check" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18"/><polyline points="12,20 18,26 28,14"/></svg>' +
+    '<div class="post-send-title">Convocatoria enviada</div></div>' +
+    '<div class="post-send-details">' +
+      '<div class="post-send-detail-item"><span class="post-send-detail-label">Titulo</span><span>' + esc(event.title) + '</span></div>' +
+      '<div class="post-send-detail-item"><span class="post-send-detail-label">Fecha</span><span>' + esc(event.date) + '</span></div>' +
+      '<div class="post-send-detail-item"><span class="post-send-detail-label">Destinatarios</span><span>' + attendeeCount + ' personas</span></div>';
+
+  var fundaeCheck = checkFundaeReadiness(event.title);
+  if (fundaeCheck.found) {
+    var accion = getCatalog('acciones').find(function(a) { return (a.nombre||'').trim().toLowerCase() === event.title.trim().toLowerCase(); });
+    if (accion && accion.fechaInicio) {
+      var deadline = new Date(accion.fechaInicio);
+      deadline.setDate(deadline.getDate() - 2);
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Plazo FUNDAE</span><span>Comunica inicio antes del ' +
+        deadline.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + '</span></div>';
+    }
+  }
+  if (document.getElementById('surveyCheck').checked) {
+    html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Encuesta</span><span>Programada</span></div>';
+  }
+  html += '</div>';
+  content.innerHTML = html;
+
+  document.getElementById('postSendDialog').classList.add('visible');
+  document.getElementById('postSendClose').onclick = function() { document.getElementById('postSendDialog').classList.remove('visible'); };
+  document.getElementById('postSendNext').onclick = function() {
+    document.getElementById('postSendDialog').classList.remove('visible');
+    document.getElementById('eventTitle').value = '';
+    document.getElementById('eventDate').value = '';
+    document.getElementById('eventLocation').value = '';
+    document.getElementById('eventFormador').value = '';
+    document.getElementById('eventBody').value = '';
+    state.excludedNIFs = new Set();
+    renderTable();
+  };
+}
+```
+
+- [ ] **Paso 4: Invocar tras doSend()**
+
+Al final de `doSend()` (tras `syncConvocatoriaWithAccion`):
+
+```javascript
+showPostSendSummary(event, selected.length, emails);
+```
+
+- [ ] **Paso 5: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.5): resumen post-envio accionable
+
+Check SVG animado, datos de convocatoria, plazo FUNDAE, boton preparar siguiente."
+```
+
+---
+
+### Task F2.6: Errores contextuales en formulario
+
+**Lane:** F (Dialogos + envio)
+
+**Files:**
+- Modify: `convocatoria.html:~1160` (CSS — `.input-field.error`, `.field-error`)
+- Modify: `convocatoria.html:8639-8651` (JS — refactorizar `validateEvent()`)
+
+- [ ] **Paso 1: Anadir CSS**
+
+Despues de la regla `.input-field` existente (~linea 1160):
+
+```css
+.input-field.error { border-color: var(--danger); }
+.field-error { display: block; font-size: 11px; color: var(--danger); margin-top: 2px; }
+```
+
+- [ ] **Paso 2: Refactorizar validateEvent()**
+
+Reemplazar lineas 8639-8651:
+
+```javascript
+function validateEvent() {
+  var event = getCurrentEvent();
+  var valid = true;
+  document.querySelectorAll('.field-error').forEach(function(el) { el.remove(); });
+  document.querySelectorAll('.input-field.error').forEach(function(el) { el.classList.remove('error'); });
+
+  var requiredFields = [
+    { id: 'eventTitle', label: 'Titulo es obligatorio', value: event.title },
+    { id: 'eventDate', label: 'Fecha es obligatoria', value: event.date }
+  ];
+  var firstError = null;
+  requiredFields.forEach(function(f) {
+    if (!f.value) {
+      valid = false;
+      var el = document.getElementById(f.id);
+      el.classList.add('error');
+      var hint = document.createElement('span');
+      hint.className = 'field-error';
+      hint.textContent = f.label;
+      el.parentNode.appendChild(hint);
+      if (!firstError) firstError = el;
+    }
+  });
+  if (event.startTime && event.endTime && event.startTime >= event.endTime) {
+    valid = false;
+    var endEl = document.getElementById('eventEnd');
+    endEl.classList.add('error');
+    var hint = document.createElement('span');
+    hint.className = 'field-error';
+    hint.textContent = 'Hora fin debe ser posterior a hora inicio';
+    endEl.parentNode.appendChild(hint);
+    if (!firstError) firstError = endEl;
+  }
+  if (firstError) {
+    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast('Completa los campos obligatorios', 'warning', 3000);
+  }
+  return valid;
+}
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.6): errores contextuales en formulario de evento
+
+Errores inline bajo cada campo, scroll al primer error, validacion hora."
+```
+
+---
+
+### Task F2.7: Diagnostico accionable errores Excel
+
+**Lane:** E (UX Convocatoria)
+
+**Files:**
+- Modify: `convocatoria.html:6499-6547` (JS — refactorizar `parseOrgSheet()`)
+- Modify: `convocatoria.html:7418-7421` (JS — dialogo para errores criticos)
+
+- [ ] **Paso 1: Refactorizar parseOrgSheet() con tipos de error**
+
+Reemplazar `parseOrgSheet()` (lineas 6499-6547). Cada error ahora es un objeto `{ type, title, detail, suggestion }`:
+
+```javascript
+function parseOrgSheet(workbook) {
+  var errors = [];
+
+  var sheetName = workbook.SheetNames.find(function(n) { return n === 'ORGANIGRAMA'; });
+  if (!sheetName) {
+    sheetName = workbook.SheetNames.find(function(n) { return n.toLowerCase() === 'organigrama'; });
+  }
+  if (!sheetName && workbook.SheetNames.length === 1) {
+    sheetName = workbook.SheetNames[0];
+  }
+  if (!sheetName) {
+    errors.push({ type: 'sheet-not-found', title: 'Hoja no encontrada',
+      detail: 'No se encontro la hoja ORGANIGRAMA. Hojas disponibles: ' + workbook.SheetNames.join(', ') + '.',
+      suggestion: 'Renombra la hoja a "ORGANIGRAMA" o usa un archivo con una sola hoja.' });
+    return { employees: [], errors: errors };
+  }
+
+  var sheet = workbook.Sheets[sheetName];
+  var rows = XLSX_sheetToJSON(sheet);
+  if (rows.length === 0) {
+    errors.push({ type: 'empty-sheet', title: 'Hoja vacia',
+      detail: 'La hoja "' + sheetName + '" no contiene datos.',
+      suggestion: 'Verifica que los datos empiezan en la fila 1 con cabeceras.' });
+    return { employees: [], errors: errors };
+  }
+
+  var headers = Object.keys(rows[0]);
+  var missing = RELEVANT_COLUMNS.filter(function(c) { return !headers.includes(c); });
+  if (missing.length > 0) {
+    errors.push({ type: 'missing-columns', title: 'Columnas parciales',
+      detail: 'Se encontraron ' + (RELEVANT_COLUMNS.length - missing.length) + ' de ' + RELEVANT_COLUMNS.length + '. Faltan: ' + missing.join(', ') + '.',
+      suggestion: 'Los datos se cargaran parcialmente.' });
+  }
+
+  var employees = rows
+    .filter(function(row) { var ab = row['Alta/Baja']; return ab === 1 || ab === '1'; })
+    .map(function(row, idx) {
+      var emp = {};
+      RELEVANT_COLUMNS.forEach(function(col) { emp[col] = row[col] != null ? String(row[col]).trim() : ''; });
+      FUNDAE_COLUMNS.forEach(function(col) { if (row[col] != null) emp['_f_' + col] = String(row[col]).trim(); });
+      emp._id = String(idx);
+      FILTER_KEYS.forEach(function(col) { emp[col] = emp[col].replace(/\s+/g, ' ').trim(); });
+      return emp;
+    });
+
+  if (employees.length === 0) {
+    errors.push({ type: 'no-active', title: 'Sin personas activas',
+      detail: 'No hay registros con Alta/Baja = 1.',
+      suggestion: 'Verifica que la columna "Alta/Baja" contiene 1 para personas en activo.' });
+  }
+  return { employees: employees, errors: errors };
+}
+```
+
+- [ ] **Paso 2: Crear funcion showExcelErrorDialog()**
+
+Insertar despues de `parseOrgSheet`:
+
+```javascript
+function showExcelErrorDialog(errors) {
+  var critical = errors.find(function(e) { return e.type === 'sheet-not-found' || e.type === 'empty-sheet'; });
+  if (!critical && errors.length === 0) return false;
+
+  if (critical) {
+    var overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay visible';
+    overlay.innerHTML = '<div class="dialog-box" style="max-width:460px; text-align:left;">' +
+      '<h3 style="margin:0 0 12px; font-size:15px; font-weight:600; color:var(--danger);">' + esc(critical.title) + '</h3>' +
+      '<p style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:8px;">' + esc(critical.detail) + '</p>' +
+      '<p style="font-size:12px; color:var(--text-muted); line-height:1.5;">' + esc(critical.suggestion) + '</p>' +
+      '<details style="margin-top:12px; font-size:12px; color:var(--text-muted);"><summary style="cursor:pointer;">Ver columnas esperadas</summary>' +
+        '<div style="margin-top:6px; font-family:monospace; font-size:11px; line-height:1.8;">' +
+        RELEVANT_COLUMNS.map(function(c) { return esc(c); }).join('<br>') + '</div></details>' +
+      '<div class="dialog-buttons" style="margin-top:16px;"><button class="btn btn-primary" id="excelErrorClose">Cerrar</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('excelErrorClose').addEventListener('click', function() { overlay.remove(); });
+    return true;
+  }
+  errors.forEach(function(err) { showToast(err.title + ': ' + err.detail, 'warning', 8000); });
+  return false;
+}
+```
+
+- [ ] **Paso 3: Actualizar handleFile()**
+
+Reemplazar lineas 7418-7421:
+
+```javascript
+if (result.errors.length > 0) {
+  var blocked = showExcelErrorDialog(result.errors);
+  if (blocked) return;
+}
+```
+
+- [ ] **Paso 4: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.7): diagnostico accionable errores Excel
+
+Errores clasificados con titulo, detalle y sugerencia.
+Dialogo para criticos, toasts para advertencias."
+```
+
+---
+
+### Task F2.8: Skeleton screen para tabla
+
+**Lane:** E (UX Convocatoria)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — `.table-skeleton`)
+- Modify: `convocatoria.html:3129-3144` (HTML — insertar skeleton en `#tableWrap`)
+- Modify: `convocatoria.html:7404-7415` (JS — mostrar/ocultar skeleton)
+
+- [ ] **Paso 1: Anadir CSS**
+
+Insertar antes de `/* --- Cuadro de Mando --- */`:
+
+```css
+/* --- Skeleton tabla --- */
+.table-skeleton { padding: 12px 28px; }
+.table-skeleton-row { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.table-skeleton-cell {
+  height: 14px; border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--bg-input) 25%, var(--border) 50%, var(--bg-input) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+```
+
+- [ ] **Paso 2: Insertar skeleton HTML**
+
+Despues de `<div class="empty-state" id="emptyState"></div>` (linea 3131):
+
+```html
+<div class="table-skeleton" id="tableSkeleton" style="display:none;">
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:19%;"></div><div class="table-skeleton-cell" style="width:31%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:21%;"></div><div class="table-skeleton-cell" style="width:29%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+  <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+</div>
+```
+
+- [ ] **Paso 3: Mostrar/ocultar en handleFile()**
+
+Tras `uploadZone.classList.add('loading');` (linea ~7405):
+
+```javascript
+document.getElementById('tableSkeleton').style.display = '';
+document.getElementById('attendeeTable').style.display = 'none';
+document.getElementById('emptyState').style.display = 'none';
+```
+
+Tras `uploadZone.classList.remove('loading');` (linea ~7415):
+
+```javascript
+document.getElementById('tableSkeleton').style.display = 'none';
+```
+
+- [ ] **Paso 4: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.8): skeleton screen para tabla
+
+8 filas skeleton con shimmer reutilizado del dashboard."
+```
+
+---
+
+### Task F2.9: Modo compacto acciones (details/summary)
+
+**Lane:** H (Catalogos)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — `.catalog-details`)
+- Modify: `convocatoria.html:5091-5370` (JS — refactorizar `getCatalogFormHtml()` para acciones)
+
+- [ ] **Paso 1: Anadir CSS**
+
+```css
+/* --- Modo compacto catalogo --- */
+.catalog-details { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.catalog-details summary {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text-primary);
+  cursor: pointer; user-select: none; list-style: none;
+  background: var(--bg-input); transition: background var(--transition);
+}
+.catalog-details summary::-webkit-details-marker { display: none; }
+.catalog-details summary:hover { background: var(--accent-subtle); }
+.catalog-details summary::after { content: '\25B6'; font-size: 9px; color: var(--text-muted); transition: transform var(--transition); }
+.catalog-details[open] summary::after { transform: rotate(90deg); }
+.catalog-details-body { padding: 10px 12px; }
+.catalog-details-pending { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+```
+
+- [ ] **Paso 2: Modificar getCatalogFormHtml() para acciones**
+
+Localizar el bloque `if (key === 'acciones')` en `getCatalogFormHtml()` (~linea 5200). Envolver los campos en tres `<details class="catalog-details">`:
+
+**Seccion 1 — "Datos basicos" (`open`):** codigo, nombre, tipo, modalidad, estado, fechaInicio, fechaFin, horasPresenciales, horasTeleformacion, proveedor, centro, tutor.
+
+**Seccion 2 — "Participantes y sesiones":** tabla de participantes, asistencia (renderAsistenciaHtml).
+
+**Seccion 3 — "Datos FUNDAE":** areaProfesional, nivelFormacion, tipoConvocatoria, objetivos, contenidos, instrucciones.
+
+Cada `<summary>` muestra pendientes:
+
+```javascript
+var pendingBasic = 0;
+if (!record.nombre) pendingBasic++;
+if (!record.fechaInicio) pendingBasic++;
+if (!record.fechaFin) pendingBasic++;
+var pendingBasicText = pendingBasic > 0 ? ' <span class="catalog-details-pending">' + pendingBasic + ' pendiente' + (pendingBasic > 1 ? 's' : '') + '</span>' : '';
+
+var pendingFundae = 0;
+if (!record.areaProfesional) pendingFundae++;
+if (!record.nivelFormacion) pendingFundae++;
+if (!record.tipoConvocatoria) pendingFundae++;
+var pendingFundaeText = pendingFundae > 0 ? ' <span class="catalog-details-pending">' + pendingFundae + ' pendiente' + (pendingFundae > 1 ? 's' : '') + '</span>' : '';
+
+body = '<details class="catalog-details" open><summary>Datos basicos' + pendingBasicText + '</summary><div class="catalog-details-body">' +
+  /* campos basicos */ +
+'</div></details>' +
+'<details class="catalog-details"><summary>Participantes y sesiones</summary><div class="catalog-details-body">' +
+  /* participantes + asistencia */ +
+'</div></details>' +
+'<details class="catalog-details"><summary>Datos FUNDAE' + pendingFundaeText + '</summary><div class="catalog-details-body">' +
+  /* campos FUNDAE */ +
+'</div></details>';
+```
+
+**Nota:** El implementador debe leer `getCatalogFormHtml()` para acciones completo (lineas ~5200-5370), identificar los campos, y redistribuirlos. Los campos concretos varian segun el estado actual del codigo.
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.9): modo compacto acciones con details/summary
+
+3 secciones colapsables. Pendientes en --text-muted en summary."
+```
+
+---
+
+### Task F2.10: Tracking formacion obligatoria con caducidades
+
+**Lane:** I (Compliance)
+
+**Files:**
+- Modify: `convocatoria.html:~1480` (CSS — `.compliance-*`)
+- Modify: `convocatoria.html:3168-3210` (HTML — anadir sub-pestana en Catalogos)
+- Modify: `convocatoria.html:6682-6692` (JS state — `complianceTypes`, `complianceRecords`)
+- Modify: `convocatoria.html:~4890` (JS — renderComplianceView)
+
+- [ ] **Paso 1: Anadir CSS**
+
+```css
+/* --- Tracking formacion obligatoria --- */
+.compliance-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.compliance-table th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+.compliance-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.compliance-expired { color: var(--danger); font-weight: 600; }
+.compliance-summary { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+.compliance-type-card { padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.compliance-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+.compliance-type-meta { font-size: 11px; color: var(--text-muted); }
+```
+
+- [ ] **Paso 2: Ampliar state**
+
+En `const state = {` (linea 6682), anadir:
+
+```javascript
+complianceTypes: [],
+complianceRecords: {},
+```
+
+- [ ] **Paso 3: Funciones de persistencia**
+
+Despues de `loadQueue()` (~linea 6703):
+
+```javascript
+function saveCompliance() {
+  try {
+    localStorage.setItem('convocatoria_compliance_types', JSON.stringify(state.complianceTypes));
+    localStorage.setItem('convocatoria_compliance_records', JSON.stringify(state.complianceRecords));
+  } catch(e) { showToast('Error al guardar compliance', 'error'); }
+}
+function loadCompliance() {
+  try {
+    state.complianceTypes = JSON.parse(localStorage.getItem('convocatoria_compliance_types') || '[]');
+    state.complianceRecords = JSON.parse(localStorage.getItem('convocatoria_compliance_records') || '{}');
+  } catch(e) { state.complianceTypes = []; state.complianceRecords = {}; }
+}
+```
+
+- [ ] **Paso 4: Anadir sub-pestana HTML**
+
+Despues de `<button class="catalog-tab" data-catalog="acciones">Acciones</button>` (linea 3176):
+
+```html
+<button class="catalog-tab" data-catalog="compliance">Formacion obligatoria</button>
+```
+
+- [ ] **Paso 5: Crear renderComplianceView()**
+
+Insertar tras `renderCatalogForm()` (~linea 4954). Funcion completa que:
+1. Muestra tipos de formacion obligatoria en panel izquierdo (con formulario para anadir nuevos)
+2. Muestra matriz persona-tipo en panel derecho (fechas vencidas en `--danger`)
+3. Boton "Importar registros" para carga masiva futura
+
+```javascript
+function renderComplianceView() {
+  var panel = document.getElementById('catalogFormPanel');
+  var listPanel = document.getElementById('catalogListPanel');
+
+  // Types in left panel
+  var typesHtml = '<div style="padding:12px 16px;"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">Tipos de formacion obligatoria</div>';
+  if (state.complianceTypes.length === 0) {
+    typesHtml += '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Sin tipos definidos. Anade PRL, LOPD, Acoso, etc.</div>';
+  } else {
+    state.complianceTypes.forEach(function(ct) {
+      typesHtml += '<div class="compliance-type-card" data-type-id="' + esc(ct.id) + '"><div>' +
+        '<div class="compliance-type-name">' + esc(ct.name) + '</div>' +
+        '<div class="compliance-type-meta">Cada ' + ct.periodMonths + ' meses</div></div>' +
+        '<button class="link-btn link-clear" data-delete-type="' + esc(ct.id) + '" style="font-size:11px;">&times;</button></div>';
+    });
+  }
+  typesHtml += '<div style="margin-top:8px;display:flex;gap:6px;">' +
+    '<input class="input-field" id="complianceNewName" placeholder="Nombre (ej: PRL General)" style="font-size:12px;flex:1;">' +
+    '<input class="input-field" id="complianceNewPeriod" type="number" placeholder="Meses" style="font-size:12px;width:70px;" min="1" value="12">' +
+    '<button class="btn btn-primary" id="btnAddComplianceType" style="font-size:11px;">Anadir</button></div></div>';
+  listPanel.innerHTML = typesHtml;
+
+  // Bind add/delete
+  document.getElementById('btnAddComplianceType').addEventListener('click', function() {
+    var name = document.getElementById('complianceNewName').value.trim();
+    var period = parseInt(document.getElementById('complianceNewPeriod').value) || 12;
+    if (!name) { showToast('Introduce un nombre', 'warning'); return; }
+    state.complianceTypes.push({ id: 'ct_' + Date.now(), name: name, periodMonths: period, scope: 'all', scopeValues: [] });
+    saveCompliance(); renderComplianceView();
+  });
+  listPanel.querySelectorAll('[data-delete-type]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      state.complianceTypes = state.complianceTypes.filter(function(ct) { return ct.id !== btn.dataset.deleteType; });
+      saveCompliance(); renderComplianceView();
+    });
+  });
+
+  // Matrix in right panel
+  if (state.complianceTypes.length === 0 || !state.employees || state.employees.length === 0) {
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">' +
+      (state.employees.length === 0 ? 'Carga el censo para ver la matriz de compliance.' : 'Define tipos en el panel izquierdo.') + '</div>';
+    return;
+  }
+
+  var today = new Date();
+  var totalExpired = 0;
+  var tableHtml = '<table class="compliance-table"><thead><tr><th>Persona</th>';
+  state.complianceTypes.forEach(function(ct) { tableHtml += '<th>' + esc(ct.name) + '</th>'; });
+  tableHtml += '</tr></thead><tbody>';
+
+  state.employees.slice(0, 100).forEach(function(emp) {
+    tableHtml += '<tr><td style="font-weight:500;color:var(--text-primary);">' + esc(emp.Empleado) + '</td>';
+    state.complianceTypes.forEach(function(ct) {
+      var record = (state.complianceRecords[emp.NIF] || {})[ct.id];
+      if (!record || !record.lastDate) {
+        tableHtml += '<td style="color:var(--text-muted);">Sin registro</td>';
+      } else {
+        var expiry = new Date(record.lastDate);
+        expiry.setMonth(expiry.getMonth() + ct.periodMonths);
+        var isExpired = expiry < today;
+        if (isExpired) totalExpired++;
+        tableHtml += '<td' + (isExpired ? ' class="compliance-expired"' : '') + '>' +
+          expiry.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' }) + '</td>';
+      }
+    });
+    tableHtml += '</tr>';
+  });
+  tableHtml += '</tbody></table>';
+
+  var summaryHtml = '<div class="compliance-summary">' + state.employees.length + ' personas trabajadoras';
+  if (totalExpired > 0) summaryHtml += ' · <span style="color:var(--danger);font-weight:600;">' + totalExpired + ' caducadas</span>';
+  summaryHtml += '</div>';
+
+  panel.innerHTML = summaryHtml + '<div style="padding:12px 16px;overflow-y:auto;max-height:calc(100vh - 200px);">' + tableHtml + '</div>';
+}
+```
+
+- [ ] **Paso 6: Vincular sub-pestana**
+
+En el listener de sub-tabs (~linea 4890), detectar `data-catalog="compliance"`:
+
+```javascript
+if (btn.dataset.catalog === 'compliance') {
+  loadCompliance();
+  document.getElementById('catalogListViewContainer').style.display = 'none';
+  renderComplianceView();
+  return;
+}
+```
+
+- [ ] **Paso 7: Cargar compliance al iniciar**
+
+Junto a `loadQueue();`, anadir `loadCompliance();`.
+
+- [ ] **Paso 8: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.10): tracking formacion obligatoria con caducidades
+
+Sub-pestana en Catalogos con tipos personalizables,
+matriz persona-formacion, fechas vencidas en --danger."
+```
+
+---
+
+### Task F2.11: Gestion comunicacion RLT
+
+**Lane:** I (Compliance)
+
+**Files:**
+- Modify: `convocatoria.html:5091-5370` (JS — campos RLT en ficha de accion)
+- Modify: `convocatoria.html:5373` (JS — bindCatalogFormEvents para RLT)
+- Modify: `convocatoria.html:~6664` (JS — helper calculateBusinessDays)
+
+- [ ] **Paso 1: Crear calculateBusinessDays()**
+
+Despues de `esc()` (linea ~6664):
+
+```javascript
+function calculateBusinessDays(startDate, days) {
+  var date = new Date(startDate);
+  var added = 0;
+  while (added < days) {
+    date.setDate(date.getDate() + 1);
+    if (date.getDay() !== 0 && date.getDay() !== 6) added++;
+  }
+  return date;
+}
+```
+
+- [ ] **Paso 2: Crear generateRLTDocument()**
+
+```javascript
+function generateRLTDocument(selectedActions) {
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comunicacion RLT</title>' +
+    '<style>body{font-family:Inter,Arial,sans-serif;font-size:13px;line-height:1.6;max-width:800px;margin:40px auto;padding:0 20px;color:#0f172a;}' +
+    'h1{font-size:16px;text-align:center;margin-bottom:24px;border-bottom:3px solid #4F46E5;padding-bottom:12px;}' +
+    'table{width:100%;border-collapse:collapse;margin:16px 0;}th,td{padding:6px 10px;border:1px solid #e2e8f0;text-align:left;font-size:12px;}' +
+    'th{background:#f1f5f9;font-weight:600;}.footer{margin-top:40px;font-size:12px;color:#475569;}</style></head><body>' +
+    '<h1>COMUNICACION A LA REPRESENTACION LEGAL DE LOS TRABAJADORES</h1>' +
+    '<p>En cumplimiento de la legislacion vigente, se comunica el plan de acciones formativas previstas:</p>' +
+    '<table><thead><tr><th>Accion</th><th>Modalidad</th><th>Horas</th><th>Fechas</th><th>Destinatarios</th></tr></thead><tbody>';
+  selectedActions.forEach(function(a) {
+    html += '<tr><td>' + esc(a.nombre||'') + '</td><td>' + esc(a.modalidad||'') + '</td><td>' +
+      (a.horasPresenciales||0) + 'h</td><td>' + esc(a.fechaInicio||'') + ' - ' + esc(a.fechaFin||'') +
+      '</td><td>' + (a.participantes||[]).length + '</td></tr>';
+  });
+  html += '</tbody></table><div class="footer"><p>Fecha: ' +
+    new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }) +
+    '</p><p style="margin-top:40px;">Fdo. _________________________</p></div></body></html>';
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+```
+
+- [ ] **Paso 3: Anadir campos RLT en getCatalogFormHtml()**
+
+En la seccion de acciones de `getCatalogFormHtml()`, despues de los campos basicos (dentro de la seccion "Datos basicos" si F2.9 ya esta implementado):
+
+```javascript
+var rltStatus = record.rlt ? record.rlt.status || 'Pendiente' : 'Pendiente';
+var rltSentDate = record.rlt ? record.rlt.sentDate || '' : '';
+var rltDeadline = record.rlt ? record.rlt.deadline || '' : '';
+
+body += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">' +
+  '<div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Comunicacion RLT</div>' +
+  '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:12px;color:var(--text-muted);">Estado:</span>' +
+    '<span style="font-size:12px;color:var(--text-secondary);">' + esc(rltStatus) + '</span></div>' +
+  field('Fecha envio RLT', 'rltSentDate', esc(rltSentDate), { type: 'date' }) +
+  (rltDeadline ? '<div style="font-size:11px;color:var(--text-muted);">Plazo respuesta: ' + esc(rltDeadline) + '</div>' : '') +
+  '<button class="btn btn-secondary" id="btnGenerateRLT" style="font-size:11px;margin-top:6px;">Generar comunicacion RLT</button></div>';
+```
+
+- [ ] **Paso 4: Vincular eventos en bindCatalogFormEvents()**
+
+Al final del bloque para acciones:
+
+```javascript
+var btnRLT = document.getElementById('btnGenerateRLT');
+if (btnRLT) {
+  btnRLT.addEventListener('click', function() { generateRLTDocument([record]); });
+}
+var rltDateInput = document.getElementById('cf_rltSentDate');
+if (rltDateInput) {
+  rltDateInput.addEventListener('change', function() {
+    if (!record.rlt) record.rlt = {};
+    record.rlt.sentDate = rltDateInput.value;
+    record.rlt.status = 'Enviada';
+    if (rltDateInput.value) {
+      var deadline = calculateBusinessDays(new Date(rltDateInput.value), 15);
+      record.rlt.deadline = deadline.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+    upsertCatalogRecord('acciones', 'codigo', record);
+    renderCatalogForm();
+    showToast('RLT registrada. Plazo: ' + record.rlt.deadline, 'info', 5000);
+  });
+}
+```
+
+- [ ] **Paso 5: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.11): gestion comunicacion RLT
+
+Generacion automatica de documento, registro de envio,
+calculo de plazo 15 dias habiles, estados."
+```
+
+---
+
+### Task F2.12: Sync convocatoria-catalogo ampliada
+
+**Lane:** J (Sync)
+
+**Files:**
+- Modify: `convocatoria.html:8490-8544` (JS — ampliar `syncConvocatoriaWithAccion()`)
+
+- [ ] **Paso 1: Ampliar syncConvocatoriaWithAccion()**
+
+Reemplazar la funcion (lineas 8490-8544). Cambios respecto a la version actual:
+- Si no hay accion coincidente, mostrar toast informativo (no silencio)
+- Copiar formador (match por nombre en catalogo de tutores) si la accion no tiene tutor
+- Copiar ubicacion (match por nombre en catalogo de centros) si la accion no tiene centro
+- Actualizar estado: "En preparacion" → "Convocada" (o "En marcha" si fecha ya pasada)
+- Toast con resumen detallado de lo sincronizado
+
+```javascript
+function syncConvocatoriaWithAccion(event, emails) {
+  var settings = loadSettings();
+  if (settings.syncConvocatoriaAccion === false) return;
+
+  var acciones = getCatalog('acciones');
+  var titleNorm = (event.title || '').trim().toLowerCase();
+  var accion = acciones.find(function(a) { return (a.nombre || '').trim().toLowerCase() === titleNorm; });
+
+  if (!accion) {
+    showToast('No se encontro accion "' + event.title + '" en el catalogo.', 'info', 5000);
+    return;
+  }
+
+  var attendeeNIFs = [];
+  if (state.employees && state.employees.length > 0) {
+    var emailSet = {};
+    emails.forEach(function(e) { emailSet[e] = true; });
+    state.employees.forEach(function(emp) {
+      if (emailSet[emp['Email trabajo']]) attendeeNIFs.push(emp.NIF);
+    });
+  }
+  if (attendeeNIFs.length === 0) return;
+
+  if (!accion.participantes) accion.participantes = [];
+  var added = 0;
+  attendeeNIFs.forEach(function(nif) {
+    if (accion.participantes.indexOf(nif) === -1) { accion.participantes.push(nif); added++; }
+  });
+
+  if (event.date) {
+    if (!accion.asistencia) accion.asistencia = { sesiones: [], registro: {} };
+    if (!accion.asistencia.sesiones) accion.asistencia.sesiones = [];
+    if (!accion.asistencia.registro) accion.asistencia.registro = {};
+    if (accion.asistencia.sesiones.indexOf(event.date) === -1) {
+      accion.asistencia.sesiones.push(event.date); accion.asistencia.sesiones.sort();
+    }
+    accion.participantes.forEach(function(nif) {
+      if (!accion.asistencia.registro[nif]) accion.asistencia.registro[nif] = [];
+      while (accion.asistencia.registro[nif].length < accion.asistencia.sesiones.length) accion.asistencia.registro[nif].push(false);
+    });
+  }
+
+  // Copy formador
+  if (!accion.tutorVinculado && event.formador) {
+    var tutores = getCatalog('tutores');
+    var matchTutor = tutores.find(function(t) {
+      return [t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ').toLowerCase() === event.formador.toLowerCase();
+    });
+    if (matchTutor) accion.tutorVinculado = matchTutor.documento;
+  }
+
+  // Copy location
+  if (!accion.centroVinculado && event.location && !event.isTeams) {
+    var centros = getCatalog('centros');
+    var matchCentro = centros.find(function(c) { return (c.nombre||'').toLowerCase() === event.location.toLowerCase(); });
+    if (matchCentro) accion.centroVinculado = matchCentro.documento;
+  }
+
+  // Update status
+  if (accion.estado === 'En preparacion' || !accion.estado) {
+    var today = new Date().toISOString().slice(0, 10);
+    accion.estado = (accion.fechaInicio && accion.fechaInicio <= today) ? 'En marcha' : 'Convocada';
+  }
+
+  upsertCatalogRecord('acciones', 'codigo', accion);
+  var parts = [];
+  if (added > 0) parts.push(added + ' participantes');
+  if (accion.tutorVinculado) parts.push('tutor');
+  if (accion.centroVinculado) parts.push('centro');
+  parts.push('estado: ' + accion.estado);
+  showToast('Sync ' + accion.codigo + ': ' + parts.join(', '), 'info', 5000);
+}
+```
+
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.12): sync convocatoria-catalogo ampliada
+
+Copia tutor, centro y estado. Transicion a Convocada/En marcha."
+```
+
+---
+
+## Resumen de Fase 2
+
+| Tarea | Lane | Esfuerzo est. | Secciones principales |
+|-------|------|---------------|----------------------|
+| F2.1 Panel calidad datos | E | 5-6h | CSS ~1480, HTML 2977-3004, JS 6499-7480 |
+| F2.2 Readiness FUNDAE | H | 4-5h | CSS ~1480, HTML 3228, JS 8546-9800 |
+| F2.3 Dialogo preview | F | 4-5h | CSS ~1400, HTML 3823-3832, JS 8653-8690 |
+| F2.4 Barra progreso cola | G | 3h | CSS ~1480, HTML 3112-3124, JS 8822-8900 |
+| F2.5 Resumen post-envio | F | 3-4h | CSS ~1480, HTML ~3832, JS 8695-8714 |
+| F2.6 Errores contextuales | F | 2-3h | CSS ~1160, JS 8639-8651 |
+| F2.7 Diagnostico Excel | E | 2-3h | JS 6499-6547, 7418-7421 |
+| F2.8 Skeleton tabla | E | 1-2h | CSS ~1480, HTML 3129-3144, JS 7404-7415 |
+| F2.9 Modo compacto | H | 3h | CSS ~1480, JS 5091-5370 |
+| F2.10 Formacion obligatoria | I | 8-10h | CSS ~2900, HTML 3168-3210, JS 4890-6692 |
+| F2.11 Comunicacion RLT | I | 5-6h | JS 5091-6664 |
+| F2.12 Sync ampliada | J | 2-3h | JS 8490-8544 |
+
+**Total estimado Fase 2:** ~43-55h (7-10 dias)
+**Total acumulado Partes 1+2:** ~66-86h
+
+---
 
 # Formación_AGORA — Overhaul UX Premium (Parte 3: Fases 3-4)
 
