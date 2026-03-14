@@ -4285,6 +4285,7 @@
               <div class="filter-option" style="padding:8px 12px;cursor:pointer;font-size:12px;transition:background 0.15s;" onmouseover="this.style.background='var(--accent-subtle)'" onmouseout="this.style.background=''" onclick="generateCertificates('aprovechamiento')">Cert. Aprovechamiento</div>
             </div>
           </div>
+          <button class="btn btn-secondary" id="btnBatchSend" title="Enviar por lotes">Por lotes</button>
           <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
           <button class="btn btn-secondary" id="btnExportPDF" title="Exportar convocatoria como PDF">Exportar PDF</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
@@ -5024,6 +5025,25 @@
       <div id="excelErrorDialogContent"></div>
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary dialog-btn-sm" id="excelErrorDialogClose">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch send dialog -->
+  <div class="dialog-overlay" id="batchDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box dialog-box-narrow-scrollable" style="text-align:left;">
+      <h3 style="margin:0 0 12px 0;">Enviar por lotes</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:0 0 12px 0;">Agrupa las personas destinatarias por un campo y añade una convocatoria por grupo a la cola.</p>
+      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; display:block;">Agrupar por</label>
+      <select class="input-field" id="batchGroupField" style="margin-bottom:12px;">
+        <option value="Ubicación">Ubicación</option>
+        <option value="Departamento">Departamento</option>
+        <option value="Empresa">Empresa</option>
+      </select>
+      <div id="batchPreview" style="max-height:280px; overflow-y:auto; margin-bottom:16px;"></div>
+      <div class="dialog-buttons dialog-buttons-mt">
+        <button class="btn btn-secondary dialog-btn-sm" id="batchCancel">Cancelar</button>
+        <button class="btn btn-primary dialog-btn-sm" id="batchAddToQueue" disabled>Añadir a cola</button>
       </div>
     </div>
   </div>
@@ -11738,6 +11758,153 @@
         showToast('Avisos FUNDAE: ' + fundaeCheck.warnings.join('; '), 'warning', 6000);
       }
     });
+
+    // ═══════════════════════════════════
+    // BATCH SEND (POR LOTES)
+    // ═══════════════════════════════════
+    function showBatchDialog() {
+      if (!validateEvent()) return;
+
+      const selected = getSelectedAttendees();
+      if (selected.length === 0) {
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
+        return;
+      }
+
+      const dialog = document.getElementById('batchDialog');
+      const fieldSelect = document.getElementById('batchGroupField');
+      const ev = getCurrentEvent();
+
+      // Render initial preview
+      renderBatchPreview(fieldSelect.value, selected, ev);
+
+      // Update preview when grouping field changes
+      fieldSelect.onchange = function() {
+        renderBatchPreview(this.value, selected, ev);
+      };
+
+      dialog.classList.add('visible');
+    }
+
+    function renderBatchPreview(field, employees, ev) {
+      const preview = document.getElementById('batchPreview');
+      const addBtn = document.getElementById('batchAddToQueue');
+
+      // Group employees by the selected field
+      const groups = {};
+      employees.forEach(function(emp) {
+        var key = emp[field] || '(sin valor)';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(emp);
+      });
+
+      var sortedKeys = Object.keys(groups).sort(function(a, b) {
+        if (a === '(sin valor)') return 1;
+        if (b === '(sin valor)') return -1;
+        return a.localeCompare(b);
+      });
+
+      if (sortedKeys.length === 0) {
+        preview.textContent = 'No hay grupos para mostrar.';
+        addBtn.disabled = true;
+        return;
+      }
+
+      // Build preview using DOM methods for safety
+      preview.textContent = '';
+
+      var summary = document.createElement('div');
+      summary.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:8px;';
+      summary.textContent = sortedKeys.length + ' grupo' + (sortedKeys.length !== 1 ? 's' : '') +
+        ' \u00b7 ' + employees.length + ' persona' + (employees.length !== 1 ? 's' : '') + ' en total';
+      preview.appendChild(summary);
+
+      var container = document.createElement('div');
+      container.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+
+      sortedKeys.forEach(function(key) {
+        var group = groups[key];
+        var row = document.createElement('div');
+        row.style.cssText = 'background:var(--bg-main); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; justify-content:space-between; align-items:center;';
+
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:13px; font-weight:500; color:var(--text-primary);';
+        nameSpan.textContent = key;
+
+        var chipSpan = document.createElement('span');
+        chipSpan.className = 'chip';
+        chipSpan.textContent = group.length + ' persona' + (group.length !== 1 ? 's' : '');
+
+        row.appendChild(nameSpan);
+        row.appendChild(chipSpan);
+        container.appendChild(row);
+      });
+
+      preview.appendChild(container);
+      addBtn.disabled = false;
+    }
+
+    function addBatchToQueue(field, employees, ev) {
+      // Group employees by the selected field
+      const groups = {};
+      employees.forEach(function(emp) {
+        var key = emp[field] || '(sin valor)';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(emp);
+      });
+
+      var sortedKeys = Object.keys(groups).sort(function(a, b) {
+        if (a === '(sin valor)') return 1;
+        if (b === '(sin valor)') return -1;
+        return a.localeCompare(b);
+      });
+
+      var added = 0;
+      sortedKeys.forEach(function(key) {
+        var group = groups[key];
+        var emails = group.map(function(e) { return e['Email trabajo']; }).filter(Boolean);
+        if (emails.length === 0) return;
+
+        state.queue.push({
+          id: Date.now() + added,
+          event: Object.assign({}, ev, {
+            title: ev.title + ' [' + key + ']'
+          }),
+          attendeeCount: emails.length,
+          emails: emails,
+          filters: JSON.parse(JSON.stringify(state.activeFilters)),
+          seriesDates: state.seriesDates.length > 1 ? [...state.seriesDates] : null
+        });
+        added++;
+      });
+
+      saveQueue();
+      renderQueue();
+      return added;
+    }
+
+    document.getElementById('batchCancel').addEventListener('click', function() {
+      closeDialogAnimated(document.getElementById('batchDialog'));
+    });
+
+    document.getElementById('batchAddToQueue').addEventListener('click', function() {
+      var selected = getSelectedAttendees();
+      if (selected.length === 0) {
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
+        return;
+      }
+      var ev = getCurrentEvent();
+      var field = document.getElementById('batchGroupField').value;
+      var added = addBatchToQueue(field, selected, ev);
+      closeDialogAnimated(document.getElementById('batchDialog'));
+      if (added > 0) {
+        showToast(added + ' convocatoria' + (added !== 1 ? 's' : '') + ' añadida' + (added !== 1 ? 's' : '') + ' a la cola (' + state.queue.length + ' en cola)', 'success');
+      } else {
+        showToast('No se añadió ninguna convocatoria (sin emails válidos)', 'warning');
+      }
+    });
+
+    document.getElementById('btnBatchSend').addEventListener('click', showBatchDialog);
 
     document.getElementById('btnClearQueue').addEventListener('click', () => {
       if (state.queue.length === 0) return;
