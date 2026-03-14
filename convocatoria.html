@@ -1405,29 +1405,36 @@
       opacity: 0.6;
     }
 
+    /* ═══ Unified Empty States ═══ */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      font-size: 15px;
       gap: 8px;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
     }
-
-    .empty-state::before {
-      content: '';
-      display: block;
-      width: 48px;
-      height: 48px;
-      background: var(--bg-input);
-      border-radius: 50%;
+    .empty-state-icon {
+      font-size: 32px;
+      line-height: 1;
       margin-bottom: 4px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z'/%3E%3C/svg%3E");
-      background-size: 24px;
-      background-position: center;
-      background-repeat: no-repeat;
+      opacity: 0.6;
+    }
+    .empty-state-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .empty-state-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 320px;
+      line-height: 1.5;
+    }
+    .empty-state-cta {
+      margin-top: 8px;
     }
 
     .event-row {
@@ -4341,14 +4348,7 @@
 
   <!-- Tab: Calendario -->
   <div class="tab-content" id="tabCalendario" role="tabpanel">
-    <div class="cal-empty-state" id="calEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
-      <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
-      </div>
-      <div style="font-size:15px; color:var(--text-secondary); font-weight:500;">Calendario vacio</div>
-      <div style="font-size:13px; max-width:340px; line-height:1.5;">Anade fechas a tus acciones formativas para verlas en el calendario.</div>
-      <button class="btn btn-primary" onclick="document.querySelector('.tab-btn[data-tab=&quot;tabCatalogos&quot;]').click();" style="margin-top:8px;">Ir a Catalogos</button>
-    </div>
+    <div id="calEmptyState" style="display:none;"></div>
     <div class="cal-container" id="calContainer">
       <div class="cal-toolbar">
         <div class="cal-nav">
@@ -4394,14 +4394,7 @@
 
   <!-- Tab: Cuadro de Mando -->
   <div class="tab-content" id="tabDashboard" role="tabpanel">
-    <div class="dash-empty-state" id="dashEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
-      <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
-      </div>
-      <div style="font-size:15px; color:var(--text-secondary); font-weight:500;">Sin datos en el cuadro de mando</div>
-      <div style="font-size:13px; max-width:340px; line-height:1.5;">Crea tu primera accion formativa en Catalogos FUNDAE para ver metricas aqui.</div>
-      <button class="btn btn-primary" onclick="document.querySelector('.tab-btn[data-tab=&quot;tabCatalogos&quot;]').click();" style="margin-top:8px;">Ir a Catalogos</button>
-    </div>
+    <div id="dashEmptyState" style="display:none;"></div>
     <div class="dash-container" id="dashContainer">
       <!-- Header -->
       <div class="dash-header">
@@ -4794,7 +4787,7 @@
       </div>
       <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título...">
       <div id="historyList"></div>
-      <div id="historyEmpty" class="dialog-history-empty">No hay convocatorias en el historial</div>
+      <div id="historyEmpty" class="dialog-history-empty"></div>
     </div>
   </div>
 
@@ -8204,6 +8197,39 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // Unified empty state builder
+    function createEmptyState(opts) {
+      // opts: { icon, title, desc, ctaText, ctaAction }
+      var wrap = document.createElement('div');
+      wrap.className = 'empty-state';
+      if (opts.icon) {
+        var ic = document.createElement('div');
+        ic.className = 'empty-state-icon';
+        ic.textContent = opts.icon;
+        wrap.appendChild(ic);
+      }
+      if (opts.title) {
+        var t = document.createElement('div');
+        t.className = 'empty-state-title';
+        t.textContent = opts.title;
+        wrap.appendChild(t);
+      }
+      if (opts.desc) {
+        var d = document.createElement('div');
+        d.className = 'empty-state-desc';
+        d.textContent = opts.desc;
+        wrap.appendChild(d);
+      }
+      if (opts.ctaText && opts.ctaAction) {
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary empty-state-cta';
+        btn.textContent = opts.ctaText;
+        btn.addEventListener('click', opts.ctaAction);
+        wrap.appendChild(btn);
+      }
+      return wrap;
+    }
+
     function addBusinessDays(startDate, days) {
       var date = new Date(startDate);
       var added = 0;
@@ -9724,7 +9750,29 @@
       if (allSorted.length === 0) {
         table.style.display = 'none';
         emptyState.style.display = '';
-        emptyState.textContent = 'Ninguna persona trabajadora coincide con estos filtros.';
+        emptyState.textContent = '';
+        var noDataLoaded = allEmployees.length === 0;
+        if (noDataLoaded) {
+          emptyState.appendChild(createEmptyState({
+            icon: '\u2B06',
+            title: 'Carga tu censo de personas trabajadoras',
+            desc: 'Arrastra un archivo Excel o haz clic en el botón para comenzar.',
+            ctaText: 'Cargar Excel',
+            ctaAction: function() { document.getElementById('fileInput').click(); }
+          }));
+        } else {
+          emptyState.appendChild(createEmptyState({
+            icon: '\uD83D\uDD0D',
+            title: 'Sin resultados',
+            desc: 'Ningún registro coincide con los filtros actuales.',
+            ctaText: 'Limpiar filtros',
+            ctaAction: function() {
+              state.activeFilters = {};
+              renderFilters();
+              renderTable();
+            }
+          }));
+        }
       } else {
         table.style.display = '';
         emptyState.style.display = 'none';
@@ -10201,10 +10249,11 @@
       if (countEl) countEl.textContent = queue.length;
       if (!queue.length) {
         body.replaceChildren();
-        var empty = document.createElement('p');
-        empty.style.cssText = 'text-align:center; color: var(--text-muted); padding: 40px 0; font-size: 13px;';
-        empty.textContent = 'La cola esta vacia';
-        body.appendChild(empty);
+        body.appendChild(createEmptyState({
+          icon: '\uD83D\uDCE5',
+          title: 'Cola vacía',
+          desc: 'Añade convocatorias a la cola para enviarlas en lote.'
+        }));
         return;
       }
       body.replaceChildren();
@@ -11696,6 +11745,12 @@
 
       if (history.length === 0) {
         list.innerHTML = '';
+        empty.textContent = '';
+        empty.appendChild(createEmptyState({
+          icon: '\uD83D\uDD52',
+          title: 'Sin historial',
+          desc: 'Las convocatorias enviadas se registrarán aquí automáticamente.'
+        }));
         empty.style.display = '';
         return;
       }
@@ -13106,23 +13161,11 @@
      */
     function renderEmptyState(container, hint) {
       container.textContent = '';
-      var wrap = document.createElement('div');
-      wrap.className = 'dash-empty';
-      var icon = document.createElement('div');
-      icon.className = 'dash-empty-icon';
-      icon.textContent = '?';
-      var txt = document.createElement('div');
-      txt.className = 'dash-empty-text';
-      txt.textContent = 'Sin datos disponibles';
-      wrap.appendChild(icon);
-      wrap.appendChild(txt);
-      if (hint) {
-        var h = document.createElement('div');
-        h.className = 'dash-empty-hint';
-        h.textContent = hint;
-        wrap.appendChild(h);
-      }
-      container.appendChild(wrap);
+      container.appendChild(createEmptyState({
+        icon: '\uD83D\uDCCA',
+        title: 'Sin datos disponibles',
+        desc: hint || ''
+      }));
     }
 
     /**
@@ -15705,6 +15748,14 @@
       var dashEmpty = document.getElementById('dashEmptyState');
       var dashContainer = document.getElementById('dashContainer');
       if (allAcciones.length === 0) {
+        dashEmpty.textContent = '';
+        dashEmpty.appendChild(createEmptyState({
+          icon: '\uD83D\uDCCA',
+          title: 'Sin datos en el cuadro de mando',
+          desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
+          ctaText: 'Ir a Catálogos',
+          ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
+        }));
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
@@ -17305,6 +17356,14 @@
       var calEmpty = document.getElementById('calEmptyState');
       var calContainer = document.getElementById('calContainer');
       if (allWithDates.length === 0) {
+        calEmpty.textContent = '';
+        calEmpty.appendChild(createEmptyState({
+          icon: '\uD83D\uDCC5',
+          title: 'Calendario vacío',
+          desc: 'Las acciones formativas aparecerán aquí automáticamente cuando les asignes fechas.',
+          ctaText: 'Ir a Catálogos',
+          ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
+        }));
         calEmpty.style.display = 'flex';
         calContainer.style.display = 'none';
         return;
