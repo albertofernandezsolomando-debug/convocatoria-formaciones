@@ -1405,29 +1405,36 @@
       opacity: 0.6;
     }
 
+    /* ═══ Unified Empty States ═══ */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      font-size: 15px;
       gap: 8px;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
     }
-
-    .empty-state::before {
-      content: '';
-      display: block;
-      width: 48px;
-      height: 48px;
-      background: var(--bg-input);
-      border-radius: 50%;
+    .empty-state-icon {
+      font-size: 32px;
+      line-height: 1;
       margin-bottom: 4px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z'/%3E%3C/svg%3E");
-      background-size: 24px;
-      background-position: center;
-      background-repeat: no-repeat;
+      opacity: 0.6;
+    }
+    .empty-state-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .empty-state-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 320px;
+      line-height: 1.5;
+    }
+    .empty-state-cta {
+      margin-top: 8px;
     }
 
     .event-row {
@@ -2361,6 +2368,75 @@
     .compliance-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
     .compliance-type-meta { font-size: 11px; color: var(--text-muted); }
 
+    /* === Activation Checklist === */
+    .activation-checklist {
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-light);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin: 0 16px 16px;
+    }
+    .activation-checklist.hidden { display: none; }
+    .activation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .activation-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .activation-progress {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .activation-dismiss {
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 8px;
+    }
+    .activation-dismiss:hover { color: var(--text-secondary); }
+    .activation-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .activation-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .activation-step.done {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    .activation-check {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      transition: all var(--transition);
+    }
+    .activation-step.done .activation-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3027,6 +3103,17 @@
     .dash-alert-type-danger { color: var(--danger); }
     .dash-alert-type-warning { color: var(--warning); }
     .dash-alert-action { font-weight: 600; }
+
+    /* Actionable dashboard elements (F3.5) */
+    .dash-kpi[data-action], .dash-alert[data-action] {
+      cursor: pointer;
+    }
+    .dash-kpi[data-action]:hover {
+      border-left-width: 4px;
+    }
+    .dash-alert[data-action]:hover {
+      background: var(--accent-subtle);
+    }
 
     /* ── Credit simulator (F1.9) ── */
     .credit-simulator {
@@ -3959,6 +4046,7 @@
     <span class="alert-banner-text" id="alertBannerText"></span>
     <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso">&#xD7;</button>
   </div>
+  <div class="activation-checklist" id="activationChecklist"></div>
   <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
   <div class="app">
     <!-- LEFT PANEL -->
@@ -4444,14 +4532,7 @@
 
   <!-- Tab: Calendario -->
   <div class="tab-content" id="tabCalendario" role="tabpanel">
-    <div class="cal-empty-state" id="calEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
-      <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
-      </div>
-      <div style="font-size:15px; color:var(--text-secondary); font-weight:500;">Calendario vacio</div>
-      <div style="font-size:13px; max-width:340px; line-height:1.5;">Anade fechas a tus acciones formativas para verlas en el calendario.</div>
-      <button class="btn btn-primary" onclick="document.querySelector('.tab-btn[data-tab=&quot;tabCatalogos&quot;]').click();" style="margin-top:8px;">Ir a Catalogos</button>
-    </div>
+    <div id="calEmptyState" style="display:none;"></div>
     <div class="cal-container" id="calContainer">
       <div class="cal-toolbar">
         <div class="cal-nav">
@@ -4498,14 +4579,7 @@
 
   <!-- Tab: Cuadro de Mando -->
   <div class="tab-content" id="tabDashboard" role="tabpanel">
-    <div class="dash-empty-state" id="dashEmptyState" style="display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); padding:40px; text-align:center;">
-      <div style="width:56px; height:56px; background:var(--bg-input); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
-      </div>
-      <div style="font-size:15px; color:var(--text-secondary); font-weight:500;">Sin datos en el cuadro de mando</div>
-      <div style="font-size:13px; max-width:340px; line-height:1.5;">Crea tu primera accion formativa en Catalogos FUNDAE para ver metricas aqui.</div>
-      <button class="btn btn-primary" onclick="document.querySelector('.tab-btn[data-tab=&quot;tabCatalogos&quot;]').click();" style="margin-top:8px;">Ir a Catalogos</button>
-    </div>
+    <div id="dashEmptyState" style="display:none;"></div>
     <div class="dash-container" id="dashContainer">
       <!-- Header -->
       <div class="dash-header">
@@ -4568,7 +4642,7 @@
       </div>
 
       <!-- Plazos FUNDAE -->
-      <div class="dash-card" id="dashPlazosFundae" data-card-id="plazos" style="display:none; margin-bottom:16px;">
+      <div class="dash-card" id="dashPlazosFundae" data-card-id="plazos" data-module="dash-plazos" style="display:none; margin-bottom:16px;">
         <div class="dash-card-title">Plazos FUNDAE</div>
         <div id="dashPlazosList"></div>
       </div>
@@ -4579,13 +4653,13 @@
 
       <!-- Charts row 1: Credit + Estado donut -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="credito">
+        <div class="dash-card" data-card-id="credito" data-module="dash-credito">
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
           <div id="dashCreditChart"></div>
           <div id="dashCreditProjection" style="margin-top: 12px;"></div>
           <div id="dashCreditSimulator"></div>
         </div>
-        <div class="dash-card" data-card-id="estado">
+        <div class="dash-card" data-card-id="estado" data-module="dash-estado">
           <div class="dash-card-title">Acciones por estado</div>
           <div id="dashEstadoChart"></div>
         </div>
@@ -4593,7 +4667,7 @@
       </div>
 
       <!-- Completeness -->
-      <div class="dash-card" data-card-id="completitud" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="completitud" data-module="dash-completitud" style="margin-bottom:16px;">
         <div class="dash-card-title">Completitud del catálogo</div>
         <div id="dashCompletenessChart"></div>
       </div>
@@ -4604,11 +4678,11 @@
 
       <!-- Charts row 2: Gasto por proveedor + Modalidad -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="proveedor">
+        <div class="dash-card" data-card-id="proveedor" data-module="dash-proveedor">
           <div class="dash-card-title">Gasto por proveedor</div>
           <div id="dashProveedorChart"></div>
         </div>
-        <div class="dash-card" data-card-id="modalidad">
+        <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad">
           <div class="dash-card-title">Horas por modalidad</div>
           <div id="dashModalidadChart"></div>
         </div>
@@ -4616,11 +4690,11 @@
 
       <!-- Charts row 3: Area + Department -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="area">
+        <div class="dash-card" data-card-id="area" data-module="dash-area">
           <div class="dash-card-title">Acciones por área profesional</div>
           <div id="dashAreaChart"></div>
         </div>
-        <div class="dash-card" data-card-id="departamento">
+        <div class="dash-card" data-card-id="departamento" data-module="dash-departamento">
           <div class="dash-card-title">Acciones por departamento</div>
           <div id="dashDeptChart"></div>
         </div>
@@ -4634,11 +4708,11 @@
 
       <!-- Charts row 4: Attendance + Confirmations -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="asistencia">
+        <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia">
           <div class="dash-card-title">Monitor de asistencia y abandono</div>
           <div id="dashAttendance"></div>
         </div>
-        <div class="dash-card" data-card-id="confirmaciones">
+        <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones">
           <div class="dash-card-title">Efectividad de confirmaciones</div>
           <div id="dashConfirmations"></div>
         </div>
@@ -4646,11 +4720,11 @@
 
       <!-- Charts row 5: Seasonality + Recurrence -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="estacionalidad">
+        <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad">
           <div class="dash-card-title">Estacionalidad formativa</div>
           <div id="dashSeasonality"></div>
         </div>
-        <div class="dash-card" data-card-id="recurrencia">
+        <div class="dash-card" data-card-id="recurrencia" data-module="dash-recurrencia">
           <div class="dash-card-title">Recurrencia de participantes</div>
           <div id="dashRecurrence"></div>
         </div>
@@ -4663,11 +4737,11 @@
 
       <!-- Charts row 6: Survey Coverage + Scorecard -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="encuestas">
+        <div class="dash-card" data-card-id="encuestas" data-module="dash-encuestas">
           <div class="dash-card-title">Cobertura de encuestas</div>
           <div id="dashSurveyCoverage"></div>
         </div>
-        <div class="dash-card" data-card-id="scorecard">
+        <div class="dash-card" data-card-id="scorecard" data-module="dash-scorecard">
           <div class="dash-card-title">Scorecard de proveedores</div>
           <div id="dashProviderScorecard"></div>
         </div>
@@ -4678,32 +4752,32 @@
       <div id="dash-group-analytics">
       <div class="dash-section-heading">Analytics avanzado</div>
 
-      <div class="dash-card" data-card-id="riesgo-fundae" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk" style="margin-bottom:16px;">
         <div class="dash-card-title">Riesgo de Bonificación FUNDAE</div>
         <div id="dashRiskScoring"></div>
       </div>
 
-      <div class="dash-card" data-card-id="roi-formacion" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi" style="margin-bottom:16px;">
         <div class="dash-card-title">ROI de Formación por Empresa</div>
         <div id="dashROI"></div>
       </div>
 
-      <div class="dash-card" data-card-id="cobertura" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura" style="margin-bottom:16px;">
         <div class="dash-card-title">Cobertura Formativa</div>
         <div id="dashCoverage"></div>
       </div>
 
-      <div class="dash-card" data-card-id="equidad" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="equidad" data-module="dash-equity" style="margin-bottom:16px;">
         <div class="dash-card-title">Equidad en Acceso a Formación</div>
         <div id="dashEquity"></div>
       </div>
 
-      <div class="dash-card" data-card-id="inversion-manager" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager" style="margin-bottom:16px;">
         <div class="dash-card-title">Inversión Formativa por Responsable</div>
         <div id="dashByManager"></div>
       </div>
 
-      <div class="dash-card" data-card-id="cross-company" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany" style="margin-bottom:16px;">
         <div class="dash-card-title">Formación Interempresarial</div>
         <div id="dashCrossCompany"></div>
       </div>
@@ -4716,7 +4790,7 @@
 
       <!-- Gestor Activity -->
       <div class="dash-chart-row" style="grid-template-columns:1fr;">
-        <div class="dash-card" data-card-id="gestor">
+        <div class="dash-card" data-card-id="gestor" data-module="dash-crosstrain">
           <div class="dash-card-title">Productividad del gestor</div>
           <div id="dashGestorActivity"></div>
         </div>
@@ -4906,7 +4980,7 @@
       </div>
       <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título...">
       <div id="historyList"></div>
-      <div id="historyEmpty" class="dialog-history-empty">No hay convocatorias en el historial</div>
+      <div id="historyEmpty" class="dialog-history-empty"></div>
     </div>
   </div>
 
@@ -8788,6 +8862,39 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // Unified empty state builder
+    function createEmptyState(opts) {
+      // opts: { icon, title, desc, ctaText, ctaAction }
+      var wrap = document.createElement('div');
+      wrap.className = 'empty-state';
+      if (opts.icon) {
+        var ic = document.createElement('div');
+        ic.className = 'empty-state-icon';
+        ic.textContent = opts.icon;
+        wrap.appendChild(ic);
+      }
+      if (opts.title) {
+        var t = document.createElement('div');
+        t.className = 'empty-state-title';
+        t.textContent = opts.title;
+        wrap.appendChild(t);
+      }
+      if (opts.desc) {
+        var d = document.createElement('div');
+        d.className = 'empty-state-desc';
+        d.textContent = opts.desc;
+        wrap.appendChild(d);
+      }
+      if (opts.ctaText && opts.ctaAction) {
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary empty-state-cta';
+        btn.textContent = opts.ctaText;
+        btn.addEventListener('click', opts.ctaAction);
+        wrap.appendChild(btn);
+      }
+      return wrap;
+    }
+
     function addBusinessDays(startDate, days) {
       var date = new Date(startDate);
       var added = 0;
@@ -9792,6 +9899,7 @@
 
       // F3.15: Precompute dashboard metrics in idle time after Excel load
       precomputeDashboard();
+      ActivationChecklist.markDone('loadOrg');
     }
 
     function buildSheetSelectorList(sheetNames, onSelect) {
@@ -10314,7 +10422,29 @@
       if (allSorted.length === 0) {
         table.style.display = 'none';
         emptyState.style.display = '';
-        emptyState.textContent = 'Ninguna persona trabajadora coincide con estos filtros.';
+        emptyState.textContent = '';
+        var noDataLoaded = allEmployees.length === 0;
+        if (noDataLoaded) {
+          emptyState.appendChild(createEmptyState({
+            icon: '\u2B06',
+            title: 'Carga tu censo de personas trabajadoras',
+            desc: 'Arrastra un archivo Excel o haz clic en el botón para comenzar.',
+            ctaText: 'Cargar Excel',
+            ctaAction: function() { document.getElementById('fileInput').click(); }
+          }));
+        } else {
+          emptyState.appendChild(createEmptyState({
+            icon: '\uD83D\uDD0D',
+            title: 'Sin resultados',
+            desc: 'Ningún registro coincide con los filtros actuales.',
+            ctaText: 'Limpiar filtros',
+            ctaAction: function() {
+              state.activeFilters = {};
+              renderFilters();
+              renderTable();
+            }
+          }));
+        }
       } else {
         table.style.display = '';
         emptyState.style.display = 'none';
@@ -10791,10 +10921,11 @@
       if (countEl) countEl.textContent = queue.length;
       if (!queue.length) {
         body.replaceChildren();
-        var empty = document.createElement('p');
-        empty.style.cssText = 'text-align:center; color: var(--text-muted); padding: 40px 0; font-size: 13px;';
-        empty.textContent = 'La cola esta vacia';
-        body.appendChild(empty);
+        body.appendChild(createEmptyState({
+          icon: '\uD83D\uDCE5',
+          title: 'Cola vacía',
+          desc: 'Añade convocatorias a la cola para enviarlas en lote.'
+        }));
         return;
       }
       body.replaceChildren();
@@ -11508,6 +11639,7 @@
           syncConvocatoriaWithAccion(event, emails);
           // Show post-send summary
           showPostSendSummary(event, selected.length, emails);
+          ActivationChecklist.markDone('sendFirst');
         }
 
         // Duplicate detection
@@ -12334,6 +12466,12 @@
 
       if (history.length === 0) {
         list.innerHTML = '';
+        empty.textContent = '';
+        empty.appendChild(createEmptyState({
+          icon: '\uD83D\uDD52',
+          title: 'Sin historial',
+          desc: 'Las convocatorias enviadas se registrarán aquí automáticamente.'
+        }));
         empty.style.display = '';
         return;
       }
@@ -13570,12 +13708,117 @@
     });
 
     // ═══════════════════════════════════
+    // ACTIVATION CHECKLIST (TAB HELPER)
+    // ═══════════════════════════════════
+
+    function applyTabChange(tabId) {
+      var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+      if (btn) btn.click();
+    }
+
+    var ActivationChecklist = {
+      STORAGE_KEY: 'convocatoria_activationChecklist',
+      steps: [
+        { id: 'loadOrg', label: 'Cargar organigrama', action: function() { document.getElementById('fileInput').click(); } },
+        { id: 'sendFirst', label: 'Enviar primera convocatoria', action: function() { applyTabChange('tabConvocatoria'); } },
+        { id: 'createAction', label: 'Crear acción formativa', action: function() { applyTabChange('tabCatalogos'); } },
+        { id: 'generateXml', label: 'Generar primer XML', action: function() { applyTabChange('tabXml'); } },
+        { id: 'setupCompliance', label: 'Definir formaciones obligatorias', action: function() { applyTabChange('tabCatalogos'); } },
+        { id: 'generateReport', label: 'Generar primer informe', action: function() { applyTabChange('tabDashboard'); } },
+        { id: 'exploreDash', label: 'Explorar el dashboard', action: function() { applyTabChange('tabDashboard'); } },
+      ],
+
+      getState: function() {
+        try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+      },
+
+      saveState: function(s) {
+        try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
+      },
+
+      markDone: function(stepId) {
+        var s = this.getState();
+        s[stepId] = true;
+        this.saveState(s);
+        this.render();
+      },
+
+      isDismissed: function() {
+        return this.getState()._dismissed === true;
+      },
+
+      dismiss: function() {
+        var s = this.getState();
+        s._dismissed = true;
+        this.saveState(s);
+        var el = document.getElementById('activationChecklist');
+        if (el) el.classList.add('hidden');
+      },
+
+      render: function() {
+        var container = document.getElementById('activationChecklist');
+        if (!container) return;
+        if (this.isDismissed()) { container.classList.add('hidden'); return; }
+
+        var s = this.getState();
+        var self = this;
+        var doneCount = this.steps.filter(function(step) { return s[step.id]; }).length;
+
+        if (doneCount >= this.steps.length) { container.classList.add('hidden'); return; }
+
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+
+        var header = document.createElement('div');
+        header.className = 'activation-header';
+        var title = document.createElement('div');
+        title.className = 'activation-title';
+        title.textContent = 'Primeros pasos con Formación_AGORA';
+        var progress = document.createElement('span');
+        progress.className = 'activation-progress';
+        progress.textContent = doneCount + ' de ' + this.steps.length;
+        var dismiss = document.createElement('button');
+        dismiss.className = 'activation-dismiss';
+        dismiss.textContent = 'No mostrar más';
+        dismiss.addEventListener('click', this.dismiss.bind(this));
+        header.appendChild(title);
+        header.appendChild(progress);
+        header.appendChild(dismiss);
+        container.appendChild(header);
+
+        var stepsDiv = document.createElement('div');
+        stepsDiv.className = 'activation-steps';
+        this.steps.forEach(function(step) {
+          var item = document.createElement('div');
+          item.className = 'activation-step' + (s[step.id] ? ' done' : '');
+          var check = document.createElement('div');
+          check.className = 'activation-check';
+          check.textContent = s[step.id] ? '\u2713' : '';
+          var label = document.createElement('span');
+          label.textContent = step.label;
+          item.appendChild(check);
+          item.appendChild(label);
+          if (!s[step.id] && step.action) {
+            item.addEventListener('click', function() { step.action(); });
+          }
+          stepsDiv.appendChild(item);
+        });
+        container.appendChild(stepsDiv);
+      },
+
+      init: function() {
+        this.render();
+      }
+    };
+
+    // ═══════════════════════════════════
     // INIT QUEUE
     // ═══════════════════════════════════
 
     loadQueue();
     loadCompliance();
     renderQueue();
+    ActivationChecklist.init();
 
     // ── Session recovery banner ──
     (function() {
@@ -13744,23 +13987,11 @@
      */
     function renderEmptyState(container, hint) {
       container.textContent = '';
-      var wrap = document.createElement('div');
-      wrap.className = 'dash-empty';
-      var icon = document.createElement('div');
-      icon.className = 'dash-empty-icon';
-      icon.textContent = '?';
-      var txt = document.createElement('div');
-      txt.className = 'dash-empty-text';
-      txt.textContent = 'Sin datos disponibles';
-      wrap.appendChild(icon);
-      wrap.appendChild(txt);
-      if (hint) {
-        var h = document.createElement('div');
-        h.className = 'dash-empty-hint';
-        h.textContent = hint;
-        wrap.appendChild(h);
-      }
-      container.appendChild(wrap);
+      container.appendChild(createEmptyState({
+        icon: '\uD83D\uDCCA',
+        title: 'Sin datos disponibles',
+        desc: hint || ''
+      }));
     }
 
     /**
@@ -16020,7 +16251,8 @@
               id: 'alert_inicio_' + (a.codigo || a.nombre),
               type: 'danger',
               action: actionLabel,
-              msg: 'empieza en ' + daysToStart + ' d\u00EDa' + (daysToStart !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE'
+              msg: 'empieza en ' + daysToStart + ' d\u00EDa' + (daysToStart !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE',
+              navTab: 'tabXml'
             });
           }
         }
@@ -16037,7 +16269,8 @@
                 id: 'alert_prep_' + (a.codigo || a.nombre),
                 type: 'warning',
                 action: actionLabel,
-                msg: 'sigue en preparaci\u00F3n — inicia en ' + daysToStart2 + ' d\u00EDa' + (daysToStart2 !== 1 ? 's' : '')
+                msg: 'sigue en preparaci\u00F3n — inicia en ' + daysToStart2 + ' d\u00EDa' + (daysToStart2 !== 1 ? 's' : ''),
+                navTab: 'tabCatalogos'
               });
             }
           }
@@ -16068,7 +16301,8 @@
               id: 'alert_fin_' + (a.codigo || a.nombre),
               type: 'danger',
               action: actionLabel,
-              msg: 'finaliz\u00F3 hace ' + daysPast + ' d\u00EDa' + (daysPast !== 1 ? 's' : '') + ' sin comunicar fin a FUNDAE'
+              msg: 'finaliz\u00F3 hace ' + daysPast + ' d\u00EDa' + (daysPast !== 1 ? 's' : '') + ' sin comunicar fin a FUNDAE',
+              navTab: 'tabXml'
             });
           }
         }
@@ -16085,14 +16319,16 @@
             id: 'alert_credito_critico',
             type: 'danger',
             action: null,
-            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% — riesgo de sobreconsumo'
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% — riesgo de sobreconsumo',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         } else if (pct >= 80) {
           alerts.push({
             id: 'alert_credito_alto',
             type: 'warning',
             action: null,
-            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% consumido'
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% consumido',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         }
 
@@ -16103,7 +16339,8 @@
             id: 'alert_credito_infrauso',
             type: 'warning',
             action: null,
-            msg: 'Solo el ' + pct + '% del cr\u00E9dito FUNDAE consumido — posible infrautilizaci\u00F3n en el \u00FAltimo trimestre'
+            msg: 'Solo el ' + pct + '% del cr\u00E9dito FUNDAE consumido — posible infrautilizaci\u00F3n en el \u00FAltimo trimestre',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         }
       }
@@ -16196,6 +16433,15 @@
         var div = document.createElement('div');
         div.className = 'dash-alert';
         div.dataset.alertId = alert.id;
+
+        // F3.5: make alert clickable if it has a navigation target
+        if (alert.navTab) {
+          div.setAttribute('data-action', 'navigate');
+          div.title = 'Clic para ir a la pestaña correspondiente';
+          div.addEventListener('click', function() {
+            dashNavigateTo(alert.navTab, alert.navScrollTo ? { scrollTo: alert.navScrollTo } : null);
+          });
+        }
 
         var typeSpan = document.createElement('span');
         typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
@@ -16323,6 +16569,36 @@
       addRow('Proyectado total (' + pctProjected + '%)', projected, true);
 
       containerEl.appendChild(sim);
+    }
+
+    // --- Progressive disclosure: collapse state management ---
+    var DASH_COLLAPSED_DEFAULTS = [
+      'dash-roi', 'dash-equity', 'dash-crosscompany',
+      'dash-risk', 'dash-manager', 'dash-crosstrain'
+    ];
+
+    function getDashCollapsedState() {
+      try {
+        var saved = localStorage.getItem('convocatoria_dashCollapsed');
+        if (saved) return JSON.parse(saved);
+      } catch(e) {}
+      return DASH_COLLAPSED_DEFAULTS.slice();
+    }
+
+    function saveDashCollapsedState(collapsed) {
+      try { localStorage.setItem('convocatoria_dashCollapsed', JSON.stringify(collapsed)); } catch(e) {}
+    }
+
+    // ── Dashboard click-through navigation (F3.5) ───────────────────────────
+    function dashNavigateTo(tab, context) {
+      var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (btn) btn.click();
+      if (context && context.scrollTo) {
+        setTimeout(function() {
+          var el = document.getElementById(context.scrollTo) || document.querySelector(context.scrollTo);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      }
     }
 
     // ═══════════════════════════════════
@@ -16483,12 +16759,21 @@
       var dashEmpty = document.getElementById('dashEmptyState');
       var dashContainer = document.getElementById('dashContainer');
       if (allAcciones.length === 0) {
+        dashEmpty.textContent = '';
+        dashEmpty.appendChild(createEmptyState({
+          icon: '\uD83D\uDCCA',
+          title: 'Sin datos en el cuadro de mando',
+          desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
+          ctaText: 'Ir a Catálogos',
+          ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
+        }));
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
       } else {
         dashEmpty.style.display = 'none';
         dashContainer.style.display = '';
+        ActivationChecklist.markDone('exploreDash');
       }
 
       // --- Computed stats (F3.15: use cache if hash matches) ---
@@ -16563,13 +16848,22 @@
       var kpiColorHex = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5];
       var kpiIdx = 0;
 
-      function addKpi(label, value, sub, sparkData, thresholdStatus) {
+      function addKpi(label, value, sub, sparkData, thresholdStatus, navOpts) {
         var card = document.createElement('div');
         card.className = 'dash-kpi';
         if (thresholdStatus === 'success') card.classList.add('dash-kpi--success');
         else if (thresholdStatus === 'warning') card.classList.add('dash-kpi--warning');
         else if (thresholdStatus === 'danger') card.classList.add('dash-kpi--danger');
         card.setAttribute('data-color', kpiColors[kpiIdx % kpiColors.length]);
+
+        // F3.5: make KPI clickable if it has a navigation target
+        if (navOpts && navOpts.tab) {
+          card.setAttribute('data-action', 'navigate');
+          card.title = 'Clic para ver detalle';
+          card.addEventListener('click', function() {
+            dashNavigateTo(navOpts.tab, navOpts.scrollTo ? { scrollTo: navOpts.scrollTo } : null);
+          });
+        }
 
         var lblWrap = document.createElement('div');
         lblWrap.className = 'dash-kpi-label';
@@ -16619,17 +16913,17 @@
         kpiIdx++;
       }
 
-      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones);
-      addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación', sparkHoras);
+      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones, null, { tab: 'tabCatalogos' });
+      addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación', sparkHoras, null, { tab: 'tabCatalogos' });
       // Conditional status for participants KPI
       var partStatus = totalParticipantes === 0 ? 'danger' : (accionesConParticipantes < acciones.length * 0.5 ? 'warning' : null);
-      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes, partStatus);
-      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto);
+      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes, partStatus, { tab: 'tabCatalogos' });
+      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto, null, { tab: 'tabCatalogos' });
       var creditoDisponible = totalCredito - totalConsumido;
       var creditoPct = totalCredito > 0 ? Math.round((totalConsumido / totalCredito) * 100) : 0;
       // Conditional status for FUNDAE credit KPI
       var creditStatus = creditoPct > 95 ? 'danger' : (creditoPct > 80 ? 'warning' : (totalCredito > 0 ? 'success' : null));
-      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total', null, creditStatus);
+      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total', null, creditStatus, { tab: 'tabDashboard', scrollTo: 'dashCreditChart' });
 
       // --- Alerts (collapsible, dismissible) ---
       var alertsWidget = document.getElementById('dashAlertsWidget');
@@ -16682,14 +16976,14 @@
             var type = diffDays > 30 ? 'danger' : 'warning';
             var alertId = 'vencida_' + (a.codigo || a.nombre);
             var actionLabel = (a.codigo || '') + ' \u2014 ' + (a.nombre || '');
-            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: diffDays + ' días vencida' });
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: diffDays + ' días vencida', navTab: 'tabCatalogos' });
           }
         }
       });
 
       var sinEmpresa = bonificables.filter(function(a) { return !a.empresaPagadora; });
       if (sinEmpresa.length > 0) {
-        pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora' });
+        pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora', navTab: 'tabCatalogos' });
       }
 
       // --- FUNDAE deadline alerts ---
@@ -16710,7 +17004,7 @@
             var type = diasHastaInicio <= 3 ? 'danger' : 'warning';
             var alertId = 'fundae_inicio_' + (a.codigo || a.nombre);
             var msg = 'empieza en ' + diasHastaInicio + ' día' + (diasHastaInicio !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE';
-            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: msg, navTab: 'tabXml' });
           }
         }
 
@@ -16722,11 +17016,11 @@
             var diasPasados = Math.abs(diasHastaFin);
             var alertId = 'fundae_fin_pasado_' + (a.codigo || a.nombre);
             var msg = 'finalizó hace ' + diasPasados + ' día' + (diasPasados !== 1 ? 's' : '') + ' — genera XML de finalización';
-            pendingAlerts.push({ id: alertId, type: 'danger', action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: 'danger', action: actionLabel, msg: msg, navTab: 'tabXml' });
           } else if (diasHastaFin <= diasAvisoFin) {
             var alertId = 'fundae_fin_proximo_' + (a.codigo || a.nombre);
             var msg = 'finaliza en ' + diasHastaFin + ' día' + (diasHastaFin !== 1 ? 's' : '');
-            pendingAlerts.push({ id: alertId, type: 'warning', action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: 'warning', action: actionLabel, msg: msg, navTab: 'tabXml' });
           }
         }
       });
@@ -16741,6 +17035,15 @@
         if (dismissed[alert.id]) return;
         var div = document.createElement('div');
         div.className = 'dash-alert';
+
+        // F3.5: make alert clickable if it has a navigation target
+        if (alert.navTab) {
+          div.setAttribute('data-action', 'navigate');
+          div.title = 'Clic para ir a la pestaña correspondiente';
+          div.addEventListener('click', function() {
+            dashNavigateTo(alert.navTab, alert.navScrollTo ? { scrollTo: alert.navScrollTo } : null);
+          });
+        }
 
         var typeSpan = document.createElement('span');
         typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
@@ -17732,18 +18035,10 @@
       });
       applyDashMode(dashMode);
 
-      // --- Collapsible cards with localStorage persistence ---
-      var dashCollapsed = {};
-      try { dashCollapsed = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
-      // Default collapsed cards (secondary/periodic analytics)
-      var defaultCollapsed = { modalidad: true, area: true, departamento: true, recurrencia: true, encuestas: true, gestor: true, 'roi-formacion': true, cobertura: true, equidad: true, 'inversion-manager': true, 'cross-company': true };
-      // On first run (no stored state), use defaults
-      var hasStoredCollapsed = localStorage.getItem('convocatoria_dash_collapsed') !== null;
-      if (!hasStoredCollapsed) dashCollapsed = defaultCollapsed;
+      // --- Collapsible cards with localStorage persistence (progressive disclosure) ---
+      var collapsed = getDashCollapsedState();
 
-      document.querySelectorAll('#dashContainer .dash-card[data-card-id]').forEach(function(card) {
-        var cardId = card.getAttribute('data-card-id');
-
+      document.querySelectorAll('#dashContainer .dash-card[data-module]').forEach(function(card) {
         // Wrap non-title children in a .dash-card-body for smooth collapse
         if (!card.querySelector('.dash-card-body')) {
           var body = document.createElement('div');
@@ -17755,28 +18050,38 @@
             }
           });
           card.appendChild(body);
-          // Set initial max-height from content
-          if (!card.classList.contains('collapsed')) {
-            body.style.maxHeight = body.scrollHeight + 'px';
-          }
         }
 
-        if (dashCollapsed[cardId]) {
+        // Apply collapsed state from persistence
+        if (collapsed.indexOf(card.dataset.module) >= 0) {
           card.classList.add('collapsed');
+        } else {
+          card.classList.remove('collapsed');
         }
+
+        // Set initial max-height for expanded cards
+        var cardBody = card.querySelector('.dash-card-body');
+        if (cardBody && !card.classList.contains('collapsed')) {
+          cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
+        }
+
         var title = card.querySelector('.dash-card-title');
         if (title) {
           title.addEventListener('click', function() {
             var cardBody = card.querySelector('.dash-card-body');
+            var collapsed = getDashCollapsedState();
+            var mod = card.dataset.module;
             if (card.classList.contains('collapsed')) {
               // Expand
               card.classList.remove('collapsed');
+              collapsed = collapsed.filter(function(m) { return m !== mod; });
               if (cardBody) {
                 cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
                 cardBody.style.opacity = '1';
               }
             } else {
               // Collapse
+              if (collapsed.indexOf(mod) < 0) collapsed.push(mod);
               if (cardBody) {
                 cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
                 // Force reflow then set to 0
@@ -17786,14 +18091,7 @@
               }
               card.classList.add('collapsed');
             }
-            var currentState = {};
-            try { currentState = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
-            if (card.classList.contains('collapsed')) {
-              currentState[cardId] = true;
-            } else {
-              delete currentState[cardId];
-            }
-            try { localStorage.setItem('convocatoria_dash_collapsed', JSON.stringify(currentState)); } catch(e) {}
+            saveDashCollapsedState(collapsed);
           });
         }
       });
@@ -18036,6 +18334,14 @@
       var calEmpty = document.getElementById('calEmptyState');
       var calContainer = document.getElementById('calContainer');
       if (allWithDates.length === 0) {
+        calEmpty.textContent = '';
+        calEmpty.appendChild(createEmptyState({
+          icon: '\uD83D\uDCC5',
+          title: 'Calendario vacío',
+          desc: 'Las acciones formativas aparecerán aquí automáticamente cuando les asignes fechas.',
+          ctaText: 'Ir a Catálogos',
+          ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
+        }));
         calEmpty.style.display = 'flex';
         calContainer.style.display = 'none';
         return;
