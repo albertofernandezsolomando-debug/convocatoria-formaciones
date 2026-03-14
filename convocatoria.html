@@ -2159,6 +2159,20 @@
       transform: rotate(180deg);
     }
 
+    /* --- Skeleton tabla --- */
+    .table-skeleton { padding: 12px 28px; }
+    .table-skeleton-row { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .table-skeleton-cell {
+      height: 14px; border-radius: var(--radius-sm);
+      background: linear-gradient(90deg, var(--bg-input) 25%, var(--border) 50%, var(--bg-input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .table-skeleton-cell { animation: none; }
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3946,6 +3960,16 @@
       <!-- Attendee table -->
       <div class="attendee-table-wrap" id="tableWrap">
         <div class="empty-state" id="emptyState"></div>
+        <div class="table-skeleton" id="tableSkeleton" style="display:none;">
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:19%;"></div><div class="table-skeleton-cell" style="width:31%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:21%;"></div><div class="table-skeleton-cell" style="width:29%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+        </div>
         <table class="attendee-table" id="attendeeTable" role="table" style="display:none;">
           <thead>
             <tr role="row">
@@ -8714,6 +8738,9 @@
         var promptDiv = document.getElementById('uploadPrompt');
         var origPromptHTML = promptDiv.innerHTML;
         promptDiv.querySelector('div:nth-child(2)').textContent = 'Procesando...';
+        document.getElementById('tableSkeleton').style.display = '';
+        document.getElementById('attendeeTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
 
         setTimeout(function() {
           const data = new Uint8Array(e.target.result);
@@ -8722,6 +8749,7 @@
 
           uploadZone.classList.remove('loading');
           promptDiv.innerHTML = origPromptHTML;
+          document.getElementById('tableSkeleton').style.display = 'none';
 
           if (result.needsSheetSelection) {
             const dialog = document.getElementById('sheetSelectorDialog');
