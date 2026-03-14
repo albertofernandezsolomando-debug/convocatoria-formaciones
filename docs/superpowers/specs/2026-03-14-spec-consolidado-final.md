@@ -683,7 +683,7 @@ Los atajos de historial (`Cmd+Shift+H`) y ajustes (`Cmd+,`) se eliminan — acce
 
 **NO se interceptan:** `Cmd+F` (buscar en pagina), `Cmd+A` (seleccionar todo), `Cmd+S` (guardar). Estos son atajos nativos del navegador.
 
-**Deteccion de OS:** La app detecta el OS con `navigator.platform` y muestra `Ctrl` o `Cmd` en tooltips segun corresponda.
+**Deteccion de OS:** La app detecta el OS con `navigator.userAgentData?.platform || navigator.platform` y muestra `Ctrl` o `Cmd` en tooltips segun corresponda.
 
 **Revelacion progresiva:** Tooltips con atajos al hacer hover con delay 800ms. En la paleta de comandos, cada accion muestra su atajo. No mostrar tooltips de atajos hasta que el usuario ha interactuado con la app al menos 3 veces.
 
@@ -1146,8 +1146,8 @@ function switchTab(tabId) {
 | **Integracion con LMS** | Research RRHH (seccion 13) | **Fuera de alcance** | La herramienta es un fichero HTML sin backend. Integraciones con LMS (SCORM, APIs) requieren infraestructura incompatible con la arquitectura zero-deployment. |
 | **PIF (Permisos Individuales de Formacion)** | Research RRHH (seccion 16) | **Aplazada indefinidamente** | Los PIF son un mecanismo distinto de la formacion programada (iniciativa del trabajador, no de la empresa). Su gestion es poco frecuente (pocas empresas los tramitan activamente) y anadirlo sin un caso de uso claro seria feature bloat. |
 | **Onboarding completo (formacion de incorporacion)** | Research RRHH (seccion 11) | **Fuera de alcance** | El onboarding completo es responsabilidad compartida con RRHH general, el manager y TI. La herramienta cubre la parte formativa del onboarding a traves del tracking de formacion obligatoria (F2.10) — las formaciones de incorporacion se registran como formaciones obligatorias de tipo "inicial". |
-| **Bordes laterales semanticos (F3.11)** | Frontend | **Descartada** | Es el patron semaforo disfrazado de barra. Linear no colorea secciones del sidebar. El estado va en el contenido. |
-| **Envio directo de convocatorias via PA (F4.4)** | Research automatizaciones | **Descartada** | La app prepara, Outlook envia. Las convocatorias no se envian directamente. Los recordatorios y encuestas SI usan PA (mismo patron que sendSurveyEmail existente). |
+| **Bordes laterales semanticos (F3.11-original)** | Frontend | **Descartada** | Es el patron semaforo disfrazado de barra. Linear no colorea secciones del sidebar. El estado va en el contenido. |
+| **Envio directo de convocatorias via PA (F4.4-original)** | Research automatizaciones | **Descartada** | La app prepara, Outlook envia. Las convocatorias no se envian directamente. Los recordatorios y encuestas SI usan PA (mismo patron que sendSurveyEmail existente). |
 
 ---
 
