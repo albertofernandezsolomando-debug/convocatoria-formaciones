@@ -2274,6 +2274,75 @@
     .compliance-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
     .compliance-type-meta { font-size: 11px; color: var(--text-muted); }
 
+    /* === Activation Checklist === */
+    .activation-checklist {
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-light);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin: 0 16px 16px;
+    }
+    .activation-checklist.hidden { display: none; }
+    .activation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .activation-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .activation-progress {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .activation-dismiss {
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 8px;
+    }
+    .activation-dismiss:hover { color: var(--text-secondary); }
+    .activation-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .activation-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .activation-step.done {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    .activation-check {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      transition: all var(--transition);
+    }
+    .activation-step.done .activation-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3875,6 +3944,7 @@
     <span class="alert-banner-text" id="alertBannerText"></span>
     <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso">&#xD7;</button>
   </div>
+  <div class="activation-checklist" id="activationChecklist"></div>
   <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
   <div class="app">
     <!-- LEFT PANEL -->
@@ -9239,6 +9309,7 @@
       renderFilters();
       renderTable();
       checkOrphanParticipants();
+      ActivationChecklist.markDone('loadOrg');
     }
 
     function buildSheetSelectorList(sheetNames, onSelect) {
@@ -10930,6 +11001,7 @@
           syncConvocatoriaWithAccion(event, emails);
           // Show post-send summary
           showPostSendSummary(event, selected.length, emails);
+          ActivationChecklist.markDone('sendFirst');
         }
 
         // Duplicate detection
@@ -12998,12 +13070,117 @@
     });
 
     // ═══════════════════════════════════
+    // ACTIVATION CHECKLIST (TAB HELPER)
+    // ═══════════════════════════════════
+
+    function applyTabChange(tabId) {
+      var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+      if (btn) btn.click();
+    }
+
+    var ActivationChecklist = {
+      STORAGE_KEY: 'convocatoria_activationChecklist',
+      steps: [
+        { id: 'loadOrg', label: 'Cargar organigrama', action: function() { document.getElementById('fileInput').click(); } },
+        { id: 'sendFirst', label: 'Enviar primera convocatoria', action: function() { applyTabChange('tabConvocatoria'); } },
+        { id: 'createAction', label: 'Crear acción formativa', action: function() { applyTabChange('tabCatalogos'); } },
+        { id: 'generateXml', label: 'Generar primer XML', action: function() { applyTabChange('tabXml'); } },
+        { id: 'setupCompliance', label: 'Definir formaciones obligatorias', action: function() { applyTabChange('tabCatalogos'); } },
+        { id: 'generateReport', label: 'Generar primer informe', action: function() { applyTabChange('tabDashboard'); } },
+        { id: 'exploreDash', label: 'Explorar el dashboard', action: function() { applyTabChange('tabDashboard'); } },
+      ],
+
+      getState: function() {
+        try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+      },
+
+      saveState: function(s) {
+        try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
+      },
+
+      markDone: function(stepId) {
+        var s = this.getState();
+        s[stepId] = true;
+        this.saveState(s);
+        this.render();
+      },
+
+      isDismissed: function() {
+        return this.getState()._dismissed === true;
+      },
+
+      dismiss: function() {
+        var s = this.getState();
+        s._dismissed = true;
+        this.saveState(s);
+        var el = document.getElementById('activationChecklist');
+        if (el) el.classList.add('hidden');
+      },
+
+      render: function() {
+        var container = document.getElementById('activationChecklist');
+        if (!container) return;
+        if (this.isDismissed()) { container.classList.add('hidden'); return; }
+
+        var s = this.getState();
+        var self = this;
+        var doneCount = this.steps.filter(function(step) { return s[step.id]; }).length;
+
+        if (doneCount >= this.steps.length) { container.classList.add('hidden'); return; }
+
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+
+        var header = document.createElement('div');
+        header.className = 'activation-header';
+        var title = document.createElement('div');
+        title.className = 'activation-title';
+        title.textContent = 'Primeros pasos con Formación_AGORA';
+        var progress = document.createElement('span');
+        progress.className = 'activation-progress';
+        progress.textContent = doneCount + ' de ' + this.steps.length;
+        var dismiss = document.createElement('button');
+        dismiss.className = 'activation-dismiss';
+        dismiss.textContent = 'No mostrar más';
+        dismiss.addEventListener('click', this.dismiss.bind(this));
+        header.appendChild(title);
+        header.appendChild(progress);
+        header.appendChild(dismiss);
+        container.appendChild(header);
+
+        var stepsDiv = document.createElement('div');
+        stepsDiv.className = 'activation-steps';
+        this.steps.forEach(function(step) {
+          var item = document.createElement('div');
+          item.className = 'activation-step' + (s[step.id] ? ' done' : '');
+          var check = document.createElement('div');
+          check.className = 'activation-check';
+          check.textContent = s[step.id] ? '\u2713' : '';
+          var label = document.createElement('span');
+          label.textContent = step.label;
+          item.appendChild(check);
+          item.appendChild(label);
+          if (!s[step.id] && step.action) {
+            item.addEventListener('click', function() { step.action(); });
+          }
+          stepsDiv.appendChild(item);
+        });
+        container.appendChild(stepsDiv);
+      },
+
+      init: function() {
+        this.render();
+      }
+    };
+
+    // ═══════════════════════════════════
     // INIT QUEUE
     // ═══════════════════════════════════
 
     loadQueue();
     loadCompliance();
     renderQueue();
+    ActivationChecklist.init();
 
     // ── Session recovery banner ──
     (function() {
@@ -15818,6 +15995,7 @@
       } else {
         dashEmpty.style.display = 'none';
         dashContainer.style.display = '';
+        ActivationChecklist.markDone('exploreDash');
       }
 
       // --- Computed stats ---
