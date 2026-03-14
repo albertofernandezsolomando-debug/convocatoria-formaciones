@@ -4891,6 +4891,15 @@
         <div class="dialog-section-title">Plantillas guardadas</div>
         <div id="settingsTemplatesList"></div>
       </div>
+      <div class="dialog-section">
+        <div class="dialog-section-title">Copia de seguridad</div>
+        <div class="dialog-hint" style="margin-bottom:8px;">Exporta todos los datos de la aplicación a un archivo JSON para guardarlos o transferirlos a otro navegador.</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" id="btnExportBackup">Exportar datos</button>
+          <button class="btn btn-secondary" id="btnImportBackup">Importar datos</button>
+        </div>
+        <input type="file" id="backupFileInput" accept=".json" style="display:none;">
+      </div>
       <div class="dialog-footer-links">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
         <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
@@ -5424,6 +5433,100 @@
       };
       reader.readAsText(file);
     }
+
+    // ═══════════════════════════════════
+    // FULL APP BACKUP EXPORT/IMPORT
+    // ═══════════════════════════════════
+
+    var BACKUP_KEYS = [
+      'convocatoria_state',
+      'convocatoria_employees',
+      'convocatoria_fileName',
+      'fundae_acciones',
+      'fundae_proveedores',
+      'fundae_centros',
+      'fundae_tutores',
+      'convocatoria_settings',
+      'convocatoria_history',
+      'convocatoria_queue',
+      'convocatoria_presets',
+      'convocatoria_templates'
+    ];
+
+    function exportBackup() {
+      var payload = { version: 1, exportedAt: new Date().toISOString(), data: {} };
+      BACKUP_KEYS.forEach(function(key) {
+        var raw = localStorage.getItem(key);
+        if (raw !== null) {
+          try { payload.data[key] = JSON.parse(raw); }
+          catch(e) { payload.data[key] = raw; }
+        }
+      });
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      var today = new Date().toISOString().slice(0, 10);
+      a.download = 'formacion_agora_backup_' + today + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      localStorage.setItem('convocatoria_lastBackup', new Date().toISOString());
+      showToast('Backup completo descargado', 'success');
+    }
+
+    function importBackup(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var payload = JSON.parse(e.target.result);
+          if (!payload.version || !payload.data) {
+            showToast('Archivo no válido: falta el campo version o data', 'error');
+            return;
+          }
+          Object.keys(payload.data).forEach(function(key) {
+            var val = payload.data[key];
+            localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+          });
+          localStorage.setItem('convocatoria_lastBackup', new Date().toISOString());
+          showToast('Datos restaurados correctamente. Recargando…', 'success');
+          setTimeout(function() { location.reload(); }, 1200);
+        } catch(err) {
+          showToast('Error al importar: archivo JSON inválido', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function checkBackupReminder() {
+      var last = localStorage.getItem('convocatoria_lastBackup');
+      if (!last) {
+        // No backup ever taken — only remind if the user has data
+        var hasData = BACKUP_KEYS.some(function(k) { return localStorage.getItem(k) !== null; });
+        if (hasData) {
+          showToast('No tienes ninguna copia de seguridad. Puedes exportar tus datos desde Ajustes.', 'info', 8000);
+        }
+        return;
+      }
+      var diff = Date.now() - new Date(last).getTime();
+      var days = diff / (1000 * 60 * 60 * 24);
+      if (days > 7) {
+        showToast('Hace más de una semana que no haces backup. Puedes exportar tus datos desde Ajustes.', 'info', 8000);
+      }
+    }
+
+    // Wire up backup buttons
+    (function() {
+      var btnExport = document.getElementById('btnExportBackup');
+      var btnImport = document.getElementById('btnImportBackup');
+      var fileInput = document.getElementById('backupFileInput');
+      if (btnExport) btnExport.addEventListener('click', exportBackup);
+      if (btnImport) btnImport.addEventListener('click', function() { fileInput.click(); });
+      if (fileInput) fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files[0]) {
+          importBackup(fileInput.files[0]);
+          fileInput.value = '';
+        }
+      });
+    })();
 
     // ═══════════════════════════════════
     // CATALOG EXCEL IMPORT/EXPORT
@@ -13819,6 +13922,7 @@
     loadCompliance();
     renderQueue();
     ActivationChecklist.init();
+    checkBackupReminder();
 
     // ── Session recovery banner ──
     (function() {
