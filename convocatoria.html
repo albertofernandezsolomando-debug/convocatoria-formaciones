@@ -504,6 +504,146 @@
       color: white;
     }
 
+    /* --- Annual plan view --- */
+    .annual-plan-wrapper {
+      padding: 20px;
+    }
+    .annual-plan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .annual-plan-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .annual-plan-year-select {
+      font-size: 13px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+    .annual-plan-quarter {
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .annual-plan-quarter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--accent-subtle);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .annual-plan-quarter-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .annual-plan-quarter-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .annual-plan-quarter-stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .annual-plan-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .annual-plan-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .annual-plan-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .annual-plan-table tr:last-child td {
+      border-bottom: none;
+    }
+    .annual-plan-table tr:hover td {
+      background: var(--accent-subtle);
+    }
+    .annual-plan-estado {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .annual-plan-estado.completed {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .annual-plan-estado.in-progress {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .annual-plan-estado.planned {
+      background: var(--bg-input);
+      color: var(--text-muted);
+    }
+    .annual-plan-empty-quarter {
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+    .annual-plan-back-btn {
+      font-size: 12px;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .annual-plan-back-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-activate {
+      font-size: 11px;
+      padding: 3px 10px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent-subtle);
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all var(--transition);
+    }
+    .btn-activate:hover {
+      background: var(--accent);
+      color: white;
+    }
+
     /* --- Catalog list view table --- */
     .catalog-list-view-container {
       flex: 1;
@@ -4146,14 +4286,11 @@
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none; position:relative; z-index:10;">
         <div class="section-label">2. Selecciona personas destinatarias</div>
-        <div id="presetBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-          <span style="font-size:11px; color:var(--text-muted);">Presets:</span>
-          <div id="presetList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
-          <button class="link-btn link-add" id="btnSavePreset" style="font-size:11px;">+ Guardar filtro actual</button>
-          <span style="color: var(--border-strong); font-size: 11px;">|</span>
-          <button class="link-btn link-add" onclick="saveAsFilterTemplate()" style="font-size:11px;">+ Plantilla completa</button>
+        <div id="unifiedTemplateBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+          <span style="font-size:11px; color:var(--text-muted);">Plantillas:</span>
+          <div id="unifiedTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+          <button class="link-btn link-add" id="btnSaveUnifiedTemplate" style="font-size:11px;">+ Guardar plantilla</button>
         </div>
-        <div id="filterTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
         <div id="filterContainer"></div>
         <details class="form-section" id="nifListSection" style="margin-top:10px;">
           <summary style="font-size:13px;font-weight:600;cursor:pointer;">Selección por lista</summary>
@@ -4179,16 +4316,9 @@
       <div class="section" id="eventoSection" style="display:none;">
         <div class="section-label">3. Datos del evento</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <select class="input-field" id="trainingTemplateSelect" style="flex:1; font-size:12px;">
-            <option value="">Cargar formacion recurrente...</option>
+          <select class="input-field" id="unifiedTemplateSelect" style="flex:1; font-size:12px;">
+            <option value="">Cargar plantilla...</option>
           </select>
-          <button class="link-btn link-add" onclick="saveAsTrainingTemplate()" style="font-size:12px; white-space:nowrap;">+ Recurrente</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <select class="input-field" id="templateSelect" style="flex:1; font-size:12px;">
-            <option value="">Selecciona plantilla...</option>
-          </select>
-          <button class="link-btn link-add" id="btnSaveTemplate" style="font-size:12px; white-space:nowrap;">Guardar como plantilla</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div>
@@ -4371,7 +4501,9 @@
         <button class="catalog-tab" data-catalog="tutores">Tutores</button>
         <button class="catalog-tab" data-catalog="acciones">Acciones</button>
         <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
+        <button class="catalog-tab" data-catalog="necesidades">Necesidades</button>
       </div>
+      <button class="catalog-view-toggle-btn" id="btnAnnualPlan" style="display:none; margin-left:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:11px; font-weight:500; padding:5px 14px; background:var(--bg-input); color:var(--text-secondary); cursor:pointer;" title="Plan anual de formación">&#128197; Plan anual</button>
       <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
         <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
         <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista">&#9783; Lista</button>
@@ -4405,6 +4537,8 @@
         <div class="catalog-list-new-row" id="catalogListNewRow"></div>
       </div>
       <div id="complianceViewContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
+      <div id="tnaViewContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
+      <div id="annualPlanContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
     </div>
   </div>
 
@@ -4969,7 +5103,16 @@
       </div>
       <div class="dialog-section">
         <div class="dialog-section-title">Plantillas guardadas</div>
-        <div id="settingsTemplatesList"></div>
+        <div id="settingsUnifiedTemplatesList"></div>
+      </div>
+      <div class="dialog-section">
+        <div class="dialog-section-title">Copia de seguridad</div>
+        <div class="dialog-hint" style="margin-bottom:8px;">Exporta todos los datos de la aplicación a un archivo JSON para guardarlos o transferirlos a otro navegador.</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" id="btnExportBackup">Exportar datos</button>
+          <button class="btn btn-secondary" id="btnImportBackup">Importar datos</button>
+        </div>
+        <input type="file" id="backupFileInput" accept=".json" style="display:none;">
       </div>
       <div class="dialog-section">
         <div class="dialog-section-title">Apariencia</div>
@@ -5530,6 +5673,32 @@
       return html;
     }
 
+    function renderProveedorScorecard(proveedor) {
+      if (!proveedor || !proveedor.cif) return '';
+      var acciones = getCatalog('acciones').filter(function(a) {
+        return a.proveedorVinculado === proveedor.cif;
+      });
+      var totalAcciones = acciones.length;
+      var totalGasto = 0;
+      var lastDate = '';
+      acciones.forEach(function(a) {
+        totalGasto += Number(a.presupuesto) || 0;
+        if (a.fechaFin && a.fechaFin > lastDate) lastDate = a.fechaFin;
+      });
+      var costeMedia = totalAcciones > 0 ? totalGasto / totalAcciones : 0;
+      var lastDateFormatted = lastDate ? lastDate.split('-').reverse().join('/') : '—';
+
+      return '<div style="margin-top:16px; background:var(--accent-subtle); border-radius:8px; padding:14px 16px;">' +
+        '<div style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Scorecard del proveedor</div>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+          '<div style="font-size:12px; color:var(--text-muted);">Total acciones<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + totalAcciones + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Coste medio/acción<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + formatCurrency(costeMedia) + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Gasto total<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + formatCurrency(totalGasto) + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Última colaboración<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + esc(lastDateFormatted) + '</div></div>' +
+        '</div>' +
+      '</div>';
+    }
+
     function exportCatalogsJSON() {
       const data = {
         proveedores: getCatalog('proveedores'),
@@ -5566,18 +5735,115 @@
     }
 
     // ═══════════════════════════════════
+    // FULL APP BACKUP EXPORT/IMPORT
+    // ═══════════════════════════════════
+
+    var BACKUP_KEYS = [
+      'convocatoria_state',
+      'convocatoria_employees',
+      'convocatoria_fileName',
+      'fundae_acciones',
+      'fundae_proveedores',
+      'fundae_centros',
+      'fundae_tutores',
+      'convocatoria_settings',
+      'convocatoria_history',
+      'convocatoria_queue',
+      'convocatoria_presets',
+      'convocatoria_templates',
+      'convocatoria_filterTemplates',
+      'convocatoria_trainingTemplates',
+      'convocatoria_unifiedTemplates'
+    ];
+
+    function exportBackup() {
+      var payload = { version: 1, exportedAt: new Date().toISOString(), data: {} };
+      BACKUP_KEYS.forEach(function(key) {
+        var raw = localStorage.getItem(key);
+        if (raw !== null) {
+          try { payload.data[key] = JSON.parse(raw); }
+          catch(e) { payload.data[key] = raw; }
+        }
+      });
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      var today = new Date().toISOString().slice(0, 10);
+      a.download = 'formacion_agora_backup_' + today + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      localStorage.setItem('convocatoria_lastBackup', new Date().toISOString());
+      showToast('Backup completo descargado', 'success');
+    }
+
+    function importBackup(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var payload = JSON.parse(e.target.result);
+          if (!payload.version || !payload.data) {
+            showToast('Archivo no válido: falta el campo version o data', 'error');
+            return;
+          }
+          Object.keys(payload.data).forEach(function(key) {
+            var val = payload.data[key];
+            localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+          });
+          localStorage.setItem('convocatoria_lastBackup', new Date().toISOString());
+          showToast('Datos restaurados correctamente. Recargando…', 'success');
+          setTimeout(function() { location.reload(); }, 1200);
+        } catch(err) {
+          showToast('Error al importar: archivo JSON inválido', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function checkBackupReminder() {
+      var last = localStorage.getItem('convocatoria_lastBackup');
+      if (!last) {
+        // No backup ever taken — only remind if the user has data
+        var hasData = BACKUP_KEYS.some(function(k) { return localStorage.getItem(k) !== null; });
+        if (hasData) {
+          showToast('No tienes ninguna copia de seguridad. Puedes exportar tus datos desde Ajustes.', 'info', 8000);
+        }
+        return;
+      }
+      var diff = Date.now() - new Date(last).getTime();
+      var days = diff / (1000 * 60 * 60 * 24);
+      if (days > 7) {
+        showToast('Hace más de una semana que no haces backup. Puedes exportar tus datos desde Ajustes.', 'info', 8000);
+      }
+    }
+
+    // Wire up backup buttons
+    (function() {
+      var btnExport = document.getElementById('btnExportBackup');
+      var btnImport = document.getElementById('btnImportBackup');
+      var fileInput = document.getElementById('backupFileInput');
+      if (btnExport) btnExport.addEventListener('click', exportBackup);
+      if (btnImport) btnImport.addEventListener('click', function() { fileInput.click(); });
+      if (fileInput) fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files[0]) {
+          importBackup(fileInput.files[0]);
+          fileInput.value = '';
+        }
+      });
+    })();
+
+    // ═══════════════════════════════════
     // CATALOG EXCEL IMPORT/EXPORT
     // ═══════════════════════════════════
 
     const CATALOG_TEMPLATE_HEADERS = {
-      proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Teléfono', 'Email', 'Responsable'],
+      proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Contacto', 'Teléfono', 'Email', 'Responsable', 'Especialidades', 'Tarifa hora'],
       centros: ['Tipo documento', 'Documento', 'Nombre', 'Dirección', 'CP', 'Localidad', 'Provincia'],
       tutores: ['Tipo documento', 'Documento', 'Nombre', 'Apellido 1', 'Apellido 2', 'Teléfono', 'Email', 'Horas dedicación'],
       acciones: ['Código', 'Nombre', 'Código grupo', 'Área profesional', 'Modalidad', 'Horas presenciales', 'Horas teleformación', 'Nivel formación', 'Objetivos', 'Contenidos']
     };
 
     const CATALOG_FIELD_MAP = {
-      proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'telefono', 'email', 'responsable'],
+      proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'contacto', 'telefono', 'email', 'responsable', 'especialidades', 'tarifaHora'],
       centros: ['tipoDocumento', 'documento', 'nombre', 'direccion', 'cp', 'localidad', 'provincia'],
       tutores: ['tipoDocumento', 'documento', 'nombre', 'apellido1', 'apellido2', 'telefono', 'email', 'horasDedicacion'],
       acciones: ['codigo', 'nombre', 'codigoGrupo', 'areaProfesional', 'modalidad', 'horasPresenciales', 'horasTeleformacion', 'nivelFormacion', 'objetivos', 'contenidos']
@@ -5681,7 +5947,7 @@
         columns: [
           { key: 'codigo',          label: 'Código',       editable: false, type: 'text',   width: '80px' },
           { key: 'nombre',          label: 'Nombre',       editable: true,  type: 'text',   width: '2fr' },
-          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
+          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Planificada','Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
           { key: 'departamento',    label: 'Departamento',  editable: true,  type: 'text',   width: '150px' },
           { key: 'empresaPagadora', label: 'Empresa',       editable: true,  type: 'select', width: '180px', options: function() { return getEmpresasGrupo().map(function(e) { return e.razonSocial; }); } },
           { key: 'fechaInicio',     label: 'F. inicio',     editable: true,  type: 'date',   width: '120px' },
@@ -5701,9 +5967,11 @@
         columns: [
           { key: 'cif',           label: 'CIF',           editable: false, type: 'text',  width: '100px' },
           { key: 'razonSocial',   label: 'Razón social',  editable: true,  type: 'text',  width: '2fr' },
+          { key: 'contacto',      label: 'Contacto',       editable: true,  type: 'text',  width: '150px' },
           { key: 'email',         label: 'Email',          editable: true,  type: 'text',  width: '200px' },
           { key: 'telefono',      label: 'Teléfono',       editable: true,  type: 'text',  width: '120px' },
-          { key: 'responsable',   label: 'Responsable',    editable: true,  type: 'text',  width: '180px' },
+          { key: 'especialidades',label: 'Especialidades', editable: true,  type: 'text',  width: '180px' },
+          { key: 'tarifaHora',    label: 'Tarifa/h',       editable: true,  type: 'number', width: '90px', step: 1, min: 0 },
           { key: '_acciones',     label: 'Acciones',       editable: false, type: 'count', width: '80px',  countFn: function(r) { return getLinkedAcciones('proveedores', r.cif).length; } },
         ],
         defaultSort: { key: 'razonSocial', dir: 'asc' },
@@ -6230,7 +6498,7 @@
       bh += '<div class="bulk-separator"></div>';
       if (catalogKey === 'acciones') {
         bh += '<select id="bulkEstado" style="font-size:12px;"><option value="">Cambiar estado...</option>';
-        ['Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
+        ['Planificada','Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
         bh += '</select>';
         bh += '<select id="bulkEmpresa" style="font-size:12px;"><option value="">Cambiar empresa...</option>';
         getEmpresasGrupo().forEach(function(e) { bh += '<option value="' + esc(e.razonSocial) + '">' + esc(e.razonSocial) + '</option>'; });
@@ -6638,6 +6906,250 @@
       }
     }
 
+    // ═══════════════════════════════════
+    // ANNUAL PLAN VIEW
+    // ═══════════════════════════════════
+
+    var annualPlanState = { active: false, year: new Date().getFullYear() };
+
+    function getQuarter(dateStr) {
+      if (!dateStr) return null;
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
+      var m = d.getMonth(); // 0-11
+      if (m <= 2) return 1;
+      if (m <= 5) return 2;
+      if (m <= 8) return 3;
+      return 4;
+    }
+
+    function getEstadoClass(estado) {
+      if (!estado) return 'planned';
+      var e = estado.toLowerCase();
+      if (e === 'terminada') return 'completed';
+      if (e === 'en marcha' || e === 'en preparación' || e === 'buscando') return 'in-progress';
+      return 'planned';
+    }
+
+    function renderAnnualPlan() {
+      var container = document.getElementById('annualPlanContainer');
+      if (!container) return;
+
+      var year = annualPlanState.year;
+      var acciones = getCatalog('acciones');
+
+      // Group actions by quarter for selected year
+      var quarters = { 1: [], 2: [], 3: [], 4: [] };
+      var unscheduled = [];
+
+      acciones.forEach(function(a, idx) {
+        a._originalIndex = idx;
+        var q = getQuarter(a.fechaInicio);
+        if (q && a.fechaInicio) {
+          var actionYear = new Date(a.fechaInicio).getFullYear();
+          if (actionYear === year) {
+            quarters[q].push(a);
+          }
+        } else {
+          // Actions without date — check if they should appear
+          // Only show unscheduled if they exist
+          unscheduled.push(a);
+        }
+      });
+
+      var quarterNames = {
+        1: 'Q1 — Enero - Marzo',
+        2: 'Q2 — Abril - Junio',
+        3: 'Q3 — Julio - Septiembre',
+        4: 'Q4 — Octubre - Diciembre'
+      };
+
+      // Year selector
+      var currentYear = new Date().getFullYear();
+      var yearOptions = '';
+      for (var y = currentYear - 2; y <= currentYear + 2; y++) {
+        yearOptions += '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>';
+      }
+
+      var html = '<div class="annual-plan-wrapper">';
+      html += '<div class="annual-plan-header">';
+      html += '<div style="display:flex; align-items:center; gap:12px;">';
+      html += '<button class="annual-plan-back-btn" id="btnAnnualPlanBack">&larr; Volver</button>';
+      html += '<h2>Plan anual de formaci\u00f3n</h2>';
+      html += '</div>';
+      html += '<select class="annual-plan-year-select" id="annualPlanYear">' + yearOptions + '</select>';
+      html += '</div>';
+
+      // Render each quarter
+      for (var qi = 1; qi <= 4; qi++) {
+        var qActions = quarters[qi];
+        var totalHours = 0;
+        var totalBudget = 0;
+
+        qActions.forEach(function(a) {
+          totalHours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+          totalBudget += parseFloat(a.presupuesto) || 0;
+        });
+
+        html += '<div class="annual-plan-quarter">';
+        html += '<div class="annual-plan-quarter-header">';
+        html += '<h3>' + esc(quarterNames[qi]) + '</h3>';
+        html += '<div class="annual-plan-quarter-stats">';
+        html += '<span><strong>' + qActions.length + '</strong> acciones</span>';
+        html += '<span><strong>' + totalHours + '</strong> horas</span>';
+        html += '<span><strong>' + formatCurrency(totalBudget) + '</strong></span>';
+        html += '</div>';
+        html += '</div>';
+
+        if (qActions.length === 0) {
+          html += '<div class="annual-plan-empty-quarter">Sin acciones programadas en este trimestre</div>';
+        } else {
+          html += '<table class="annual-plan-table">';
+          html += '<thead><tr>';
+          html += '<th>Nombre</th>';
+          html += '<th>Modalidad</th>';
+          html += '<th>Estado</th>';
+          html += '<th>Horas</th>';
+          html += '<th>Participantes</th>';
+          html += '<th></th>';
+          html += '</tr></thead>';
+          html += '<tbody>';
+
+          qActions.forEach(function(a) {
+            var hours = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+            var partCount = (a.participantes || []).length;
+            var estadoClass = getEstadoClass(a.estado);
+
+            html += '<tr>';
+            html += '<td>' + esc(a.nombre || 'Sin nombre') + '</td>';
+            html += '<td>' + esc(a.modalidad || '-') + '</td>';
+            html += '<td><span class="annual-plan-estado ' + estadoClass + '">' + esc(a.estado || 'Sin estado') + '</span></td>';
+            html += '<td>' + hours + 'h</td>';
+            html += '<td>' + partCount + '</td>';
+            html += '<td>';
+            if (a.estado === 'Planificada') {
+              html += '<button class="btn-activate" data-action-index="' + a._originalIndex + '">Activar</button>';
+            }
+            html += '</td>';
+            html += '</tr>';
+          });
+
+          html += '</tbody></table>';
+        }
+        html += '</div>';
+      }
+
+      // Unscheduled actions summary
+      if (unscheduled.length > 0) {
+        html += '<div class="annual-plan-quarter" style="border-color: var(--warning-light);">';
+        html += '<div class="annual-plan-quarter-header" style="background: var(--warning-light);">';
+        html += '<h3>Sin fecha programada</h3>';
+        html += '<div class="annual-plan-quarter-stats">';
+        html += '<span><strong>' + unscheduled.length + '</strong> acciones sin fecha de inicio</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="annual-plan-empty-quarter">Estas acciones no tienen fecha de inicio asignada y no aparecen en ning\u00fan trimestre.</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Bind: year selector
+      var yearSelect = document.getElementById('annualPlanYear');
+      if (yearSelect) {
+        yearSelect.addEventListener('change', function() {
+          annualPlanState.year = parseInt(yearSelect.value, 10);
+          renderAnnualPlan();
+        });
+      }
+
+      // Bind: back button
+      var backBtn = document.getElementById('btnAnnualPlanBack');
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          closeAnnualPlan();
+        });
+      }
+
+      // Bind: activate buttons
+      container.querySelectorAll('.btn-activate').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(btn.dataset.actionIndex, 10);
+          activatePlannedAction(idx);
+        });
+      });
+    }
+
+    function activatePlannedAction(actionIndex) {
+      var catalog = getCatalog('acciones');
+      if (catalog[actionIndex]) {
+        catalog[actionIndex].estado = 'En preparaci\u00f3n';
+        saveCatalog('acciones', catalog);
+        renderAnnualPlan();
+        showToast('Acci\u00f3n activada', 'success');
+      }
+    }
+
+    function showAnnualPlan() {
+      annualPlanState.active = true;
+      var listPanel = document.getElementById('catalogListPanel');
+      var formPanel = document.getElementById('catalogFormPanel');
+      var listViewContainer = document.getElementById('catalogListViewContainer');
+      var complianceContainer = document.getElementById('complianceViewContainer');
+      var annualPlanContainer = document.getElementById('annualPlanContainer');
+      var viewToggle = document.getElementById('catalogViewToggle');
+      var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+      listPanel.style.display = 'none';
+      formPanel.style.display = 'none';
+      listViewContainer.style.display = 'none';
+      complianceContainer.style.display = 'none';
+      var tnaContainer = document.getElementById('tnaViewContainer');
+      if (tnaContainer) tnaContainer.style.display = 'none';
+      annualPlanContainer.style.display = '';
+      if (viewToggle) viewToggle.style.display = 'none';
+      if (btnAnnualPlan) {
+        btnAnnualPlan.style.background = 'var(--accent)';
+        btnAnnualPlan.style.color = 'white';
+        btnAnnualPlan.style.borderColor = 'var(--accent)';
+      }
+      renderAnnualPlan();
+    }
+
+    function closeAnnualPlan() {
+      annualPlanState.active = false;
+      var annualPlanContainer = document.getElementById('annualPlanContainer');
+      var viewToggle = document.getElementById('catalogViewToggle');
+      var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+      annualPlanContainer.style.display = 'none';
+      if (viewToggle) viewToggle.style.display = '';
+      if (btnAnnualPlan) {
+        btnAnnualPlan.style.background = 'var(--bg-input)';
+        btnAnnualPlan.style.color = 'var(--text-secondary)';
+        btnAnnualPlan.style.borderColor = 'var(--border)';
+      }
+
+      // Restore the normal catalog view
+      var savedModes = getCatalogViewModes();
+      var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+      toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+      if (savedMode === 'ficha') {
+        renderCatalogList();
+        renderCatalogForm();
+      }
+    }
+
+    // Bind: Annual plan button
+    document.getElementById('btnAnnualPlan').addEventListener('click', function() {
+      if (annualPlanState.active) {
+        closeAnnualPlan();
+      } else {
+        showAnnualPlan();
+      }
+    });
+
     // Sub-tab switching
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6654,23 +7166,50 @@
           listViewState.selectedPKs = new Set();
           listViewState.lastClickedPK = null;
 
-          // Handle compliance tab specially
+          // Handle compliance / necesidades tabs specially
           var complianceContainer = document.getElementById('complianceViewContainer');
+          var tnaContainer = document.getElementById('tnaViewContainer');
+          var annualPlanContainer = document.getElementById('annualPlanContainer');
           var listPanel = document.getElementById('catalogListPanel');
           var formPanel = document.getElementById('catalogFormPanel');
           var listViewContainer = document.getElementById('catalogListViewContainer');
           var viewToggle = document.getElementById('catalogViewToggle');
+          var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+          // Always reset annual plan state when switching tabs
+          annualPlanState.active = false;
+          annualPlanContainer.style.display = 'none';
+          if (btnAnnualPlan) {
+            btnAnnualPlan.style.background = 'var(--bg-input)';
+            btnAnnualPlan.style.color = 'var(--text-secondary)';
+            btnAnnualPlan.style.borderColor = 'var(--border)';
+          }
+
+          // Show annual plan button only for acciones tab
+          if (btnAnnualPlan) {
+            btnAnnualPlan.style.display = (btn.dataset.catalog === 'acciones') ? '' : 'none';
+          }
 
           if (btn.dataset.catalog === 'compliance') {
             listPanel.style.display = 'none';
             formPanel.style.display = 'none';
             listViewContainer.style.display = 'none';
             complianceContainer.style.display = '';
+            tnaContainer.style.display = 'none';
             if (viewToggle) viewToggle.style.display = 'none';
             loadCompliance();
             renderComplianceView();
+          } else if (btn.dataset.catalog === 'necesidades') {
+            listPanel.style.display = 'none';
+            formPanel.style.display = 'none';
+            listViewContainer.style.display = 'none';
+            complianceContainer.style.display = 'none';
+            tnaContainer.style.display = '';
+            if (viewToggle) viewToggle.style.display = 'none';
+            renderTNAView();
           } else {
             complianceContainer.style.display = 'none';
+            tnaContainer.style.display = 'none';
             if (viewToggle) viewToggle.style.display = '';
             // Restore saved view mode for this catalog
             var savedModes = getCatalogViewModes();
@@ -6972,10 +7511,14 @@
           field('Código postal', 'cp', v('cp')) +
           field('Localidad', 'localidad', v('localidad')) +
           field('Provincia', 'provincia', v('provincia')) +
+          field('Persona de contacto', 'contacto', v('contacto')) +
           field('Teléfono contacto', 'telefono', v('telefono')) +
           field('Email contacto', 'email', v('email'), { type: 'email' }) +
           field('Responsable formación', 'responsable', v('responsable')) +
-          renderLinkedAccionesHtml('proveedores', record.cif);
+          field('Especialidades', 'especialidades', v('especialidades'), { placeholder: 'Ej: Idiomas, PRL, Ofimática' }) +
+          field('Tarifa hora', 'tarifaHora', v('tarifaHora'), { type: 'number', placeholder: '€/hora' }) +
+          renderLinkedAccionesHtml('proveedores', record.cif) +
+          renderProveedorScorecard(record);
       } else if (key === 'centros') {
         title = isNew ? 'Nuevo centro' : esc(cfg.title(record));
         body = select('Tipo documento centro', 'tipoDocumento', record.tipoDocumento || '', [
@@ -7061,6 +7604,7 @@
           field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
           field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
           select('Estado', 'estado', record.estado || '', [
+            { value: 'Planificada', label: 'Planificada' },
             { value: 'Pendiente', label: 'Pendiente' },
             { value: 'Buscando', label: 'Buscando' },
             { value: 'En preparación', label: 'En preparación' },
@@ -8327,12 +8871,18 @@
         record.cp = val('cp');
         record.localidad = val('localidad');
         record.provincia = val('provincia');
+        record.contacto = val('contacto');
         record.telefono = val('telefono');
         record.email = val('email');
         record.responsable = val('responsable');
+        record.especialidades = val('especialidades');
+        record.tarifaHora = val('tarifaHora');
 
         if (!record.cif) markError('cif', 'El CIF es obligatorio');
         else if (!/^[A-Za-z]\d{7}[A-Za-z0-9]$/.test(record.cif)) markError('cif', 'Formato de CIF no válido (Ej: B12345678)');
+        if (record.tarifaHora && (isNaN(Number(record.tarifaHora)) || Number(record.tarifaHora) < 0)) {
+          markError('tarifaHora', 'La tarifa hora debe ser un número positivo');
+        }
       } else if (key === 'centros') {
         record.tipoDocumento = val('tipoDocumento');
         record.documento = val('documento');
@@ -8644,6 +9194,10 @@
       var accionesTab = document.querySelector('.catalog-tab[data-catalog="acciones"]');
       if (accionesTab) accionesTab.classList.add('active');
       catalogState.activeCatalog = 'acciones';
+
+      // Show annual plan button for acciones
+      var btnAP = document.getElementById('btnAnnualPlan');
+      if (btnAP) btnAP.style.display = '';
 
       // Select the action - force ficha mode
       catalogState.selectedPK = code;
@@ -9348,6 +9902,227 @@
     }
 
     // ═══════════════════════════════════
+    // MINI-TNA: TRAINING NEEDS ANALYSIS
+    // ═══════════════════════════════════
+
+    function getTNARequests() {
+      try { return JSON.parse(localStorage.getItem('convocatoria_tnaRequests') || '[]'); }
+      catch(e) { return []; }
+    }
+
+    function saveTNARequests(requests) {
+      try { localStorage.setItem('convocatoria_tnaRequests', JSON.stringify(requests)); }
+      catch(e) { showToast('Error al guardar solicitudes TNA', 'error'); }
+    }
+
+    function renderTNAView() {
+      var container = document.getElementById('tnaViewContainer');
+      var requests = getTNARequests();
+
+      var urgenciaColors = {
+        alta: 'background:var(--danger-light); color:var(--danger); border:1px solid var(--danger);',
+        media: 'background:var(--warning-light); color:var(--warning); border:1px solid var(--warning);',
+        baja: 'background:var(--bg-input); color:var(--text-muted); border:1px solid var(--border);'
+      };
+      var estadoColors = {
+        pendiente: 'background:var(--warning-light); color:var(--warning); border:1px solid var(--warning);',
+        aprobada: 'background:var(--success-light); color:var(--success); border:1px solid var(--success);',
+        rechazada: 'background:var(--danger-light); color:var(--danger); border:1px solid var(--danger);',
+        convertida: 'background:var(--accent-light); color:var(--accent); border:1px solid var(--accent);'
+      };
+
+      var html = '<div style="padding:24px; max-width:900px; margin:0 auto;">';
+      html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">';
+      html += '<div><h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin:0;">Necesidades formativas (TNA)</h2>';
+      html += '<p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Solicitudes de formación por área / departamento</p></div>';
+      html += '<button class="btn btn-primary" id="btnNewTNA" style="font-size:12px;">+ Nueva solicitud</button>';
+      html += '</div>';
+
+      if (requests.length === 0) {
+        html += '<div style="text-align:center; padding:48px 20px; color:var(--text-muted); font-size:13px;">';
+        html += '<div style="font-size:32px; margin-bottom:12px;">&#128203;</div>';
+        html += 'No hay solicitudes de formación registradas.<br>Pulsa "Nueva solicitud" para crear la primera.';
+        html += '</div>';
+      } else {
+        // Sort: pendiente first, then by date desc
+        var sortOrder = { pendiente: 0, aprobada: 1, rechazada: 2, convertida: 3 };
+        requests.sort(function(a, b) {
+          var sa = sortOrder[a.estado] !== undefined ? sortOrder[a.estado] : 9;
+          var sb = sortOrder[b.estado] !== undefined ? sortOrder[b.estado] : 9;
+          if (sa !== sb) return sa - sb;
+          return (b.createdAt || '').localeCompare(a.createdAt || '');
+        });
+
+        html += '<div style="display:flex; flex-direction:column; gap:10px;">';
+        for (var i = 0; i < requests.length; i++) {
+          var r = requests[i];
+          var urgStyle = urgenciaColors[r.urgencia] || urgenciaColors.media;
+          var estStyle = estadoColors[r.estado] || estadoColors.pendiente;
+          var dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-ES') : '-';
+
+          html += '<div style="background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; display:flex; align-items:flex-start; gap:14px;">';
+
+          // Content
+          html += '<div style="flex:1; min-width:0;">';
+          html += '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">';
+          html += '<span style="font-size:14px; font-weight:600; color:var(--text-primary);">' + esc(r.tema || 'Sin tema') + '</span>';
+          html += '<span style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + urgStyle + '">' + esc(r.urgencia || 'media') + '</span>';
+          html += '<span style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + estStyle + '">' + esc(r.estado || 'pendiente') + '</span>';
+          html += '</div>';
+          html += '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;"><strong>Área:</strong> ' + esc(r.area || '-') + '</div>';
+          if (r.justificacion) {
+            html += '<div style="font-size:12px; color:var(--text-muted); line-height:1.4;">' + esc(r.justificacion) + '</div>';
+          }
+          html += '<div style="font-size:11px; color:var(--text-muted); margin-top:6px;">' + esc(dateStr) + '</div>';
+          html += '</div>';
+
+          // Actions
+          html += '<div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">';
+          if (r.estado !== 'convertida') {
+            html += '<button class="btn btn-primary" style="font-size:11px; padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + r.id + ')">Crear acción</button>';
+          }
+          html += '<button class="btn btn-secondary" style="font-size:11px; padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + r.id + ')">Eliminar</button>';
+          html += '</div>';
+
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Bind new request button
+      var btnNew = document.getElementById('btnNewTNA');
+      if (btnNew) {
+        btnNew.addEventListener('click', showTNAForm);
+      }
+    }
+
+    function showTNAForm() {
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:480px; text-align:left;">' +
+        '<h3 style="margin:0 0 16px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Nueva solicitud de formación</h3>' +
+        '<div style="display:flex; flex-direction:column; gap:12px;">' +
+          '<div>' +
+            '<label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Área / Departamento</label>' +
+            '<input class="input-field" type="text" id="tnaArea" placeholder="Ej: Recursos Humanos" style="width:100%; font-size:13px;">' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Tema de formación</label>' +
+            '<input class="input-field" type="text" id="tnaTema" placeholder="Ej: Gestión del cambio" style="width:100%; font-size:13px;">' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Justificación</label>' +
+            '<textarea class="input-field" id="tnaJustificacion" rows="3" placeholder="Motivo de la solicitud..." style="width:100%; font-size:13px; resize:vertical;"></textarea>' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Urgencia</label>' +
+            '<select class="input-field" id="tnaUrgencia" style="width:100%; font-size:13px;">' +
+              '<option value="baja">Baja</option>' +
+              '<option value="media" selected>Media</option>' +
+              '<option value="alta">Alta</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div class="dialog-buttons" style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end;">' +
+          '<button class="btn btn-secondary" id="tnaCancelBtn">Cancelar</button>' +
+          '<button class="btn btn-primary" id="tnaSaveBtn">Guardar solicitud</button>' +
+        '</div>' +
+      '</div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('tnaCancelBtn').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('tnaSaveBtn').addEventListener('click', function() {
+        var area = document.getElementById('tnaArea').value.trim();
+        var tema = document.getElementById('tnaTema').value.trim();
+        var justificacion = document.getElementById('tnaJustificacion').value.trim();
+        var urgencia = document.getElementById('tnaUrgencia').value;
+
+        if (!tema) {
+          showToast('El tema de formación es obligatorio', 'error');
+          return;
+        }
+
+        var requests = getTNARequests();
+        requests.push({
+          id: Date.now(),
+          area: area,
+          tema: tema,
+          justificacion: justificacion,
+          urgencia: urgencia,
+          estado: 'pendiente',
+          createdAt: new Date().toISOString()
+        });
+        saveTNARequests(requests);
+        overlay.remove();
+        showToast('Solicitud de formación registrada', 'success');
+        renderTNAView();
+      });
+
+      // Focus first field
+      setTimeout(function() { document.getElementById('tnaArea').focus(); }, 100);
+    }
+
+    function convertTNAToAction(requestId) {
+      var requests = getTNARequests();
+      var request = null;
+      for (var i = 0; i < requests.length; i++) {
+        if (requests[i].id === requestId) { request = requests[i]; break; }
+      }
+      if (!request) return;
+
+      var action = {
+        nombre: request.tema,
+        departamento: request.area,
+        estado: 'Planificada',
+        notas: [{ id: Date.now(), date: new Date().toISOString(), tag: 'sistema', text: 'Origen: solicitud TNA — ' + request.justificacion }]
+      };
+      var catalog = getCatalog('acciones');
+      catalog.push(action);
+      saveCatalog('acciones', catalog);
+
+      // Mark request as converted
+      request.estado = 'convertida';
+      saveTNARequests(requests);
+
+      showToast('Acción formativa creada desde solicitud', 'success');
+      renderTNAView();
+    }
+
+    function deleteTNARequest(requestId) {
+      var requests = getTNARequests();
+      var request = null;
+      var requestIndex = -1;
+      for (var i = 0; i < requests.length; i++) {
+        if (requests[i].id === requestId) { request = requests[i]; requestIndex = i; break; }
+      }
+      if (!request) return;
+
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
+        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Eliminar solicitud</h3>' +
+        '<p style="font-size:13px; color:var(--text-secondary);">¿Eliminar la solicitud "' + esc(request.tema || '') + '"?</p>' +
+        '<div class="dialog-buttons" style="margin-top:16px; display:flex; gap:8px; justify-content:center;">' +
+          '<button class="btn btn-secondary" id="tnaDeleteCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="tnaDeleteConfirm" style="background:var(--danger);">Eliminar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('tnaDeleteCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('tnaDeleteConfirm').addEventListener('click', function() {
+        var reqs = getTNARequests();
+        reqs = reqs.filter(function(r) { return r.id !== requestId; });
+        saveTNARequests(reqs);
+        overlay.remove();
+        showToast('Solicitud eliminada', 'success');
+        renderTNAView();
+      });
+    }
+
+    // ═══════════════════════════════════
     // SETTINGS PERSISTENCE
     // ═══════════════════════════════════
 
@@ -9383,199 +10158,343 @@
     }
 
     // ═══════════════════════════════════
-    // CONVOCATORIA TEMPLATES
+    // UNIFIED TEMPLATE SYSTEM
     // ═══════════════════════════════════
 
-    function getTemplates() {
+    function getUnifiedTemplates() {
       try {
-        return JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+        return JSON.parse(localStorage.getItem('convocatoria_unifiedTemplates') || '[]');
       } catch(e) { return []; }
     }
 
-    function saveTemplates(templates) {
+    function saveUnifiedTemplatesStore(templates) {
       try {
-        localStorage.setItem('convocatoria_templates', JSON.stringify(templates));
+        localStorage.setItem('convocatoria_unifiedTemplates', JSON.stringify(templates));
       } catch(e) {
         showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
       }
     }
 
-    function populateTemplateSelect() {
-      const select = document.getElementById('templateSelect');
-      if (!select) return;
-      const templates = getTemplates();
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">Selecciona plantilla...</option>';
-      templates.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = String(t.id);
-        opt.textContent = t.name;
-        select.appendChild(opt);
+    function migrateTemplates() {
+      if (localStorage.getItem('convocatoria_unifiedTemplates')) return;
+      var unified = [];
+
+      // Migrate convocatoria_templates (event-only)
+      try {
+        var old1 = JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+        old1.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'convocatoria',
+            data: { event: t.event || {} },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_presets (filter-only)
+      try {
+        var old2 = JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
+        old2.forEach(function(p) {
+          unified.push({
+            id: Date.now() + Math.random(),
+            name: p.name || 'Sin nombre',
+            type: 'filter',
+            data: { filters: p.filters || {} },
+            createdAt: p.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_filterTemplates (filter+event)
+      try {
+        var old3 = JSON.parse(localStorage.getItem('convocatoria_filterTemplates') || '[]');
+        old3.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'convocatoria',
+            data: {
+              filters: t.filters || {},
+              event: t.event || {}
+            },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_trainingTemplates (training)
+      try {
+        var old4 = JSON.parse(localStorage.getItem('convocatoria_trainingTemplates') || '[]');
+        old4.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'training',
+            data: {
+              filters: t.filters || {},
+              event: {
+                title: t.eventTitle || '',
+                isTeams: t.eventIsTeams || false,
+                location: t.eventLocation || '',
+                formador: t.eventFormador || '',
+                startTime: t.eventStartTime || '',
+                endTime: t.eventEndTime || '',
+                body: t.eventBody || ''
+              }
+            },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Deduplicate by name+type
+      var seen = {};
+      unified = unified.filter(function(t) {
+        var key = t.type + '::' + t.name;
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
       });
-      // Restore selection if still valid
-      if (currentVal && templates.some(t => String(t.id) === currentVal)) {
-        select.value = currentVal;
+
+      if (unified.length > 0) {
+        saveUnifiedTemplatesStore(unified);
+      } else {
+        localStorage.setItem('convocatoria_unifiedTemplates', '[]');
       }
+
+      // Clean up old keys
+      localStorage.removeItem('convocatoria_templates');
+      localStorage.removeItem('convocatoria_presets');
+      localStorage.removeItem('convocatoria_filterTemplates');
+      localStorage.removeItem('convocatoria_trainingTemplates');
     }
 
-    function loadTemplate(templateId) {
-      const templates = getTemplates();
-      const tpl = templates.find(t => String(t.id) === String(templateId));
-      if (!tpl || !tpl.event) return;
+    function saveUnifiedTemplate(name, type, data) {
+      var templates = getUnifiedTemplates();
+      templates.push({
+        id: Date.now(),
+        name: name,
+        type: type,
+        data: data,
+        createdAt: new Date().toISOString()
+      });
+      saveUnifiedTemplatesStore(templates);
+      renderUnifiedTemplateChips();
+      populateUnifiedTemplateSelect();
+      renderSettingsUnifiedTemplates();
+    }
 
-      const ev = tpl.event;
-      document.getElementById('eventTitle').value = ev.title || '';
-      document.getElementById('eventTitle').classList.remove('error');
-      document.getElementById('eventLocation').value = ev.location || '';
-      document.getElementById('eventBody').value = ev.body || '';
-      document.getElementById('eventFormador').value = ev.formador || '';
+    function loadUnifiedTemplate(template) {
+      if (!template) return;
+      var d = template.data || {};
 
-      if (ev.isTeams) {
-        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-      } else {
-        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+      // Apply filters if present
+      if (d.filters && Object.keys(d.filters).length > 0) {
+        state.activeFilters = JSON.parse(JSON.stringify(d.filters));
+        renderFilters();
+        renderTable();
+      }
+
+      // Apply event data if present
+      if (d.event) {
+        var ev = d.event;
+        if (ev.title) { document.getElementById('eventTitle').value = ev.title; document.getElementById('eventTitle').classList.remove('error'); }
+        if (ev.startTime) document.getElementById('eventStart').value = ev.startTime;
+        if (ev.endTime) document.getElementById('eventEnd').value = ev.endTime;
+        if (ev.location) document.getElementById('eventLocation').value = ev.location;
+        if (ev.body) document.getElementById('eventBody').value = ev.body;
+        if (ev.formador) document.getElementById('eventFormador').value = ev.formador;
+        if (ev.isTeams) {
+          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+        } else if (ev.isTeams === false) {
+          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+        }
       }
 
       saveState();
-      showToast('Plantilla «' + tpl.name + '» cargada', 'success');
+      showToast('Plantilla «' + esc(template.name) + '» cargada', 'success');
     }
 
-    function showSaveTemplateDialog() {
-      var existing = document.getElementById('templateSaveOverlay');
-      if (existing) existing.remove();
+    function deleteUnifiedTemplate(id) {
+      var templates = getUnifiedTemplates();
+      var tpl = templates.find(function(t) { return t.id === id; });
+      var name = tpl ? tpl.name : '';
+      templates = templates.filter(function(t) { return t.id !== id; });
+      saveUnifiedTemplatesStore(templates);
+      renderUnifiedTemplateChips();
+      populateUnifiedTemplateSelect();
+      renderSettingsUnifiedTemplates();
+      showToast('Plantilla «' + esc(name) + '» eliminada', 'success');
+    }
 
-      var overlay = document.createElement('div');
-      overlay.id = 'templateSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
+    function getTypeLabel(type) {
+      if (type === 'filter') return 'Filtro';
+      if (type === 'training') return 'Recurrente';
+      return 'Convocatoria';
+    }
 
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar como plantilla</h3>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre de la plantilla</label>' +
-        '<input type="text" class="input-field" id="templateNameInput" placeholder="Ej: PRL Obligatoria" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="templateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="templateSaveConfirm">Guardar</button>' +
-        '</div>' +
-      '</div>';
+    function getTypeColor(type) {
+      if (type === 'filter') return { bg: 'var(--bg-input)', border: 'var(--border)', text: 'var(--text-secondary)' };
+      if (type === 'training') return { bg: 'var(--success-light)', border: 'var(--success)', text: 'var(--success)' };
+      return { bg: 'var(--accent-subtle)', border: 'var(--accent)', text: 'var(--accent)' };
+    }
 
-      document.body.appendChild(overlay);
+    function populateUnifiedTemplateSelect() {
+      var sel = document.getElementById('unifiedTemplateSelect');
+      if (!sel) return;
+      var templates = getUnifiedTemplates();
+      var currentVal = sel.value;
+      sel.replaceChildren();
+      var opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = 'Cargar plantilla...';
+      sel.appendChild(opt0);
 
-      var nameInput = document.getElementById('templateNameInput');
-      nameInput.focus();
-
-      function doSave() {
-        var name = nameInput.value.trim();
-        if (!name) {
-          showToast('Introduce un nombre para la plantilla', 'warning');
-          return;
-        }
-        var templates = getTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          event: {
-            title: document.getElementById('eventTitle').value,
-            isTeams: isTeams,
-            location: document.getElementById('eventLocation').value,
-            body: document.getElementById('eventBody').value,
-            formador: document.getElementById('eventFormador').value
-          }
-        });
-        saveTemplates(templates);
-        populateTemplateSelect();
-        renderSettingsTemplates();
-        overlay.remove();
-        showToast('Plantilla «' + name + '» guardada', 'success');
-      }
-
-      document.getElementById('templateSaveConfirm').addEventListener('click', doSave);
-      nameInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') doSave();
+      // Group by type
+      var groups = { convocatoria: [], training: [], filter: [] };
+      templates.forEach(function(t) {
+        if (groups[t.type]) groups[t.type].push(t);
+        else groups.convocatoria.push(t);
       });
-      document.getElementById('templateSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+      var groupLabels = { convocatoria: 'Convocatoria', training: 'Recurrentes', filter: 'Solo filtros' };
+      ['convocatoria', 'training', 'filter'].forEach(function(type) {
+        if (groups[type].length === 0) return;
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = groupLabels[type];
+        groups[type].forEach(function(t) {
+          var opt = document.createElement('option');
+          opt.value = String(t.id);
+          opt.textContent = t.name;
+          optgroup.appendChild(opt);
+        });
+        sel.appendChild(optgroup);
+      });
+
+      if (currentVal && templates.some(function(t) { return String(t.id) === currentVal; })) {
+        sel.value = currentVal;
+      }
     }
 
-    function renderSettingsTemplates() {
-      var container = document.getElementById('settingsTemplatesList');
+    function renderUnifiedTemplateChips() {
+      var container = document.getElementById('unifiedTemplateChips');
       if (!container) return;
-      var templates = getTemplates();
-      if (templates.length === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">No hay plantillas guardadas.</div>';
-        return;
-      }
-      container.innerHTML = templates.map(function(t) {
-        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">' +
-          '<span style="font-size:12px; color:var(--text-primary);">' + esc(t.name) + '</span>' +
-          '<button class="link-btn link-clear" data-delete-template="' + t.id + '" style="font-size:11px;" title="Eliminar plantilla">&times;</button>' +
-        '</div>';
-      }).join('');
-
-      container.querySelectorAll('[data-delete-template]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var id = parseInt(this.getAttribute('data-delete-template'), 10);
-          var templates = getTemplates();
-          var tpl = templates.find(function(t) { return t.id === id; });
-          var name = tpl ? tpl.name : '';
-          templates = templates.filter(function(t) { return t.id !== id; });
-          saveTemplates(templates);
-          populateTemplateSelect();
-          renderSettingsTemplates();
-          showToast('Plantilla «' + name + '» eliminada', 'success');
-        });
+      var templates = getUnifiedTemplates();
+      container.replaceChildren();
+      if (templates.length === 0) return;
+      templates.forEach(function(t) {
+        var colors = getTypeColor(t.type);
+        var chip = document.createElement('span');
+        chip.className = 'preset-chip';
+        chip.style.background = colors.bg;
+        chip.style.borderColor = colors.border;
+        chip.style.color = colors.text;
+        chip.textContent = t.name;
+        chip.title = getTypeLabel(t.type);
+        chip.onclick = function() { loadUnifiedTemplate(t); };
+        var del = document.createElement('span');
+        del.className = 'preset-delete';
+        del.textContent = '\u00d7';
+        del.setAttribute('aria-label', 'Eliminar');
+        del.setAttribute('role', 'button');
+        del.onclick = function(e) { e.stopPropagation(); deleteUnifiedTemplate(t.id); };
+        chip.appendChild(del);
+        container.appendChild(chip);
       });
     }
 
-    // ═══════════════════════════════════
-    // FILTER+EVENT TEMPLATES (plantillas reutilizables)
-    // ═══════════════════════════════════
-
-    function loadFilterTemplates() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_filterTemplates') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function saveFilterTemplates(templates) {
-      try {
-        localStorage.setItem('convocatoria_filterTemplates', JSON.stringify(templates));
-      } catch(e) {
-        showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
-      }
-    }
-
-    function saveAsFilterTemplate() {
-      var existing = document.getElementById('filterTemplateSaveOverlay');
+    function showSaveUnifiedTemplateDialog() {
+      var existing = document.getElementById('unifiedTemplateSaveOverlay');
       if (existing) existing.remove();
 
       var overlay = document.createElement('div');
-      overlay.id = 'filterTemplateSaveOverlay';
+      overlay.id = 'unifiedTemplateSaveOverlay';
       overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar plantilla completa</h3>' +
-        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Incluye filtros activos + datos del evento (excepto fecha).</p>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
-        '<input type="text" class="input-field" id="filterTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="filterTemplateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="filterTemplateSaveConfirm">Guardar</button>' +
-        '</div></div>';
-      document.body.appendChild(overlay);
 
-      var nameInput = document.getElementById('filterTemplateNameInput');
+      var dialogBox = document.createElement('div');
+      dialogBox.className = 'dialog-box';
+      dialogBox.style.maxWidth = '420px';
+
+      var title = document.createElement('h3');
+      title.style.cssText = 'margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);';
+      title.textContent = 'Guardar plantilla';
+      dialogBox.appendChild(title);
+
+      var desc = document.createElement('p');
+      desc.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:10px;';
+      desc.textContent = 'Guarda filtros y datos del evento para reutilizar.';
+      dialogBox.appendChild(desc);
+
+      var nameLabel = document.createElement('label');
+      nameLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      nameLabel.textContent = 'Nombre';
+      dialogBox.appendChild(nameLabel);
+
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'input-field';
+      nameInput.id = 'unifiedTemplateNameInput';
+      nameInput.placeholder = 'Ej: PRL Obligatoria';
+      nameInput.style.cssText = 'width:100%; margin-bottom:10px;';
+      dialogBox.appendChild(nameInput);
+
+      var typeLabel = document.createElement('label');
+      typeLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      typeLabel.textContent = 'Tipo';
+      dialogBox.appendChild(typeLabel);
+
+      var typeSelect = document.createElement('select');
+      typeSelect.className = 'input-field';
+      typeSelect.id = 'unifiedTemplateTypeInput';
+      typeSelect.style.width = '100%';
+      var typeOptions = [
+        { value: 'convocatoria', text: 'Convocatoria (filtros + evento)' },
+        { value: 'training', text: 'Recurrente (filtros + evento)' },
+        { value: 'filter', text: 'Solo filtros' }
+      ];
+      typeOptions.forEach(function(o) {
+        var opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.text;
+        typeSelect.appendChild(opt);
+      });
+      dialogBox.appendChild(typeSelect);
+
+      var btnRow = document.createElement('div');
+      btnRow.className = 'dialog-buttons';
+      btnRow.style.marginTop = '16px';
+
+      var btnCancel = document.createElement('button');
+      btnCancel.className = 'link-btn link-clear';
+      btnCancel.textContent = 'Cancelar';
+      btnRow.appendChild(btnCancel);
+
+      var btnConfirm = document.createElement('button');
+      btnConfirm.className = 'btn btn-primary';
+      btnConfirm.textContent = 'Guardar';
+      btnRow.appendChild(btnConfirm);
+
+      dialogBox.appendChild(btnRow);
+      overlay.appendChild(dialogBox);
+      document.body.appendChild(overlay);
       nameInput.focus();
 
       function doSave() {
         var name = nameInput.value.trim();
-        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
-        var templates = loadFilterTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          filters: JSON.parse(JSON.stringify(state.activeFilters)),
-          event: {
+        if (!name) { showToast('Introduce un nombre para la plantilla', 'warning'); return; }
+        var type = typeSelect.value;
+
+        var data = {};
+        var activeKeys = Object.keys(state.activeFilters).filter(function(k) { return state.activeFilters[k] && state.activeFilters[k].length > 0; });
+        if (type !== 'filter' || activeKeys.length > 0) {
+          data.filters = JSON.parse(JSON.stringify(state.activeFilters));
+        }
+
+        if (type !== 'filter') {
+          var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+          data.event = {
             title: document.getElementById('eventTitle').value || '',
             isTeams: isTeams,
             startTime: document.getElementById('eventStart').value || '',
@@ -9583,191 +10502,71 @@
             location: document.getElementById('eventLocation').value || '',
             body: document.getElementById('eventBody').value || '',
             formador: document.getElementById('eventFormador').value || ''
-          },
-          createdAt: new Date().toISOString()
-        });
-        saveFilterTemplates(templates);
-        renderFilterTemplateChips();
-        overlay.remove();
-        showToast('Plantilla "' + name + '" guardada', 'success');
-      }
-
-      document.getElementById('filterTemplateSaveConfirm').addEventListener('click', doSave);
-      nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
-      document.getElementById('filterTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-    }
-
-    function applyFilterTemplate(id) {
-      var templates = loadFilterTemplates();
-      var t = templates.find(function(x) { return x.id === id; });
-      if (!t) return;
-      // Aplicar filtros
-      if (t.filters) {
-        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
-      }
-      // Aplicar evento (excepto fecha)
-      if (t.event) {
-        if (t.event.title) document.getElementById('eventTitle').value = t.event.title;
-        if (t.event.startTime) document.getElementById('eventStart').value = t.event.startTime;
-        if (t.event.endTime) document.getElementById('eventEnd').value = t.event.endTime;
-        if (t.event.location) document.getElementById('eventLocation').value = t.event.location;
-        if (t.event.body) document.getElementById('eventBody').value = t.event.body;
-        if (t.event.formador) document.getElementById('eventFormador').value = t.event.formador;
-        if (t.event.isTeams) {
-          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-        } else {
-          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+          };
         }
-      }
-      renderFilters();
-      renderTable();
-      showToast('Plantilla "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
-    }
 
-    function deleteFilterTemplate(id) {
-      var templates = loadFilterTemplates();
-      var t = templates.find(function(x) { return x.id === id; });
-      templates = templates.filter(function(x) { return x.id !== id; });
-      saveFilterTemplates(templates);
-      renderFilterTemplateChips();
-      showToast('Plantilla "' + (t ? t.name : '') + '" eliminada', 'info');
-    }
+        if (type === 'filter' && activeKeys.length === 0) {
+          showToast('No hay filtros activos para guardar', 'warning');
+          return;
+        }
 
-    function renderFilterTemplateChips() {
-      var container = document.getElementById('filterTemplateChips');
-      if (!container) return;
-      var templates = loadFilterTemplates();
-      container.replaceChildren();
-      if (templates.length === 0) return;
-      templates.forEach(function(t) {
-        var chip = document.createElement('span');
-        chip.className = 'preset-chip';
-        chip.style.background = 'var(--accent-subtle)';
-        chip.style.borderColor = 'var(--accent)';
-        chip.style.color = 'var(--accent)';
-        chip.textContent = t.name;
-        chip.onclick = function() { applyFilterTemplate(t.id); };
-        var del = document.createElement('span');
-        del.className = 'preset-delete';
-        del.textContent = '\u00d7';
-        del.style.opacity = '0.6';
-        del.setAttribute('aria-label', 'Eliminar');
-        del.setAttribute('role', 'button');
-        del.onclick = function(e) { e.stopPropagation(); deleteFilterTemplate(t.id); };
-        chip.appendChild(del);
-        container.appendChild(chip);
-      });
-    }
-
-    // ═══════════════════════════════════
-    // RECURRING TRAINING TEMPLATES (formaciones recurrentes)
-    // ═══════════════════════════════════
-
-    function loadTrainingTemplates() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_trainingTemplates') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function saveTrainingTemplates(templates) {
-      try {
-        localStorage.setItem('convocatoria_trainingTemplates', JSON.stringify(templates));
-      } catch(e) {
-        showToast('Error al guardar: almacenamiento lleno', 'error');
-      }
-    }
-
-    function saveAsTrainingTemplate() {
-      var existing = document.getElementById('trainingTemplateSaveOverlay');
-      if (existing) existing.remove();
-
-      var overlay = document.createElement('div');
-      overlay.id = 'trainingTemplateSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar formacion recurrente</h3>' +
-        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Guarda todos los campos excepto la fecha para reutilizar en futuras convocatorias.</p>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
-        '<input type="text" class="input-field" id="trainingTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="trainingTemplateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="trainingTemplateSaveConfirm">Guardar</button>' +
-        '</div></div>';
-      document.body.appendChild(overlay);
-
-      var nameInput = document.getElementById('trainingTemplateNameInput');
-      nameInput.focus();
-
-      function doSave() {
-        var name = nameInput.value.trim();
-        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
-        var templates = loadTrainingTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          eventTitle: document.getElementById('eventTitle').value || '',
-          eventIsTeams: isTeams,
-          eventLocation: document.getElementById('eventLocation').value || '',
-          eventFormador: document.getElementById('eventFormador').value || '',
-          eventStartTime: document.getElementById('eventStart').value || '',
-          eventEndTime: document.getElementById('eventEnd').value || '',
-          eventBody: document.getElementById('eventBody').value || '',
-          filters: JSON.parse(JSON.stringify(state.activeFilters)),
-          createdAt: new Date().toISOString()
-        });
-        saveTrainingTemplates(templates);
-        showToast('Formacion recurrente "' + name + '" guardada', 'success');
-        renderTrainingTemplateSelector();
+        saveUnifiedTemplate(name, type, data);
         overlay.remove();
+        showToast('Plantilla «' + esc(name) + '» guardada', 'success');
       }
 
-      document.getElementById('trainingTemplateSaveConfirm').addEventListener('click', doSave);
+      btnConfirm.addEventListener('click', doSave);
       nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
-      document.getElementById('trainingTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      btnCancel.addEventListener('click', function() { overlay.remove(); });
       overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     }
 
-    function renderTrainingTemplateSelector() {
-      var sel = document.getElementById('trainingTemplateSelect');
-      if (!sel) return;
-      var templates = loadTrainingTemplates();
-      sel.replaceChildren();
-      var opt0 = document.createElement('option');
-      opt0.value = '';
-      opt0.textContent = 'Cargar formacion recurrente...';
-      sel.appendChild(opt0);
+    function renderSettingsUnifiedTemplates() {
+      var container = document.getElementById('settingsUnifiedTemplatesList');
+      if (!container) return;
+      var templates = getUnifiedTemplates();
+      if (templates.length === 0) {
+        container.textContent = '';
+        var emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'font-size:12px; color:var(--text-muted); padding:6px 0;';
+        emptyMsg.textContent = 'No hay plantillas guardadas.';
+        container.appendChild(emptyMsg);
+        return;
+      }
+      container.replaceChildren();
       templates.forEach(function(t) {
-        var opt = document.createElement('option');
-        opt.value = String(t.id);
-        opt.textContent = t.name;
-        sel.appendChild(opt);
-      });
-    }
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);';
 
-    function applyTrainingTemplate(id) {
-      var templates = loadTrainingTemplates();
-      var t = templates.find(function(x) { return x.id == id; });
-      if (!t) return;
-      // Rellenar campos excepto fecha
-      if (t.eventTitle) document.getElementById('eventTitle').value = t.eventTitle;
-      if (t.eventLocation) document.getElementById('eventLocation').value = t.eventLocation;
-      if (t.eventFormador) document.getElementById('eventFormador').value = t.eventFormador;
-      if (t.eventStartTime) document.getElementById('eventStart').value = t.eventStartTime;
-      if (t.eventEndTime) document.getElementById('eventEnd').value = t.eventEndTime;
-      if (t.eventBody) document.getElementById('eventBody').value = t.eventBody;
-      if (t.eventIsTeams) {
-        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-      } else {
-        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
-      }
-      if (t.filters) {
-        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
-        renderFilters();
-        renderTable();
-      }
-      showToast('Formacion recurrente "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
+        var left = document.createElement('div');
+        left.style.cssText = 'display:flex; align-items:center; gap:6px;';
+
+        var badge = document.createElement('span');
+        var colors = getTypeColor(t.type);
+        badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:var(--radius-lg); background:' + colors.bg + '; color:' + colors.text + '; border:1px solid ' + colors.border + ';';
+        badge.textContent = getTypeLabel(t.type);
+        left.appendChild(badge);
+
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:12px; color:var(--text-primary);';
+        nameSpan.textContent = t.name;
+        left.appendChild(nameSpan);
+
+        row.appendChild(left);
+
+        var delBtn = document.createElement('button');
+        delBtn.className = 'link-btn link-clear';
+        delBtn.style.fontSize = '11px';
+        delBtn.title = 'Eliminar plantilla';
+        delBtn.textContent = '\u00d7';
+        delBtn.setAttribute('data-delete-unified', String(t.id));
+        delBtn.addEventListener('click', function() {
+          deleteUnifiedTemplate(t.id);
+        });
+        row.appendChild(delBtn);
+
+        container.appendChild(row);
+      });
     }
 
     function substituteTemplateVars(bodyText, event) {
@@ -10620,93 +11419,10 @@
       ).join(' ');
 
       saveState();
-      renderPresets();
-      renderFilterTemplateChips();
+      renderUnifiedTemplateChips();
     }
 
-    // FILTER PRESETS
-    function getPresets() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function savePresets(presets) {
-      try { localStorage.setItem('convocatoria_presets', JSON.stringify(presets)); } catch(e) {}
-    }
-
-    function renderPresets() {
-      const presets = getPresets();
-      const list = document.getElementById('presetList');
-      if (!list) return;
-      list.innerHTML = presets.map((p, i) =>
-        '<span class="preset-chip" data-index="' + i + '">' +
-          esc(p.name) +
-          ' <span class="preset-delete" data-delete="' + i + '" role="button" aria-label="Eliminar">&times;</span>' +
-        '</span>'
-      ).join('');
-
-      list.querySelectorAll('.preset-chip').forEach(chip => {
-        chip.addEventListener('click', e => {
-          if (e.target.classList.contains('preset-delete')) {
-            // Delete preset
-            const idx = parseInt(e.target.dataset.delete);
-            const presets = getPresets();
-            presets.splice(idx, 1);
-            savePresets(presets);
-            renderPresets();
-            return;
-          }
-          // Load preset
-          const idx = parseInt(chip.dataset.index);
-          const presets = getPresets();
-          if (presets[idx]) {
-            state.activeFilters = JSON.parse(JSON.stringify(presets[idx].filters));
-            renderFilters();
-            renderTable();
-            showToast('Preset "' + presets[idx].name + '" cargado', 'info');
-          }
-        });
-      });
-    }
-
-    document.getElementById('btnSavePreset').addEventListener('click', () => {
-      const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
-      if (activeKeys.length === 0) {
-        showToast('No hay filtros activos para guardar', 'warning');
-        return;
-      }
-      var existingOvl = document.getElementById('presetSaveOverlay');
-      if (existingOvl) existingOvl.remove();
-      var overlay = document.createElement('div');
-      overlay.id = 'presetSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar preset de filtros</h3>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre del preset</label>' +
-        '<input type="text" class="input-field" id="presetNameInput" placeholder="Ej: Fábrica Madrid" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="presetSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="presetSaveConfirm">Guardar</button>' +
-        '</div>' +
-      '</div>';
-      document.body.appendChild(overlay);
-      var presetInput = document.getElementById('presetNameInput');
-      presetInput.focus();
-      function doSavePreset() {
-        var name = presetInput.value.trim();
-        if (!name) { showToast('Introduce un nombre para el preset', 'warning'); return; }
-        var presets = getPresets();
-        presets.push({ name: name, filters: JSON.parse(JSON.stringify(state.activeFilters)) });
-        savePresets(presets);
-        renderPresets();
-        overlay.remove();
-        showToast('Preset "' + name + '" guardado', 'success');
-      }
-      document.getElementById('presetSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      document.getElementById('presetSaveConfirm').addEventListener('click', doSavePreset);
-      presetInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSavePreset(); });
-    });
+    document.getElementById('btnSaveUnifiedTemplate').addEventListener('click', showSaveUnifiedTemplateDialog);
 
     document.addEventListener('click', () => {
       document.querySelectorAll('.filter-dropdown.open').forEach(d => {
@@ -11414,25 +12130,20 @@
       });
     }());
 
-    // Template select and save
-    document.getElementById('templateSelect').addEventListener('change', function() {
+    // Unified template select
+    document.getElementById('unifiedTemplateSelect').addEventListener('change', function() {
       if (this.value) {
-        loadTemplate(this.value);
+        var templates = getUnifiedTemplates();
+        var tpl = templates.find(function(t) { return String(t.id) === String(document.getElementById('unifiedTemplateSelect').value); });
+        if (tpl) loadUnifiedTemplate(tpl);
+        document.getElementById('unifiedTemplateSelect').value = '';
       }
     });
-    document.getElementById('btnSaveTemplate').addEventListener('click', showSaveTemplateDialog);
 
-    // Populate template dropdown on init
-    populateTemplateSelect();
-
-    // Training template (recurring) selector
-    document.getElementById('trainingTemplateSelect').addEventListener('change', function() {
-      if (this.value) {
-        applyTrainingTemplate(this.value);
-        this.value = '';
-      }
-    });
-    renderTrainingTemplateSelector();
+    // Run migration and populate on init
+    migrateTemplates();
+    populateUnifiedTemplateSelect();
+    renderUnifiedTemplateChips();
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
@@ -13022,7 +13733,7 @@
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
       document.getElementById('themeSelect').value = settings.theme || 'light';
-      renderSettingsTemplates();
+      renderSettingsUnifiedTemplates();
       renderEmpresasGrupoSettings();
       document.getElementById('settingsDialog').classList.add('visible');
     });
@@ -14654,6 +15365,7 @@
     loadCompliance();
     renderQueue();
     ActivationChecklist.init();
+    checkBackupReminder();
 
     // ── Session recovery banner ──
     (function() {
@@ -18348,6 +19060,7 @@
       // --- Estado chart (donut, uses cached estadoCounts from metrics) ---
       var estadoCounts = metrics.estadoCounts;
       var estadoColorMap = {
+        'Planificada': '#a3a3a3',
         'En marcha': DS.accent,
         'Terminada': DS.chart3,
         'Anulada': DS.chart5,
@@ -19145,6 +19858,7 @@
     // ═══════════════════════════════════
 
     var CAL_ESTADO_COLORS = {
+      'Planificada': '#a3a3a3',
       'Pendiente': DS.textMuted,
       'En preparación': DS.chart2,
       'En marcha': DS.accent,
@@ -19492,7 +20206,7 @@
       summaryEl.innerHTML = '<strong>' + visible.length + '</strong> formaciones &middot; <strong>' + totalPart + '</strong> participantes &middot; <strong>' + Math.round(totalHoras) + '</strong> horas';
 
       // Legend
-      var legendEstados = ['Pendiente', 'Buscando', 'En preparación', 'En marcha', 'Terminada', 'Anulada', 'Retrasada'];
+      var legendEstados = ['Planificada', 'Pendiente', 'Buscando', 'En preparación', 'En marcha', 'Terminada', 'Anulada', 'Retrasada'];
       legendEl.innerHTML = legendEstados.map(function(e) {
         return '<div class="cal-legend-item">' +
           '<div class="cal-legend-dot" style="background:' + (CAL_ESTADO_COLORS[e] || DS.textMuted) + ';"></div>' +
