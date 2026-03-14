@@ -4198,6 +4198,7 @@
             </div>
           </div>
           <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
+          <button class="btn btn-secondary" id="btnExportPDF" title="Exportar convocatoria como PDF">Exportar PDF</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
       </div>
@@ -4549,6 +4550,7 @@
         <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar persona trabajadora (nombre o NIF)" style="width:300px; font-size:13px;">
         <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
         <div style="flex:1;"></div>
+        <button class="btn btn-secondary" id="btnReportDirection" style="font-size:12px;">Informe para Direccion</button>
         <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
       </div>
 
@@ -6253,6 +6255,16 @@
           parts.push('</div>');
         });
       }
+
+      // RLT Balance section
+      parts.push('<div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">');
+      parts.push('<span style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">Informes RLT</span>');
+      parts.push('<div style="display:flex; gap:6px; align-items:center;">');
+      parts.push('<input type="number" id="rltBalanceYear" value="' + new Date().getFullYear() + '" min="2000" max="2099" style="width:80px; font-size:12px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:var(--font-body);">');
+      parts.push('<button class="btn btn-secondary" id="btnRLTBalance" style="font-size:11px; padding:5px 10px;">Balance anual RLT</button>');
+      parts.push('</div>');
+      parts.push('</div>');
+
       parts.push('</div>');
 
       // Right panel: matrix table
@@ -6394,6 +6406,20 @@
             if (nif) affectedNIFs.add(nif);
           });
           showToast(affectedNIFs.size + ' persona' + (affectedNIFs.size !== 1 ? 's' : '') + ' trabajadora' + (affectedNIFs.size !== 1 ? 's' : '') + ' afectada' + (affectedNIFs.size !== 1 ? 's' : ''), 'info');
+        });
+      }
+
+      // Bind: RLT Balance button
+      var btnRLTBalance = document.getElementById('btnRLTBalance');
+      if (btnRLTBalance) {
+        btnRLTBalance.addEventListener('click', function() {
+          var yearInput = document.getElementById('rltBalanceYear');
+          var year = yearInput ? parseInt(yearInput.value, 10) : new Date().getFullYear();
+          if (isNaN(year) || year < 2000 || year > 2099) {
+            showToast('Introduce un año válido', 'warning');
+            return;
+          }
+          generateRLTBalance(year);
         });
       }
     }
@@ -6658,7 +6684,12 @@
           ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
         '</div>' +
         '<div id="cfAsistenciaInner">' + innerHtml +
-          (participantes.length > 0 ? '<div style="margin-top:10px;"><button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button></div>' : '') +
+          (participantes.length > 0 ? '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
+            '<button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button>' +
+            '<button class="btn btn-secondary" id="btnAttendanceSheet" style="font-size:12px;">Hoja de firmas por sesi\u00F3n</button>' +
+            '<button class="btn btn-secondary" id="btnGenerateCerts" style="font-size:12px;">Certificados</button>' +
+            '<button class="btn btn-secondary" id="btnDossierInspeccion" style="font-size:12px;">Dossier inspecci\u00F3n</button>' +
+          '</div>' : '') +
         '</div>' +
       '</div>';
     }
@@ -7295,6 +7326,30 @@
           printSignSheet(record);
         });
       }
+
+      // Attendance sheet per session button
+      var attendanceBtn = document.getElementById('btnAttendanceSheet');
+      if (attendanceBtn) {
+        attendanceBtn.addEventListener('click', function() {
+          generateAttendanceSheet(record.codigo);
+        });
+      }
+
+      // Certificates button
+      var certsBtn = document.getElementById('btnGenerateCerts');
+      if (certsBtn) {
+        certsBtn.addEventListener('click', function() {
+          generateCatalogCertificates(record.codigo);
+        });
+      }
+
+      // Dossier inspección button
+      var btnDossier = document.getElementById('btnDossierInspeccion');
+      if (btnDossier) {
+        btnDossier.addEventListener('click', function() {
+          generateInspectionDossier(record.codigo);
+        });
+      }
     }
 
     function renderConfirmacionesHtml(record) {
@@ -7421,6 +7476,211 @@
           w.print();
         };
       }
+    }
+
+    function getCatalogAction(actionId) {
+      var acciones = getCatalog('acciones');
+      return acciones.find(function(a) { return a.codigo === actionId; }) || null;
+    }
+
+    function resolveParticipants(record) {
+      return (record.participantes || []).map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        return {
+          name: emp ? (emp.Empleado || nif) : nif,
+          nif: nif,
+          empresa: emp ? (emp.Empresa || '') : ''
+        };
+      }).sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    }
+
+    function resolveTrainerName(record) {
+      if (!record.tutorVinculado) return '';
+      var tutores = getCatalog('tutores');
+      var tutor = tutores.find(function(t) { return t.documento === record.tutorVinculado; });
+      if (!tutor) return '';
+      return [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
+    }
+
+    function resolveLocationName(record) {
+      if (!record.centroVinculado) return '';
+      var centros = getCatalog('centros');
+      var centro = centros.find(function(c) { return c.documento === record.centroVinculado; });
+      if (!centro) return '';
+      return centro.nombre || '';
+    }
+
+    function generateAttendanceSheet(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Acción no encontrada', 'error'); return; }
+      var asistencia = action.asistencia || { sesiones: [], registro: {} };
+      var sessions = asistencia.sesiones || [];
+      if (sessions.length === 0) { showToast('No hay sesiones registradas', 'warning'); return; }
+      var participants = resolveParticipants(action);
+      var trainerName = resolveTrainerName(action);
+      var locationName = resolveLocationName(action);
+      var actionTitle = action.nombre || action.codigo || '';
+
+      var sheetsHtml = sessions.map(function(sessionDate, idx) {
+        var dateLabel = sessionDate;
+        try {
+          var d = new Date(sessionDate + 'T00:00:00');
+          dateLabel = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch(e) {}
+
+        var rows = participants.map(function(p) {
+          return '<tr><td>' + esc(p.name || '') + '</td><td>' + esc(p.nif || '') + '</td>'
+            + '<td class="sign"></td><td class="time"></td><td class="time"></td></tr>';
+        }).join('');
+
+        return '<div class="sheet' + (idx > 0 ? ' pb' : '') + '">'
+          + '<div class="hdr"><div class="htitle">HOJA DE FIRMAS</div><div class="hbrand">Formaci\u00F3n_AGORA</div></div>'
+          + '<div class="meta"><p><strong>Formaci\u00F3n:</strong> ' + esc(actionTitle) + '</p>'
+          + '<p><strong>Fecha:</strong> ' + esc(dateLabel) + '</p>'
+          + '<p><strong>Lugar:</strong> ' + esc(locationName) + ' | <strong>Formador/a:</strong> ' + esc(trainerName) + '</p></div>'
+          + '<table><thead><tr><th>Nombre</th><th>NIF</th><th>Firma</th><th>H. entrada</th><th>H. salida</th></tr></thead><tbody>' + rows + '</tbody></table>'
+          + '<div class="tsign"><p>Firma formador/a:</p><div class="sline"></div></div></div>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoja de firmas - ' + esc(actionTitle) + '</title>'
+        + '<style>@page{size:A4;margin:15mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:11px}'
+        + '.pb{page-break-before:always} .hdr{border-bottom:3px solid #4F46E5;padding-bottom:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.htitle{font-size:16px;font-weight:600} .hbrand{font-size:10px;color:#94a3b8} .meta p{margin:2px 0}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:12px} th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:12px 8px;border-bottom:1px solid #e2e8f0} .sign{width:120px} .time{width:80px}'
+        + '.tsign{margin-top:40px} .sline{border-bottom:1px solid #0f172a;width:250px;margin-top:40px}'
+        + '</style></head><body>' + sheetsHtml + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    function generateCatalogCertificates(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Acción no encontrada', 'error'); return; }
+      var asistencia = action.asistencia || { sesiones: [], registro: {} };
+      var sessions = asistencia.sesiones || [];
+      var totalSessions = sessions.length;
+      var minAtt = 75;
+      var actionTitle = action.nombre || action.codigo || '';
+
+      // Resolve participants with attendance percentage
+      var allParticipants = (action.participantes || []).map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        var registro = asistencia.registro || {};
+        var attended = 0;
+        var nifRecord = registro[nif] || [];
+        for (var i = 0; i < nifRecord.length; i++) {
+          if (nifRecord[i] === true) attended++;
+        }
+        var pct = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+        return {
+          name: emp ? (emp.Empleado || nif) : nif,
+          nif: nif,
+          attendancePercent: pct
+        };
+      });
+
+      var eligible = allParticipants.filter(function(p) { return p.attendancePercent >= minAtt; });
+      if (eligible.length === 0) { showToast('Sin participantes con asistencia >= ' + minAtt + '%', 'warning'); return; }
+
+      var trainerName = resolveTrainerName(action);
+      var totalHours = (parseFloat(action.horasPresenciales) || 0) + (parseFloat(action.horasTeleformacion) || 0);
+      var modalidad = action.modalidad || 'Presencial';
+
+      var year = new Date().getFullYear();
+      var certsHtml = eligible.map(function(p, idx) {
+        var num = 'CERT-' + year + '-' + String(idx + 1).padStart(4, '0');
+        return '<div class="cert' + (idx > 0 ? ' pb' : '') + '">'
+          + '<div class="chdr"><div class="cbrand">Formaci\u00F3n_AGORA</div><div class="cnum">' + num + '</div></div>'
+          + '<h1 class="ctitle">CERTIFICADO DE ASISTENCIA</h1>'
+          + '<div class="cbody"><p>Se certifica que <strong>' + esc(p.name || '') + '</strong>, '
+          + 'con NIF <strong>' + esc(p.nif || '') + '</strong>, ha completado la acci\u00F3n formativa:</p>'
+          + '<div class="caction"><p class="cat">' + esc(actionTitle) + '</p>'
+          + '<p>' + totalHours + ' horas | ' + esc(modalidad) + '</p>'
+          + (trainerName ? '<p>Formador/a: ' + esc(trainerName) + '</p>' : '') + '</div></div>'
+          + '<div class="cfooter"><div class="cdate">Emisi\u00F3n: ' + new Date().toLocaleDateString('es-ES') + '</div>'
+          + '<div class="csign"><div class="sline"></div><p>Firma y sello</p></div></div></div>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificados - ' + esc(actionTitle) + '</title>'
+        + '<style>@page{size:A4;margin:25mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a}'
+        + '.cert{min-height:700px;display:flex;flex-direction:column} .pb{page-break-before:always}'
+        + '.chdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:40px}'
+        + '.cbrand{font-size:12px;color:#94a3b8} .cnum{font-size:11px;color:#94a3b8}'
+        + '.ctitle{text-align:center;font-size:22px;font-weight:600;margin-bottom:32px;letter-spacing:.05em}'
+        + '.cbody{flex:1;font-size:14px;line-height:1.8}'
+        + '.caction{background:#f8fafc;border-left:3px solid #4F46E5;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0}'
+        + '.cat{font-size:16px;font-weight:600;margin-bottom:4px} .caction p{margin:2px 0;font-size:13px;color:#475569}'
+        + '.cfooter{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:20px}'
+        + '.cdate{font-size:12px;color:#475569} .csign{text-align:center}'
+        + '.sline{border-bottom:1px solid #0f172a;width:200px;margin-bottom:8px} .csign p{font-size:11px;color:#475569;margin:0}'
+        + '</style></head><body>' + certsHtml + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+      showToast(eligible.length + ' certificados generados', 'success');
+    }
+
+    function buildInspectionChecklist(action) {
+      return [
+        { label: 'Datos de la accion formativa', ok: !!(action.nombre && (action.horasPresenciales || action.horasTeleformacion) && action.modalidad) },
+        { label: 'Participantes registrados', ok: (action.participantes || []).length > 0 },
+        { label: 'Sesiones con fechas', ok: !!(action.asistencia && action.asistencia.sesiones && action.asistencia.sesiones.length > 0) },
+        { label: 'Asistencia registrada', ok: !!(action.asistencia && action.asistencia.registro && Object.keys(action.asistencia.registro).length > 0) },
+        { label: 'Comunicacion RLT', ok: !!(action.rltEstado && action.rltEstado !== 'Pendiente') },
+        { label: 'Encuesta satisfaccion', ok: !!action.surveyStatus },
+      ];
+    }
+
+    function generateInspectionDossier(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Accion no encontrada', 'error'); return; }
+      var checklist = buildInspectionChecklist(action);
+      var done = checklist.filter(function(i) { return i.ok; }).length;
+
+      var clRows = checklist.map(function(i) {
+        var c = i.ok ? '#16a34a' : '#dc2626';
+        return '<tr><td style="color:' + c + ';font-weight:600;width:24px">' + (i.ok ? '\u2713' : '\u2717') + '</td>'
+          + '<td>' + esc(i.label) + '</td><td style="color:' + c + '">' + (i.ok ? 'Disponible' : 'Pendiente') + '</td></tr>';
+      }).join('');
+
+      var participants = action.participantes || [];
+      var pRows = participants.map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif || e._id === nif; });
+        return '<tr><td>' + esc(emp ? (emp.Empleado || emp.NOMBRE || '') : nif) + '</td><td>' + esc(nif) + '</td></tr>';
+      }).join('');
+
+      var totalHours = (parseFloat(action.horasPresenciales) || 0) + (parseFloat(action.horasTeleformacion) || 0);
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dossier - ' + esc(action.nombre || '') + '</title>'
+        + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.ht{font-size:18px;font-weight:600} .hb{font-size:11px;color:#94a3b8}'
+        + 'h2{font-size:14px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
+        + '.sbox{background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0}'
+        + '.sbox p{margin:4px 0} .prog{font-size:14px;font-weight:600;margin-top:12px}'
+        + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '</style></head><body>'
+        + '<div class="header"><div class="ht">DOSSIER DE INSPECCION</div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="sbox"><p><strong>Accion:</strong> ' + esc(action.nombre || '') + '</p>'
+        + '<p><strong>Horas:</strong> ' + totalHours + ' | <strong>Modalidad:</strong> ' + esc(action.modalidad || '') + '</p>'
+        + '<div class="prog">Documentacion: ' + done + ' de ' + checklist.length + ' elementos</div></div>'
+        + '<h2>Checklist de documentacion</h2>'
+        + '<table><thead><tr><th></th><th>Documento</th><th>Estado</th></tr></thead><tbody>' + clRows + '</tbody></table>'
+        + '<h2>Participantes (' + participants.length + ')</h2>'
+        + '<table><thead><tr><th>Nombre</th><th>NIF</th></tr></thead><tbody>' + pRows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
     }
 
     function renderAccionParticipants(record) {
@@ -11097,6 +11357,54 @@
       }
       return valid;
     }
+
+    function exportConvocatoriaPDF() {
+      if (!validateEvent()) return;
+      var ev = getCurrentEvent();
+      var selected = getSelectedAttendees();
+      if (selected.length === 0) { showToast('Selecciona al menos una persona destinataria', 'warning'); return; }
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite las ventanas emergentes para exportar', 'warning'); return; }
+
+      var rows = selected.map(function(emp) {
+        return '<tr><td>' + esc(emp['Empleado'] || '') + '</td><td>' + esc(emp['Email trabajo'] || '') + '</td>'
+          + '<td>' + esc(emp['Departamento'] || '') + '</td><td>' + esc(emp['Ubicación'] || '') + '</td></tr>';
+      }).join('');
+
+      var locationLine = ev.location ? '<p><strong>Ubicación:</strong> ' + esc(ev.location) + '</p>' : '';
+      var dateLine = ev.date ? '<p><strong>Fecha:</strong> ' + esc(ev.date) + '</p>' : '';
+      var timeLine = (ev.startTime && ev.endTime) ? '<p><strong>Horario:</strong> ' + esc(ev.startTime) + ' - ' + esc(ev.endTime) + '</p>' : '';
+
+      // Build PDF document in new window (all dynamic content sanitised via esc())
+      var doc = w.document;
+      doc.open();
+      doc.writeln('<!DOCTYPE html><html><head><meta charset="utf-8">'
+        + '<title>Convocatoria - ' + esc(ev.title || 'Sin titulo') + '</title>'
+        + '<style>@page{size:A4;margin:20mm}'
+        + 'body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.header-brand{font-size:11px;color:#94a3b8}'
+        + '.header-title{font-size:20px;font-weight:600}'
+        + '.meta{margin-bottom:24px} .meta p{margin:4px 0;font-size:13px}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:16px}'
+        + 'th{background:#f1f5f9;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}'
+        + 'tr:nth-child(even) td{background:#f8fafc}'
+        + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '.count{margin-top:16px;font-size:13px;color:#475569}'
+        + '</style></head><body>'
+        + '<div class="header"><div><div class="header-title">' + esc(ev.title || 'Convocatoria') + '</div></div><div class="header-brand">Formación_AGORA</div></div>'
+        + '<div class="meta">' + dateLine + timeLine + locationLine + '</div>'
+        + '<div class="count">' + selected.length + ' personas destinatarias</div>'
+        + '<table><thead><tr><th>Nombre</th><th>Email</th><th>Departamento</th><th>Ubicación</th></tr></thead><tbody>' + rows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formación_AGORA</div>'
+        + '</body></html>');
+      doc.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    document.getElementById('btnExportPDF').addEventListener('click', exportConvocatoriaPDF);
 
     document.getElementById('btnOpenOutlook').addEventListener('click', () => {
       if (!validateEvent()) return;
@@ -16802,6 +17110,12 @@
         exportBtn.onclick = function() { exportAnnualReport(); };
       }
 
+      // Wire direction report button
+      var dirReportBtn = document.getElementById('btnReportDirection');
+      if (dirReportBtn) {
+        dirReportBtn.onclick = function() { generateDirectionReport(); };
+      }
+
       // Phase 2: Render analytics modules incrementally
       requestAnimationFrame(function() {
         renderAttendanceMonitor('dashAttendance', acciones);
@@ -18246,6 +18560,176 @@
         calState.selectedCodigo = null;
         document.querySelectorAll('.cal-bar.selected').forEach(function(b) { b.classList.remove('selected'); });
       });
+    }
+
+    // ═══════════════════════════════════
+    // DIRECTION REPORT (F3.9)
+    // ═══════════════════════════════════
+
+    function generateDirectionReport() {
+      var year = new Date().getFullYear();
+      var allActions = getCatalog('acciones') || [];
+      var actions = allActions.filter(function(a) {
+        return a.fechaInicio && a.fechaInicio.startsWith(String(year));
+      });
+      var totalActions = actions.length;
+      var totalHours = actions.reduce(function(s, a) { return s + (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0); }, 0);
+      var uniqueNifs = new Set();
+      var totalParts = 0;
+      var byMod = {}, byDept = {};
+      actions.forEach(function(a) {
+        var m = a.modalidad || 'Sin definir'; byMod[m] = (byMod[m] || 0) + 1;
+        (a.participantes || []).forEach(function(nif) {
+          totalParts++;
+          uniqueNifs.add(nif);
+          var emp = (state.employees || []).find(function(e) { return e.NIF === nif || e._id === nif; });
+          var d = emp ? (emp.Departamento || 'Sin asignar') : 'Sin asignar';
+          byDept[d] = (byDept[d] || 0) + 1;
+        });
+      });
+
+      var modRows = Object.keys(byMod).map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byMod[k] + '</td></tr>'; }).join('');
+      var deptRows = Object.keys(byDept).sort(function(a, b) { return byDept[b] - byDept[a]; }).slice(0, 10)
+        .map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byDept[k] + '</td></tr>'; }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
+        + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.ht{font-size:20px;font-weight:600} .hs{font-size:13px;color:#475569;margin-top:4px} .hb{font-size:11px;color:#94a3b8}'
+        + '.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}'
+        + '.kpi{background:#f8fafc;border-radius:8px;padding:16px;text-align:center;border-left:3px solid #4F46E5}'
+        + '.kv{font-size:28px;font-weight:700;color:#4F46E5} .kl{font-size:11px;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}'
+        + 'h2{font-size:14px;font-weight:600;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
+        + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '</style></head><body>'
+        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="kpis">'
+        + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
+        + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
+        + '</div>'
+        + '<h2>Distribucion por modalidad</h2>'
+        + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>'
+        + '<h2>Participacion por departamento (Top 10)</h2>'
+        + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    // ═══════════════════════════════════
+    // RLT ANNUAL TRAINING BALANCE
+    // ═══════════════════════════════════
+
+    function generateRLTBalance(year) {
+      year = year || new Date().getFullYear();
+      var allActions = getCatalog('acciones') || [];
+      var actions = allActions.filter(function(a) {
+        return a.fechaInicio && a.fechaInicio.startsWith(String(year));
+      });
+
+      if (actions.length === 0) {
+        showToast('No hay acciones formativas para el ejercicio ' + year, 'warning');
+        return;
+      }
+
+      // KPIs
+      var totalActions = actions.length;
+      var totalHours = actions.reduce(function(s, a) {
+        return s + (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+      }, 0);
+      var uniqueNifs = new Set();
+      actions.forEach(function(a) {
+        (a.participantes || []).forEach(function(nif) { uniqueNifs.add(nif); });
+      });
+      var totalParticipants = uniqueNifs.size;
+
+      // Breakdown by modalidad (training type)
+      var byModalidad = {};
+      actions.forEach(function(a) {
+        var m = a.modalidad || 'Sin definir';
+        if (!byModalidad[m]) byModalidad[m] = { count: 0, hours: 0, participants: new Set() };
+        byModalidad[m].count++;
+        byModalidad[m].hours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+        (a.participantes || []).forEach(function(nif) { byModalidad[m].participants.add(nif); });
+      });
+
+      var modRows = Object.keys(byModalidad).map(function(k) {
+        var d = byModalidad[k];
+        return '<tr>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">' + esc(k) + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.count + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.hours + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.participants.size + '</td>' +
+          '</tr>';
+      }).join('');
+
+      // Full listing table
+      var listRows = actions.map(function(a) {
+        var horas = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+        var nPart = (a.participantes || []).length;
+        return '<tr>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.codigo || '') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.nombre || '') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + esc(a.modalidad || '-') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + horas + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + nPart + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.fechaInicio || '-') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.fechaFin || '-') + '</td>' +
+          '</tr>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes para generar el balance', 'warning'); return; }
+
+      w.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">'
+        + '<title>Balance RLT ' + year + '</title>'
+        + '<style>'
+        + '@page{size:A4;margin:20mm}'
+        + 'body{font-family:"Inter",-apple-system,system-ui,sans-serif;color:#0f172a;font-size:12px;line-height:1.6;max-width:800px;margin:0 auto;padding:20mm}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.ht{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}'
+        + '.hs{font-size:13px;color:#475569;margin-top:4px}'
+        + '.hb{font-size:11px;color:#94a3b8}'
+        + '.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}'
+        + '.kpi{background:#f8fafc;border-radius:8px;padding:16px;text-align:center;border-left:3px solid #4F46E5}'
+        + '.kv{font-size:28px;font-weight:700;color:#4F46E5}'
+        + '.kl{font-size:11px;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}'
+        + 'h2{font-size:14px;font-weight:600;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'th.center{text-align:center}'
+        + '.signatures{display:flex;justify-content:space-between;margin-top:80px;page-break-inside:avoid}'
+        + '.sig-block{width:45%;text-align:center}'
+        + '.sig-line{border-top:1px solid #1e293b;margin-top:60px;padding-top:8px;font-size:11px;color:#475569}'
+        + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '@media print{body{padding:0;margin:20mm}}'
+        + '</style></head><body>'
+        + '<div class="header"><div><div class="ht">Balance de Acciones Formativas</div><div class="hs">Ejercicio ' + esc(String(year)) + '</div></div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="kpis">'
+        + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones formativas</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas totales</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalParticipants + '</div><div class="kl">Participantes unicos</div></div>'
+        + '</div>'
+        + '<h2>Desglose por modalidad</h2>'
+        + '<table><thead><tr><th>Modalidad</th><th class="center">Acciones</th><th class="center">Horas</th><th class="center">Participantes</th></tr></thead><tbody>' + modRows + '</tbody></table>'
+        + '<h2>Relacion de acciones formativas</h2>'
+        + '<table><thead><tr><th>Codigo</th><th>Nombre</th><th class="center">Modalidad</th><th class="center">Horas</th><th class="center">Participantes</th><th>F. inicio</th><th>F. fin</th></tr></thead><tbody>' + listRows + '</tbody></table>'
+        + '<div class="signatures">'
+        + '<div class="sig-block"><div class="sig-line">Por la empresa</div></div>'
+        + '<div class="sig-block"><div class="sig-line">Por la Representacion Legal de los Trabajadores</div></div>'
+        + '</div>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
     }
 
     // ═══════════════════════════════════
