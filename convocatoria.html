@@ -5031,6 +5031,32 @@
     });
 
     // ═══════════════════════════════════
+    // KEYBOARD SHORTCUTS
+    // ═══════════════════════════════════
+    const KBD = {
+      isMac: /mac/i.test(navigator.userAgentData?.platform || navigator.platform || ''),
+      get mod() { return this.isMac ? '\u2318' : 'Ctrl'; },
+      interactionCount: 0,
+      REVEAL_THRESHOLD: 3,
+
+      init() {
+        try {
+          this.interactionCount = parseInt(localStorage.getItem('convocatoria_kbdInteractions') || '0', 10);
+        } catch(e) { this.interactionCount = 0; }
+      },
+
+      trackInteraction() {
+        this.interactionCount++;
+        try { localStorage.setItem('convocatoria_kbdInteractions', String(this.interactionCount)); } catch(e) {}
+      },
+
+      shouldShowShortcuts() {
+        return this.interactionCount >= this.REVEAL_THRESHOLD;
+      }
+    };
+    KBD.init();
+
+    // ═══════════════════════════════════
     // COMMAND PALETTE (Cmd+K)
     // ═══════════════════════════════════
     const CmdK = {
@@ -5052,7 +5078,7 @@
           { group: 'Herramientas', label: 'Abrir ajustes', icon: '\u2699', action: () => document.getElementById('settingsDialog').classList.add('visible') },
           { group: 'Herramientas', label: 'Ver historial', icon: '\uD83D\uDD52', action: () => document.getElementById('historyDialog')?.classList.add('visible') },
           { group: 'Convocatoria', label: 'Limpiar filtros', icon: '\u2715', action: () => { document.querySelectorAll('.filter-select').forEach(s => { s.value = ''; }); renderFilters(); renderTable(); } },
-          { group: 'Convocatoria', label: 'Enviar convocatoria', icon: '\u2709', shortcut: 'Ctrl+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
+          { group: 'Convocatoria', label: 'Enviar convocatoria', icon: '\u2709', shortcut: KBD.mod + '+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
         ];
 
         this.input.addEventListener('input', () => this.render());
@@ -5148,15 +5174,62 @@
     CmdK.init();
 
     document.addEventListener('keydown', function(e) {
+      // Cmd/Ctrl+K — command palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        CmdK.open();
+        e.preventDefault(); CmdK.open(); return;
       }
-      if (e.key === 'Escape' && CmdK.overlay.classList.contains('visible')) {
+
+      // Escape — close overlays
+      if (e.key === 'Escape') {
+        if (CmdK.overlay.classList.contains('visible')) { CmdK.close(); return; }
+        var visibleDialog = document.querySelector('.dialog-overlay.visible');
+        if (visibleDialog) { visibleDialog.classList.remove('visible'); return; }
+      }
+
+      // Alt+1..5 — navigate tabs
+      if (e.altKey && e.key >= '1' && e.key <= '5') {
         e.preventDefault();
-        CmdK.close();
+        var tabIndex = parseInt(e.key) - 1;
+        var tabs = document.querySelectorAll('.tab-btn');
+        if (tabs[tabIndex]) { tabs[tabIndex].click(); KBD.trackInteraction(); }
+        return;
+      }
+
+      // Ctrl/Cmd+Enter — send convocatoria (only in Convocatoria tab)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.shiftKey) {
+        var activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.tab === 'tabConvocatoria') {
+          e.preventDefault();
+          document.getElementById('btnOpenOutlook').click();
+          KBD.trackInteraction();
+        }
+        return;
+      }
+
+      // Ctrl/Cmd+Shift+Enter — add to queue
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'Enter') {
+        var activeTab2 = document.querySelector('.tab-btn.active');
+        if (activeTab2 && activeTab2.dataset.tab === 'tabConvocatoria') {
+          e.preventDefault();
+          var addBtn = document.getElementById('btnAddToQueue');
+          if (addBtn) { addBtn.click(); KBD.trackInteraction(); }
+        }
+        return;
       }
     });
+
+    function updateShortcutTooltips() {
+      if (!KBD.shouldShowShortcuts()) return;
+      var mod = KBD.mod;
+      var btnOutlook = document.getElementById('btnOpenOutlook');
+      if (btnOutlook) btnOutlook.title = 'Enviar convocatoria (' + mod + '+Enter)';
+      var btnAdd = document.getElementById('btnAddToQueue');
+      if (btnAdd) btnAdd.title = 'Anadir a cola (' + mod + '+Shift+Enter)';
+      document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+        btn.title = (btn.title || btn.textContent.trim()) + ' (Alt+' + (i+1) + ')';
+      });
+    }
+    updateShortcutTooltips();
 
     // ═══════════════════════════════════
     // FUNDAE CATALOG DATA LAYER
