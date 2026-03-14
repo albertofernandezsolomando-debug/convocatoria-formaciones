@@ -4096,6 +4096,7 @@
             </div>
           </div>
           <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
+          <button class="btn btn-secondary" id="btnExportPDF" title="Exportar convocatoria como PDF">Exportar PDF</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
         </div>
       </div>
@@ -10767,6 +10768,54 @@
       }
       return valid;
     }
+
+    function exportConvocatoriaPDF() {
+      if (!validateEvent()) return;
+      var ev = getCurrentEvent();
+      var selected = getSelectedAttendees();
+      if (selected.length === 0) { showToast('Selecciona al menos una persona destinataria', 'warning'); return; }
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite las ventanas emergentes para exportar', 'warning'); return; }
+
+      var rows = selected.map(function(emp) {
+        return '<tr><td>' + esc(emp['Empleado'] || '') + '</td><td>' + esc(emp['Email trabajo'] || '') + '</td>'
+          + '<td>' + esc(emp['Departamento'] || '') + '</td><td>' + esc(emp['Ubicación'] || '') + '</td></tr>';
+      }).join('');
+
+      var locationLine = ev.location ? '<p><strong>Ubicación:</strong> ' + esc(ev.location) + '</p>' : '';
+      var dateLine = ev.date ? '<p><strong>Fecha:</strong> ' + esc(ev.date) + '</p>' : '';
+      var timeLine = (ev.startTime && ev.endTime) ? '<p><strong>Horario:</strong> ' + esc(ev.startTime) + ' - ' + esc(ev.endTime) + '</p>' : '';
+
+      // Build PDF document in new window (all dynamic content sanitised via esc())
+      var doc = w.document;
+      doc.open();
+      doc.writeln('<!DOCTYPE html><html><head><meta charset="utf-8">'
+        + '<title>Convocatoria - ' + esc(ev.title || 'Sin titulo') + '</title>'
+        + '<style>@page{size:A4;margin:20mm}'
+        + 'body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.header-brand{font-size:11px;color:#94a3b8}'
+        + '.header-title{font-size:20px;font-weight:600}'
+        + '.meta{margin-bottom:24px} .meta p{margin:4px 0;font-size:13px}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:16px}'
+        + 'th{background:#f1f5f9;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}'
+        + 'tr:nth-child(even) td{background:#f8fafc}'
+        + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '.count{margin-top:16px;font-size:13px;color:#475569}'
+        + '</style></head><body>'
+        + '<div class="header"><div><div class="header-title">' + esc(ev.title || 'Convocatoria') + '</div></div><div class="header-brand">Formación_AGORA</div></div>'
+        + '<div class="meta">' + dateLine + timeLine + locationLine + '</div>'
+        + '<div class="count">' + selected.length + ' personas destinatarias</div>'
+        + '<table><thead><tr><th>Nombre</th><th>Email</th><th>Departamento</th><th>Ubicación</th></tr></thead><tbody>' + rows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formación_AGORA</div>'
+        + '</body></html>');
+      doc.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    document.getElementById('btnExportPDF').addEventListener('click', exportConvocatoriaPDF);
 
     document.getElementById('btnOpenOutlook').addEventListener('click', () => {
       if (!validateEvent()) return;
