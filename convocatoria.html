@@ -7841,7 +7841,7 @@
       if (lastFile) {
         document.querySelector('#uploadPrompt div:last-child').innerHTML =
           'Arrastra tu Excel aquí o <strong style="color: var(--accent);">haz clic para seleccionar</strong>' +
-          '<br><span style="font-size:11px; color: var(--text-muted);">Último: ' + lastFile + '</span>';
+          '<br><span style="font-size:11px; color: var(--text-muted);">Último: ' + esc(lastFile) + '</span>';
       }
     } catch(e) {}
 
@@ -10096,6 +10096,7 @@
       var defaults = loadXmlGroupDefaults(cif);
       if (!defaults) return;
       var fields = ['xmlIdGrupo', 'xmlDescripcion', 'xmlResponsable', 'xmlTelefono'];
+      var filledCount = 0;
       fields.forEach(function(id) {
         var key = id.replace('xml', '').replace(/^./, function(c) { return c.toLowerCase(); });
         // Map field IDs to defaults keys
@@ -10103,13 +10104,16 @@
         var defaultKey = map[id];
         if (defaults[defaultKey] !== undefined) {
           var el = document.getElementById(id);
-          if (el && !el.value) el.value = defaults[defaultKey];
+          if (el && !el.value) { el.value = defaults[defaultKey]; filledCount++; }
         }
       });
       // xmlInformaRLT select
       if (defaults.informaRLT) {
         var rltEl = document.getElementById('xmlInformaRLT');
         if (rltEl) rltEl.value = defaults.informaRLT;
+      }
+      if (filledCount > 0) {
+        showToast('Datos del grupo pre-rellenados desde la última generación', 'info', 3000);
       }
     }
 
