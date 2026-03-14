@@ -1246,6 +1246,7 @@
       border-color: var(--danger);
       box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
     }
+    .field-error { display: block; font-size: 11px; color: var(--danger); margin-top: 2px; }
 
     /* ── On-blur field validation ── */
     .input-field.incomplete {
@@ -9643,16 +9644,42 @@
     }
 
     function validateEvent() {
-      const event = getCurrentEvent();
-      let valid = true;
+      var event = getCurrentEvent();
+      var valid = true;
+      document.querySelectorAll('.field-error').forEach(function(el) { el.remove(); });
+      document.querySelectorAll('.input-field.error').forEach(function(el) { el.classList.remove('error'); });
 
-      const titleEl = document.getElementById('eventTitle');
-      const dateEl = document.getElementById('eventDate');
-
-      titleEl.classList.toggle('error', !event.title);
-      dateEl.classList.toggle('error', !event.date);
-
-      if (!event.title || !event.date) valid = false;
+      var requiredFields = [
+        { id: 'eventTitle', label: 'Título es obligatorio', value: event.title },
+        { id: 'eventDate', label: 'Fecha es obligatoria', value: event.date }
+      ];
+      var firstError = null;
+      requiredFields.forEach(function(f) {
+        if (!f.value) {
+          valid = false;
+          var el = document.getElementById(f.id);
+          el.classList.add('error');
+          var hint = document.createElement('span');
+          hint.className = 'field-error';
+          hint.textContent = f.label;
+          el.parentNode.appendChild(hint);
+          if (!firstError) firstError = el;
+        }
+      });
+      if (event.startTime && event.endTime && event.startTime >= event.endTime) {
+        valid = false;
+        var endEl = document.getElementById('eventEnd');
+        endEl.classList.add('error');
+        var hint = document.createElement('span');
+        hint.className = 'field-error';
+        hint.textContent = 'Hora fin debe ser posterior a hora inicio';
+        endEl.parentNode.appendChild(hint);
+        if (!firstError) firstError = endEl;
+      }
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast('Completa los campos obligatorios', 'warning', 3000);
+      }
       return valid;
     }
 
