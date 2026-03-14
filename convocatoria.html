@@ -4368,6 +4368,7 @@
           <button class="cal-zoom-btn active" data-zoom="quarter">Trimestre</button>
           <button class="cal-zoom-btn" data-zoom="year">Año</button>
         </div>
+        <button class="btn btn-secondary" id="btnExportICS" style="font-size:12px;">Exportar .ics</button>
       </div>
       <div class="cal-filters">
         <div class="cal-filter-group">
@@ -17270,6 +17271,8 @@
         empClear.style.display = 'none';
         renderCalendarTab();
       });
+
+      document.getElementById('btnExportICS').addEventListener('click', exportCalendarICS);
     }
 
     function renderCalendarTab() {
@@ -17690,6 +17693,94 @@
           renderCalendarTab();
         });
       });
+    }
+
+    // ── ICS calendar export (F3.12) ──
+
+    function icsEscape(str) {
+      return (str || '').replace(/[\\;,\n]/g, function(c) {
+        if (c === '\\') return '\\\\';
+        if (c === ';') return '\\;';
+        if (c === ',') return '\\,';
+        if (c === '\n') return '\\n';
+        return c;
+      });
+    }
+
+    function getVisibleCalendarActions() {
+      var acciones = getCatalog('acciones');
+      return acciones.filter(function(a) { return a.fechaInicio && a.fechaFin; });
+    }
+
+    function generateICS(actions) {
+      var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FormacionAGORA//ES', 'CALSCALE:GREGORIAN'];
+
+      actions.forEach(function(action) {
+        var sesiones = (action.asistencia && action.asistencia.sesiones && action.asistencia.sesiones.length > 0)
+          ? action.asistencia.sesiones
+          : null;
+
+        if (sesiones) {
+          // One VEVENT per session date
+          sesiones.forEach(function(dateStr) {
+            var cleanDate = dateStr.replace(/-/g, '');
+            var uid = 'agora-' + (action.codigo || Math.random().toString(36).substr(2)) + '-' + cleanDate + '@formacionagora';
+
+            lines.push('BEGIN:VEVENT');
+            lines.push('UID:' + uid);
+            lines.push('DTSTART;VALUE=DATE:' + cleanDate);
+            lines.push('DTEND;VALUE=DATE:' + cleanDate);
+            lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
+            var desc = [];
+            if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
+            if (action.participantes && action.participantes.length) desc.push('Participantes: ' + action.participantes.length);
+            if (action.estado) desc.push('Estado: ' + action.estado);
+            if (desc.length) lines.push('DESCRIPTION:' + icsEscape(desc.join('\\n')));
+            lines.push('STATUS:' + (action.estado === 'Cerrada' ? 'CONFIRMED' : 'TENTATIVE'));
+            lines.push('END:VEVENT');
+          });
+        } else {
+          // Single VEVENT spanning fechaInicio to fechaFin
+          var startDate = action.fechaInicio.replace(/-/g, '');
+          var endDate = action.fechaFin.replace(/-/g, '');
+          var uid = 'agora-' + (action.codigo || Math.random().toString(36).substr(2)) + '-' + startDate + '@formacionagora';
+
+          lines.push('BEGIN:VEVENT');
+          lines.push('UID:' + uid);
+          lines.push('DTSTART;VALUE=DATE:' + startDate);
+          lines.push('DTEND;VALUE=DATE:' + endDate);
+          lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
+          var desc = [];
+          if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
+          if (action.participantes && action.participantes.length) desc.push('Participantes: ' + action.participantes.length);
+          if (action.estado) desc.push('Estado: ' + action.estado);
+          if (desc.length) lines.push('DESCRIPTION:' + icsEscape(desc.join('\\n')));
+          lines.push('STATUS:' + (action.estado === 'Cerrada' ? 'CONFIRMED' : 'TENTATIVE'));
+          lines.push('END:VEVENT');
+        }
+      });
+
+      lines.push('END:VCALENDAR');
+      return lines.join('\r\n');
+    }
+
+    function exportCalendarICS() {
+      var actions = getVisibleCalendarActions();
+      if (!actions || actions.length === 0) {
+        showToast('No hay acciones formativas con fechas para exportar', 'warning');
+        return;
+      }
+      var icsContent = generateICS(actions);
+      var blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'formacion_agora_' + new Date().toISOString().slice(0, 10) + '.ics';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(actions.length + ' eventos exportados a .ics', 'success');
     }
 
     function showCalDetail(item) {
