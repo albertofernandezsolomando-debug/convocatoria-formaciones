@@ -287,6 +287,59 @@
       font-weight: 600;
     }
 
+    /* ── Alert banner ── */
+    .alert-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--warning-light);
+      border-bottom: 1px solid var(--warning);
+      font-size: 12px;
+      position: relative;
+      z-index: 10;
+    }
+    .alert-banner.visible {
+      display: flex;
+    }
+    .alert-banner-text {
+      flex: 1;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+    .alert-banner-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--warning);
+      background: rgba(217,119,6,0.12);
+      border-radius: var(--radius-lg);
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .alert-banner-count.has-danger {
+      color: var(--danger);
+      background: rgba(220,38,38,0.1);
+    }
+    .alert-banner-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      transition: color var(--transition);
+      flex-shrink: 0;
+    }
+    .alert-banner-close:hover {
+      color: var(--text-primary);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .alert-banner { transition: none; }
+      .alert-banner-close { transition: none; }
+    }
+
     .tab-content {
       display: none;
       flex: 1;
@@ -2425,6 +2478,58 @@
     .dash-alert-type-warning { color: var(--warning); }
     .dash-alert-action { font-weight: 600; }
 
+    /* ── Credit simulator (F1.9) ── */
+    .credit-simulator {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .credit-simulator-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .credit-simulator-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+    .credit-simulator-value {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .credit-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-input);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: 8px 0 4px;
+      position: relative;
+    }
+    .credit-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-lg);
+      background: var(--accent);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .credit-bar-fill.high {
+      background: var(--warning);
+    }
+    .credit-bar-fill.critical {
+      background: var(--danger);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .credit-bar-fill { transition: none; }
+    }
+
     /* Gauge-row bar charts (HTML-based) */
     .dash-gauge-row {
       display: flex;
@@ -3239,6 +3344,11 @@
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCatalogos">Catálogos FUNDAE</button>
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabXml">Generar XML FUNDAE</button>
   </div>
+  <div id="alertBanner" class="alert-banner" role="status" aria-live="polite">
+    <span class="alert-banner-count" id="alertBannerCount">0 avisos</span>
+    <span class="alert-banner-text" id="alertBannerText"></span>
+    <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso">&#xD7;</button>
+  </div>
   <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
   <div class="app">
     <!-- LEFT PANEL -->
@@ -3821,6 +3931,7 @@
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
           <div id="dashCreditChart"></div>
           <div id="dashCreditProjection" style="margin-top: 12px;"></div>
+          <div id="dashCreditSimulator"></div>
         </div>
         <div class="dash-card" data-card-id="estado">
           <div class="dash-card-title">Acciones por estado</div>
@@ -4220,7 +4331,15 @@
         btn.classList.add('active');
         btn.setAttribute('aria-selected', 'true');
         document.getElementById(btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'tabDashboard') { showDashboardSkeleton(); requestAnimationFrame(function() { renderDashboard(); }); }
+        if (btn.dataset.tab === 'tabDashboard') {
+          showDashboardSkeleton();
+          requestAnimationFrame(function() {
+            renderDashboard();
+            var alerts = evaluateAlerts();
+            updateAlertBanner(alerts);
+            updateDashboardAlerts(alerts);
+          });
+        }
         if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
         if (btn.dataset.tab === 'tabCatalogos') {
           // Restore saved view mode
@@ -13329,6 +13448,358 @@
       return acciones;
     }
 
+    // ── Business days helper ──────────────────────────────────────────────────
+    // Returns the number of business days (Mon–Fri) between startDate and endDate.
+    // Positive = endDate is after startDate.
+    function calculateBusinessDays(startDate, endDate) {
+      var start = new Date(startDate);
+      var end = new Date(endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (start >= end) return 0;
+      var count = 0;
+      var cur = new Date(start);
+      cur.setDate(cur.getDate() + 1);
+      while (cur <= end) {
+        var dow = cur.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        cur.setDate(cur.getDate() + 1);
+      }
+      return count;
+    }
+
+    // ── Proactive alert engine ────────────────────────────────────────────────
+    // Returns array of { id, type ('danger'|'warning'), msg, action? }
+    // Rules:
+    //   1. Formation starting in ≤3 days without "Inicio comunicado" → danger
+    //   2. Formation starting in ≤5 days still "En preparación" → warning
+    //   3. RLT: rltEstado === 'Enviada' for ≥15 business days → auto-transition
+    //   4. Finished formation without "Fin comunicado" → danger
+    // Sorted: danger first, then warning.
+    function evaluateAlerts() {
+      var acciones = getCatalog('acciones');
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+      var alerts = [];
+
+      acciones.forEach(function(a) {
+        if (a.estado === 'Anulada') return;
+        var actionLabel = (a.codigo ? a.codigo + ' ' : '') + '\u00AB' + (a.nombre || '') + '\u00BB';
+
+        // Rule 1: Formation in ≤3 days without "Inicio comunicado"
+        if (a.fechaInicio && !a.comunicacionInicioEnviada) {
+          var fi = new Date(a.fechaInicio + 'T00:00:00');
+          var daysToStart = Math.ceil((fi - today) / 86400000);
+          if (daysToStart >= 0 && daysToStart <= 3) {
+            alerts.push({
+              id: 'alert_inicio_' + (a.codigo || a.nombre),
+              type: 'danger',
+              action: actionLabel,
+              msg: 'empieza en ' + daysToStart + ' d\u00EDa' + (daysToStart !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE'
+            });
+          }
+        }
+
+        // Rule 2: Formation in ≤5 days still "En preparación"
+        if (a.estado === 'En preparaci\u00F3n' && a.fechaInicio) {
+          var fi2 = new Date(a.fechaInicio + 'T00:00:00');
+          var daysToStart2 = Math.ceil((fi2 - today) / 86400000);
+          if (daysToStart2 >= 0 && daysToStart2 <= 5) {
+            // Avoid duplicate with rule 1 for same accion
+            var alreadyDanger = alerts.some(function(al) { return al.id === 'alert_inicio_' + (a.codigo || a.nombre); });
+            if (!alreadyDanger) {
+              alerts.push({
+                id: 'alert_prep_' + (a.codigo || a.nombre),
+                type: 'warning',
+                action: actionLabel,
+                msg: 'sigue en preparaci\u00F3n — inicia en ' + daysToStart2 + ' d\u00EDa' + (daysToStart2 !== 1 ? 's' : '')
+              });
+            }
+          }
+        }
+
+        // Rule 3: RLT auto-transition: rltEstado "Enviada" → "Sin objeciones (plazo vencido)"
+        // after 15 business days from rltFechaEnvio
+        if (a.rltEstado === 'Enviada' && a.rltFechaEnvio) {
+          var rltSent = new Date(a.rltFechaEnvio + 'T00:00:00');
+          var bizDays = calculateBusinessDays(rltSent, today);
+          if (bizDays >= 15) {
+            // Auto-transition
+            var allAcciones = getCatalog('acciones');
+            var idx = allAcciones.findIndex(function(x) { return x.codigo === a.codigo; });
+            if (idx >= 0) {
+              allAcciones[idx].rltEstado = 'Sin objeciones (plazo vencido)';
+              saveCatalog('acciones', allAcciones);
+            }
+          }
+        }
+
+        // Rule 4: Formation finished without "Fin comunicado"
+        if (a.fechaFin && !a.comunicacionFinEnviada) {
+          var ff = new Date(a.fechaFin + 'T00:00:00');
+          if (ff < today && a.estado !== 'Anulada') {
+            var daysPast = Math.floor((today - ff) / 86400000);
+            alerts.push({
+              id: 'alert_fin_' + (a.codigo || a.nombre),
+              type: 'danger',
+              action: actionLabel,
+              msg: 'finaliz\u00F3 hace ' + daysPast + ' d\u00EDa' + (daysPast !== 1 ? 's' : '') + ' sin comunicar fin a FUNDAE'
+            });
+          }
+        }
+      });
+
+      // Credit alerts (F1.9 integration point)
+      var totalCredito = getEmpresasGrupo().reduce(function(s, e) { return s + e.credito; }, 0);
+      if (totalCredito > 0) {
+        var bonificables = acciones.filter(function(a) { return a.bonificable === 'S\u00ED'; });
+        var consumido = bonificables.reduce(function(s, a) { return s + (Number(a.presupuesto) || 0); }, 0);
+        var pct = Math.round((consumido / totalCredito) * 100);
+        if (pct >= 95) {
+          alerts.push({
+            id: 'alert_credito_critico',
+            type: 'danger',
+            action: null,
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% — riesgo de sobreconsumo'
+          });
+        } else if (pct >= 80) {
+          alerts.push({
+            id: 'alert_credito_alto',
+            type: 'warning',
+            action: null,
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% consumido'
+          });
+        }
+
+        // Underutilization alert: Sept-Dec with <50% consumed
+        var nowMonth = today.getMonth() + 1; // 1-based
+        if (nowMonth >= 9 && nowMonth <= 12 && pct < 50) {
+          alerts.push({
+            id: 'alert_credito_infrauso',
+            type: 'warning',
+            action: null,
+            msg: 'Solo el ' + pct + '% del cr\u00E9dito FUNDAE consumido — posible infrautilizaci\u00F3n en el \u00FAltimo trimestre'
+          });
+        }
+      }
+
+      // Sort: danger first, then warning
+      var priorityOrder = { danger: 0, warning: 1 };
+      alerts.sort(function(a, b) {
+        return (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99);
+      });
+
+      return alerts;
+    }
+
+    // ── Update alert banner (tab-bar level) ───────────────────────────────────
+    function updateAlertBanner(alerts) {
+      var banner = document.getElementById('alertBanner');
+      var bannerCount = document.getElementById('alertBannerCount');
+      var bannerText = document.getElementById('alertBannerText');
+      if (!banner || !bannerCount || !bannerText) return;
+
+      // Don't show if user dismissed this evaluation round
+      if (banner.dataset.dismissed === 'true') return;
+
+      if (!alerts || alerts.length === 0) {
+        banner.classList.remove('visible');
+        return;
+      }
+
+      var hasDanger = alerts.some(function(a) { return a.type === 'danger'; });
+      var dangerCount = alerts.filter(function(a) { return a.type === 'danger'; }).length;
+      var warnCount = alerts.filter(function(a) { return a.type === 'warning'; }).length;
+
+      bannerCount.textContent = alerts.length + (alerts.length === 1 ? ' aviso' : ' avisos');
+      bannerCount.className = 'alert-banner-count' + (hasDanger ? ' has-danger' : '');
+
+      var parts = [];
+      if (dangerCount > 0) parts.push(dangerCount + ' urgente' + (dangerCount !== 1 ? 's' : ''));
+      if (warnCount > 0) parts.push(warnCount + ' advertencia' + (warnCount !== 1 ? 's' : ''));
+      // Show first alert action as preview
+      var first = alerts[0];
+      var preview = first.action ? first.action + ' — ' + first.msg : first.msg;
+      bannerText.textContent = parts.join(', ') + '. ' + preview;
+
+      banner.classList.add('visible');
+    }
+
+    // ── Update dashboard alerts widget with evaluateAlerts results ─────────────
+    function updateDashboardAlerts(alerts) {
+      var alertsWidget = document.getElementById('dashAlertsWidget');
+      var alertsBody = document.getElementById('dashAlertsBody');
+      var alertsBadge = document.getElementById('dashAlertsBadge');
+      var alertsSummary = document.getElementById('dashAlertsSummary');
+      if (!alertsWidget || !alertsBody || !alertsBadge || !alertsSummary) return;
+
+      // Load dismissed state
+      var dismissedKey = 'convocatoria_dismissed_alerts';
+      var dismissed = {};
+      try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}'); } catch(e) {}
+
+      function dismissAlert(alertId, el) {
+        dismissed[alertId] = Date.now();
+        try { localStorage.setItem(dismissedKey, JSON.stringify(dismissed)); } catch(e) {}
+        el.remove();
+        refreshCount();
+      }
+
+      function refreshCount() {
+        var remaining = alertsBody.querySelectorAll('.dash-alert').length;
+        alertsBadge.textContent = remaining;
+        alertsSummary.textContent = remaining === 1 ? 'aviso pendiente' : 'avisos pendientes';
+        alertsWidget.style.display = remaining > 0 ? '' : 'none';
+        var hasDanger = alertsBody.querySelector('.dash-alert-type-danger');
+        alertsBadge.className = 'dash-alerts-badge' + (hasDanger ? ' dash-badge-danger' : '');
+        var tabBadge = document.getElementById('tabBadgeDashboard');
+        if (tabBadge) {
+          tabBadge.textContent = remaining;
+          tabBadge.style.display = remaining > 0 ? '' : 'none';
+        }
+      }
+
+      // Clear existing engine-generated alerts (those with id starting 'alert_')
+      Array.prototype.slice.call(alertsBody.querySelectorAll('.dash-alert[data-alert-id^="alert_"]')).forEach(function(el) {
+        el.remove();
+      });
+
+      // Prepend new alerts
+      var fragment = document.createDocumentFragment();
+      alerts.forEach(function(alert) {
+        if (dismissed[alert.id]) return;
+        var div = document.createElement('div');
+        div.className = 'dash-alert';
+        div.dataset.alertId = alert.id;
+
+        var typeSpan = document.createElement('span');
+        typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
+        typeSpan.textContent = alert.type === 'danger' ? 'urgente' : 'aviso';
+        div.appendChild(typeSpan);
+
+        var textSpan = document.createElement('span');
+        if (alert.action) {
+          var bold = document.createElement('strong');
+          bold.className = 'dash-alert-action';
+          bold.textContent = alert.action;
+          textSpan.appendChild(bold);
+          textSpan.appendChild(document.createTextNode(' \u2014 ' + alert.msg));
+        } else {
+          textSpan.textContent = alert.msg;
+        }
+        div.appendChild(textSpan);
+
+        var btn = document.createElement('button');
+        btn.className = 'dash-alert-dismiss';
+        btn.textContent = '\u00D7';
+        btn.title = 'Descartar aviso';
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dismissAlert(alert.id, div);
+        });
+        div.appendChild(btn);
+
+        fragment.appendChild(div);
+      });
+      alertsBody.insertBefore(fragment, alertsBody.firstChild);
+
+      refreshCount();
+    }
+
+    // ── Credit simulator (F1.9) ───────────────────────────────────────────────
+    // Renders a consumption progress bar + rows with consumed/planned/projected.
+    function renderCreditSimulator(containerEl) {
+      if (!containerEl) return;
+      containerEl.textContent = '';
+
+      var empresas = getEmpresasGrupo();
+      var totalCredito = empresas.reduce(function(s, e) { return s + (e.credito || 0); }, 0);
+      if (totalCredito <= 0) return;
+
+      var acciones = getCatalog('acciones');
+      var bonificables = acciones.filter(function(a) { return a.bonificable === 'S\u00ED' && a.estado !== 'Anulada'; });
+
+      var consumed = 0;
+      var planned = 0;
+
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      bonificables.forEach(function(a) {
+        var budget = Number(a.presupuesto) || 0;
+        if (!budget) return;
+        var estado = a.estado || '';
+        var fechaFin = a.fechaFin ? new Date(a.fechaFin + 'T00:00:00') : null;
+
+        // Consumed = Terminada or fechaFin past
+        if (estado === 'Terminada' || (fechaFin && fechaFin < today)) {
+          consumed += budget;
+        } else {
+          // Planned = En marcha / En preparación / etc. with future date
+          planned += budget;
+        }
+      });
+
+      var projected = consumed + planned;
+      var pctConsumed = Math.round((consumed / totalCredito) * 100);
+      var pctProjected = Math.round((projected / totalCredito) * 100);
+      var pctPlanned = Math.round((planned / totalCredito) * 100);
+
+      var barClass = pctProjected >= 95 ? 'critical' : pctProjected >= 80 ? 'high' : '';
+      var barWidth = Math.min(pctProjected, 100);
+
+      var sim = document.createElement('div');
+      sim.className = 'credit-simulator';
+
+      var titleEl = document.createElement('div');
+      titleEl.className = 'credit-simulator-title';
+      titleEl.textContent = 'Simulador de consumo';
+      sim.appendChild(titleEl);
+
+      // Progress bar
+      var bar = document.createElement('div');
+      bar.className = 'credit-bar';
+      var fill = document.createElement('div');
+      fill.className = 'credit-bar-fill' + (barClass ? ' ' + barClass : '');
+      // Set initial width to 0, animate to target
+      fill.style.width = '0%';
+      bar.appendChild(fill);
+      sim.appendChild(bar);
+      // Animate after paint
+      requestAnimationFrame(function() {
+        fill.style.width = barWidth + '%';
+      });
+
+      var pctLabel = document.createElement('div');
+      pctLabel.style.cssText = 'font-size:11px; color:var(--text-muted); text-align:right; margin-bottom:8px;';
+      pctLabel.textContent = pctProjected + '% proyectado sobre cr\u00E9dito total';
+      sim.appendChild(pctLabel);
+
+      // Rows
+      function addRow(label, value, isTotal) {
+        var row = document.createElement('div');
+        row.className = 'credit-simulator-row';
+        if (isTotal) {
+          row.style.cssText = 'border-top:1px solid var(--border); margin-top:4px; padding-top:6px;';
+        }
+        var lblEl = document.createElement('span');
+        lblEl.textContent = label;
+        var valEl = document.createElement('span');
+        valEl.className = 'credit-simulator-value';
+        valEl.textContent = formatCurrency(value);
+        row.appendChild(lblEl);
+        row.appendChild(valEl);
+        sim.appendChild(row);
+      }
+
+      addRow('Cr\u00E9dito disponible', totalCredito, false);
+      addRow('Consumido (' + pctConsumed + '%)', consumed, false);
+      addRow('Planificado (' + pctPlanned + '%)', planned, false);
+      addRow('Proyectado total (' + pctProjected + '%)', projected, true);
+
+      containerEl.appendChild(sim);
+    }
+
     function renderDashboard() {
       hideDashboardSkeleton();
       autoTransitionEstados();
@@ -13671,6 +14142,9 @@
 
       updateAlertCount();
 
+      // Proactive engine alerts — overlay on top of existing dashboard alerts
+      updateDashboardAlerts(evaluateAlerts());
+
       // --- Plazos FUNDAE timeline ---
       var plazosContainer = document.getElementById('dashPlazosFundae');
       var plazosList = document.getElementById('dashPlazosList');
@@ -13875,6 +14349,9 @@
         table.appendChild(tbody);
         projContainer.appendChild(table);
       })();
+
+      // --- Credit Simulator (F1.9) ---
+      renderCreditSimulator(document.getElementById('dashCreditSimulator'));
 
       // --- Gasto por proveedor chart ---
       var gastoProveedor = {};
@@ -15796,6 +16273,44 @@
         }
       }
     });
+
+    // ═══════════════════════════════════
+    // PROACTIVE ALERT ENGINE — TRIGGERS
+    // ═══════════════════════════════════
+
+    // Alert banner close handler
+    (function() {
+      var closeBtn = document.getElementById('alertBannerClose');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          var banner = document.getElementById('alertBanner');
+          if (banner) {
+            banner.classList.remove('visible');
+            banner.dataset.dismissed = 'true';
+          }
+        });
+      }
+    })();
+
+    // Run on app load
+    (function() {
+      var initialAlerts = evaluateAlerts();
+      updateAlertBanner(initialAlerts);
+    })();
+
+    // Re-run every 60 minutes
+    setInterval(function() {
+      var banner = document.getElementById('alertBanner');
+      // Reset dismissed state on each periodic refresh so fresh alerts show
+      if (banner) banner.dataset.dismissed = '';
+      var alerts = evaluateAlerts();
+      updateAlertBanner(alerts);
+      // If dashboard tab is active, refresh dashboard alerts widget too
+      var dashTab = document.getElementById('tabDashboard');
+      if (dashTab && dashTab.classList.contains('active')) {
+        updateDashboardAlerts(alerts);
+      }
+    }, 60 * 60 * 1000);
 
   </script>
 </body>
