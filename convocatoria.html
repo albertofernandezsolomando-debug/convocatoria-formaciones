@@ -9909,10 +9909,51 @@
       return false; // not blocked
     }
 
+    // F4.10: Compare two organigram datasets by NIF
+    function compareOrganigrams(oldEmps, newEmps) {
+      var oldByNif = {}, newByNif = {};
+      (oldEmps || []).forEach(function(e) { if (e.NIF) oldByNif[e.NIF] = e; });
+      (newEmps || []).forEach(function(e) { if (e.NIF) newByNif[e.NIF] = e; });
+      var added = [], removed = [], changed = [];
+      Object.keys(newByNif).forEach(function(nif) {
+        if (!oldByNif[nif]) added.push(newByNif[nif]);
+        else if ((oldByNif[nif].DEPARTAMENTO || '') !== (newByNif[nif].DEPARTAMENTO || '')) {
+          changed.push({ nif: nif, oldDept: oldByNif[nif].DEPARTAMENTO, newDept: newByNif[nif].DEPARTAMENTO });
+        }
+      });
+      Object.keys(oldByNif).forEach(function(nif) { if (!newByNif[nif]) removed.push(oldByNif[nif]); });
+      return { added: added, removed: removed, changed: changed };
+    }
+
     function processParseResult(result, file) {
       if (result.errors.length > 0) {
         var blocked = showExcelErrorDialog(result.errors);
         if (blocked || result.employees.length === 0) return;
+      }
+
+      // F4.10: Organigram diff — compare old and new employees before replacing
+      if (state.employees && state.employees.length > 0 && result.employees.length > 0) {
+        var diff = compareOrganigrams(state.employees, result.employees);
+        var hasDiff = diff.added.length > 0 || diff.removed.length > 0 || diff.changed.length > 0;
+        if (hasDiff) {
+          var parts = [];
+          if (diff.added.length > 0) parts.push(diff.added.length + ' nueva' + (diff.added.length !== 1 ? 's' : ''));
+          if (diff.removed.length > 0) parts.push(diff.removed.length + ' eliminada' + (diff.removed.length !== 1 ? 's' : ''));
+          if (diff.changed.length > 0) parts.push(diff.changed.length + ' cambio' + (diff.changed.length !== 1 ? 's' : '') + ' de departamento');
+          showToast('Cambios en organigrama: ' + parts.join(', '), 'info', 6000);
+        }
+        // Check if removed employees have active training actions
+        if (diff.removed.length > 0) {
+          var activeActions = getCatalog('acciones').filter(function(a) { return a.estado !== 'Cerrada'; });
+          var atRisk = diff.removed.filter(function(emp) {
+            return activeActions.some(function(a) {
+              return (a.participantes || []).indexOf(emp.NIF) >= 0;
+            });
+          });
+          if (atRisk.length > 0) {
+            showToast(atRisk.length + ' persona' + (atRisk.length !== 1 ? 's' : '') + ' eliminada' + (atRisk.length !== 1 ? 's' : '') + ' tiene' + (atRisk.length !== 1 ? 'n' : '') + ' formaciones activas', 'warning', 8000);
+          }
+        }
       }
 
       state.employees = result.employees;
