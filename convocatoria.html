@@ -4114,6 +4114,17 @@
         </div>
         <div id="filterTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
         <div id="filterContainer"></div>
+        <details class="form-section" id="nifListSection" style="margin-top:10px;">
+          <summary style="font-size:13px;font-weight:600;cursor:pointer;">Selección por lista</summary>
+          <textarea class="input-field" id="nifListInput" rows="4"
+            placeholder="Pega NIFs o emails separados por comas, puntos y coma, o saltos de línea..."
+            style="font-size:12px;resize:vertical;margin-top:8px;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" id="btnApplyNifList" style="font-size:12px;flex:1;">Aplicar</button>
+            <button class="link-btn link-clear" id="btnClearNifList" style="font-size:12px;">Limpiar</button>
+          </div>
+          <div id="nifListFeedback" style="font-size:11px;color:var(--text-muted);margin-top:8px;"></div>
+        </details>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
           <span style="color: var(--border-strong); font-size: 11px;">|</span>
@@ -10324,6 +10335,56 @@
     document.getElementById('btnClearFilters').addEventListener('click', () => {
       state.activeFilters = {};
       renderFilters();
+      renderTable();
+    });
+
+    // --- NIF/Email list selection (F4.2) ---
+    document.getElementById('btnApplyNifList').addEventListener('click', function() {
+      var raw = document.getElementById('nifListInput').value.trim();
+      if (!raw) {
+        showToast('Pega al menos un NIF o email', 'warning');
+        return;
+      }
+      // Split by comma, semicolon, tab, or newline; trim and lowercase
+      var tokens = raw.split(/[,;\t\n]+/).map(function(t) { return t.trim().toLowerCase(); }).filter(function(t) { return t.length > 0; });
+      if (tokens.length === 0) {
+        showToast('No se encontraron valores válidos', 'warning');
+        return;
+      }
+      var tokenSet = new Set(tokens);
+      var matched = [];
+      var matchedTokens = new Set();
+      (state.employees || []).forEach(function(emp) {
+        var nif = (emp.NIF || '').trim().toLowerCase();
+        var email = (emp['Email trabajo'] || '').trim().toLowerCase();
+        if ((nif && tokenSet.has(nif)) || (email && tokenSet.has(email))) {
+          matched.push(emp);
+          if (nif && tokenSet.has(nif)) matchedTokens.add(nif);
+          if (email && tokenSet.has(email)) matchedTokens.add(email);
+        }
+      });
+      // Exclude everyone NOT matched
+      var matchedIds = new Set(matched.map(function(e) { return e._id; }));
+      state.excludedNIFs = new Set(
+        (state.employees || []).filter(function(e) { return !matchedIds.has(e._id); }).map(function(e) { return e._id; })
+      );
+      // Build feedback
+      var unmatched = tokens.filter(function(t) { return !matchedTokens.has(t); });
+      var feedbackEl = document.getElementById('nifListFeedback');
+      var parts = [];
+      parts.push(esc(matched.length + ' de ' + tokens.length + ' coincidencias encontradas.'));
+      if (unmatched.length > 0) {
+        parts.push('<br><span style="color:var(--warning);">Sin coincidencia: ' + unmatched.map(function(u) { return esc(u); }).join(', ') + '</span>');
+      }
+      feedbackEl.innerHTML = parts.join('');
+      renderTable();
+      showToast(matched.length + ' personas seleccionadas por lista', 'success');
+    });
+
+    document.getElementById('btnClearNifList').addEventListener('click', function() {
+      document.getElementById('nifListInput').value = '';
+      document.getElementById('nifListFeedback').innerHTML = '';
+      state.excludedNIFs = new Set();
       renderTable();
     });
 
