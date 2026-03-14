@@ -2027,6 +2027,138 @@
       font-size: 11px;
     }
 
+    /* --- Panel Calidad de Datos --- */
+    .dq-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-panel);
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .dq-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition);
+    }
+    .dq-summary:hover {
+      background: var(--accent-subtle);
+    }
+    .dq-summary-count {
+      font-weight: 600;
+      color: var(--warning);
+    }
+    .dq-body {
+      display: none;
+      padding: 8px 12px 12px;
+      border-top: 1px solid var(--border);
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .dq-panel.open .dq-body {
+      display: block;
+    }
+    .dq-group-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin: 8px 0 4px;
+    }
+    .dq-group-title:first-child {
+      margin-top: 0;
+    }
+    .dq-issue {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+      font-size: 12px;
+    }
+    .dq-issue:hover {
+      background: var(--accent-subtle);
+    }
+    .dq-issue-text {
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dq-issue-action {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 500;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+    .dq-editor {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      margin: 2px 0 4px;
+    }
+    .dq-editor input {
+      flex: 1;
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      background: var(--bg-panel);
+      color: var(--text-primary);
+    }
+    .dq-editor input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: var(--shadow-accent);
+    }
+    .dq-editor button {
+      font-size: 11px;
+      padding: 3px 8px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 500;
+    }
+    .dq-editor .dq-save {
+      background: var(--accent);
+      color: #fff;
+    }
+    .dq-editor .dq-save:hover {
+      background: var(--accent-hover);
+    }
+    .dq-editor .dq-cancel {
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .dq-editor .dq-cancel:hover {
+      background: var(--bg-input);
+    }
+    .dq-summary-arrow {
+      font-size: 10px;
+      transition: transform var(--transition);
+      margin-left: 6px;
+    }
+    .dq-panel.open .dq-summary-arrow {
+      transform: rotate(180deg);
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3617,6 +3749,7 @@
           </svg>
         </div>
         <a href="#" class="link-btn link-add" id="btnDemoData" onclick="loadDemoData(); return false;" style="margin-top:8px; display:block; text-align:center; font-size:12px;">Probar con datos de ejemplo</a>
+        <div class="dq-panel" id="dqPanel" style="display:none;"></div>
       </div>
 
       <!-- 2. Filtros -->
@@ -7244,6 +7377,210 @@
       return XLSX.utils.sheet_to_json(sheet);
     }
 
+    function collectDataQualityIssues(employees) {
+      var issues = [];
+      var nifCounts = {};
+      employees.forEach(function(e) {
+        if (e.NIF && e.NIF !== '') {
+          nifCounts[e.NIF] = (nifCounts[e.NIF] || 0) + 1;
+        }
+      });
+      employees.forEach(function(e) {
+        var name = e.Empleado || e['Nombre y apellidos'] || '(sin nombre)';
+        var email = e['Email trabajo'];
+        // no-email
+        if (!email || email === '') {
+          issues.push({ type: 'no-email', empId: e._id, name: name, field: 'Email trabajo', current: '' });
+        }
+        // invalid-email
+        if (email && email !== '' && !isValidEmail(email)) {
+          issues.push({ type: 'invalid-email', empId: e._id, name: name, field: 'Email trabajo', current: email });
+        }
+        // no-nif
+        if (!e.NIF || e.NIF === '') {
+          issues.push({ type: 'no-nif', empId: e._id, name: name, field: 'NIF', current: '' });
+        }
+        // dup-nif
+        if (e.NIF && e.NIF !== '' && nifCounts[e.NIF] > 1) {
+          issues.push({ type: 'dup-nif', empId: e._id, name: name, field: 'NIF', current: e.NIF });
+        }
+      });
+      return issues;
+    }
+
+    function applyCorrections(employees) {
+      try {
+        var corrections = JSON.parse(localStorage.getItem('convocatoria_corrections') || '{}');
+        Object.keys(corrections).forEach(function(empId) {
+          var emp = employees.find(function(e) { return e._id === empId; });
+          if (emp) {
+            var fields = corrections[empId];
+            Object.keys(fields).forEach(function(field) {
+              emp[field] = fields[field];
+            });
+          }
+        });
+      } catch(err) {}
+    }
+
+    function saveCorrection(empId, field, value) {
+      try {
+        var corrections = JSON.parse(localStorage.getItem('convocatoria_corrections') || '{}');
+        if (!corrections[empId]) corrections[empId] = {};
+        corrections[empId][field] = value;
+        localStorage.setItem('convocatoria_corrections', JSON.stringify(corrections));
+      } catch(err) {}
+    }
+
+    function renderDataQualityPanel() {
+      var panel = document.getElementById('dqPanel');
+      if (!panel) return;
+      var issues = state.dataQualityIssues;
+      if (issues.length === 0) {
+        panel.style.display = 'none';
+        while (panel.firstChild) panel.removeChild(panel.firstChild);
+        return;
+      }
+      panel.style.display = '';
+      var typeLabels = {
+        'no-email': 'Sin email',
+        'invalid-email': 'Email con formato incorrecto',
+        'no-nif': 'Sin NIF',
+        'dup-nif': 'NIF duplicado'
+      };
+      var typeOrder = ['no-email', 'invalid-email', 'no-nif', 'dup-nif'];
+      var grouped = {};
+      issues.forEach(function(issue) {
+        if (!grouped[issue.type]) grouped[issue.type] = [];
+        grouped[issue.type].push(issue);
+      });
+
+      var wasOpen = panel.classList.contains('open');
+
+      // Build panel using DOM methods + esc() for dynamic data
+      while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+      // Summary header
+      var summary = document.createElement('div');
+      summary.className = 'dq-summary';
+      var summaryText = document.createElement('span');
+      var countSpan = document.createElement('span');
+      countSpan.className = 'dq-summary-count';
+      countSpan.textContent = issues.length;
+      summaryText.appendChild(countSpan);
+      summaryText.appendChild(document.createTextNode(' aviso' + (issues.length !== 1 ? 's' : '') + ' de calidad de datos'));
+      var arrow = document.createElement('span');
+      arrow.className = 'dq-summary-arrow';
+      arrow.textContent = '\u25BC';
+      summary.appendChild(summaryText);
+      summary.appendChild(arrow);
+      panel.appendChild(summary);
+
+      // Body
+      var body = document.createElement('div');
+      body.className = 'dq-body';
+
+      typeOrder.forEach(function(type) {
+        var group = grouped[type];
+        if (!group || group.length === 0) return;
+        var title = document.createElement('div');
+        title.className = 'dq-group-title';
+        title.textContent = typeLabels[type] + ' (' + group.length + ')';
+        body.appendChild(title);
+        group.forEach(function(issue) {
+          var currentDisplay = issue.current ? issue.current : '(vac\u00edo)';
+          var row = document.createElement('div');
+          row.className = 'dq-issue';
+          row.setAttribute('data-emp-id', issue.empId);
+          row.setAttribute('data-field', issue.field);
+          row.setAttribute('data-current', issue.current);
+          var textSpan = document.createElement('span');
+          textSpan.className = 'dq-issue-text';
+          textSpan.textContent = issue.name + ' \u2014 ' + currentDisplay;
+          var actionSpan = document.createElement('span');
+          actionSpan.className = 'dq-issue-action';
+          actionSpan.textContent = 'Editar';
+          row.appendChild(textSpan);
+          row.appendChild(actionSpan);
+          body.appendChild(row);
+        });
+      });
+
+      panel.appendChild(body);
+
+      if (wasOpen) panel.classList.add('open');
+
+      // Click on summary toggles
+      summary.addEventListener('click', function() {
+        panel.classList.toggle('open');
+      });
+
+      // Click on issue opens inline editor
+      panel.querySelectorAll('.dq-issue').forEach(function(row) {
+        row.addEventListener('click', function() {
+          // Don't re-open if editor already present
+          if (row.nextElementSibling && row.nextElementSibling.classList.contains('dq-editor')) return;
+          // Remove any other open editors
+          panel.querySelectorAll('.dq-editor').forEach(function(ed) { ed.remove(); });
+
+          var empId = row.getAttribute('data-emp-id');
+          var field = row.getAttribute('data-field');
+          var current = row.getAttribute('data-current');
+
+          var editor = document.createElement('div');
+          editor.className = 'dq-editor';
+          var input = document.createElement('input');
+          input.type = 'text';
+          input.value = current;
+          input.placeholder = field === 'Email trabajo' ? 'correo@ejemplo.com' : 'NIF';
+          var saveBtn = document.createElement('button');
+          saveBtn.className = 'dq-save';
+          saveBtn.textContent = 'Guardar';
+          var cancelBtn = document.createElement('button');
+          cancelBtn.className = 'dq-cancel';
+          cancelBtn.textContent = 'Cancelar';
+
+          editor.appendChild(input);
+          editor.appendChild(saveBtn);
+          editor.appendChild(cancelBtn);
+          row.after(editor);
+
+          input.focus();
+          input.select();
+
+          cancelBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            editor.remove();
+          });
+
+          saveBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var newValue = input.value.trim();
+            // Update employee
+            var emp = state.employees.find(function(emp) { return emp._id === empId; });
+            if (emp) {
+              emp[field] = newValue;
+              saveCorrection(empId, field, newValue);
+              // Re-persist employees
+              try {
+                localStorage.setItem('convocatoria_employees', JSON.stringify(state.employees));
+              } catch(err) {}
+              // Recollect issues and re-render
+              state.dataQualityIssues = collectDataQualityIssues(state.employees);
+              renderDataQualityPanel();
+              renderTable();
+              showToast('Dato actualizado para ' + (emp.Empleado || empId), 'success', 3000);
+            }
+          });
+
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { saveBtn.click(); }
+            if (e.key === 'Escape') { cancelBtn.click(); }
+          });
+        });
+      });
+    }
+
     function filterEmployees(employees, activeFilters) {
       return employees.filter(emp => {
         return FILTER_KEYS.every(key => {
@@ -7435,6 +7772,7 @@
       sortColumn: 'Empleado',
       sortDirection: 'asc',
       queue: [],
+      dataQualityIssues: [],
     };
 
     // ═══════════════════════════════════
@@ -8147,32 +8485,16 @@
 
       state.employees = result.employees;
 
-      // Data quality report
-      const nifs = state.employees.map(function(e) { return e.NIF; });
-      const emptyNifs = nifs.filter(function(n) { return !n || n === ''; }).length;
-      const nifCounts = {};
-      nifs.forEach(function(n) { if (n) nifCounts[n] = (nifCounts[n] || 0) + 1; });
-      const dupNifs = Object.entries(nifCounts).filter(function(entry) { return entry[1] > 1; });
+      // Apply saved corrections from localStorage
+      applyCorrections(state.employees);
 
-      const emails = state.employees.map(function(e) { return e['Email trabajo']; });
-      const emptyEmails = emails.filter(function(e) { return !e || e === ''; }).length;
-      const invalidEmails = state.employees.filter(function(e) {
-        const email = e['Email trabajo'];
-        return email && email !== '' && !isValidEmail(email);
-      });
-
-      if (dupNifs.length > 0) {
-        showToast(dupNifs.length + ' NIF' + (dupNifs.length > 1 ? 's' : '') + ' duplicado' + (dupNifs.length > 1 ? 's' : '') + ' detectado' + (dupNifs.length > 1 ? 's' : ''), 'warning', 6000);
-      }
-      if (emptyNifs > 0) {
-        showToast(emptyNifs + (emptyNifs > 1 ? ' personas trabajadoras' : ' persona trabajadora') + ' sin NIF', 'warning', 5000);
-      }
-      if (invalidEmails.length > 0) {
-        showToast(invalidEmails.length + ' email' + (invalidEmails.length > 1 ? 's' : '') + ' con formato incorrecto', 'warning', 6000);
-      }
-
-      showToast(state.employees.length + ' personas trabajadoras activas' +
-        (emptyEmails > 0 ? ' · ' + emptyEmails + ' sin email' : ''), 'info', 4000);
+      // Data quality panel
+      state.dataQualityIssues = collectDataQualityIssues(state.employees);
+      var issueCount = state.dataQualityIssues.length;
+      showToast(state.employees.length + ' personas trabajadoras cargadas' +
+        (issueCount > 0 ? ' \u00b7 ' + issueCount + ' aviso' + (issueCount !== 1 ? 's' : '') + ' de calidad' : ''),
+        issueCount > 0 ? 'warning' : 'info', 4000);
+      renderDataQualityPanel();
 
       state.activeFilters = {};
       state.excludedNIFs = new Set();
