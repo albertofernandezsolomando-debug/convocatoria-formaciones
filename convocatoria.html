@@ -1246,6 +1246,7 @@
       border-color: var(--danger);
       box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
     }
+    .field-error { display: block; font-size: 11px; color: var(--danger); margin-top: 2px; }
 
     /* ── On-blur field validation ── */
     .input-field.incomplete {
@@ -2207,6 +2208,54 @@
     .fundae-readiness-list li.missing::before { background: var(--danger); }
     .fundae-readiness-link { color: var(--accent); cursor: pointer; font-size: 11px; }
     .fundae-readiness-link:hover { text-decoration: underline; }
+
+    /* --- Dialogo preview + confirmacion --- */
+    .confirm-preview { padding: 16px; border-bottom: 1px solid var(--border); }
+    .confirm-preview-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .confirm-preview-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .confirm-preview-meta span { display: inline-block; margin-right: 12px; }
+    .confirm-preview-count {
+      display: inline-block; padding: 2px 10px;
+      background: var(--accent-light); color: var(--accent);
+      border-radius: var(--radius-lg); font-weight: 600; font-size: 13px;
+    }
+    .confirm-attendee-list { margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+    .confirm-attendee-more { color: var(--text-muted); font-style: italic; }
+    .confirm-alerts { padding: 12px 16px; }
+    .confirm-alert-card {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); margin-bottom: 6px;
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .confirm-alert-icon { flex-shrink: 0; font-size: 14px; }
+    .confirm-dialog-enter { animation: confirmEnter 0.25s ease-out; }
+    @keyframes confirmEnter {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confirm-dialog-enter { animation: none; }
+    }
+
+    /* --- Resumen post-envio --- */
+    .post-send-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .post-send-check { width: 40px; height: 40px; flex-shrink: 0; }
+    .post-send-check circle { fill: var(--accent-light); }
+    .post-send-check polyline {
+      fill: none; stroke: var(--accent); stroke-width: 2.5;
+      stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 24; stroke-dashoffset: 24;
+      animation: postSendDraw 0.5s ease-out 0.2s forwards;
+    }
+    @keyframes postSendDraw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .post-send-check polyline { animation: none; stroke-dashoffset: 0; }
+    }
+    .post-send-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .post-send-details { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; padding-left: 52px; }
+    .post-send-detail-item { display: flex; align-items: center; gap: 6px; }
+    .post-send-detail-label { color: var(--text-muted); min-width: 80px; }
 
     /* --- Cuadro de Mando --- */
     .dash-container {
@@ -4703,12 +4752,23 @@
 
   <!-- Confirmation dialog -->
   <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box">
-      <h3>Confirmar convocatoria</h3>
-      <div id="confirmBody" class="dialog-body-text"></div>
-      <div class="dialog-buttons">
+    <div class="dialog-box confirm-dialog-enter" style="max-width:520px; padding:0; border-top:3px solid var(--accent);">
+      <div class="confirm-preview" id="confirmPreview"></div>
+      <div class="confirm-alerts" id="confirmAlerts"></div>
+      <div class="dialog-buttons" style="padding:12px 16px; border-top:1px solid var(--border);">
         <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
         <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post-send summary dialog -->
+  <div class="dialog-overlay" id="postSendDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box" style="max-width:460px; text-align:left;">
+      <div id="postSendContent"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" id="postSendClose">Cerrar</button>
+        <button class="btn btn-primary" id="postSendNext">Preparar siguiente</button>
       </div>
     </div>
   </div>
@@ -9983,6 +10043,73 @@
       showToast('Sync ' + accion.codigo + ': ' + parts.join(', '), 'info', 5000);
     }
 
+    function showPostSendSummary(event, attendeeCount, emails) {
+      var svgCheck = '<svg class="post-send-check" viewBox="0 0 40 40">' +
+        '<circle cx="20" cy="20" r="18"/>' +
+        '<polyline points="12,21 18,27 28,15"/>' +
+        '</svg>';
+
+      var html = '<div class="post-send-header">' + svgCheck +
+        '<span class="post-send-title">Convocatoria enviada</span></div>';
+
+      var dateStr = '';
+      if (event.date) {
+        dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+          weekday: 'long', day: 'numeric', month: 'long'
+        });
+      }
+
+      html += '<div class="post-send-details">';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Título</span><span>' + esc(event.title) + '</span></div>';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Fecha</span><span>' + esc(dateStr) + '</span></div>';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Destinatarios</span><span>' + attendeeCount + ' personas</span></div>';
+
+      // Check for FUNDAE action
+      var acciones = getCatalog('acciones');
+      var titleNorm = (event.title || '').trim().toLowerCase();
+      var accion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (accion && accion.bonificable === 'Sí' && accion.fechaInicio) {
+        var fi = new Date(accion.fechaInicio + 'T00:00:00');
+        fi.setDate(fi.getDate() - 2);
+        var deadlineStr = fi.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">FUNDAE</span><span>Comunicar inicio antes del ' + esc(deadlineStr) + '</span></div>';
+      }
+
+      // Check survey
+      if (document.getElementById('surveyCheck').checked) {
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Encuesta</span><span>Programada</span></div>';
+      }
+
+      html += '</div>';
+
+      document.getElementById('postSendContent').innerHTML = html;
+      document.getElementById('postSendDialog').classList.add('visible');
+
+      document.getElementById('postSendClose').onclick = function() {
+        document.getElementById('postSendDialog').classList.remove('visible');
+      };
+
+      document.getElementById('postSendNext').onclick = function() {
+        document.getElementById('postSendDialog').classList.remove('visible');
+        // Clear event form fields
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDate').value = '';
+        document.getElementById('eventStart').value = '10:00';
+        document.getElementById('eventEnd').value = '12:00';
+        document.getElementById('eventLocation').value = '';
+        document.getElementById('eventBody').value = '';
+        document.getElementById('eventFormador').value = '';
+        document.getElementById('eventTitle').classList.remove('error');
+        document.getElementById('eventDate').classList.remove('error');
+        // Reset excludedNIFs
+        state.excludedNIFs = new Set();
+        // Re-render attendee table
+        renderTable();
+      };
+    }
+
     function checkFundaeReadiness(eventTitle) {
       var acciones = getCatalog('acciones');
       var titleNorm = (eventTitle || '').trim().toLowerCase();
@@ -10199,16 +10326,42 @@
     }
 
     function validateEvent() {
-      const event = getCurrentEvent();
-      let valid = true;
+      var event = getCurrentEvent();
+      var valid = true;
+      document.querySelectorAll('.field-error').forEach(function(el) { el.remove(); });
+      document.querySelectorAll('.input-field.error').forEach(function(el) { el.classList.remove('error'); });
 
-      const titleEl = document.getElementById('eventTitle');
-      const dateEl = document.getElementById('eventDate');
-
-      titleEl.classList.toggle('error', !event.title);
-      dateEl.classList.toggle('error', !event.date);
-
-      if (!event.title || !event.date) valid = false;
+      var requiredFields = [
+        { id: 'eventTitle', label: 'Título es obligatorio', value: event.title },
+        { id: 'eventDate', label: 'Fecha es obligatoria', value: event.date }
+      ];
+      var firstError = null;
+      requiredFields.forEach(function(f) {
+        if (!f.value) {
+          valid = false;
+          var el = document.getElementById(f.id);
+          el.classList.add('error');
+          var hint = document.createElement('span');
+          hint.className = 'field-error';
+          hint.textContent = f.label;
+          el.parentNode.appendChild(hint);
+          if (!firstError) firstError = el;
+        }
+      });
+      if (event.startTime && event.endTime && event.startTime >= event.endTime) {
+        valid = false;
+        var endEl = document.getElementById('eventEnd');
+        endEl.classList.add('error');
+        var hint = document.createElement('span');
+        hint.className = 'field-error';
+        hint.textContent = 'Hora fin debe ser posterior a hora inicio';
+        endEl.parentNode.appendChild(hint);
+        if (!firstError) firstError = endEl;
+      }
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast('Completa los campos obligatorios', 'warning', 3000);
+      }
       return valid;
     }
 
@@ -10220,35 +10373,74 @@
       const emails = selected.map(e => e['Email trabajo']);
       const isSeries = state.seriesDates.length > 1;
 
-      // Build confirmation summary using esc() for all user-supplied strings
+      // Build preview section using esc() for all user-supplied strings
       const dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
       });
       const typeLabel = event.isTeams ? 'Teams' : 'Presencial';
-      let summary = '<strong>' + esc(event.title) + '</strong><br>';
-      summary += dateStr + ', ' + event.startTime + ' – ' + event.endTime + '<br>';
-      summary += typeLabel;
-      if (event.location && !event.isTeams) summary += ' · ' + esc(event.location);
-      summary += '<br><strong>' + selected.length + '</strong> personas destinatarias';
-      if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
+
+      var previewHtml = '<div class="confirm-preview-title">' + esc(event.title) + '</div>';
+      previewHtml += '<div class="confirm-preview-meta">';
+      previewHtml += '<span>' + dateStr + ', ' + event.startTime + ' \u2013 ' + event.endTime + '</span>';
+      previewHtml += '<span>' + typeLabel;
+      if (event.location && !event.isTeams) previewHtml += ' \u00b7 ' + esc(event.location);
+      previewHtml += '</span>';
+      if (isSeries) previewHtml += '<span>' + state.seriesDates.length + ' sesiones (serie)</span>';
+      previewHtml += '</div>';
+
+      // Attendee count chip
+      previewHtml += '<div style="margin-top:10px;">';
+      previewHtml += '<span class="confirm-preview-count">' + selected.length + ' personas destinatarias</span>';
+      previewHtml += '</div>';
+
+      // Truncated attendee list (max 5 + "y N m\u00e1s")
+      var maxShow = 5;
+      var attendeeNames = selected.map(function(e) { return e.Empleado || ''; });
+      var attendeeListHtml = '<div class="confirm-attendee-list">';
+      var showNames = attendeeNames.slice(0, maxShow);
+      attendeeListHtml += showNames.map(function(n) { return esc(n); }).join(', ');
+      if (attendeeNames.length > maxShow) {
+        attendeeListHtml += ' <span class="confirm-attendee-more">y ' + (attendeeNames.length - maxShow) + ' m\u00e1s</span>';
+      }
+      attendeeListHtml += '</div>';
+      previewHtml += attendeeListHtml;
+
+      // Build alerts section
+      var alertsHtml = '';
+
+      // Alert: >50 recipients
       if (selected.length > 50) {
-        summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 personas destinatarias)</span>';
+        alertsHtml += '<div class="confirm-alert-card">';
+        alertsHtml += '<span class="confirm-alert-icon">\ud83d\udccb</span>';
+        alertsHtml += '<span>Se copiar\u00e1n los emails al portapapeles (' + selected.length + ' personas destinatarias, >50)</span>';
+        alertsHtml += '</div>';
       }
 
-      // Schedule conflict detection — non-blocking warnings
-      const conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
+      // Alert: schedule conflicts
+      var conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
       if (conflicts.length > 0) {
-        summary += buildConflictWarningHtml(conflicts);
+        for (var ci = 0; ci < conflicts.length; ci++) {
+          var c = conflicts[ci];
+          alertsHtml += '<div class="confirm-alert-card">';
+          alertsHtml += '<span class="confirm-alert-icon">\u26a0\ufe0f</span>';
+          alertsHtml += '<span>' + esc(String(c.emails.length)) + ' personas ya convocadas a \u00ab' + esc(c.title) + '\u00bb el mismo d\u00eda/hora</span>';
+          alertsHtml += '</div>';
+        }
       }
 
-      // FUNDAE readiness check — non-blocking warnings
-      const fundaeCheck = checkFundaeReadiness(event.title);
+      // Alert: FUNDAE warnings
+      var fundaeCheck = checkFundaeReadiness(event.title);
       if (fundaeCheck.found && fundaeCheck.warnings.length > 0) {
-        summary += buildFundaeWarningHtml(fundaeCheck.warnings);
+        var fundaeItems = fundaeCheck.warnings.map(function(w) { return esc(w); }).join('; ');
+        alertsHtml += '<div class="confirm-alert-card">';
+        alertsHtml += '<span class="confirm-alert-icon">\ud83d\udcd1</span>';
+        alertsHtml += '<span>FUNDAE: ' + fundaeItems + '</span>';
+        alertsHtml += '</div>';
       }
 
-      // Note: innerHTML is used with esc() for all user-supplied values — safe from XSS
-      document.getElementById('confirmBody').innerHTML = summary;
+      // All user-supplied values sanitized with esc() — safe for innerHTML
+      document.getElementById('confirmPreview').innerHTML = previewHtml;
+      document.getElementById('confirmAlerts').innerHTML = alertsHtml;
       document.getElementById('confirmDialog').classList.add('visible');
 
       document.getElementById('confirmProceed').onclick = () => {
@@ -10273,6 +10465,8 @@
           }
           // Sync with matching acción formativa
           syncConvocatoriaWithAccion(event, emails);
+          // Show post-send summary
+          showPostSendSummary(event, selected.length, emails);
         }
 
         // Duplicate detection
