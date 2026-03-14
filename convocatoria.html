@@ -3747,12 +3747,18 @@
       padding-bottom: 8px;
     }
 
-    /* ── Excluded rows ── */
-    .attendee-row.excluded td {
+    /* --- Animacion exclusion tabla --- */
+    tr.row-excluded td {
       opacity: 0.4;
       text-decoration: line-through;
+      transition: opacity 0.2s ease, text-decoration 0.2s ease;
     }
-    .attendee-row.excluded:hover td {
+    tr:not(.row-excluded) td {
+      opacity: 1;
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+    tr.row-excluded:hover td {
       opacity: 0.6;
     }
 
@@ -9737,7 +9743,7 @@
         const hasEmail = isValidEmail(emp['Email trabajo']);
         const isExcluded = state.excludedNIFs.has(emp._id);
         const isExternal = emp._source === 'external';
-        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' excluded' : '');
+        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
         const sourceBadge = isExternal ? ' <span class="chip" style="background:var(--accent-light);">ext</span>' : '';
 
         return '<tr class="' + rowClass + '">' +
@@ -9761,10 +9767,10 @@
           var row = cb.closest('tr');
           if (cb.checked) {
             state.excludedNIFs.delete(cb.dataset.id);
-            if (row) row.classList.remove('excluded');
+            if (row) row.classList.remove('row-excluded');
           } else {
             state.excludedNIFs.add(cb.dataset.id);
-            if (row) row.classList.add('excluded');
+            if (row) row.classList.add('row-excluded');
           }
           updateCounts();
         });
