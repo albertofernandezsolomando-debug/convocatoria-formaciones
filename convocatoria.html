@@ -5931,6 +5931,16 @@
           parts.push('</div>');
         });
       }
+
+      // RLT Balance section
+      parts.push('<div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">');
+      parts.push('<span style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">Informes RLT</span>');
+      parts.push('<div style="display:flex; gap:6px; align-items:center;">');
+      parts.push('<input type="number" id="rltBalanceYear" value="' + new Date().getFullYear() + '" min="2000" max="2099" style="width:80px; font-size:12px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:var(--font-body);">');
+      parts.push('<button class="btn btn-secondary" id="btnRLTBalance" style="font-size:11px; padding:5px 10px;">Balance anual RLT</button>');
+      parts.push('</div>');
+      parts.push('</div>');
+
       parts.push('</div>');
 
       // Right panel: matrix table
@@ -6072,6 +6082,20 @@
             if (nif) affectedNIFs.add(nif);
           });
           showToast(affectedNIFs.size + ' persona' + (affectedNIFs.size !== 1 ? 's' : '') + ' trabajadora' + (affectedNIFs.size !== 1 ? 's' : '') + ' afectada' + (affectedNIFs.size !== 1 ? 's' : ''), 'info');
+        });
+      }
+
+      // Bind: RLT Balance button
+      var btnRLTBalance = document.getElementById('btnRLTBalance');
+      if (btnRLTBalance) {
+        btnRLTBalance.addEventListener('click', function() {
+          var yearInput = document.getElementById('rltBalanceYear');
+          var year = yearInput ? parseInt(yearInput.value, 10) : new Date().getFullYear();
+          if (isNaN(year) || year < 2000 || year > 2099) {
+            showToast('Introduce un año válido', 'warning');
+            return;
+          }
+          generateRLTBalance(year);
         });
       }
     }
@@ -18089,6 +18113,114 @@
         + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>'
         + '<h2>Participacion por departamento (Top 10)</h2>'
         + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    // ═══════════════════════════════════
+    // RLT ANNUAL TRAINING BALANCE
+    // ═══════════════════════════════════
+
+    function generateRLTBalance(year) {
+      year = year || new Date().getFullYear();
+      var allActions = getCatalog('acciones') || [];
+      var actions = allActions.filter(function(a) {
+        return a.fechaInicio && a.fechaInicio.startsWith(String(year));
+      });
+
+      if (actions.length === 0) {
+        showToast('No hay acciones formativas para el ejercicio ' + year, 'warning');
+        return;
+      }
+
+      // KPIs
+      var totalActions = actions.length;
+      var totalHours = actions.reduce(function(s, a) {
+        return s + (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+      }, 0);
+      var uniqueNifs = new Set();
+      actions.forEach(function(a) {
+        (a.participantes || []).forEach(function(nif) { uniqueNifs.add(nif); });
+      });
+      var totalParticipants = uniqueNifs.size;
+
+      // Breakdown by modalidad (training type)
+      var byModalidad = {};
+      actions.forEach(function(a) {
+        var m = a.modalidad || 'Sin definir';
+        if (!byModalidad[m]) byModalidad[m] = { count: 0, hours: 0, participants: new Set() };
+        byModalidad[m].count++;
+        byModalidad[m].hours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+        (a.participantes || []).forEach(function(nif) { byModalidad[m].participants.add(nif); });
+      });
+
+      var modRows = Object.keys(byModalidad).map(function(k) {
+        var d = byModalidad[k];
+        return '<tr>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">' + esc(k) + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.count + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.hours + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:center;">' + d.participants.size + '</td>' +
+          '</tr>';
+      }).join('');
+
+      // Full listing table
+      var listRows = actions.map(function(a) {
+        var horas = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+        var nPart = (a.participantes || []).length;
+        return '<tr>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.codigo || '') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.nombre || '') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + esc(a.modalidad || '-') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + horas + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px; text-align:center;">' + nPart + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.fechaInicio || '-') + '</td>' +
+          '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:11px;">' + esc(a.fechaFin || '-') + '</td>' +
+          '</tr>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes para generar el balance', 'warning'); return; }
+
+      w.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">'
+        + '<title>Balance RLT ' + year + '</title>'
+        + '<style>'
+        + '@page{size:A4;margin:20mm}'
+        + 'body{font-family:"Inter",-apple-system,system-ui,sans-serif;color:#0f172a;font-size:12px;line-height:1.6;max-width:800px;margin:0 auto;padding:20mm}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.ht{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}'
+        + '.hs{font-size:13px;color:#475569;margin-top:4px}'
+        + '.hb{font-size:11px;color:#94a3b8}'
+        + '.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}'
+        + '.kpi{background:#f8fafc;border-radius:8px;padding:16px;text-align:center;border-left:3px solid #4F46E5}'
+        + '.kv{font-size:28px;font-weight:700;color:#4F46E5}'
+        + '.kl{font-size:11px;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}'
+        + 'h2{font-size:14px;font-weight:600;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'th.center{text-align:center}'
+        + '.signatures{display:flex;justify-content:space-between;margin-top:80px;page-break-inside:avoid}'
+        + '.sig-block{width:45%;text-align:center}'
+        + '.sig-line{border-top:1px solid #1e293b;margin-top:60px;padding-top:8px;font-size:11px;color:#475569}'
+        + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '@media print{body{padding:0;margin:20mm}}'
+        + '</style></head><body>'
+        + '<div class="header"><div><div class="ht">Balance de Acciones Formativas</div><div class="hs">Ejercicio ' + esc(String(year)) + '</div></div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="kpis">'
+        + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones formativas</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas totales</div></div>'
+        + '<div class="kpi"><div class="kv">' + totalParticipants + '</div><div class="kl">Participantes unicos</div></div>'
+        + '</div>'
+        + '<h2>Desglose por modalidad</h2>'
+        + '<table><thead><tr><th>Modalidad</th><th class="center">Acciones</th><th class="center">Horas</th><th class="center">Participantes</th></tr></thead><tbody>' + modRows + '</tbody></table>'
+        + '<h2>Relacion de acciones formativas</h2>'
+        + '<table><thead><tr><th>Codigo</th><th>Nombre</th><th class="center">Modalidad</th><th class="center">Horas</th><th class="center">Participantes</th><th>F. inicio</th><th>F. fin</th></tr></thead><tbody>' + listRows + '</tbody></table>'
+        + '<div class="signatures">'
+        + '<div class="sig-block"><div class="sig-line">Por la empresa</div></div>'
+        + '<div class="sig-block"><div class="sig-line">Por la Representacion Legal de los Trabajadores</div></div>'
+        + '</div>'
         + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
         + '</body></html>');
       w.document.close();
