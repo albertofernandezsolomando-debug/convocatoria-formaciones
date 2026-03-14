@@ -5215,6 +5215,49 @@
       if (this.files[0]) { importCatalogExcel(this.files[0]); this.value = ''; }
     });
 
+    function duplicateAction(codigo) {
+      var allAcciones = getCatalog('acciones');
+      var original = allAcciones.find(function(a) { return a.codigo === codigo; });
+      if (!original) {
+        showToast('Acción no encontrada', 'error');
+        return;
+      }
+
+      // Generate new codigo: max existing + 1
+      var maxCodigo = 0;
+      for (var i = 0; i < allAcciones.length; i++) {
+        var c = parseInt(allAcciones[i].codigo, 10);
+        if (!isNaN(c) && c > maxCodigo) maxCodigo = c;
+      }
+      var newCodigo = String(maxCodigo + 1);
+
+      // Deep clone
+      var copy = JSON.parse(JSON.stringify(original));
+
+      // Assign new pk
+      copy.codigo = newCodigo;
+
+      // Prefix nombre
+      copy.nombre = 'Copia de ' + (original.nombre || 'Sin título');
+
+      // Clear state/dates/participants
+      copy.participantes = [];
+      copy.notas = [];
+      copy.asistencia = { sesiones: [], registro: {} };
+      copy.fechaInicio = '';
+      copy.fechaFin = '';
+      copy.estado = 'En preparación';
+      copy.grupoAccion = '';
+      copy.codigoGrupo = '';
+      copy.createdAt = new Date().toISOString();
+
+      upsertCatalogRecord('acciones', 'codigo', copy);
+      catalogState.selectedPK = newCodigo;
+      renderCatalogList();
+      renderCatalogForm();
+      showToast('Acción duplicada: "' + esc(copy.nombre) + '"', 'success');
+    }
+
     function renderCatalogForm() {
       const panel = document.getElementById('catalogFormPanel');
       const key = catalogState.activeCatalog;
@@ -5758,29 +5801,7 @@
         var duplicateBtn = document.getElementById('btnDuplicateCatalog');
         if (duplicateBtn) {
           duplicateBtn.addEventListener('click', function() {
-            var allAcciones = getCatalog('acciones');
-            var maxCodigo = 0;
-            for (var i = 0; i < allAcciones.length; i++) {
-              var c = parseInt(allAcciones[i].codigo, 10);
-              if (!isNaN(c) && c > maxCodigo) maxCodigo = c;
-            }
-            var newCodigo = String(maxCodigo + 1);
-            var clone = JSON.parse(JSON.stringify(record));
-            clone.codigo = newCodigo;
-            clone.participantes = [];
-            clone.notas = [];
-            clone.asistencia = { sesiones: [], registro: {} };
-            clone.estado = 'Pendiente';
-            clone.fechaInicio = '';
-            clone.fechaFin = '';
-            clone.grupoAccion = '';
-            clone.codigoGrupo = '';
-            var cfg = CATALOG_CONFIG['acciones'];
-            upsertCatalogRecord('acciones', cfg.pk, clone);
-            catalogState.selectedPK = newCodigo;
-            renderCatalogList();
-            renderCatalogForm();
-            showToast('Acción duplicada como código ' + newCodigo, 'success');
+            duplicateAction(record.codigo);
           });
         }
 
