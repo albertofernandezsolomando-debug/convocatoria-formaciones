@@ -11,24 +11,20 @@
 
 ### Nombre del producto
 
-> **FormacionES**
+> **Formación_AGORA**
 
 **Justificacion del nombre:**
 
-- **"Formacion"** identifica el dominio: gestion de formacion corporativa.
-- **"ES"** en mayusculas funciona como doble sentido deliberado: el plural natural de "formacion" y el codigo de pais de Espana (donde FUNDAE, la RLT y la normativa PRL/LOPD son contexto legal obligatorio).
+- **"Formación"** identifica el dominio: gestion de formacion corporativa.
+- **"AGORA"** como espacio donde confluyen todos los flujos de formacion. El guion bajo da caracter tecnico/moderno.
 - No se limita a FUNDAE ni a convocatorias. Tampoco es generico hasta ser vacio.
 - Sustituye a "Convocatoria de Formaciones" (describia una funcionalidad, no un producto) y a "Formaciones FUNDAE" (limitaba la identidad a un solo flujo regulatorio).
-- Aplicacion practica: `<title>FormacionES</title>`, `.app-header-title` muestra "FormacionES".
-
-### Identidad en una frase
-
-> **"La herramienta de escritorio que permite a las gestoras de formacion cubrir todo el ciclo — desde la deteccion de necesidades hasta el reporting a Direccion, incluyendo el cumplimiento normativo FUNDAE — sin necesitar nada de TI."**
+- Aplicacion practica: `<title>Formación_AGORA</title>`, `.app-header-title` muestra "Formación_AGORA".
 
 ### Desglose
 
 - **Herramienta de escritorio:** No es un SaaS ni una plataforma departamental. Es un fichero HTML que funciona abriendo en el navegador. Sin servidores, sin licencias, sin TI.
-- **Gestoras de formacion:** La usuaria principal es Laura, 38 anos, responsable de formacion en un grupo empresarial con 4-6 sociedades y 500-2.000 empleados. No es directora de RRHH ni desarrolladora.
+- **Gestoras de formacion:** La usuaria principal es Laura, 38 anos, responsable de formacion en un grupo empresarial con 4-6 sociedades y 500-2.000 personas trabajadoras. No es directora de RRHH ni desarrolladora.
 - **Todo el ciclo de formacion:** No solo el ciclo FUNDAE. Cubre el ciclo completo de gestion de formacion corporativa: deteccion de necesidades, planificacion, sourcing, logistica, convocatoria, ejecucion, evaluacion, compliance y reporting. FUNDAE es un flujo regulatorio critico dentro de ese ciclo, no el unico.
 - **Cumplimiento normativo:** FUNDAE (formacion bonificada), comunicacion a la RLT, formacion obligatoria (PRL, LOPD, acoso), documentacion para inspeccion — el departamento de formacion tiene obligaciones legales que la herramienta cubre de forma nativa.
 - **Sin necesitar nada de TI:** Zero-deployment, zero-cost, datos en localStorage. La autonomia es la ventaja competitiva principal.
@@ -51,9 +47,9 @@ La herramienta cubre las 7 fases del ciclo de gestion de formacion corporativa:
 | 2. Planificacion y presupuesto | Baja | Media-Alta — plan anual, simulacion de credito con alertas de umbral |
 | 3. Diseno y sourcing | Media-Baja | Media — catalogo de proveedores con evaluacion |
 | 4. Logistica y convocatoria | **Alta** (core existente) | **Muy alta** — lotes, recordatorios automaticos via PA, listas de espera, sync automatica con catalogo |
-| 5. Ejecucion y seguimiento | Media | **Muy alta** — asistencia, hojas de firmas auto-generadas, certificados, semaforo FUNDAE, motor de alertas |
+| 5. Ejecucion y seguimiento | Media | **Muy alta** — asistencia, hojas de firmas auto-generadas, certificados, checklist readiness FUNDAE, motor de alertas |
 | 6. Evaluacion | Media-Baja | Media-Alta — Kirkpatrick L1-L2 integrado con encuestas + reenvio automatico |
-| 7. Reporting y compliance | Media | **Muy alta** — RLT auto-generada, inspeccion, informe Direccion, compliance training con caducidades |
+| 7. Reporting y compliance | Media | **Muy alta** — RLT auto-generada, inspeccion, informe Direccion, formacion obligatoria con caducidades |
 
 Ademas, cubre los flujos especificos de Espana:
 - **Ciclo FUNDAE completo** (comunicacion inicio/fin, XML con auto-relleno de datos de grupo, bonificacion, credito con simulacion)
@@ -86,25 +82,25 @@ Estos son los terminos que se usaran en la interfaz, el codigo y la documentacio
 
 | Concepto | Termino en la UI | NO usar | Razon |
 |----------|-----------------|---------|-------|
-| La aplicacion | **FormacionES** | "Convocatoria de Formaciones", "Formaciones FUNDAE" | Nombre decidido; refleja alcance completo |
-| Persona del organigrama Excel | **Empleado/a** | "Trabajador/a" | Es el termino del campo Excel |
-| Empleado/a seleccionado/a para una convocatoria | **Destinatario/a** | "Asistente" en contexto de envio | "Asistente" confunde con "asistio"; "Participante" es FUNDAE |
-| Empleado/a registrado/a en accion FUNDAE | **Participante** | "Asistente" en contexto FUNDAE | Es el termino oficial FUNDAE. Solo en catalogos, XML y dashboard. |
+| La aplicacion | **Formación_AGORA** | "Convocatoria de Formaciones", "Formaciones FUNDAE" | Nombre decidido; refleja alcance completo |
+| Persona del organigrama Excel | **Persona trabajadora** | "Trabajador/a", "Empleado/a" | Termino inclusivo y neutral |
+| Persona trabajadora seleccionada para una convocatoria | **Persona destinataria** | "Asistente" en contexto de envio | "Asistente" confunde con "asistio"; "Participante" es FUNDAE |
+| Persona trabajadora registrada en accion FUNDAE | **Participante** | "Asistente" en contexto FUNDAE | Es el termino oficial FUNDAE. Solo en catalogos, XML y dashboard. |
 | Acto de enviar invitaciones | **Convocar** / **Convocatoria** | — | Se mantiene el verbo del dominio. |
-| Email que recibe el empleado | **Invitacion** | "Convocatoria" cuando se refiere al email | Distingue el email del acto de convocar. |
+| Email que recibe la persona trabajadora | **Invitacion** | "Convocatoria" cuando se refiere al email | Distingue el email del acto de convocar. |
 | Registro del catalogo | **Accion formativa** | "Formacion" (cuando hay ambiguedad), "Curso" | Termino oficial FUNDAE. |
 | Evento con fecha y hora | **Sesion** | "Evento" (cuando hay ambiguedad) | Distingue la sesion puntual de la accion formativa completa. |
 | Datos del organigrama | **Censo** / **Organigrama** | "Datos", "Excel" (cuando se refiere al contenido) | "Datos" es demasiado generico. |
 | Proveedor de formacion | **Proveedor** | "Empresa formadora" | Consistencia. |
 | Persona que imparte la formacion | **Formador/a** | "Tutor/a" en la UI general | FUNDAE usa "tutor/a", pero la UI puede ser mas natural. Mantener "tutor/a" solo en contexto XML. |
-| Formacion obligatoria por ley | **Formacion de compliance** | "Formacion legal", "Formacion regulatoria" | Termino establecido internacionalmente |
+| Formacion obligatoria por ley | **Formacion obligatoria** | "Formacion legal", "Formacion regulatoria", "Formacion de compliance" | Termino directo y comprensible en el contexto normativo espanol |
 | Representacion Legal de los Trabajadores | **RLT** | "Sindicatos", "Comite de empresa" | Termino legal correcto, cubre todas las formas de representacion |
 | Vencimiento de una formacion obligatoria | **Caducidad** | "Expiracion", "Vencimiento" | Termino natural en espanol para este contexto |
 | Conjunto de documentos para la ITSS | **Dossier de inspeccion** | "Expediente", "Carpeta" | Distingue claramente la funcion |
 | Informe periodico para Direccion | **Informe de ejecucion** | "Report", "Dashboard export" | Termino que Laura usa naturalmente |
 | Plan anual aprobado por Direccion | **Plan de formacion** | "Roadmap", "Planificacion" | Termino de RRHH establecido |
 
-**Regla de transicion semantica:** Un empleado se convierte en destinatario al seleccionarlo para una convocatoria. Se convierte en participante al registrarlo en una accion formativa del catalogo FUNDAE. Esta transicion refleja la transicion funcional real: Convocatoria -> Catalogo.
+**Regla de transicion semantica:** Una persona trabajadora se convierte en persona destinataria al seleccionarla para una convocatoria. Se convierte en participante al registrarla en una accion formativa del catalogo FUNDAE. Esta transicion refleja la transicion funcional real: Convocatoria -> Catalogo.
 
 ---
 
@@ -120,7 +116,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 1. **Preparar, no ejecutar.** La herramienta prepara todo; Laura decide y confirma. Esto mantiene la confianza y el control.
 2. **Alertar, no bloquear.** Los avisos son informativos, no modales. Laura puede ignorar una alerta si sabe que no aplica (ej: accion no bonificada, no necesita XML).
-3. **Progresivo, no abrumador.** Las automatizaciones se activan a medida que Laura introduce datos. Una accion con solo un titulo no genera alertas. Una accion con fechas, participantes y datos FUNDAE genera un semaforo completo.
+3. **Progresivo, no abrumador.** Las automatizaciones se activan a medida que Laura introduce datos. Una accion con solo un titulo no genera alertas. Una accion con fechas, participantes y datos FUNDAE genera un checklist de readiness completo.
 4. **Visible, no oculto.** Cada accion automatica produce feedback visible: un toast, un cambio de estado, un indicador visual. Laura siempre sabe que ha hecho la herramienta.
 5. **Determinista, no probabilistico.** Cero IA, cero heuristicas, cero "quizas". Si la regla se cumple, la accion se ejecuta. Si no se cumple, no se ejecuta. Siempre.
 6. **Offline-first, PA-second.** Todo lo que se puede hacer en el navegador se hace en el navegador. Solo se usa Power Automate para lo que REQUIERE un servidor: enviar emails, esperar hasta una fecha futura, interactuar con APIs externas.
@@ -190,7 +186,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F0.2 — Unificar terminologia en la interfaz
 
-**Que:** Aplicar el glosario vinculante en toda la UI: sustituir "asistentes" por "destinatarios" en el flujo de convocatoria, "trabajadores" por "empleados", etc. Actualizar tooltips, labels, mensajes de toast, textos de ayuda.
+**Que:** Aplicar el glosario vinculante en toda la UI: sustituir "asistentes" por "personas destinatarias" en el flujo de convocatoria, "trabajadores" por "personas trabajadoras", etc. Actualizar tooltips, labels, mensajes de toast, textos de ayuda.
 
 **Por que:** La terminologia inconsistente dice "esto lo hicieron personas distintas que no se hablan". La consistencia terminologica es la fractura de identidad mas visible y la mas facil de cerrar.
 
@@ -216,7 +212,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F0.4 — Renombrar la aplicacion
 
-**Que:** Cambiar "Convocatoria de Formaciones" por "FormacionES" en `<title>` (linea 6), `.app-header-title` y cualquier referencia visible.
+**Que:** Cambiar "Convocatoria de Formaciones" por "Formación_AGORA" en `<title>` (linea 6), `.app-header-title` y cualquier referencia visible.
 
 **Por que:** El nombre actual describe una funcionalidad (convocar), no un producto. El nuevo nombre refleja el alcance completo (gestion integral de formacion) sin limitarse a FUNDAE. Con la vision amplia que cubre las 7 fases del ciclo L&D, un nombre que solo diga "convocatoria" o "FUNDAE" subestima la herramienta.
 
@@ -315,11 +311,11 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F1.5 — Animacion de exito en upload-zone
 
-**Que:** Al cargar un archivo exitosamente, aplicar un "pulso de exito" CSS (scale breve + ring que se expande y desvanece). El icono de check se "dibuja" con animacion `stroke-dasharray`/`stroke-dashoffset`.
+**Que:** Al cargar un archivo exitosamente, check SVG animado con `stroke-dasharray`/`stroke-dashoffset`. Sin ring expansivo, sin scale.
 
-**Por que:** La carga del Excel es el primer momento significativo de la experiencia. Un pulso de exito transforma un evento funcional en un momento memorable.
+**Por que:** La carga del Excel es el primer momento significativo de la experiencia. Stripe payment success — un gesto limpio, una sola animacion.
 
-**Como:** Animacion CSS `@keyframes uploadSuccess` con `scale(1.02)` + `box-shadow` ring. Animacion SVG draw para el check.
+**Como:** Animacion SVG draw para el check con `stroke-dasharray`/`stroke-dashoffset`. Sin `scale()`, sin `box-shadow` ring.
 
 **Fase:** 1.
 **Esfuerzo:** Bajo (1h).
@@ -397,15 +393,15 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F2.1 — Panel persistente de calidad de datos con edicion in situ
 
-**Que:** Al cargar el Excel, mostrar un panel colapsable (no toasts efimeros) con todos los problemas detectados: emails invalidos, NIFs duplicados, empleados sin email. Cada problema es clickable y abre un mini-editor inline para corregir el dato. Las correcciones se aplican a los datos en memoria y se persisten en localStorage.
+**Que:** Al cargar el Excel, mostrar un panel colapsable (no toasts efimeros) con todos los problemas detectados: emails invalidos, NIFs duplicados, personas trabajadoras sin email. Cada problema es clickable y abre un mini-editor inline para corregir el dato. Las correcciones se aplican a los datos en memoria y se persisten en localStorage.
 
 **Por que:** Laura pierde informacion critica porque los toasts desaparecen en 4-6 segundos. El panel transforma la incertidumbre en confianza. La edicion in situ elimina el bucle frustrante Excel -> corregir -> recargar -> perder filtros.
 
 **Automatizacion (A13 — Panel calidad de datos):**
 - **Trigger:** Carga de Excel (ya se ejecutan las validaciones; la diferencia es como se muestra el resultado).
 - **Acciones automaticas:**
-  - Ejecutar validaciones sobre todos los empleados: emails invalidos, NIFs duplicados, empleados sin email, NIFs con formato invalido, empleados sin departamento, empleados sin puesto.
-  - Generar resumen de calidad: "347 empleados cargados, 12 sin email, 3 NIFs duplicados, 2 emails invalidos".
+  - Ejecutar validaciones sobre todas las personas trabajadoras: emails invalidos, NIFs duplicados, personas sin email, NIFs con formato invalido, personas sin departamento, personas sin puesto.
+  - Generar resumen de calidad: "347 personas trabajadoras cargadas, 12 sin email, 3 NIFs duplicados, 2 emails invalidos".
   - Mostrar panel colapsable PERSISTENTE (no toast): barra de resumen siempre visible ("12 avisos de calidad"), click para expandir lista detallada de problemas, cada problema clickable ("Maria Garcia (sin email)" → resaltar en tabla).
 - **Lo que queda manual:** Laura decide que corregir y cuando. Laura puede editar in situ o corregir en el Excel fuente.
 - **Implementacion:** JS nativo. Al completar el parseo, recopilar problemas en `state.dataQualityIssues`. Renderizar panel lateral colapsable (reutilizar estructura de `dash-alerts-widget`) con problemas agrupados por tipo. Mini-editor inline: campo editable, boton guardar, boton cancelar. Correcciones en `convocatoria_corrections` (localStorage), indexadas por NIF. Al recargar Excel, intentar reaplicar.
@@ -416,27 +412,26 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 ---
 
-#### F2.2 — Semaforo de readiness FUNDAE con data storytelling
+#### F2.2 — Panel inline de readiness FUNDAE con checklist narrativo
 
-**Que:** Indicador visual rojo/amarillo/verde de "readiness para FUNDAE" en la ficha de cada accion formativa Y como panel superior persistente en la pestana de generacion XML. Con texto narrativo generado: "Faltan 3 datos para generar el XML: NSS de 2 participantes y el telefono del responsable. [Completar datos]".
+**Que:** Panel inline dentro de la pestana XML que, al seleccionar una accion formativa, muestra un checklist narrativo con los datos faltantes: "Faltan 3 datos: NSS de 2 participantes y telefono del responsable. [Completar datos]". Sin indicador de color en la ficha del catalogo — solo aparece al ir a generar XML.
 
-**Por que:** El peak negativo mas intenso del mapa emocional de Laura es descubrir datos incompletos al final, despues de 10 minutos de configuracion. Este semaforo invierte el flujo: muestra el estado ANTES de intentar generar. El data storytelling lo hace accionable en vez de solo informativo.
+**Por que:** El peak negativo mas intenso del mapa emocional de Laura es descubrir datos incompletos al final, despues de 10 minutos de configuracion. Este panel invierte el flujo: muestra el estado ANTES de intentar generar. Texto > color. Patron Linear: el data storytelling narrativo comunica urgencia sin colores semafóricos.
 
-**Automatizacion (A4 — Semaforo de readiness y validacion progresiva):**
-- **Trigger:** Apertura de ficha de accion formativa + apertura del generador XML + vista lista del catalogo.
+**Automatizacion (A4 — Panel de readiness y validacion progresiva):**
+- **Trigger:** Apertura del generador XML + seleccion de accion formativa en la pestana XML.
 - **Acciones automaticas:**
   - Ejecutar `checkFundaeReadiness(action)`:
-    - Verificar datos de la accion (titulo, fechas, modalidad, horas) → %
-    - Verificar datos del centro (si presencial: nombre, direccion, CIF) → %
-    - Verificar datos del tutor (nombre, NIF, email) → %
-    - Verificar datos de participantes (NIF/NIE valido, NSS, grupo cotizacion, tipo documento) → %
-    - Verificar comunicacion RLT (si aplica) → check
-    - Calcular puntuacion global: 0-100%
-  - Mostrar indicador visual: < 50% → Rojo, 50-90% → Amarillo, > 90% → Verde
-  - Lista expandible con cada item OK/FALTA y link clickable al campo que falta (scroll + focus)
-  - En vista lista del catalogo: columna de semaforo (punto de color)
+    - Verificar datos de la accion (titulo, fechas, modalidad, horas)
+    - Verificar datos del centro (si presencial: nombre, direccion, CIF)
+    - Verificar datos del tutor (nombre, NIF, email)
+    - Verificar datos de participantes (NIF/NIE valido, NSS, grupo cotizacion, tipo documento)
+    - Verificar comunicacion RLT (si aplica)
+  - Generar texto narrativo: "Faltan N datos: [lista legible]. [Completar datos]"
+  - Si todo completo: "Todos los datos listos para generar XML."
+  - Cada item faltante es un link clickable al campo que falta (scroll + focus)
 - **Lo que queda manual:** Laura completa los datos faltantes. Laura decide cuando generar el XML.
-- **Implementacion:** JS nativo. Refactorizar la validacion existente del generador XML para que sea reutilizable. Devuelve objeto `{ score, items: [{field, status, message}] }`. Nuevo componente visual: barra de progreso + lista expandible en la ficha. En vista lista: columna con `<span class="readiness-dot">`.
+- **Implementacion:** JS nativo. Refactorizar la validacion existente del generador XML para que sea reutilizable. Devuelve objeto `{ complete, items: [{field, status, message}] }`. Nuevo componente visual: panel de texto narrativo inline en la pestana XML con lista expandible de items faltantes.
 
 **Fase:** 2.
 **Esfuerzo:** Medio (4-5h).
@@ -446,13 +441,13 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F2.3 — Dialogo de preview + confirmacion fusionado
 
-**Que:** Transformar el dialogo de confirmacion actual en un dialogo de preview+confirmacion de dos secciones. Arriba: preview del email (titulo, fecha, ubicacion, lista de destinatarios truncada). Abajo: avisos (conflictos, FUNDAE, encuesta). Tratamiento visual premium: entrada con `scale(0.9->1)`, `backdrop-filter: blur(8px)`, borde superior de 3px en `--accent`.
+**Que:** Transformar el dialogo de confirmacion actual en un dialogo de preview+confirmacion de dos secciones. Arriba: preview del email (titulo, fecha, ubicacion, lista de personas destinatarias truncada). Abajo: avisos (conflictos, FUNDAE, encuesta). Tratamiento visual premium: entrada con `scale(0.9->1)`, `backdrop-filter: blur(8px)`, borde superior de 3px en `--accent`.
 
 **Por que:** Dos propuestas separadas (rediseno de dialogo + vista previa) se fusionan para evitar que Laura vea la misma informacion dos veces. Confirmar la convocatoria ES el pico de la experiencia (regla pico-final). Resuelve el miedo a errores: Laura ve exactamente que se va a enviar antes de confirmar.
 
 **Como:**
 - Reestructurar `#confirmDialog` con dos secciones: `.confirm-preview` y `.confirm-alerts`.
-- La preview incluye: titulo del evento en negrita, fecha formateada, icono de tipo (Teams/Presencial), conteo de destinatarios como chip `.dash-kpi-value`, tabla truncada de primeros 5 destinatarios con "y N mas".
+- La preview incluye: titulo del evento en negrita, fecha formateada, icono de tipo (Teams/Presencial), conteo de personas destinatarias como chip `.dash-kpi-value`, tabla truncada de primeras 5 personas destinatarias con "y N mas".
 - Los avisos se muestran como cards con icono (warning/info), no como HTML inline.
 - Boton "Enviar" con estado de carga (spinner 300ms antes de cerrar).
 - Post-confirmacion: mini-dialogo de resumen accionable (ver F2.5).
@@ -489,7 +484,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 **Como:**
 - Tras el envio exitoso (apertura de Outlook o completacion de cola), mostrar dialogo con:
-  - "Convocatoria 'PRL Oficinas Madrid' enviada a 24 destinatarios."
+  - "Convocatoria 'PRL Oficinas Madrid' enviada a 24 personas destinatarias."
   - "Encuesta programada para el 20/3 a las 17:00." (si aplica)
   - "Plazo FUNDAE: comunica inicio antes del 18/3." (con link al generador XML)
   - Boton "Preparar siguiente" y boton "Cerrar".
@@ -537,7 +532,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 ---
 
-#### F2.8 — Skeleton screen para tabla de destinatarios
+#### F2.8 — Skeleton screen para tabla de personas destinatarias
 
 **Que:** Al iniciar la carga del Excel, mostrar skeleton (8-10 filas) que replique la estructura de la tabla con animacion `shimmer` existente.
 
@@ -553,15 +548,15 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F2.9 — Modo compacto para formulario de acciones formativas
 
-**Que:** Reorganizar el formulario de acciones formativas con `<details>` colapsables por grupos: "Datos basicos" (titulo, tipo, modalidad, fechas, estado — siempre visible), "Participantes y sesiones" (tabla, asistencia — expandible), "Datos FUNDAE" (area profesional, nivel, grupo, tutor, centro — colapsado por defecto). Mini-semaforo en el header de cada grupo indicando si hay campos vacios requeridos.
+**Que:** Reorganizar el formulario de acciones formativas con `<details>` colapsables por grupos: "Datos basicos" (titulo, tipo, modalidad, fechas, estado — siempre visible), "Participantes y sesiones" (tabla, asistencia — expandible), "Datos FUNDAE" (area profesional, nivel, grupo, tutor, centro — colapsado por defecto). Texto en `--text-muted` en el `<summary>` de cada `<details>` indicando pendientes.
 
-**Por que:** El formulario tiene 20+ campos. Laura se pierde entre lo operativo y lo administrativo. La divulgacion progresiva reduce la carga cognitiva un 40%. Es un pain point diario, no esporadico.
+**Por que:** El formulario tiene 20+ campos. Laura se pierde entre lo operativo y lo administrativo. La divulgacion progresiva reduce la carga cognitiva un 40%. Es un pain point diario, no esporadico. Linear comunica estado en el contenido, no en el chrome.
 
 **Como:**
 - Envolver secciones del formulario en `<details>` con `<summary>` estilizado.
 - "Datos basicos" tiene `open` por defecto.
 - "Datos FUNDAE" colapsado por defecto; abierto automaticamente al acceder desde pestana XML.
-- Semaforo en cada `<summary>`: punto verde/amarillo/rojo segun completitud de campos internos.
+- En el `<summary>` de cada `<details>`, texto en `--text-muted`: "2 pendientes". Nada si la seccion esta completa.
 
 **Fase:** 2.
 **Esfuerzo:** Medio (3h).
@@ -571,20 +566,20 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F2.10 — Tracking de formacion obligatoria con caducidades
 
-**Que:** Nueva seccion en el catalogo o sub-pestana "Formacion obligatoria" con: (1) definicion de tipos (PRL general, PRL puesto, LOPD, acoso, canal de denuncias, etc.) con periodicidad, (2) al cargar organigrama, marcar que formaciones aplican a cada puesto/departamento, (3) registrar ultima fecha de formacion por empleado, (4) semaforo de caducidad (verde/amarillo/rojo), (5) vista de gaps de compliance filtrable, (6) boton "Crear convocatoria" que pre-selecciona los empleados afectados.
+**Que:** Nueva seccion en el catalogo o sub-pestana "Formacion obligatoria" con: (1) definicion de tipos (PRL general, PRL puesto, LOPD, acoso, canal de denuncias, etc.) con periodicidad, (2) al cargar organigrama, marcar que formaciones aplican a cada puesto/departamento, (3) registrar ultima fecha de formacion por persona trabajadora, (4) tabla con columnas "Ultima formacion" y "Caduca" — fechas vencidas en `--danger` (unico color semantico ya establecido para errores, sin verde ni amarillo), (5) vista de gaps de compliance filtrable, (6) boton "Crear convocatoria" que pre-selecciona las personas trabajadoras afectadas.
 
 **Por que:** La formacion obligatoria representa el 30-50% de las acciones formativas del departamento. Un incumplimiento en PRL puede suponer sanciones graves. Laura mantiene hoy un Excel separado con caducidades, sin conexion con el organigrama ni con el calendario. Ninguna herramienta FUNDAE del mercado integra este tracking con el organigrama.
 
 **Automatizacion (A7 — Tracking de formacion obligatoria con caducidades):**
 - **Trigger:** Apertura de la app (evaluacion de caducidades) + carga de organigrama (cruce automatico) + registro de asistencia (actualizacion automatica).
 - **Acciones automaticas:**
-  - Al cargar organigrama, cruzar empleados con tipos de formacion obligatoria segun departamento/puesto.
-  - Para cada par (empleado, tipo obligatorio): calcular fecha caducidad = fechaFormacion + periodicidad. Semaforo: > 90 dias → VERDE, <= 90 dias → AMARILLO, caducada → ROJO, sin registro → ROJO.
-  - Generar vista de compliance: tabla empleados x tipos con semaforo, filtros, resumen ("87% de la plantilla con PRL vigente").
-  - Alimentar motor de alertas (F1.3) con: "5 empleados con PRL caducada o a punto de caducar" + boton "Crear convocatoria con empleados afectados".
-  - Al registrar asistencia en una formacion de compliance: actualizar registro del empleado, recalcular caducidad, reiniciar ciclo de alertas.
+  - Al cargar organigrama, cruzar personas trabajadoras con tipos de formacion obligatoria segun departamento/puesto.
+  - Para cada par (persona trabajadora, tipo obligatorio): calcular fecha caducidad = fechaFormacion + periodicidad. Tabla con columnas "Ultima formacion" y "Caduca". Fechas vencidas en `--danger`. Single-accent principle: Stripe/Vercel usan un solo color de alerta.
+  - Generar vista de compliance: tabla personas trabajadoras x tipos con fechas, filtros, resumen ("87% de la plantilla con PRL vigente").
+  - Alimentar motor de alertas (F1.3) con: "5 personas trabajadoras con PRL caducada o a punto de caducar" + boton "Crear convocatoria con personas afectadas".
+  - Al registrar asistencia en una formacion obligatoria: actualizar registro de la persona trabajadora, recalcular caducidad, reiniciar ciclo de alertas.
 - **Lo que queda manual:** Laura define tipos de formacion obligatoria y periodicidad. Laura asocia tipos a ambitos (todos, departamento, puesto). Laura puede cargar registros historicos iniciales (importacion Excel). Laura gestiona las convocatorias de renovacion.
-- **Implementacion:** JS nativo. Nuevo modelo de datos en localStorage: `state.complianceTypes` (array de tipos con periodicidad y ambito) y `state.complianceRecords` (registros por empleado y tipo con fecha de completitud). UI: sub-pestana en Catalogos "Formacion obligatoria". Integracion con motor de alertas (F1.3).
+- **Implementacion:** JS nativo. Nuevo modelo de datos en localStorage: `state.complianceTypes` (array de tipos con periodicidad y ambito) y `state.complianceRecords` (registros por persona trabajadora y tipo con fecha de completitud). UI: sub-pestana en Catalogos "Formacion obligatoria". Integracion con motor de alertas (F1.3).
 
 **Fase:** 2.
 **Esfuerzo:** Medio-alto (8-10h).
@@ -662,7 +657,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 - Listener global `keydown` para `Cmd+K`.
 - Fuzzy search simple sin dependencias.
 - Categorias: Navegacion, Datos, Filtros, Convocatoria, Herramientas, Catalogos, Compliance.
-- Acciones contextuales: si hay datos cargados, "Buscar empleado: [nombre]"; si hay catalogo, "Ir a accion: [nombre]"; si hay compliance gaps, "Ver gaps de formacion obligatoria".
+- Acciones contextuales: si hay datos cargados, "Buscar persona: [nombre]"; si hay catalogo, "Ir a accion: [nombre]"; si hay compliance gaps, "Ver gaps de formacion obligatoria".
 
 **Fase:** 3.
 **Esfuerzo:** Alto (6-8h).
@@ -672,21 +667,23 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F3.2 — Atajos de teclado globales
 
-**Que:** Conjunto reducido de atajos que no intercepten atajos nativos del navegador.
+**Que:** Conjunto reducido de atajos que no intercepten atajos nativos del navegador. Laura probablemente usa Windows (entorno corporativo RRHH). `Ctrl+1..5`, `Ctrl+Shift+H` y `Ctrl+,` conflictan con atajos nativos de Chrome en Windows.
 
 **Atajos definitivos:**
 
-| Atajo | Accion | Contexto |
-|-------|--------|----------|
-| `Cmd+K` | Abrir paleta de comandos | Global |
-| `Cmd+Enter` | Enviar (abrir en Outlook) | Tab Convocatoria, con datos |
-| `Cmd+Shift+Enter` | Anadir a cola | Tab Convocatoria, con datos |
-| `Cmd+1..5` | Navegar a pestana 1-5 | Global |
-| `Cmd+Shift+H` | Abrir historial | Global |
-| `Cmd+,` | Abrir ajustes | Global |
-| `Escape` | Cerrar dialogo / paleta / panel | Global (ya existe parcialmente) |
+| Atajo | Accion | Notas |
+|-------|--------|-------|
+| `Ctrl/Cmd+K` | Abrir command palette | Universal, sin conflicto |
+| `Ctrl/Cmd+Enter` | Enviar (abrir en Outlook) | Tab Convocatoria, con datos |
+| `Ctrl/Cmd+Shift+Enter` | Anadir a cola | Tab Convocatoria, con datos |
+| `Alt+1..5` | Navegar a pestana 1-5 | Evita conflicto con Ctrl+1..5 del navegador en Windows |
+| `Escape` | Cerrar dialogo/panel | Ya existe parcialmente |
+
+Los atajos de historial (`Cmd+Shift+H`) y ajustes (`Cmd+,`) se eliminan — accesibles via command palette.
 
 **NO se interceptan:** `Cmd+F` (buscar en pagina), `Cmd+A` (seleccionar todo), `Cmd+S` (guardar). Estos son atajos nativos del navegador.
+
+**Deteccion de OS:** La app detecta el OS con `navigator.platform` y muestra `Ctrl` o `Cmd` en tooltips segun corresponda.
 
 **Revelacion progresiva:** Tooltips con atajos al hacer hover con delay 800ms. En la paleta de comandos, cada accion muestra su atajo. No mostrar tooltips de atajos hasta que el usuario ha interactuado con la app al menos 3 veces.
 
@@ -698,10 +695,10 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F3.3 — Empty states contextuales unificados (todas las pestanas)
 
-**Que:** Sistema unificado de componentes `.empty-state` con variantes por tipo y pestana. Cubre tabla de destinatarios, cola, historial, cada modulo del dashboard, calendario, y catalogos.
+**Que:** Sistema unificado de componentes `.empty-state` con variantes por tipo y pestana. Cubre tabla de personas destinatarias, cola, historial, cada modulo del dashboard, calendario, y catalogos.
 
-**Variantes para la tabla de destinatarios (simplificado):**
-- **Sin datos cargados:** Icono upload, "Carga tu censo de empleados", CTA "Cargar Excel".
+**Variantes para la tabla de personas destinatarias (simplificado):**
+- **Sin datos cargados:** Icono upload, "Carga tu censo de personas trabajadoras", CTA "Cargar Excel".
 - **Sin resultados de filtro:** Icono lupa, "Sin resultados", CTA "Limpiar filtros".
 
 **Variantes para dashboard (critico):** Cada `renderEmptyState()` explica: (1) que datos necesita el modulo, (2) donde se introducen, (3) si el modulo es avanzado y se puede ignorar.
@@ -748,11 +745,11 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F3.6 — PDF de convocatoria con branding
 
-**Que:** Nuevo boton "Exportar convocatoria" que genera un PDF via `window.open()` con: cabecera con nombre del producto ("FormacionES") y paleta indigo, datos del evento, tabla de destinatarios con filas alternas, pie con fecha de generacion.
+**Que:** Nuevo boton "Exportar convocatoria" que genera un PDF via `window.open()` con: cabecera con nombre del producto ("Formación_AGORA") y paleta indigo, datos del evento, tabla de personas destinatarias con filas alternas, pie con fecha de generacion.
 
 **Por que:** El PDF es la unica pieza de la app que personas externas ven. Su calidad comunica directamente la calidad del producto.
 
-**Como:** Funcion `exportConvocatoriaPDF()` que abre `window.open()` con HTML inline usando estilos `@media print` + `@page`. Cabecera con borde inferior de 3px en `--accent`, titulo del evento, metadata, tabla de destinatarios, pie con fecha.
+**Como:** Funcion `exportConvocatoriaPDF()` que abre `window.open()` con HTML inline usando estilos `@media print` + `@page`. Cabecera con borde inferior de 3px en `--accent`, titulo del evento, metadata, tabla de personas destinatarias, pie con fecha.
 
 **Fase:** 3.
 **Esfuerzo:** Medio (3-4h).
@@ -762,7 +759,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 #### F3.7 — Generacion automatica de hojas de firmas y certificados
 
-**Que:** Aplicar branding unificado (misma cabecera "FormacionES", misma paleta, misma tipografia) a la hoja de firmas y certificados. Generacion automatica de hojas de firmas por sesion y certificados de asistencia/aprovechamiento con generacion masiva y numeracion automatica.
+**Que:** Aplicar branding unificado (misma cabecera "Formación_AGORA", misma paleta, misma tipografia) a la hoja de firmas y certificados. Generacion automatica de hojas de firmas por sesion y certificados de asistencia/aprovechamiento con generacion masiva y numeracion automatica.
 
 **Por que:** Las hojas de firmas y los certificados son requisitos documentales para FUNDAE e inspeccion. Laura los crea hoy manualmente en Word/Publisher. Cada documento generado con un nivel de pulido diferente fragmenta la percepcion de calidad.
 
@@ -832,19 +829,11 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 ---
 
-#### F3.11 — Bordes laterales con color semantico en secciones del panel izquierdo
+#### F3.11 — Animacion de seleccion/deseleccion en tabla
 
-**Que:** La barra indicadora de cada seccion del panel izquierdo cambia de color segun estado: `--success` cuando la seccion esta completa, `--accent` por defecto, `--warning` si faltan campos obligatorios.
+**Que:** Al excluir una fila, transicion 200ms a `opacity: 0.4` con `text-decoration: line-through`. Al reincluir, volver a `opacity: 1` con transicion suave. Sin color de fondo.
 
-**Fase:** 3.
-**Esfuerzo:** Bajo (1-2h).
-**Impacto:** Medio — refuerza la sensacion de flujo guiado.
-
----
-
-#### F3.12 — Animacion de seleccion/deseleccion en tabla
-
-**Que:** Al excluir una fila, transicion suave de 200ms a `opacity: 0.4` con `text-decoration: line-through`. Al reincluir, flash breve de `background: var(--success-light)` que se desvanece.
+**Por que:** Figma/Linear usan opacidad como indicador primario de estado. Sin flash de color.
 
 **Fase:** 3.
 **Esfuerzo:** Bajo (1h).
@@ -852,7 +841,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 ---
 
-#### F3.13 — Exportacion .ics de calendario
+#### F3.12 — Exportacion .ics de calendario
 
 **Que:** Boton en la pestana Calendario para exportar un archivo .ics con todas las formaciones visibles (respetando filtros activos).
 
@@ -870,7 +859,7 @@ Derivados del research de automatizaciones deterministas. Rigen el diseno e impl
 
 ---
 
-#### F3.14 — View Transitions API para cambio de pestanas
+#### F3.13 — View Transitions API para cambio de pestanas
 
 **Que:** Al cambiar de pestana, usar `document.startViewTransition()` para un cross-fade de 150ms. Degradacion elegante en navegadores sin soporte.
 
@@ -890,7 +879,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F3.15 — Blur sistematico en overlays
+#### F3.14 — Blur sistematico en overlays
 
 **Que:** Unificar `backdrop-filter: blur(8px)` en todos los overlays (dialogos, paleta de comandos, dropdowns de filtros). Actualmente los dialogos usan `blur(4px)`.
 
@@ -900,7 +889,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F3.16 — Precomputacion del dashboard al cargar datos
+#### F3.15 — Precomputacion del dashboard al cargar datos
 
 **Que:** Al completar la carga del Excel, calcular las metricas del dashboard en un `requestIdleCallback()`. Cuando Laura navega al dashboard, renderizar instantaneamente si los datos no han cambiado.
 
@@ -910,7 +899,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F3.17 — Checklist de activacion persistente
+#### F3.16 — Checklist de activacion persistente
 
 **Que:** Panel colapsable en la parte superior de la app (visible solo las primeras sesiones) con 7 pasos: (1) Cargar organigrama, (2) Enviar primera convocatoria, (3) Crear accion formativa, (4) Generar primer XML, (5) Definir formaciones obligatorias, (6) Generar primer informe, (7) Explorar el dashboard. Progreso persistido en localStorage. Se oculta al completar o al pulsar "No mostrar mas".
 
@@ -944,7 +933,7 @@ function switchTab(tabId) {
 
 #### F4.2 — Seleccion por lista de NIFs/emails
 
-**Que:** Textarea donde Laura puede pegar una lista de NIFs o emails. La app hace match con el organigrama y selecciona exactamente esos empleados.
+**Que:** Textarea donde Laura puede pegar una lista de NIFs o emails. La app hace match con el organigrama y selecciona exactamente esas personas trabajadoras.
 
 **Fase:** 4.
 **Esfuerzo:** Bajo (2-3h).
@@ -975,35 +964,9 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.4 — Envio masivo via Power Automate (sin deeplink)
+#### F4.4 — Reenvio automatico de encuesta de satisfaccion
 
-**Que:** Nuevo modo de envio que usa el webhook existente para enviar convocatorias directamente via PA/Graph API, sin abrir pestanas de Outlook.
-
-**Automatizacion (A12 — Envio masivo via PA):**
-- **Trigger:** Laura pulsa "Enviar via Power Automate" (alternativa al deeplink Outlook).
-- **Acciones automaticas:**
-  - Construir payload completo: `type: "convocatoria"`, `to: [emails]`, `subject`, `body` (HTML completo), `calendarEvent` (si aplica: start, end, location, subject).
-  - Enviar al webhook PA en un unico POST.
-  - PA enviar email via Outlook connector. Si `calendarEvent` presente: crear evento de calendario.
-  - PA responde 200/202.
-  - Registrar en historial como "enviada via PA".
-  - Sincronizar con accion formativa (F2.12).
-  - Programar recordatorio si configurado (F4.3).
-  - Programar encuesta si configurada (ya existe).
-- **Lo que queda manual:** Laura decide cuando enviar. Laura verifica datos antes del envio.
-- **Implementacion:**
-  - *En convocatoria.html:* Nuevo boton junto a "Abrir en Outlook": "Enviar via Power Automate". Reutilizar `buildSurveyPayload` como patron, con `type: "convocatoria"`. Misma funcion `fetch()` con webhook existente.
-  - *En Power Automate:* Nuevo branch `if type == 'convocatoria'` → `Send an email (V2)` + opcionalmente `Create event (V4)`.
-
-**Fase:** 4.
-**Esfuerzo:** Alto (8-12h). Requiere ampliar significativamente el flujo de Power Automate.
-**Impacto:** Muy alto — elimina deeplinks, pop-up blockers, limite de URL. Ahorro: 3-20 horas/ano.
-
----
-
-#### F4.5 — Reenvio automatico de encuesta de satisfaccion
-
-**Que:** Al enviar una encuesta de satisfaccion, programar automaticamente un reenvio 7 dias despues a todos los destinatarios.
+**Que:** Al enviar una encuesta de satisfaccion, programar automaticamente un reenvio 7 dias despues a todas las personas destinatarias.
 
 **Automatizacion (A15 — Reenvio de encuesta):**
 - **Trigger:** Envio de la encuesta original (automatico, vinculado al flujo existente).
@@ -1017,7 +980,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.6 — Virtual scrolling en tabla de destinatarios
+#### F4.5 — Virtual scrolling en tabla de personas destinatarias
 
 **Que:** Para datasets >500 filas, renderizar solo las filas visibles + 20 de buffer. Implementacion con IntersectionObserver o calculo de viewport sin dependencias externas.
 
@@ -1027,7 +990,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.7 — Dark mode
+#### F4.6 — Dark mode
 
 **Que:** Definir tokens dark bajo `[data-theme="dark"]` en `:root`. Toggle en ajustes con 3 opciones: Claro, Oscuro, Sistema.
 
@@ -1037,7 +1000,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.8 — Backup automatico de datos
+#### F4.7 — Backup automatico de datos
 
 **Que:** Boton "Exportar/Importar datos" que serializa todo el estado a fichero JSON. Recordatorio periodico ("Hace 7 dias que no exportas").
 
@@ -1047,11 +1010,11 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.9 — Perfil formativo de empleado
+#### F4.8 — Perfil formativo de persona trabajadora
 
-**Que:** Al buscar un empleado en el dashboard, mostrar perfil con: formaciones recibidas, horas acumuladas, formaciones obligatorias vigentes/caducadas, certificados emitidos, encuestas contestadas.
+**Que:** Al buscar una persona trabajadora en el dashboard, mostrar perfil con: formaciones recibidas, horas acumuladas, formaciones obligatorias vigentes/caducadas, certificados emitidos, encuestas contestadas.
 
-**Por que:** Con la vision amplia, la perspectiva del empleado individual es tan valiosa como la perspectiva de la accion formativa. Laura necesita responder a preguntas como "¿Maria Garcia ya hizo PRL este ano?" sin buscar manualmente en el catalogo.
+**Por que:** Con la vision amplia, la perspectiva de la persona trabajadora individual es tan valiosa como la perspectiva de la accion formativa. Laura necesita responder a preguntas como "¿Maria Garcia ya hizo PRL este ano?" sin buscar manualmente en el catalogo.
 
 **Fase:** 4.
 **Esfuerzo:** Medio (4-5h).
@@ -1059,7 +1022,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.10 — Informe personalizable
+#### F4.9 — Informe personalizable
 
 **Que:** En el dashboard, permitir seleccionar que secciones incluir en la exportacion, anadir header con logo de empresa, opcion de exportar a PDF.
 
@@ -1069,9 +1032,9 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.11 — Resumen de cambios al recargar organigrama
+#### F4.10 — Resumen de cambios al recargar organigrama
 
-**Que:** Al cargar un nuevo Excel con datos previos en sesion, comparar por NIF y mostrar resumen: "15 nuevas incorporaciones, 2 bajas, 4 cambios de departamento." Avisar si participantes de acciones activas o empleados con formaciones obligatorias registradas ya no estan en el nuevo organigrama.
+**Que:** Al cargar un nuevo Excel con datos previos en sesion, comparar por NIF y mostrar resumen: "15 nuevas incorporaciones, 2 bajas, 4 cambios de departamento." Avisar si participantes de acciones activas o personas trabajadoras con formaciones obligatorias registradas ya no estan en el nuevo organigrama.
 
 **Fase:** 4.
 **Esfuerzo:** Medio (3-4h).
@@ -1079,7 +1042,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.12 — Datos de ejemplo en dashboard
+#### F4.11 — Datos de ejemplo en dashboard
 
 **Que:** Boton "Ver con datos de ejemplo" en el empty state del dashboard que carga dataset sintetico de 3-5 acciones formativas con participantes, encuestas, formaciones obligatorias y metricas de compliance. Marca visual clara ("Datos de ejemplo") con boton "Borrar datos de ejemplo".
 
@@ -1089,7 +1052,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.13 — Tipografia fluida con clamp()
+#### F4.12 — Tipografia fluida con clamp()
 
 **Que:** Reemplazar tamanos de fuente fijos por escalas fluidas con `clamp()`. Cargar Inter como variable font (`wght@300..700`) en vez de pesos estaticos.
 
@@ -1099,7 +1062,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.14 — Unificacion de templates
+#### F4.13 — Unificacion de templates
 
 **Que:** Unificar los 3 tipos de template (plantillas de evento, plantillas de filtro+evento, plantillas de formaciones recurrentes) en un unico concepto de "plantilla" que guarda todo: filtros, exclusiones, datos del evento, vinculacion al catalogo. Un dropdown, un boton "Guardar plantilla", un boton "Cargar plantilla".
 
@@ -1109,7 +1072,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.15 — Plan anual de formacion
+#### F4.14 — Plan anual de formacion
 
 **Que:** Nueva vista "Plan anual" con: (1) acciones formativas "planificadas" (estado previo a "En preparacion"), (2) vista agrupada por trimestre/mes con resumen de presupuesto, (3) comparativa plan vs. ejecucion, (4) exportacion del plan a formato presentable, (5) boton para convertir accion planificada en accion real del catalogo.
 
@@ -1121,7 +1084,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.16 — Gestion ampliada de proveedores
+#### F4.15 — Gestion ampliada de proveedores
 
 **Que:** Ampliar el catalogo de "Centros de formacion" con: persona de contacto, telefono, email, especialidades, tarifa referencia, scorecard automatico (satisfaccion media, numero de acciones, ultima colaboracion, coste medio), vista comparativa.
 
@@ -1131,9 +1094,9 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.17 — Gestion de listas de espera
+#### F4.16 — Gestion de listas de espera
 
-**Que:** Campo opcional "Aforo maximo" en datos del evento. Si destinatarios seleccionados > aforo, ofrecer crear lista de espera. Vista con confirmados vs. espera. Paso automatico al eliminar confirmado.
+**Que:** Campo opcional "Aforo maximo" en datos del evento. Si personas destinatarias seleccionadas > aforo, ofrecer crear lista de espera. Vista con confirmados vs. espera. Paso automatico al eliminar confirmado.
 
 **Fase:** 4.
 **Esfuerzo:** Medio (4-5h).
@@ -1141,7 +1104,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.18 — Deteccion basica de necesidades formativas (mini-TNA)
+#### F4.17 — Deteccion basica de necesidades formativas (mini-TNA)
 
 **Que:** Formulario de solicitud de formacion exportable/importable. Laura genera un formulario, los managers rellenan (area, tema, justificacion, urgencia), Laura importa las respuestas. Vista de solicitudes con filtros. Boton "Crear accion formativa" que pre-rellena el catalogo.
 
@@ -1153,7 +1116,7 @@ function switchTab(tabId) {
 
 ---
 
-#### F4.19 — Evaluacion Kirkpatrick L1-L2 integrada
+#### F4.18 — Evaluacion Kirkpatrick L1-L2 integrada
 
 **Que:** Ampliar el sistema de encuestas existente con: (1) estructura de cuestionario de Kirkpatrick L1 (reaccion: utilidad percibida, calidad formador, materiales, NPS), (2) soporte para test pre/post formacion L2 (aprendizaje), (3) resultados agregados por accion formativa y por proveedor, (4) benchmarking entre formaciones.
 
@@ -1179,10 +1142,12 @@ function switchTab(tabId) {
 | **Filtros avanzados AND/OR** | Frontend revision (2.10) | **Aplazada indefinidamente** | Complejidad UI alta para un caso de uso infrecuente. El sistema actual cubre el 95% de los escenarios. |
 | **Bento Grid para dashboard** | Frontend revision (2.6) | **Aplazada indefinidamente** | Requiere un rediseno completo del dashboard. La divulgacion progresiva (F3.4) resuelve el problema de sobrecarga sin rehacer el layout. |
 | **Personalizacion de columnas en tabla** | Frontend revision (2.3) | **Aplazada a Fase 4+** | La tabla tiene pocas columnas fijas. La personalizacion tiene sentido para tablas de 10+ columnas. |
-| **Gestion de competencias / Skills Matrix** | Research RRHH (seccion 12) | **Aplazada indefinidamente** | Es un modulo de gestion de talento que desborda el alcance de "gestion de formacion". La herramienta cubre el ciclo L&D, no la gestion de competencias estrategica. Si Laura necesita una skills matrix, usa un Excel aparte o un HRIS. Sin embargo, el perfil formativo del empleado (F4.9) cubre parcialmente esta necesidad desde la perspectiva de formacion. |
+| **Gestion de competencias / Skills Matrix** | Research RRHH (seccion 12) | **Aplazada indefinidamente** | Es un modulo de gestion de talento que desborda el alcance de "gestion de formacion". La herramienta cubre el ciclo L&D, no la gestion de competencias estrategica. Si Laura necesita una skills matrix, usa un Excel aparte o un HRIS. Sin embargo, el perfil formativo de la persona trabajadora (F4.8) cubre parcialmente esta necesidad desde la perspectiva de formacion. |
 | **Integracion con LMS** | Research RRHH (seccion 13) | **Fuera de alcance** | La herramienta es un fichero HTML sin backend. Integraciones con LMS (SCORM, APIs) requieren infraestructura incompatible con la arquitectura zero-deployment. |
 | **PIF (Permisos Individuales de Formacion)** | Research RRHH (seccion 16) | **Aplazada indefinidamente** | Los PIF son un mecanismo distinto de la formacion programada (iniciativa del trabajador, no de la empresa). Su gestion es poco frecuente (pocas empresas los tramitan activamente) y anadirlo sin un caso de uso claro seria feature bloat. |
 | **Onboarding completo (formacion de incorporacion)** | Research RRHH (seccion 11) | **Fuera de alcance** | El onboarding completo es responsabilidad compartida con RRHH general, el manager y TI. La herramienta cubre la parte formativa del onboarding a traves del tracking de formacion obligatoria (F2.10) — las formaciones de incorporacion se registran como formaciones obligatorias de tipo "inicial". |
+| **Bordes laterales semanticos (F3.11)** | Frontend | **Descartada** | Es el patron semaforo disfrazado de barra. Linear no colorea secciones del sidebar. El estado va en el contenido. |
+| **Envio directo de convocatorias via PA (F4.4)** | Research automatizaciones | **Descartada** | La app prepara, Outlook envia. Las convocatorias no se envian directamente. Los recordatorios y encuestas SI usan PA (mismo patron que sendSurveyEmail existente). |
 
 ---
 
@@ -1195,15 +1160,15 @@ Las 13 propuestas del research de flujos RRHH (F1-F13 del documento original) se
 | **F1: Comunicacion RLT** | Muy alta — es un paso legal obligatorio del ciclo FUNDAE y de formacion en general | **Fase 2** (F2.11) — Core compliance, con automatizacion A3 integrada |
 | **F2: Tracking formacion obligatoria** | Muy alta — 30-50% del trabajo del departamento, responsabilidad legal directa | **Fase 2** (F2.10) — Core compliance, con automatizacion A7 integrada |
 | **F3: Dossier de inspeccion** | Muy alta — cierra el ciclo de documentacion; diferenciador unico | **Fase 3** (F3.8) — Tras tener datos de RLT y compliance |
-| **F4: Plan anual de formacion** | Alta — cubre fase 2 del ciclo L&D, poco frecuente pero estrategico | **Fase 4** (F4.15) — Extension estrategica |
-| **F5: Gestion de proveedores** | Media-Alta — amplia lo existente sin anadir complejidad | **Fase 4** (F4.16) — Refinamiento |
-| **F6: Exportacion .ics calendario** | Alta — trivial de implementar, valor inmediato | **Fase 3** (F3.13) — Quick win, con automatizacion A10 integrada |
+| **F4: Plan anual de formacion** | Alta — cubre fase 2 del ciclo L&D, poco frecuente pero estrategico | **Fase 4** (F4.14) — Extension estrategica |
+| **F5: Gestion de proveedores** | Media-Alta — amplia lo existente sin anadir complejidad | **Fase 4** (F4.15) — Refinamiento |
+| **F6: Exportacion .ics calendario** | Alta — trivial de implementar, valor inmediato | **Fase 3** (F3.12) — Quick win, con automatizacion A10 integrada |
 | **F7: Balance formativo RLT** | Muy alta — complemento directo de F1 (comunicacion RLT) | **Fase 3** (F3.10) — Tras implementar RLT, con automatizacion A9 integrada |
-| **F8: Listas de espera** | Media — refinamiento del flujo existente, infrecuente | **Fase 4** (F4.17) — Extension |
-| **F9: Mini-TNA** | Media — util 1-2 meses al ano, riesgo de feature bloat | **Fase 4** (F4.18) — Extension |
+| **F8: Listas de espera** | Media — refinamiento del flujo existente, infrecuente | **Fase 4** (F4.16) — Extension |
+| **F9: Mini-TNA** | Media — util 1-2 meses al ano, riesgo de feature bloat | **Fase 4** (F4.17) — Extension |
 | **F10: Credito FUNDAE con simulacion** | Muy alta — amplifica modulo existente, alto impacto | **Fase 1** (F1.9) — Quick win que amplifica lo existente |
 | **F11: Certificados mejorados** | Alta — parte de documentacion para inspeccion | **Fase 3** (F3.7) — Junto con branding y hojas de firmas, con automatizaciones A5/A6 integradas |
-| **F12: Perfil formativo empleado** | Alta — la "otra cara" de la perspectiva centrada en acciones | **Fase 4** (F4.9) — Extension |
+| **F12: Perfil formativo persona trabajadora** | Alta — la "otra cara" de la perspectiva centrada en acciones | **Fase 4** (F4.8) — Extension |
 | **F13: Informe para Direccion** | Muy alta — genera valor visible para stakeholders | **Fase 3** (F3.9) — Reporting |
 
 ### Integracion de automatizaciones del research
@@ -1215,24 +1180,24 @@ Las 15 automatizaciones del research de automatizaciones deterministas (A1-A15) 
 | **A1: Motor de alertas y plazos** | Integrada en F1.3 | Enriquece las alertas proactivas con evaluacion sistematica de reglas de plazo, auto-transicion de estados RLT |
 | **A2: Recordatorios via PA** | Nueva propuesta F4.3 | Depende de PA, se integra como extension del webhook existente |
 | **A3: Comunicacion RLT automatica** | Integrada en F2.11 | Enriquece la gestion RLT con generacion automatica de documento, calculo de plazos, auto-transicion de estado |
-| **A4: Semaforo readiness FUNDAE** | Integrada en F2.2 | Enriquece el semaforo con validacion progresiva completa y narrativa accionable |
+| **A4: Panel readiness FUNDAE** | Integrada en F2.2 | Enriquece el panel con validacion progresiva completa y checklist narrativo accionable |
 | **A5: Hojas de firmas** | Integrada en F3.7 | Se fusiona con la mejora de certificados bajo "documentacion automatica" |
 | **A6: Certificados de asistencia** | Integrada en F3.7 | Se fusiona con hojas de firmas bajo "documentacion automatica" |
-| **A7: Compliance/caducidades** | Integrada en F2.10 | Enriquece el tracking de formacion obligatoria con cruce automatico, semaforo, alertas y pre-seleccion |
+| **A7: Compliance/caducidades** | Integrada en F2.10 | Enriquece el tracking de formacion obligatoria con cruce automatico, fechas con --danger, alertas y pre-seleccion |
 | **A8: Sync convocatoria-catalogo++** | Nueva propuesta F2.12 | Amplia la sincronizacion existente con copia de campos, creacion de sesiones y transicion de estado |
 | **A9: Informe RLT anual** | Integrada en F3.10 | Enriquece el balance formativo con generacion automatica de estadisticas y documento |
-| **A10: Exportacion ICS** | Integrada en F3.13 | Enriquece la exportacion de calendario con formato VCALENDAR completo |
+| **A10: Exportacion ICS** | Integrada en F3.12 | Enriquece la exportacion de calendario con formato VCALENDAR completo |
 | **A11: Auto-relleno grupo XML** | Integrada en F1.8 | Enriquece el auto-relleno con persistencia por CIF de empresa |
-| **A12: Envio masivo via PA** | Nueva propuesta F4.4 | Depende de PA, transforma el envio de convocatorias |
+| **A12: Envio masivo via PA** | Descartada | La app prepara, Outlook envia. Las convocatorias no se envian directamente via PA. |
 | **A13: Panel calidad de datos** | Integrada en F2.1 | Enriquece el panel con validaciones ampliadas y resumen de calidad |
 | **A14: Duplicar accion** | Integrada en F1.2 | Enriquece la duplicacion con definicion precisa de campos copiados vs. limpiados |
-| **A15: Reenvio encuesta** | Nueva propuesta F4.5 | Depende de PA, extension minima del flujo de encuestas |
+| **A15: Reenvio encuesta** | Nueva propuesta F4.4 | Depende de PA, extension minima del flujo de encuestas |
 
-**Ninguna automatizacion descartada.** Las 15 pasan el filtro de coherencia: todas respetan el principio "preparar, no ejecutar" y se integran en propuestas existentes sin crear UI nueva visible por defecto.
+**Una automatizacion descartada (A12 — envio masivo via PA).** Las 14 restantes pasan el filtro de coherencia: todas respetan el principio "preparar, no ejecutar" y se integran en propuestas existentes sin crear UI nueva visible por defecto. A12 se descarta porque la app prepara y Outlook envia — las convocatorias no se envian directamente via PA.
 
 ### Propuesta nueva derivada del research: Evaluacion Kirkpatrick
 
-El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8). La herramienta ya tiene encuestas de satisfaccion via PA (L1 basico) y un modulo de ROI en el dashboard (L5 parcial). La propuesta F4.19 cierra el gap estructurando la evaluacion segun el estandar de la industria.
+El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8). La herramienta ya tiene encuestas de satisfaccion via PA (L1 basico) y un modulo de ROI en el dashboard (L5 parcial). La propuesta F4.18 cierra el gap estructurando la evaluacion segun el estandar de la industria.
 
 ---
 
@@ -1242,14 +1207,14 @@ El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8).
 
 | # | Incoherencia | Resolucion |
 |---|-------------|------------|
-| **1.1** | **Inter: elogio como "Excelente" vs. estado del arte que la identifica como "segura"** | Mantener Inter — es la fuente correcta para productividad. Modernizar la carga como variable font + `clamp()` (F4.13). No es prioridad: el impacto para Laura es nulo. |
+| **1.1** | **Inter: elogio como "Excelente" vs. estado del arte que la identifica como "segura"** | Mantener Inter — es la fuente correcta para productividad. Modernizar la carga como variable font + `clamp()` (F4.12). No es prioridad: el impacto para Laura es nulo. |
 | **1.2** | **Sombras: 2 niveles documentados vs. 4 reales en CSS** | Resuelto en F0.3. Las sombras accent son una variante de color, no un nivel. Se redefinira la documentacion y se ajusta opacidad. |
 | **1.3** | **Toasts: mejora incremental vs. panel persistente vs. centro de notificaciones** | Tres capas complementarias: (1) Toasts mejorados (F1.4). (2) Panel persistente de calidad de datos (F2.1). (3) No centro de notificaciones — excesivo para app single-user. |
-| **1.4** | **Empty states: tabla vs. dashboard vs. datos de ejemplo** | Unificados en F3.3 bajo sistema de componentes con variantes. Datos de ejemplo aplazados a F4.12. |
+| **1.4** | **Empty states: tabla vs. dashboard vs. datos de ejemplo** | Unificados en F3.3 bajo sistema de componentes con variantes. Datos de ejemplo aplazados a F4.11. |
 | **1.5** | **Atajos de teclado: conflicto con nativos del navegador** | No interceptar nativos. Conjunto definitivo en F3.2. |
 | **1.6** | **Dialogo de confirmacion vs. vista previa — solapamiento funcional** | Fusionados en F2.3. |
 | **1.7** | **Confetti al completar cola vs. selectividad** | Confetti descartado. Sustituido por F2.5 (resumen post-envio). |
-| **1.8** | **Nombre del producto** | Resuelto en F0.4. Se adopta "FormacionES" (no "Formaciones FUNDAE" — la vision amplia requiere un nombre que no se limite a un solo flujo regulatorio). |
+| **1.8** | **Nombre del producto** | Resuelto en F0.4. Se adopta "Formación_AGORA" — AGORA como espacio donde confluyen todos los flujos de formacion. El guion bajo da caracter tecnico/moderno. |
 
 ### Incoherencias del revisor de empatia (10)
 
@@ -1262,9 +1227,9 @@ El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8).
 | **E5** | **Migrar estilos inline — impacto cero para Laura** | Reclasificado: prerequisito tecnico en F0.1, no propuesta de valor. |
 | **E6** | **Empty states asumen usuario nuevo — Laura nunca los ve** | Resuelto: 80% esfuerzo en panel de calidad de datos (F2.1), 20% en empty states. |
 | **E7** | **Flujo de lotes por ubicacion ausente** | Incorporado como F4.1. |
-| **E8** | **Duplicacion funcional de templates** | Incorporado como F4.14. |
+| **E8** | **Duplicacion funcional de templates** | Incorporado como F4.13. |
 | **E9** | **Sombras y hover priorizados por encima de pain points reales** | Sombras absorbidas en F0.3. Hover aplazado. Prioridades alineadas con pain points. |
-| **E10** | **Renombrar la app como prioridad 2 — impacto nulo para Laura** | Resuelto en F0.4 como cambio trivial. Pero con la vision amplia, el nombre SI importa: "FormacionES" refleja que la herramienta no es solo convocatorias. |
+| **E10** | **Renombrar la app como prioridad 2 — impacto nulo para Laura** | Resuelto en F0.4 como cambio trivial. Pero con la vision amplia, el nombre SI importa: "Formación_AGORA" — AGORA como espacio donde confluyen todos los flujos de formacion. |
 
 ### Incoherencias del revisor de coherencia (6)
 
@@ -1274,23 +1239,23 @@ El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8).
 | **C2** | **Herramienta personal vs. plataforma departamental** | Resuelto: es una herramienta personal para Laura que genera outputs para Direccion y la RLT. Laura es la operadora; los stakeholders reciben informes generados. No es multiusuario, pero si genera valor departamental. |
 | **C3** | **Terminologia inconsistente** | Resuelto por el glosario vinculante, ampliado con terminos del research RRHH (compliance, caducidad, RLT, dossier). |
 | **C4** | **Disparidad de madurez entre pestanas** | La vision amplia profundiza este riesgo (mas funcionalidades = mas superficie). Mitigacion: Fase 3 iguala la calidad con empty states transversales, checklist de activacion de 7 pasos, y dashboard accionable que conecta todas las pestanas. |
-| **C5** | **Tension localStorage vs. funcionalidades con backend** | Las funcionalidades con PA siguen en Fase 4. La identidad base no depende de backend. Nuevo riesgo: el volumen de datos de compliance (formaciones obligatorias por empleado) puede estresar localStorage. Mitigacion: considerar IndexedDB si el volumen supera el 70% del limite. F4.8 (backup) se vuelve mas urgente. |
-| **C6** | **Onboarding se complica con cada nueva funcionalidad** | Resuelto: checklist de activacion (F3.17) ampliado a 7 pasos que cubren la vision amplia. Las funcionalidades de compliance se descubren via el checklist. |
+| **C5** | **Tension localStorage vs. funcionalidades con backend** | Las funcionalidades con PA siguen en Fase 4. La identidad base no depende de backend. Nuevo riesgo: el volumen de datos de compliance (formaciones obligatorias por persona trabajadora) puede estresar localStorage. Mitigacion: considerar IndexedDB si el volumen supera el 70% del limite. F4.7 (backup) se vuelve mas urgente. |
+| **C6** | **Onboarding se complica con cada nueva funcionalidad** | Resuelto: checklist de activacion (F3.16) ampliado a 7 pasos que cubren la vision amplia. Las funcionalidades de compliance se descubren via el checklist. |
 
 ### Nuevas incoherencias detectadas en revision 2 (3)
 
 | # | Incoherencia | Resolucion |
 |---|-------------|------------|
 | **N1** | **La vision amplia multiplica el riesgo de feature bloat** | Las 13 propuestas del research RRHH anaden funcionalidades sustanciales. Mitigacion: las propuestas que cubren fases del ciclo L&D poco frecuentes (TNA = 1-2 meses/ano, plan anual = 1 vez/ano, PIF = casi nunca) se clasifican como Fase 4. La regla YAGNI se aplica estrictamente: no implementar hasta que Laura lo pida. Divulgacion progresiva en TODAS las funcionalidades nuevas. |
-| **N2** | **El nombre "FormacionES" podria percibirse como generico** | El nombre es deliberadamente amplio para reflejar la vision completa. La diferenciacion viene del subtitulo en la UI (si se necesita) y de la experiencia de uso, no del nombre. "FormacionES" es mas memorable que "Gestor de Formacion" o "Central de Formacion" y el doble sentido con "ES" le da identidad espanola. |
+| **N2** | **El nombre "Formación_AGORA" — justificacion** | "AGORA" como espacio donde confluyen todos los flujos de formacion. El guion bajo da caracter tecnico/moderno. La diferenciacion viene de la experiencia de uso, no del nombre. |
 | **N3** | **Las funcionalidades de compliance (F2.10, F2.11) anaden peso a Fase 2** | Fase 2 pasa de "Core UX premium" a "Core UX premium + compliance". El esfuerzo total de Fase 2 sube de 5-7 dias a 7-10 dias. Esto es aceptable porque: (a) compliance es tan core como FUNDAE en la vision amplia, (b) las propuestas de compliance reutilizan patrones existentes (catalogo, plazos, alertas), (c) el impacto legal justifica la prioridad. |
 
 ### Nuevas incoherencias detectadas en revision 3 — integracion de automatizaciones (4)
 
 | # | Incoherencia | Resolucion |
 |---|-------------|------------|
-| **N4** | **Las automatizaciones anaden 15 flujos nuevos — riesgo de complejidad interna** | Mitigacion: las automatizaciones no crean UI nueva visible por defecto. Se integran como comportamientos automaticos (A1, A7, A8, A13), opciones en contexto (A2, A5, A6, A14), o configuracion colapsada (A15). No se crean pestanas nuevas. El motor de alertas (A1) centraliza la logica de evaluacion en una unica funcion `evaluateAlerts()`. |
-| **N5** | **Las automatizaciones PA (A2, A12, A15) crean dependencia de infraestructura externa** | Mitigacion: todas las automatizaciones PA son Fase 4 (opcionales). La herramienta funciona al 100% sin PA. Las automatizaciones PA amplian capacidades pero no son prerequisito para nada en Fases 0-3. El principio "offline-first, PA-second" se respeta estrictamente. |
+| **N4** | **Las automatizaciones anaden 14 flujos nuevos — riesgo de complejidad interna** | Mitigacion: las automatizaciones no crean UI nueva visible por defecto. Se integran como comportamientos automaticos (A1, A7, A8, A13), opciones en contexto (A2, A5, A6, A14), o configuracion colapsada (A15). No se crean pestanas nuevas. El motor de alertas (A1) centraliza la logica de evaluacion en una unica funcion `evaluateAlerts()`. |
+| **N5** | **Las automatizaciones PA (A2, A15) crean dependencia de infraestructura externa** | Mitigacion: todas las automatizaciones PA son Fase 4 (opcionales). La herramienta funciona al 100% sin PA. Las automatizaciones PA amplian capacidades pero no son prerequisito para nada en Fases 0-3. El principio "offline-first, PA-second" se respeta estrictamente. A12 (envio masivo via PA) fue descartada. |
 | **N6** | **F2.12 (sync ampliada) puede crear datos duplicados si Laura vincula mal la convocatoria con la accion** | Mitigacion: la sincronizacion siempre pregunta antes de crear una accion nueva ("¿Crear accion formativa desde esta convocatoria?"). Si la convocatoria ya esta vinculada, actualiza sin duplicar. Toast explicativo: "Accion PRL-003 actualizada: 15 participantes, 2 sesiones". |
 | **N7** | **Fase 2 sube a 8-11 dias con la incorporacion de F2.12** | Aceptable. F2.12 es bajo esfuerzo (2-3h) y alto impacto en coherencia de datos. La sincronizacion convocatoria-catalogo es una de las fricciones mas frecuentes (30-80 veces/ano). |
 
@@ -1298,9 +1263,9 @@ El research documenta extensamente el modelo Kirkpatrick + Phillips (seccion 8).
 
 ## Analisis competitivo post-overhaul
 
-Si se implementan las Fases 0-3, FormacionES cubrira:
+Si se implementan las Fases 0-3, Formación_AGORA cubrira:
 
-| Fase del ciclo L&D | FormacionES (actual) | FormacionES (post-overhaul) | Gesbon | Cezanne HR | SAP SF Learning |
+| Fase del ciclo L&D | Formación_AGORA (actual) | Formación_AGORA (post-overhaul) | Gesbon | Cezanne HR | SAP SF Learning |
 |---------------------|---------------------|----------------------------|--------|------------|-----------------|
 | Deteccion necesidades | No | No (Fase 4) | No | Parcial | Parcial |
 | Planificacion/presupuesto | Baja | Media (simulacion credito + alertas umbral) | Parcial | Si | Si |
@@ -1309,15 +1274,15 @@ Si se implementan las Fases 0-3, FormacionES cubrira:
 | Ejecucion/asistencia | Media | **Muy alta** (hojas firmas, certificados auto) | Parcial | Si | Si |
 | Evaluacion | Media-Baja | Media-Alta (reenvio encuesta auto) | No | Si | Si |
 | Reporting | Media | **Muy alta** (Direccion + RLT auto-generados) | Parcial | Si | Si |
-| **Compliance FUNDAE** | **Alta** | **Muy alta** (semaforo, alertas, auto-relleno XML) | **Alta** | No | No |
+| **Compliance FUNDAE** | **Alta** | **Muy alta** (checklist narrativo, alertas, auto-relleno XML) | **Alta** | No | No |
 | **Comunicacion RLT** | No | **Si** (documento auto-generado, plazos auto) | Parcial | No | No |
 | **Dossier inspeccion** | No | **Si** (hojas firmas + certificados integrados) | Parcial | No | No |
 | **Formacion obligatoria** | No | **Si** (caducidades auto, alertas, pre-seleccion) | No | Parcial | Si |
 | Certificados | Baja | **Alta** (generacion masiva, automatica) | Parcial | Si | Si |
-| Perfil empleado | No | No (Fase 4) | No | Si | Si |
+| Perfil persona trabajadora | No | No (Fase 4) | No | Si | Si |
 | Calendario exportable | No | **Si** (ICS automatico) | No | Si | Si |
 | **Motor de alertas** | No | **Si** (plazos, caducidades, credito, RLT) | Parcial | Si | Si |
-| **Automatizaciones deterministas** | Baja | **Alta** (15 flujos automaticos sin IA) | Media | Media | Alta |
+| **Automatizaciones deterministas** | Baja | **Alta** (14 flujos automaticos sin IA) | Media | Media | Alta |
 
 **Diferenciadores unicos post-overhaul:**
 1. Unica herramienta que cubre convocatoria + FUNDAE + RLT + compliance + inspeccion en un solo fichero
@@ -1325,7 +1290,7 @@ Si se implementan las Fases 0-3, FormacionES cubrira:
 3. Tracking de formacion obligatoria con caducidades integrado con el organigrama y motor de alertas
 4. Velocidad de operacion (todo local, sin latencia de red)
 5. Informe para Direccion y balance RLT generados automaticamente desde los datos operativos
-6. 15 automatizaciones deterministas que cubren el 75% de los pasos del ciclo formativo sin intervencion manual
+6. 14 automatizaciones deterministas que cubren el 75% de los pasos del ciclo formativo sin intervencion manual
 
 **Propuesta de valor actualizada:**
 > "Todo lo que necesitas para gestionar la formacion de tu empresa — desde la convocatoria hasta el informe a Direccion, pasando por el compliance FUNDAE, las formaciones obligatorias y la documentacion para inspeccion — en una herramienta de escritorio que automatiza los pasos repetitivos, te avisa de los plazos criticos, y puedes abrir manana mismo sin pedir nada a TI."
@@ -1342,7 +1307,7 @@ Derivados de la investigacion, el CLAUDE.md, las conclusiones de los 3 revisores
 4. **Consistencia sobre novedad** — cada nuevo componente reutiliza patrones existentes (`--radius`, `--transition`, `--shadow-sm/lg`).
 5. **El efecto compuesto** — la percepcion premium no viene de una sola mejora sino de la acumulacion de cientos de decisiones correctas.
 6. **Laura sobre el disenador** — ante cualquier duda de priorizacion, la pregunta es: "¿Esto ayuda a Laura a hacer su trabajo mas rapido o con menos miedo a errores?"
-7. **Prevencion sobre curacion** — es mas valioso evitar un error (semaforo FUNDAE, validacion on-blur, alerta de caducidad) que mostrar un error bonito.
+7. **Prevencion sobre curacion** — es mas valioso evitar un error (checklist readiness FUNDAE, validacion on-blur, alerta de caducidad) que mostrar un error bonito.
 8. **Informacion de cierre sobre celebracion** — Laura necesita saber que salio bien y cual es el siguiente paso, no confetti ni sonidos.
 9. **Coherencia transversal** — no pulir la pestana de Convocatoria al nivel de Stripe mientras el Calendario sigue siendo un Gantt sin guia. Cada fase debe elevar todas las pestanas proporcionalmente.
 10. **La deuda tecnica se paga primero** — Fase 0 existe por una razon. Implementar mejoras visuales sobre estilos inline es construir sobre arena.
