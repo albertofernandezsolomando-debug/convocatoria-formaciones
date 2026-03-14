@@ -1479,6 +1479,11 @@
       to { opacity: 0; transform: translateX(40px); }
     }
 
+    /* ── Sheet selector dialog ── */
+    .sheet-selector-list { display:flex; flex-direction:column; gap:6px; margin-top:12px; max-height:200px; overflow-y:auto; }
+    .sheet-selector-item { padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; font-size:13px; color:var(--text-primary); background:var(--bg-input); transition:all var(--transition); text-align:left; width:100%; font-family:var(--font-body); }
+    .sheet-selector-item:hover { border-color:var(--accent); background:var(--accent-subtle); color:var(--accent); }
+
     /* ── Toast container ── */
     #toastContainer {
       position: fixed;
@@ -4151,6 +4156,18 @@
     </div>
   </div>
 
+  <!-- Sheet selector dialog -->
+  <div class="dialog-overlay" id="sheetSelectorDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box dialog-box-narrow-scrollable">
+      <h3>Seleccionar hoja</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">El fichero tiene varias hojas. Elige cuál contiene el organigrama:</p>
+      <div class="sheet-selector-list" id="sheetSelectorList"></div>
+      <div class="dialog-buttons dialog-buttons-mt">
+        <button class="btn btn-secondary dialog-btn-sm" id="sheetSelectorCancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Onboarding overlay -->
   <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-compact">
@@ -6781,15 +6798,35 @@
       return (first === 'X' || first === 'Y' || first === 'Z') ? 60 : 10;
     }
 
-    function parseOrgSheet(workbook) {
+    function parseOrgSheet(workbook, sheetNameOverride) {
       const errors = [];
-      const sheetName = workbook.SheetNames.find(n => n === 'ORGANIGRAMA');
-      if (!sheetName) {
-        errors.push('No se ha encontrado la hoja ORGANIGRAMA. ¿Estás usando el fichero correcto?');
-        return { employees: [], errors };
+
+      let resolvedSheetName = sheetNameOverride || null;
+
+      if (!resolvedSheetName) {
+        // 1. Exact match
+        resolvedSheetName = workbook.SheetNames.find(n => n === 'ORGANIGRAMA') || null;
       }
 
-      const sheet = workbook.Sheets[sheetName];
+      if (!resolvedSheetName) {
+        // 2. Case-insensitive match
+        const ciMatch = workbook.SheetNames.find(n => n.toUpperCase() === 'ORGANIGRAMA');
+        if (ciMatch) {
+          resolvedSheetName = ciMatch;
+        }
+      }
+
+      if (!resolvedSheetName) {
+        // 3. Single sheet → use it directly
+        if (workbook.SheetNames.length === 1) {
+          resolvedSheetName = workbook.SheetNames[0];
+        } else {
+          // 4. Multiple sheets → ask the user
+          return { employees: [], errors, needsSheetSelection: true, sheetNames: workbook.SheetNames.slice() };
+        }
+      }
+
+      const sheet = workbook.Sheets[resolvedSheetName];
       const rows = XLSX_sheetToJSON(sheet);
       if (rows.length === 0) {
         errors.push('La hoja ORGANIGRAMA está vacía.');
@@ -7683,9 +7720,86 @@
       });
     }
 
+    function processParseResult(result, file) {
+      if (result.errors.length > 0) {
+        result.errors.forEach(function(err) { showToast(err, 'error', 6000); });
+        if (result.employees.length === 0) return;
+      }
+
+      state.employees = result.employees;
+
+      // Data quality report
+      const nifs = state.employees.map(function(e) { return e.NIF; });
+      const emptyNifs = nifs.filter(function(n) { return !n || n === ''; }).length;
+      const nifCounts = {};
+      nifs.forEach(function(n) { if (n) nifCounts[n] = (nifCounts[n] || 0) + 1; });
+      const dupNifs = Object.entries(nifCounts).filter(function(entry) { return entry[1] > 1; });
+
+      const emails = state.employees.map(function(e) { return e['Email trabajo']; });
+      const emptyEmails = emails.filter(function(e) { return !e || e === ''; }).length;
+      const invalidEmails = state.employees.filter(function(e) {
+        const email = e['Email trabajo'];
+        return email && email !== '' && !isValidEmail(email);
+      });
+
+      if (dupNifs.length > 0) {
+        showToast(dupNifs.length + ' NIF' + (dupNifs.length > 1 ? 's' : '') + ' duplicado' + (dupNifs.length > 1 ? 's' : '') + ' detectado' + (dupNifs.length > 1 ? 's' : ''), 'warning', 6000);
+      }
+      if (emptyNifs > 0) {
+        showToast(emptyNifs + (emptyNifs > 1 ? ' personas trabajadoras' : ' persona trabajadora') + ' sin NIF', 'warning', 5000);
+      }
+      if (invalidEmails.length > 0) {
+        showToast(invalidEmails.length + ' email' + (invalidEmails.length > 1 ? 's' : '') + ' con formato incorrecto', 'warning', 6000);
+      }
+
+      showToast(state.employees.length + ' personas trabajadoras activas' +
+        (emptyEmails > 0 ? ' · ' + emptyEmails + ' sin email' : ''), 'info', 4000);
+
+      state.activeFilters = {};
+      state.excludedNIFs = new Set();
+      state.externalEmployees = [];
+      const extBtn = document.getElementById('btnAddExternal');
+      extBtn.textContent = '+ Añadir lista externa';
+      extBtn.style.color = '';
+
+      uploadZone.classList.add('loaded');
+      uploadPrompt.style.display = 'none';
+      uploadInfo.style.display = 'block';
+      fileNameEl.textContent = file.name;
+      fileStats.textContent = state.employees.length + ' personas trabajadoras activas · hoja Organigrama';
+
+      try { localStorage.setItem('lastFile', file.name); } catch(err) {}
+      try {
+        localStorage.setItem('convocatoria_employees', JSON.stringify(state.employees));
+        localStorage.setItem('convocatoria_fileName', file.name);
+      } catch(err) {}
+
+      document.getElementById('filtrosSection').style.display = '';
+      document.getElementById('eventoSection').style.display = '';
+      document.getElementById('summaryBar').style.display = '';
+      document.getElementById('actionBar').style.display = '';
+      document.getElementById('tableSearch').style.display = '';
+
+      renderFilters();
+      renderTable();
+      checkOrphanParticipants();
+    }
+
+    function buildSheetSelectorList(sheetNames, onSelect) {
+      const list = document.getElementById('sheetSelectorList');
+      while (list.firstChild) list.removeChild(list.firstChild);
+      sheetNames.forEach(function(name) {
+        const btn = document.createElement('button');
+        btn.className = 'sheet-selector-item';
+        btn.textContent = name;
+        btn.addEventListener('click', function() { onSelect(name); });
+        list.appendChild(btn);
+      });
+    }
+
     function handleFile(file) {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = function(e) {
         // Show loading state
         uploadZone.classList.add('loading');
         var promptDiv = document.getElementById('uploadPrompt');
@@ -7693,81 +7807,33 @@
         promptDiv.querySelector('div:nth-child(2)').textContent = 'Procesando...';
 
         setTimeout(function() {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const result = parseOrgSheet(workbook);
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const result = parseOrgSheet(workbook);
 
-        uploadZone.classList.remove('loading');
-        promptDiv.innerHTML = origPromptHTML;
+          uploadZone.classList.remove('loading');
+          promptDiv.innerHTML = origPromptHTML;
 
-        if (result.errors.length > 0) {
-          result.errors.forEach(err => showToast(err, 'error', 6000));
-          if (result.employees.length === 0) return;
-        }
+          if (result.needsSheetSelection) {
+            const dialog = document.getElementById('sheetSelectorDialog');
+            buildSheetSelectorList(result.sheetNames, function(sheetName) {
+              dialog.classList.remove('visible');
+              var sheetResult = parseOrgSheet(workbook, sheetName);
+              processParseResult(sheetResult, file);
+            });
+            dialog.classList.add('visible');
+            return;
+          }
 
-        state.employees = result.employees;
-
-        // Data quality report
-        const qualityIssues = [];
-        const nifs = state.employees.map(e => e.NIF);
-        const emptyNifs = nifs.filter(n => !n || n === '').length;
-        const nifCounts = {};
-        nifs.forEach(n => { if (n) nifCounts[n] = (nifCounts[n] || 0) + 1; });
-        const dupNifs = Object.entries(nifCounts).filter(([k,v]) => v > 1);
-
-        const emails = state.employees.map(e => e['Email trabajo']);
-        const emptyEmails = emails.filter(e => !e || e === '').length;
-        const invalidEmails = state.employees.filter(e => {
-          const email = e['Email trabajo'];
-          return email && email !== '' && !isValidEmail(email);
-        });
-
-        if (dupNifs.length > 0) {
-          showToast(dupNifs.length + ' NIF' + (dupNifs.length > 1 ? 's' : '') + ' duplicado' + (dupNifs.length > 1 ? 's' : '') + ' detectado' + (dupNifs.length > 1 ? 's' : ''), 'warning', 6000);
-        }
-        if (emptyNifs > 0) {
-          showToast(emptyNifs + (emptyNifs > 1 ? ' personas trabajadoras' : ' persona trabajadora') + ' sin NIF', 'warning', 5000);
-        }
-        if (invalidEmails.length > 0) {
-          showToast(invalidEmails.length + ' email' + (invalidEmails.length > 1 ? 's' : '') + ' con formato incorrecto', 'warning', 6000);
-        }
-
-        // Always show summary toast
-        showToast(state.employees.length + ' personas trabajadoras activas' +
-          (emptyEmails > 0 ? ' · ' + emptyEmails + ' sin email' : ''), 'info', 4000);
-
-        state.activeFilters = {};
-        state.excludedNIFs = new Set();
-        state.externalEmployees = [];
-        const extBtn = document.getElementById('btnAddExternal');
-        extBtn.textContent = '+ Añadir lista externa';
-        extBtn.style.color = '';
-
-        uploadZone.classList.add('loaded');
-        uploadPrompt.style.display = 'none';
-        uploadInfo.style.display = 'block';
-        fileNameEl.textContent = file.name;
-        fileStats.textContent = state.employees.length + ' personas trabajadoras activas · hoja Organigrama';
-
-        try { localStorage.setItem('lastFile', file.name); } catch(e) {}
-        try {
-          localStorage.setItem('convocatoria_employees', JSON.stringify(state.employees));
-          localStorage.setItem('convocatoria_fileName', file.name);
-        } catch(e) {}
-
-        document.getElementById('filtrosSection').style.display = '';
-        document.getElementById('eventoSection').style.display = '';
-        document.getElementById('summaryBar').style.display = '';
-        document.getElementById('actionBar').style.display = '';
-        document.getElementById('tableSearch').style.display = '';
-
-        renderFilters();
-        renderTable();
-        checkOrphanParticipants();
+          processParseResult(result, file);
         }, 50); // setTimeout to let DOM update with loading state
       };
       reader.readAsArrayBuffer(file);
     }
+
+    document.getElementById('sheetSelectorCancel').addEventListener('click', function() {
+      document.getElementById('sheetSelectorDialog').classList.remove('visible');
+    });
 
     // Check localStorage for last filename
     try {
@@ -10009,6 +10075,54 @@
       URL.revokeObjectURL(url);
     }
 
+    // ── XML group defaults per CIF ──
+
+    function saveXmlGroupDefaults(cif, data) {
+      if (!cif) return;
+      try {
+        localStorage.setItem('convocatoria_xmlGroupDefaults_' + cif, JSON.stringify(data));
+      } catch(err) {}
+    }
+
+    function loadXmlGroupDefaults(cif) {
+      if (!cif) return null;
+      try {
+        var raw = localStorage.getItem('convocatoria_xmlGroupDefaults_' + cif);
+        return raw ? JSON.parse(raw) : null;
+      } catch(err) { return null; }
+    }
+
+    function applyXmlGroupDefaults(cif) {
+      var defaults = loadXmlGroupDefaults(cif);
+      if (!defaults) return;
+      var fields = ['xmlIdGrupo', 'xmlDescripcion', 'xmlResponsable', 'xmlTelefono'];
+      fields.forEach(function(id) {
+        var key = id.replace('xml', '').replace(/^./, function(c) { return c.toLowerCase(); });
+        // Map field IDs to defaults keys
+        var map = { xmlIdGrupo: 'idGrupo', xmlDescripcion: 'descripcion', xmlResponsable: 'responsable', xmlTelefono: 'telefonoContacto' };
+        var defaultKey = map[id];
+        if (defaults[defaultKey] !== undefined) {
+          var el = document.getElementById(id);
+          if (el && !el.value) el.value = defaults[defaultKey];
+        }
+      });
+      // xmlInformaRLT select
+      if (defaults.informaRLT) {
+        var rltEl = document.getElementById('xmlInformaRLT');
+        if (rltEl) rltEl.value = defaults.informaRLT;
+      }
+    }
+
+    function collectXmlGroupDefaults() {
+      return {
+        idGrupo: document.getElementById('xmlIdGrupo').value,
+        descripcion: document.getElementById('xmlDescripcion').value,
+        responsable: document.getElementById('xmlResponsable').value,
+        telefonoContacto: document.getElementById('xmlTelefono').value,
+        informaRLT: document.getElementById('xmlInformaRLT').value
+      };
+    }
+
     // Date/time helpers for FUNDAE format
     function toFundaeDate(iso) {
       if (!iso) return '';
@@ -10081,6 +10195,9 @@
       // Pre-fill description with action name
       var xmlDescEl = document.getElementById('xmlDescripcion');
       if (xmlDescEl && !xmlDescEl.value) xmlDescEl.value = accion.nombre || '';
+
+      // Pre-fill group defaults saved from last generation for this empresa
+      applyXmlGroupDefaults(accion.empresaPagadora || '');
 
       // Build participant rows from linked NIFs
       const nifs = accion.participantes || [];
@@ -10624,6 +10741,7 @@
 
       if (returnOnly) return xml;
       downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + grupoData.idGrupo + '.xml');
+      saveXmlGroupDefaults(accion.empresaPagadora || '', collectXmlGroupDefaults());
       showToast('XML Inicio de Grupo generado', 'success');
     }
 
@@ -10728,6 +10846,7 @@
 
       if (returnOnly) return xml;
       downloadXML(xml, 'Finalizacion_' + accion.codigo + '_G' + idGrupo + '.xml');
+      saveXmlGroupDefaults(accion.empresaPagadora || '', collectXmlGroupDefaults());
       showToast('XML Finalizacion de Grupo generado', 'success');
     }
 
@@ -10853,6 +10972,8 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        var batchAccion = getXmlAccion();
+        if (batchAccion) saveXmlGroupDefaults(batchAccion.empresaPagadora || '', collectXmlGroupDefaults());
         showToast('3 XMLs generados y descargados', 'success');
       }
 
