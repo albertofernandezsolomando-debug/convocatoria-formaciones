@@ -2027,6 +2027,15 @@
       font-size: 11px;
     }
 
+    /* --- Barra de progreso cola --- */
+    .queue-progress { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+    .queue-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.3s ease-out; }
+    .queue-status-text { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .queue-item-done { opacity: 0.5; position: relative; }
+    .queue-item-done::after { content: '\2713'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .queue-item-failed { opacity: 0.5; border-color: var(--danger) !important; }
+    .queue-item-failed::after { content: '\2717'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 14px; }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3752,6 +3761,10 @@
             <button class="btn btn-primary" id="btnLaunchQueue" style="font-size:12px; padding:6px 14px;">Lanzar cola</button>
           </div>
         </div>
+        <div class="queue-progress" id="queueProgress" style="display:none;">
+          <div class="queue-progress-fill" id="queueProgressFill"></div>
+        </div>
+        <div class="queue-status-text" id="queueStatusText" style="display:none;"></div>
         <div id="queueList" class="queue-list"></div>
       </div>
 
@@ -9705,15 +9718,34 @@
       const total = state.queue.length;
       let index = 0;
 
+      // Show and reset progress bar
+      const queueProgress = document.getElementById('queueProgress');
+      const queueProgressFill = document.getElementById('queueProgressFill');
+      const queueStatusText = document.getElementById('queueStatusText');
+      queueProgress.style.display = '';
+      queueStatusText.style.display = '';
+      queueProgressFill.style.width = '0%';
+      queueStatusText.textContent = '';
+
       function launchNext() {
         if (index >= state.queue.length) {
-          // All done
+          // All done — set progress to 100%
+          queueProgressFill.style.width = '100%';
+          queueStatusText.textContent = total + ' convocatorias procesadas';
+          setTimeout(() => {
+            queueProgress.style.display = 'none';
+            queueStatusText.style.display = 'none';
+          }, 3000);
           state.queue = [];
           saveQueue();
           renderQueue();
           showToast('¡Cola completa! ' + total + ' convocatorias enviadas', 'success', 6000);
           return;
         }
+
+        // Update progress bar
+        queueProgressFill.style.width = Math.round((index / total) * 100) + '%';
+        queueStatusText.textContent = 'Procesando ' + (index + 1) + ' de ' + total + '...';
 
         const item = state.queue[index];
         const event = item.event;
@@ -9737,9 +9769,19 @@
           sendSurveyEmail(event, emails);
         }
 
+        // Mark processed queue item as done
+        const queueItems = document.getElementById('queueList').querySelectorAll('.queue-item');
+        if (queueItems[index]) {
+          queueItems[index].classList.add('queue-item-done');
+          queueItems[index].style.position = 'relative';
+        }
+
         index++;
 
         if (index < state.queue.length) {
+          // Update progress after processing
+          queueProgressFill.style.width = Math.round((index / total) * 100) + '%';
+
           // Show series-style dialog for next
           const dialog = document.getElementById('seriesDialog');
           document.getElementById('dialogTitle').textContent =
@@ -9765,10 +9807,19 @@
             state.queue = state.queue.slice(index);
             saveQueue();
             renderQueue();
+            // Hide progress bar on cancel
+            queueProgress.style.display = 'none';
+            queueStatusText.style.display = 'none';
             showToast((total - index) + ' convocatorias pendientes en la cola', 'info');
           };
         } else {
-          // Last one — clean up
+          // Last one — clean up, set progress to 100%
+          queueProgressFill.style.width = '100%';
+          queueStatusText.textContent = total + ' convocatorias procesadas';
+          setTimeout(() => {
+            queueProgress.style.display = 'none';
+            queueStatusText.style.display = 'none';
+          }, 3000);
           state.queue = [];
           saveQueue();
           renderQueue();
