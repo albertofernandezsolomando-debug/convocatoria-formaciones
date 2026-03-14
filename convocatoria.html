@@ -6335,7 +6335,11 @@
           ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
         '</div>' +
         '<div id="cfAsistenciaInner">' + innerHtml +
-          (participantes.length > 0 ? '<div style="margin-top:10px;"><button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button></div>' : '') +
+          (participantes.length > 0 ? '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
+            '<button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button>' +
+            '<button class="btn btn-secondary" id="btnAttendanceSheet" style="font-size:12px;">Hoja de firmas por sesi\u00F3n</button>' +
+            '<button class="btn btn-secondary" id="btnGenerateCerts" style="font-size:12px;">Certificados</button>' +
+          '</div>' : '') +
         '</div>' +
       '</div>';
     }
@@ -6972,6 +6976,22 @@
           printSignSheet(record);
         });
       }
+
+      // Attendance sheet per session button
+      var attendanceBtn = document.getElementById('btnAttendanceSheet');
+      if (attendanceBtn) {
+        attendanceBtn.addEventListener('click', function() {
+          generateAttendanceSheet(record.codigo);
+        });
+      }
+
+      // Certificates button
+      var certsBtn = document.getElementById('btnGenerateCerts');
+      if (certsBtn) {
+        certsBtn.addEventListener('click', function() {
+          generateCatalogCertificates(record.codigo);
+        });
+      }
     }
 
     function renderConfirmacionesHtml(record) {
@@ -7098,6 +7118,152 @@
           w.print();
         };
       }
+    }
+
+    function getCatalogAction(actionId) {
+      var acciones = getCatalog('acciones');
+      return acciones.find(function(a) { return a.codigo === actionId; }) || null;
+    }
+
+    function resolveParticipants(record) {
+      return (record.participantes || []).map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        return {
+          name: emp ? (emp.Empleado || nif) : nif,
+          nif: nif,
+          empresa: emp ? (emp.Empresa || '') : ''
+        };
+      }).sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    }
+
+    function resolveTrainerName(record) {
+      if (!record.tutorVinculado) return '';
+      var tutores = getCatalog('tutores');
+      var tutor = tutores.find(function(t) { return t.documento === record.tutorVinculado; });
+      if (!tutor) return '';
+      return [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
+    }
+
+    function resolveLocationName(record) {
+      if (!record.centroVinculado) return '';
+      var centros = getCatalog('centros');
+      var centro = centros.find(function(c) { return c.documento === record.centroVinculado; });
+      if (!centro) return '';
+      return centro.nombre || '';
+    }
+
+    function generateAttendanceSheet(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Acción no encontrada', 'error'); return; }
+      var asistencia = action.asistencia || { sesiones: [], registro: {} };
+      var sessions = asistencia.sesiones || [];
+      if (sessions.length === 0) { showToast('No hay sesiones registradas', 'warning'); return; }
+      var participants = resolveParticipants(action);
+      var trainerName = resolveTrainerName(action);
+      var locationName = resolveLocationName(action);
+      var actionTitle = action.nombre || action.codigo || '';
+
+      var sheetsHtml = sessions.map(function(sessionDate, idx) {
+        var dateLabel = sessionDate;
+        try {
+          var d = new Date(sessionDate + 'T00:00:00');
+          dateLabel = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch(e) {}
+
+        var rows = participants.map(function(p) {
+          return '<tr><td>' + esc(p.name || '') + '</td><td>' + esc(p.nif || '') + '</td>'
+            + '<td class="sign"></td><td class="time"></td><td class="time"></td></tr>';
+        }).join('');
+
+        return '<div class="sheet' + (idx > 0 ? ' pb' : '') + '">'
+          + '<div class="hdr"><div class="htitle">HOJA DE FIRMAS</div><div class="hbrand">Formaci\u00F3n_AGORA</div></div>'
+          + '<div class="meta"><p><strong>Formaci\u00F3n:</strong> ' + esc(actionTitle) + '</p>'
+          + '<p><strong>Fecha:</strong> ' + esc(dateLabel) + '</p>'
+          + '<p><strong>Lugar:</strong> ' + esc(locationName) + ' | <strong>Formador/a:</strong> ' + esc(trainerName) + '</p></div>'
+          + '<table><thead><tr><th>Nombre</th><th>NIF</th><th>Firma</th><th>H. entrada</th><th>H. salida</th></tr></thead><tbody>' + rows + '</tbody></table>'
+          + '<div class="tsign"><p>Firma formador/a:</p><div class="sline"></div></div></div>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoja de firmas - ' + esc(actionTitle) + '</title>'
+        + '<style>@page{size:A4;margin:15mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:11px}'
+        + '.pb{page-break-before:always} .hdr{border-bottom:3px solid #4F46E5;padding-bottom:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.htitle{font-size:16px;font-weight:600} .hbrand{font-size:10px;color:#94a3b8} .meta p{margin:2px 0}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:12px} th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:12px 8px;border-bottom:1px solid #e2e8f0} .sign{width:120px} .time{width:80px}'
+        + '.tsign{margin-top:40px} .sline{border-bottom:1px solid #0f172a;width:250px;margin-top:40px}'
+        + '</style></head><body>' + sheetsHtml + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+    }
+
+    function generateCatalogCertificates(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Acción no encontrada', 'error'); return; }
+      var asistencia = action.asistencia || { sesiones: [], registro: {} };
+      var sessions = asistencia.sesiones || [];
+      var totalSessions = sessions.length;
+      var minAtt = 75;
+      var actionTitle = action.nombre || action.codigo || '';
+
+      // Resolve participants with attendance percentage
+      var allParticipants = (action.participantes || []).map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+        var registro = asistencia.registro || {};
+        var attended = 0;
+        var nifRecord = registro[nif] || [];
+        for (var i = 0; i < nifRecord.length; i++) {
+          if (nifRecord[i] === true) attended++;
+        }
+        var pct = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+        return {
+          name: emp ? (emp.Empleado || nif) : nif,
+          nif: nif,
+          attendancePercent: pct
+        };
+      });
+
+      var eligible = allParticipants.filter(function(p) { return p.attendancePercent >= minAtt; });
+      if (eligible.length === 0) { showToast('Sin participantes con asistencia >= ' + minAtt + '%', 'warning'); return; }
+
+      var trainerName = resolveTrainerName(action);
+      var totalHours = (parseFloat(action.horasPresenciales) || 0) + (parseFloat(action.horasTeleformacion) || 0);
+      var modalidad = action.modalidad || 'Presencial';
+
+      var year = new Date().getFullYear();
+      var certsHtml = eligible.map(function(p, idx) {
+        var num = 'CERT-' + year + '-' + String(idx + 1).padStart(4, '0');
+        return '<div class="cert' + (idx > 0 ? ' pb' : '') + '">'
+          + '<div class="chdr"><div class="cbrand">Formaci\u00F3n_AGORA</div><div class="cnum">' + num + '</div></div>'
+          + '<h1 class="ctitle">CERTIFICADO DE ASISTENCIA</h1>'
+          + '<div class="cbody"><p>Se certifica que <strong>' + esc(p.name || '') + '</strong>, '
+          + 'con NIF <strong>' + esc(p.nif || '') + '</strong>, ha completado la acci\u00F3n formativa:</p>'
+          + '<div class="caction"><p class="cat">' + esc(actionTitle) + '</p>'
+          + '<p>' + totalHours + ' horas | ' + esc(modalidad) + '</p>'
+          + (trainerName ? '<p>Formador/a: ' + esc(trainerName) + '</p>' : '') + '</div></div>'
+          + '<div class="cfooter"><div class="cdate">Emisi\u00F3n: ' + new Date().toLocaleDateString('es-ES') + '</div>'
+          + '<div class="csign"><div class="sline"></div><p>Firma y sello</p></div></div></div>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificados - ' + esc(actionTitle) + '</title>'
+        + '<style>@page{size:A4;margin:25mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a}'
+        + '.cert{min-height:700px;display:flex;flex-direction:column} .pb{page-break-before:always}'
+        + '.chdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:40px}'
+        + '.cbrand{font-size:12px;color:#94a3b8} .cnum{font-size:11px;color:#94a3b8}'
+        + '.ctitle{text-align:center;font-size:22px;font-weight:600;margin-bottom:32px;letter-spacing:.05em}'
+        + '.cbody{flex:1;font-size:14px;line-height:1.8}'
+        + '.caction{background:#f8fafc;border-left:3px solid #4F46E5;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0}'
+        + '.cat{font-size:16px;font-weight:600;margin-bottom:4px} .caction p{margin:2px 0;font-size:13px;color:#475569}'
+        + '.cfooter{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:20px}'
+        + '.cdate{font-size:12px;color:#475569} .csign{text-align:center}'
+        + '.sline{border-bottom:1px solid #0f172a;width:200px;margin-bottom:8px} .csign p{font-size:11px;color:#475569;margin:0}'
+        + '</style></head><body>' + certsHtml + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
+      showToast(eligible.length + ' certificados generados', 'success');
     }
 
     function renderAccionParticipants(record) {
