@@ -54,6 +54,42 @@
       --chart-8: #6366F1;
     }
 
+    [data-theme="dark"] {
+      --accent: #818CF8;
+      --accent-hover: #6366F1;
+      --accent-light: #312E81;
+      --accent-subtle: #1E1B4B;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --bg-primary: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-input: #334155;
+      --border: #334155;
+      --border-strong: #475569;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      [data-theme="system"] {
+        --accent: #818CF8;
+        --accent-hover: #6366F1;
+        --accent-light: #312E81;
+        --accent-subtle: #1E1B4B;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --bg-primary: #0f172a;
+        --bg-panel: #1e293b;
+        --bg-input: #334155;
+        --border: #334155;
+        --border-strong: #475569;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+      }
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     .tabnum,
     .dash-container td,
@@ -4891,6 +4927,15 @@
         <div class="dialog-section-title">Plantillas guardadas</div>
         <div id="settingsTemplatesList"></div>
       </div>
+      <div class="dialog-section">
+        <div class="dialog-section-title">Apariencia</div>
+        <label style="font-size:13px;color:var(--text-secondary);margin-top:12px;display:block;">Tema</label>
+        <select id="themeSelect" class="input-field" style="font-size:13px;">
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+          <option value="system">Sistema</option>
+        </select>
+      </div>
       <div class="dialog-footer-links">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
         <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
@@ -9096,6 +9141,23 @@
     }
 
     // ═══════════════════════════════════
+    // THEME
+    // ═══════════════════════════════════
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      try { var s = loadSettings(); s.theme = theme; saveSettings(s); } catch(e) {}
+    }
+
+    function initTheme() {
+      var s = loadSettings();
+      var theme = s.theme || 'light';
+      applyTheme(theme);
+      var sel = document.getElementById('themeSelect');
+      if (sel) sel.value = theme;
+    }
+
+    // ═══════════════════════════════════
     // CONVOCATORIA TEMPLATES
     // ═══════════════════════════════════
 
@@ -12325,6 +12387,7 @@
       document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
+      document.getElementById('themeSelect').value = settings.theme || 'light';
       renderSettingsTemplates();
       renderEmpresasGrupoSettings();
       document.getElementById('settingsDialog').classList.add('visible');
@@ -12358,9 +12421,16 @@
       }
 
       const syncConvocatoriaAccion = document.getElementById('settingsSyncConvocatoria').checked;
-      saveSettings({ webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion });
+      const theme = document.getElementById('themeSelect').value;
+      var prev = loadSettings();
+      saveSettings(Object.assign(prev, { webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion, theme }));
+      applyTheme(theme);
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
+    });
+
+    document.getElementById('themeSelect').addEventListener('change', function() {
+      applyTheme(this.value);
     });
 
     document.getElementById('btnShowInstructions').addEventListener('click', () => {
@@ -13945,6 +14015,7 @@
     // INIT QUEUE
     // ═══════════════════════════════════
 
+    initTheme();
     loadQueue();
     loadCompliance();
     renderQueue();
