@@ -4200,6 +4200,15 @@
             Enviar encuesta de satisfacción al finalizar
           </label>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="checkbox" id="chkReminder" style="margin:0;">
+          <label for="chkReminder" style="font-size:12px;color:var(--text-secondary);">Enviar recordatorio</label>
+          <select id="selReminderDays" class="filter-select" style="font-size:12px;width:auto;padding:4px 8px;" disabled>
+            <option value="1">1 día antes</option>
+            <option value="2" selected>2 días antes</option>
+            <option value="3">3 días antes</option>
+          </select>
+        </div>
       </div>
 
       <div class="save-indicator" id="saveIndicator">Sin cambios</div>
@@ -9618,6 +9627,66 @@
       });
     }
 
+    function sendReminderEmail(event, emails) {
+      if (!event.date) {
+        showToast('Completa la fecha del evento para programar el recordatorio', 'warning', 6000);
+        return;
+      }
+
+      var settings = loadSettings();
+      if (!settings.webhookUrl) {
+        showToast('Configura el webhook en Ajustes para enviar recordatorios', 'warning', 6000);
+        return;
+      }
+
+      var daysBefore = parseInt(document.getElementById('selReminderDays').value, 10) || 2;
+      var eventDateObj = new Date(event.date + 'T09:00:00');
+      eventDateObj.setDate(eventDateObj.getDate() - daysBefore);
+      var scheduledTime = eventDateObj.toISOString();
+
+      var dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+      var subject = 'Recordatorio: ' + (event.title || 'Formación') + ' \u2013 ' + dateStr;
+      var body = '<p>Te recordamos que tienes programada la formación <strong>' + esc(event.title) + '</strong> el ' + dateStr + ' de ' + event.startTime + ' a ' + event.endTime + '.</p>';
+      if (event.location && !event.isTeams) {
+        body += '<p>Lugar: ' + esc(event.location) + '</p>';
+      }
+      if (event.isTeams) {
+        body += '<p>Modalidad: Teams</p>';
+      }
+
+      var payload = {
+        type: 'reminder',
+        to: emails,
+        subject: subject,
+        body: body,
+        scheduledTime: scheduledTime
+      };
+
+      fetch(settings.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(r) {
+        if (r.ok || r.status === 202) {
+          showToast('Recordatorio programado ' + daysBefore + ' día(s) antes', 'success');
+        } else {
+          showToast('Error al programar recordatorio (HTTP ' + r.status + ')', 'error', 6000);
+        }
+      }).catch(function() {
+        fetch(settings.webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload)
+        }).then(function() {
+          showToast('Recordatorio enviado a Power Automate (sin confirmación)', 'success');
+        }).catch(function() {
+          showToast('No se pudo conectar con Power Automate para el recordatorio', 'error', 6000);
+        });
+      });
+    }
+
     function markSurveyScheduled(title, eventDate) {
       const history = getHistory();
       const entry = history.find(h => h.title === title && h.eventDate === eventDate);
@@ -10775,6 +10844,9 @@
     document.getElementById('eventBody').addEventListener('input', saveState);
     document.getElementById('eventFormador').addEventListener('input', saveState);
     document.getElementById('surveyCheck').addEventListener('change', saveState);
+    document.getElementById('chkReminder').addEventListener('change', function() {
+      document.getElementById('selReminderDays').disabled = !this.checked;
+    });
 
     // ── On-blur validation for required event fields ──
     (function() {
@@ -11286,6 +11358,11 @@
       if (document.getElementById('surveyCheck').checked) {
         html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Encuesta</span><span>Programada</span></div>';
       }
+      // Check reminder
+      if (document.getElementById('chkReminder').checked) {
+        var reminderDays = document.getElementById('selReminderDays').value;
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Recordatorio</span><span>' + reminderDays + ' día(s) antes</span></div>';
+      }
 
       html += '</div>';
 
@@ -11716,6 +11793,9 @@
           if (document.getElementById('surveyCheck').checked) {
             sendSurveyEmail(event, emails);
           }
+          if (document.getElementById('chkReminder').checked) {
+            sendReminderEmail(event, emails);
+          }
           // Sync with matching acción formativa
           syncConvocatoriaWithAccion(event, emails);
           // Show post-send summary
@@ -12031,6 +12111,10 @@
         // Send survey if enabled
         if (document.getElementById('surveyCheck').checked) {
           sendSurveyEmail(event, emails);
+        }
+        // Send reminder if enabled
+        if (document.getElementById('chkReminder').checked) {
+          sendReminderEmail(event, emails);
         }
 
         // Mark processed queue item as done
