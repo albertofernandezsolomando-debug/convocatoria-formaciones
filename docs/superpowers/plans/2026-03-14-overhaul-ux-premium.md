@@ -1892,3 +1892,3270 @@ git commit -m "feat(F1.9): FUNDAE credit simulator with consumption bar, project
 **Total estimado Fase 0:** ~7-10h
 **Total estimado Fase 1:** ~16-21h
 **Total Parte 1:** ~23-31h
+
+---
+
+## Fase 2: Core UX + compliance (Parte 2 del plan)
+
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Implementar las 12 tareas de Fase 2 que transforman el flujo principal de convocatorias y anaden compliance (RLT, formacion obligatoria). Cada tarea produce cambios autocontenidos y testeables.
+
+**Duracion estimada:** 7-10 dias
+
+**Prerequisitos:** Fase 0 y Fase 1 completadas (especialmente F0.1 inline-CSS, F0.2 terminologia, F1.3 motor de alertas, F1.4 toasts, F1.6 on-blur).
+
+**Directivas de diseno (validadas):**
+- NO semaforos (verde/amarillo/rojo) en ninguna parte
+- NO sound design, NO confetti
+- Indicadores de estado: texto en `--text-muted` + fechas vencidas en `--danger`
+- Animaciones: solo opacidad y `stroke-dasharray`. Sin flash de color, sin scale, sin ring
+- Terminologia: persona trabajadora, persona destinataria, formacion obligatoria
+- Nombre: Formacion_AGORA
+
+---
+
+### Mapa de paralelismo — Fase 2
+
+#### Carriles de ejecucion paralela
+
+```
+Lane E (UX Convocatoria):  F2.1 → F2.7 → F2.8
+Lane F (Dialogos + envio): F2.3 → F2.5 → F2.6
+Lane G (Cola + progreso):  F2.4
+Lane H (Catalogos):        F2.9 → F2.2
+Lane I (Compliance):       F2.10 → F2.11
+Lane J (Sync):             F2.12
+```
+
+#### Justificacion de lanes
+
+| Lane | Secciones HTML/JS que toca | Por que es independiente |
+|------|---------------------------|-------------------------|
+| **E** | JS 6499-7480 (parsing, handleFile), HTML 2956-3004 (upload zone) | Toca parseo Excel y zona de carga — no se solapa con dialogos ni catalogos |
+| **F** | HTML 3823-3832 (confirmDialog), JS 8639-8745 (validateEvent, send flow) | Toca dialogos de confirmacion y flujo de envio — zona aislada |
+| **G** | HTML 3112-3124 (queueBar), JS 8822-8900 (launchNext) | Solo toca la cola — completamente aislada |
+| **H** | HTML 3213-3500 (tabXml), JS 9741-9833 (XML logic), JS 4933-5090 (catalogForm) | Toca pestanas XML y Catalogos — no se solapa con Convocatoria |
+| **I** | HTML 3168-3210 (tabCatalogos), JS nuevo (compliance) | Anade sub-pestanas y logica nueva — secciones nuevas del catalogo |
+| **J** | JS 8490-8544 (syncConvocatoriaWithAccion) | Modifica una sola funcion existente |
+
+#### Orden de merge recomendado
+
+1. **Lane G** (F2.4) — cambio aislado, sin conflictos posibles
+2. **Lane J** (F2.12) — modifica una sola funcion
+3. **Lane E** (F2.1 → F2.7 → F2.8) — zona de parseo/carga
+4. **Lane H** (F2.9 → F2.2) — zona catalogos/XML
+5. **Lane F** (F2.3 → F2.5 → F2.6) — zona de envio (mas cambios interrelacionados)
+6. **Lane I** (F2.10 → F2.11) — compliance (mas codigo nuevo, menos conflictos)
+
+#### Dependencias entre lanes
+
+```
+Lane I (F2.10, F2.11) depende de F1.3 (motor de alertas) — Fase 1
+Lane F (F2.6) depende de F1.6 (on-blur) — Fase 1
+Lane H (F2.2) depende de F2.9 (modo compacto) — misma lane, secuencial
+Ninguna lane de Fase 2 depende de otra lane de Fase 2
+```
+
+---
+
+### Task F2.1: Panel calidad de datos con edicion in situ
+
+**Lane:** E (UX Convocatoria)
+
+**Files:**
+- Modify: `convocatoria.html:1457-1480` (CSS — nuevas clases `.dq-panel`, `.dq-issue`, `.dq-editor`)
+- Modify: `convocatoria.html:2977-3004` (HTML — insertar panel colapsable despues de upload-zone)
+- Modify: `convocatoria.html:6682-6692` (JS state — anadir `dataQualityIssues`)
+- Modify: `convocatoria.html:7401-7480` (JS handleFile — reemplazar toasts por panel persistente)
+
+- [ ] **Paso 1: Anadir CSS del panel de calidad**
+
+Insertar antes de la linea `/* --- Cuadro de Mando --- */` (linea 1481):
+
+```css
+/* --- Panel calidad de datos --- */
+.dq-panel {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+.dq-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: background var(--transition);
+}
+.dq-summary:hover { background: var(--accent-subtle); }
+.dq-summary-count {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.dq-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dq-panel.open .dq-body { display: block; }
+.dq-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 12px 4px;
+}
+.dq-issue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.dq-issue:hover { background: var(--accent-subtle); }
+.dq-issue-text { flex: 1; min-width: 0; }
+.dq-issue-action {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+}
+.dq-editor {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 12px 8px;
+}
+.dq-editor input {
+  flex: 1;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+}
+.dq-editor button {
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+```
+
+- [ ] **Paso 2: Verificar que el CSS compila**
+
+Abrir `convocatoria.html` en el navegador, abrir DevTools, confirmar que no hay errores de parseo CSS.
+
+- [ ] **Paso 3: Anadir estado de calidad de datos**
+
+Modificar el bloque `const state = {` en linea 6682. Anadir propiedad al final:
+
+```javascript
+const state = {
+  employees: [],
+  externalEmployees: [],
+  activeFilters: {},
+  excludedNIFs: new Set(),
+  seriesDates: [],
+  currentSessionIndex: 0,
+  sortColumn: 'Empleado',
+  sortDirection: 'asc',
+  queue: [],
+  dataQualityIssues: [],  // NEW
+};
+```
+
+- [ ] **Paso 4: Crear funcion collectDataQualityIssues()**
+
+Insertar despues de `function XLSX_sheetToJSON(sheet)` (linea 6549-6551):
+
+```javascript
+function collectDataQualityIssues(employees) {
+  var issues = [];
+  var nifCounts = {};
+  employees.forEach(function(emp) {
+    if (emp.NIF) nifCounts[emp.NIF] = (nifCounts[emp.NIF] || 0) + 1;
+  });
+
+  employees.forEach(function(emp, idx) {
+    var email = emp['Email trabajo'];
+    if (!email || email === '') {
+      issues.push({ type: 'no-email', empId: emp._id, name: emp.Empleado || ('Fila ' + (idx+1)), field: 'Email trabajo', current: '' });
+    } else if (!isValidEmail(email)) {
+      issues.push({ type: 'invalid-email', empId: emp._id, name: emp.Empleado || ('Fila ' + (idx+1)), field: 'Email trabajo', current: email });
+    }
+    if (!emp.NIF || emp.NIF === '') {
+      issues.push({ type: 'no-nif', empId: emp._id, name: emp.Empleado || ('Fila ' + (idx+1)), field: 'NIF', current: '' });
+    } else if (nifCounts[emp.NIF] > 1) {
+      issues.push({ type: 'dup-nif', empId: emp._id, name: emp.Empleado || ('Fila ' + (idx+1)), field: 'NIF', current: emp.NIF });
+    }
+  });
+  return issues;
+}
+```
+
+- [ ] **Paso 5: Crear funcion renderDataQualityPanel()**
+
+Insertar justo despues de `collectDataQualityIssues`:
+
+```javascript
+function renderDataQualityPanel() {
+  var container = document.getElementById('dqPanel');
+  if (!container) return;
+  var issues = state.dataQualityIssues;
+  if (issues.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+
+  var grouped = { 'no-email': [], 'invalid-email': [], 'no-nif': [], 'dup-nif': [] };
+  issues.forEach(function(iss) {
+    if (grouped[iss.type]) grouped[iss.type].push(iss);
+  });
+
+  var labels = {
+    'no-email': 'Sin email',
+    'invalid-email': 'Email invalido',
+    'no-nif': 'Sin NIF',
+    'dup-nif': 'NIF duplicado'
+  };
+
+  var bodyHtml = '';
+  Object.keys(grouped).forEach(function(type) {
+    var items = grouped[type];
+    if (items.length === 0) return;
+    bodyHtml += '<div class="dq-group-title">' + esc(labels[type]) + ' (' + items.length + ')</div>';
+    items.forEach(function(iss) {
+      bodyHtml += '<div class="dq-issue" data-emp-id="' + esc(iss.empId) + '" data-field="' + esc(iss.field) + '">' +
+        '<span class="dq-issue-text">' + esc(iss.name) +
+          (iss.current ? ' <span style="color:var(--text-muted);">(' + esc(iss.current) + ')</span>' : '') +
+        '</span>' +
+        '<span class="dq-issue-action">Editar</span>' +
+      '</div>';
+    });
+  });
+
+  container.innerHTML =
+    '<div class="dq-summary" onclick="this.parentElement.classList.toggle(\'open\')">' +
+      '<span><span class="dq-summary-count">' + issues.length + '</span> avisos de calidad</span>' +
+      '<span style="font-size:10px;">&#9660;</span>' +
+    '</div>' +
+    '<div class="dq-body">' + bodyHtml + '</div>';
+
+  // Bind edit handlers
+  container.querySelectorAll('.dq-issue').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var empId = el.dataset.empId;
+      var field = el.dataset.field;
+      var emp = state.employees.find(function(e) { return e._id === empId; });
+      if (!emp) return;
+      var existing = el.nextElementSibling;
+      if (existing && existing.classList.contains('dq-editor')) { existing.remove(); return; }
+      var editor = document.createElement('div');
+      editor.className = 'dq-editor';
+      editor.innerHTML = '<input class="input-field" type="text" value="' + esc(emp[field] || '') + '" placeholder="Nuevo valor">' +
+        '<button class="btn btn-primary" style="font-size:11px; padding:4px 10px;">Guardar</button>' +
+        '<button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;">X</button>';
+      el.after(editor);
+      var input = editor.querySelector('input');
+      input.focus();
+      editor.querySelector('.btn-primary').addEventListener('click', function() {
+        var newVal = input.value.trim();
+        emp[field] = newVal;
+        try {
+          var corrections = JSON.parse(localStorage.getItem('convocatoria_corrections') || '{}');
+          if (!corrections[empId]) corrections[empId] = {};
+          corrections[empId][field] = newVal;
+          localStorage.setItem('convocatoria_corrections', JSON.stringify(corrections));
+        } catch(e) {}
+        state.dataQualityIssues = collectDataQualityIssues(state.employees);
+        renderDataQualityPanel();
+        renderTable();
+        showToast('Dato corregido: ' + emp.Empleado, 'success', 3000);
+      });
+      editor.querySelector('.btn-secondary').addEventListener('click', function() { editor.remove(); });
+    });
+  });
+}
+```
+
+- [ ] **Paso 6: Insertar contenedor HTML del panel**
+
+Despues del cierre de `upload-zone` (linea ~3003, justo antes de `<a href="#" class="link-btn link-add" id="btnDemoData"`), insertar:
+
+```html
+<div class="dq-panel" id="dqPanel" style="display:none;"></div>
+```
+
+- [ ] **Paso 7: Reemplazar toasts de calidad en handleFile()**
+
+En `handleFile()` (lineas 7425-7452), reemplazar el bloque completo desde `// Data quality report` hasta el toast de resumen por:
+
+```javascript
+// Data quality report — panel persistente (no toasts efimeros)
+state.dataQualityIssues = collectDataQualityIssues(state.employees);
+
+// Apply saved corrections
+try {
+  var corrections = JSON.parse(localStorage.getItem('convocatoria_corrections') || '{}');
+  Object.keys(corrections).forEach(function(empId) {
+    var emp = state.employees.find(function(e) { return e._id === empId; });
+    if (!emp) return;
+    Object.keys(corrections[empId]).forEach(function(field) {
+      emp[field] = corrections[empId][field];
+    });
+  });
+  state.dataQualityIssues = collectDataQualityIssues(state.employees);
+} catch(e) {}
+
+var emptyEmails = state.employees.filter(function(e) { return !e['Email trabajo']; }).length;
+showToast(state.employees.length + ' personas trabajadoras cargadas' +
+  (state.dataQualityIssues.length > 0 ? ' · ' + state.dataQualityIssues.length + ' avisos de calidad' : ''), 'info', 4000);
+
+renderDataQualityPanel();
+```
+
+- [ ] **Paso 8: Verificar manualmente**
+
+1. Cargar un Excel con datos reales
+2. Verificar que aparece el panel colapsable debajo de la zona de carga
+3. Hacer click en el panel para expandirlo
+4. Hacer click en un issue para abrir el editor inline
+5. Editar un email, pulsar Guardar, verificar que el panel se actualiza
+6. Recargar la pagina, cargar el mismo Excel, verificar que las correcciones se reaplicaron
+
+- [ ] **Paso 9: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F2.1): panel calidad de datos con edicion in situ
+
+Reemplaza toasts efimeros por panel colapsable persistente.
+Edicion inline de emails y NIFs con persistencia en localStorage."
+```
+
+---
+
+<!-- F2.2-PLACEHOLDER -->
+
+# Formación_AGORA — Overhaul UX Premium (Parte 3: Fases 3-4)
+
+## Fase 3: Diferenciadores premium + reporting (10-14 dias)
+
+**Objetivo:** Features que elevan la percepcion de calidad, extienden la coherencia a todas las pestanas, y anaden capacidades de reporting y documentacion automatica. Solo se implementan despues de que el core (Fases 0-2) este solido.
+
+**Prerequisitos:** Fases 0, 1 y 2 completadas y mergeadas a main.
+
+---
+
+### Task F3.1: Paleta de comandos Cmd+K
+
+**Files:**
+- Modify: `convocatoria.html:1370-1430` (CSS — nuevas clases `.cmdk-*` junto a `.dialog-overlay`)
+- Modify: `convocatoria.html:3823-3900` (HTML — nuevo overlay `#cmdkOverlay` junto a dialogos existentes)
+- Modify: `convocatoria.html:3931-3952` (JS — tab navigation, reutilizar para Cmd+K)
+- Modify: `convocatoria.html:~9135` (JS — zona de init, registrar listener global keydown)
+
+**Contexto:** La app tiene 5 pestanas con funcionalidades dispersas. Cmd+K es el punto de acceso unificado. Sigue el patron de `.dialog-overlay` + `.dialog-box` ya existente (lineas 1370-1430). El fuzzy search se implementa sin dependencias externas.
+
+- [ ] **Paso 1: Escribir CSS de la paleta de comandos**
+
+Anadir despues de `.dialog-overlay.closing .dialog-box` (linea ~1421):
+
+```css
+/* ═══ Command Palette ═══ */
+.cmdk-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+}
+.cmdk-overlay.visible { display: flex; animation: overlayIn 0.2s ease-out; }
+.cmdk-overlay.closing { animation: overlayOut 0.15s ease-in forwards; }
+.cmdk-box {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg);
+  animation: dialogIn 0.25s ease-out;
+  overflow: hidden;
+}
+.cmdk-overlay.closing .cmdk-box {
+  animation: dialogOut 0.15s ease-in forwards;
+}
+.cmdk-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 15px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  outline: none;
+}
+.cmdk-input::placeholder { color: var(--text-muted); }
+.cmdk-results {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.cmdk-group-label {
+  padding: 8px 20px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.cmdk-item:hover, .cmdk-item.active {
+  background: var(--accent-subtle);
+}
+.cmdk-item-icon {
+  width: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.cmdk-item-label { flex: 1; }
+.cmdk-item-shortcut {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+.cmdk-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+```
+
+- [ ] **Paso 2: Escribir HTML del overlay**
+
+Anadir despues de `<div id="toastContainer">` (linea ~3696):
+
+```html
+<div class="cmdk-overlay" id="cmdkOverlay" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
+  <div class="cmdk-box">
+    <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Buscar comando, pestana o accion..." autocomplete="off">
+    <div class="cmdk-results" id="cmdkResults"></div>
+  </div>
+</div>
+```
+
+- [ ] **Paso 3: Implementar motor de busqueda fuzzy y catalogo de comandos**
+
+Anadir en la zona JS, despues del bloque de tab navigation (~linea 3952):
+
+```javascript
+// ═══════════════════════════════════
+// COMMAND PALETTE (Cmd+K)
+// ═══════════════════════════════════
+const CmdK = {
+  overlay: null, input: null, results: null,
+  activeIndex: -1,
+  commands: [],
+
+  init() {
+    this.overlay = document.getElementById('cmdkOverlay');
+    this.input = document.getElementById('cmdkInput');
+    this.results = document.getElementById('cmdkResults');
+
+    this.commands = [
+      { group: 'Navegacion', label: 'Ir a Dashboard', icon: '\u2261', shortcut: 'Alt+1', action: () => document.querySelector('.tab-btn[data-tab="tabDashboard"]').click() },
+      { group: 'Navegacion', label: 'Ir a Calendario', icon: '\uD83D\uDCC5', shortcut: 'Alt+2', action: () => document.querySelector('.tab-btn[data-tab="tabCalendario"]').click() },
+      { group: 'Navegacion', label: 'Ir a Convocatoria', icon: '\u2709', shortcut: 'Alt+3', action: () => document.querySelector('.tab-btn[data-tab="tabConvocatoria"]').click() },
+      { group: 'Navegacion', label: 'Ir a Catalogos', icon: '\uD83D\uDCCB', shortcut: 'Alt+4', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
+      { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: '\uD83D\uDCC4', shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
+      { group: 'Herramientas', label: 'Abrir ajustes', icon: '\u2699', action: () => document.getElementById('settingsDialog').classList.add('visible') },
+      { group: 'Herramientas', label: 'Ver historial', icon: '\uD83D\uDD52', action: () => document.getElementById('historyDialog')?.classList.add('visible') },
+      { group: 'Convocatoria', label: 'Limpiar filtros', icon: '\u2715', action: () => { document.querySelectorAll('.filter-select').forEach(s => { s.value = ''; }); renderFilters(); renderTable(); } },
+      { group: 'Convocatoria', label: 'Enviar convocatoria', icon: '\u2709', shortcut: 'Ctrl+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
+    ];
+
+    this.input.addEventListener('input', () => this.render());
+    this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+    this.overlay.addEventListener('click', (e) => { if (e.target === this.overlay) this.close(); });
+  },
+
+  open() {
+    this.overlay.classList.remove('closing');
+    this.overlay.classList.add('visible');
+    this.input.value = '';
+    this.activeIndex = -1;
+    this.render();
+    requestAnimationFrame(() => this.input.focus());
+  },
+
+  close() {
+    this.overlay.classList.add('closing');
+    setTimeout(() => { this.overlay.classList.remove('visible', 'closing'); }, 150);
+  },
+
+  fuzzyMatch(query, text) {
+    var q = query.toLowerCase();
+    var t = text.toLowerCase();
+    if (!q) return true;
+    var qi = 0;
+    for (var ti = 0; ti < t.length && qi < q.length; ti++) {
+      if (t[ti] === q[qi]) qi++;
+    }
+    return qi === q.length;
+  },
+
+  render() {
+    var query = this.input.value.trim();
+    var filtered = this.commands.filter(c => this.fuzzyMatch(query, c.label) || this.fuzzyMatch(query, c.group));
+    this.results.textContent = '';
+    this.activeIndex = -1;
+
+    if (filtered.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'cmdk-empty';
+      empty.textContent = 'Sin resultados para "' + query + '"';
+      this.results.appendChild(empty);
+      return;
+    }
+
+    var groups = {};
+    filtered.forEach(function(c) {
+      if (!groups[c.group]) groups[c.group] = [];
+      groups[c.group].push(c);
+    });
+
+    var self = this;
+    var itemIndex = 0;
+    Object.keys(groups).forEach(function(groupName) {
+      var label = document.createElement('div');
+      label.className = 'cmdk-group-label';
+      label.textContent = groupName;
+      self.results.appendChild(label);
+
+      groups[groupName].forEach(function(cmd) {
+        var item = document.createElement('div');
+        item.className = 'cmdk-item';
+        item.dataset.index = itemIndex++;
+        item.innerHTML = '<span class="cmdk-item-icon">' + cmd.icon + '</span>'
+          + '<span class="cmdk-item-label">' + cmd.label + '</span>'
+          + (cmd.shortcut ? '<span class="cmdk-item-shortcut">' + cmd.shortcut + '</span>' : '');
+        item.addEventListener('click', function() { self.execute(cmd); });
+        self.results.appendChild(item);
+      });
+    });
+  },
+
+  handleKeydown(e) {
+    var items = this.results.querySelectorAll('.cmdk-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.activeIndex = Math.min(this.activeIndex + 1, items.length - 1); this.highlightActive(items); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); this.activeIndex = Math.max(this.activeIndex - 1, 0); this.highlightActive(items); }
+    else if (e.key === 'Enter' && this.activeIndex >= 0) { e.preventDefault(); items[this.activeIndex]?.click(); }
+    else if (e.key === 'Escape') { e.preventDefault(); this.close(); }
+  },
+
+  highlightActive(items) {
+    items.forEach(function(it, i) { it.classList.toggle('active', i === CmdK.activeIndex); });
+    if (items[this.activeIndex]) items[this.activeIndex].scrollIntoView({ block: 'nearest' });
+  },
+
+  execute(cmd) {
+    this.close();
+    setTimeout(function() { cmd.action(); }, 160);
+  }
+};
+```
+
+- [ ] **Paso 4: Registrar listener global y arrancar CmdK**
+
+En la zona de inicializacion (despues de `DOMContentLoaded` o junto al tab navigation ~linea 3952):
+
+```javascript
+CmdK.init();
+
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    CmdK.open();
+  }
+  if (e.key === 'Escape' && CmdK.overlay.classList.contains('visible')) {
+    e.preventDefault();
+    CmdK.close();
+  }
+});
+```
+
+- [ ] **Paso 5: Verificar**
+
+1. Pulsar Cmd+K (Mac) / Ctrl+K (Windows) → se abre la paleta centrada con blur de fondo.
+2. Escribir "dash" → filtra a "Ir a Dashboard".
+3. Flechas arriba/abajo → navegan la lista.
+4. Enter → ejecuta el comando y cierra la paleta.
+5. Click fuera → cierra. Escape → cierra.
+6. Sin query → muestra todos los comandos agrupados.
+
+- [ ] **Paso 6: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.1): command palette with Cmd+K, fuzzy search, keyboard navigation"
+```
+
+---
+
+### Task F3.2: Atajos de teclado globales
+
+**Files:**
+- Modify: `convocatoria.html:~3952` (JS — anadir listeners keydown junto al bloque de CmdK)
+- Modify: `convocatoria.html:~3931-3952` (JS — tab navigation, refactorizar para reutilizar con Alt+N)
+
+**Contexto:** Atajos seguros que no conflictan con el navegador. Deteccion de OS con `navigator.userAgentData?.platform || navigator.platform`. Alt+1..5 para pestanas (NO Ctrl+1..5 que conflicta en Windows con pestanas del navegador). Los tooltips de atajos se revelan progresivamente despues de 3 interacciones.
+
+- [ ] **Paso 1: Implementar deteccion de OS y constante de modificador**
+
+```javascript
+// ═══════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════
+const KBD = {
+  isMac: /mac/i.test(navigator.userAgentData?.platform || navigator.platform || ''),
+  get mod() { return this.isMac ? '\u2318' : 'Ctrl'; },
+  interactionCount: 0,
+  REVEAL_THRESHOLD: 3,
+
+  init() {
+    try {
+      this.interactionCount = parseInt(localStorage.getItem('convocatoria_kbdInteractions') || '0', 10);
+    } catch(e) { this.interactionCount = 0; }
+  },
+
+  trackInteraction() {
+    this.interactionCount++;
+    try { localStorage.setItem('convocatoria_kbdInteractions', String(this.interactionCount)); } catch(e) {}
+  },
+
+  shouldShowShortcuts() {
+    return this.interactionCount >= this.REVEAL_THRESHOLD;
+  }
+};
+KBD.init();
+```
+
+- [ ] **Paso 2: Registrar atajos globales**
+
+Integrar en el listener `keydown` global (junto al de CmdK):
+
+```javascript
+document.addEventListener('keydown', function(e) {
+  // Cmd/Ctrl+K — command palette (ya registrado en F3.1)
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault(); CmdK.open(); return;
+  }
+
+  // Escape — cerrar overlays
+  if (e.key === 'Escape') {
+    if (CmdK.overlay.classList.contains('visible')) { CmdK.close(); return; }
+    var visibleDialog = document.querySelector('.dialog-overlay.visible');
+    if (visibleDialog) { visibleDialog.classList.remove('visible'); return; }
+  }
+
+  // Alt+1..5 — navegar pestanas
+  if (e.altKey && e.key >= '1' && e.key <= '5') {
+    e.preventDefault();
+    var tabIndex = parseInt(e.key) - 1;
+    var tabs = document.querySelectorAll('.tab-btn');
+    if (tabs[tabIndex]) { tabs[tabIndex].click(); KBD.trackInteraction(); }
+    return;
+  }
+
+  // Ctrl/Cmd+Enter — enviar convocatoria (solo en tab Convocatoria)
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.shiftKey) {
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab && activeTab.dataset.tab === 'tabConvocatoria') {
+      e.preventDefault();
+      document.getElementById('btnOpenOutlook').click();
+      KBD.trackInteraction();
+    }
+    return;
+  }
+
+  // Ctrl/Cmd+Shift+Enter — anadir a cola
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'Enter') {
+    var activeTab2 = document.querySelector('.tab-btn.active');
+    if (activeTab2 && activeTab2.dataset.tab === 'tabConvocatoria') {
+      e.preventDefault();
+      var addBtn = document.getElementById('btnAddToQueue');
+      if (addBtn) { addBtn.click(); KBD.trackInteraction(); }
+    }
+    return;
+  }
+});
+```
+
+- [ ] **Paso 3: Actualizar tooltips de botones con atajos**
+
+En la zona de init, despues de registrar atajos:
+
+```javascript
+// Revelar atajos en tooltips solo tras N interacciones
+function updateShortcutTooltips() {
+  if (!KBD.shouldShowShortcuts()) return;
+  var mod = KBD.mod;
+  var btnOutlook = document.getElementById('btnOpenOutlook');
+  if (btnOutlook) btnOutlook.title = 'Enviar convocatoria (' + mod + '+Enter)';
+  var btnAdd = document.getElementById('btnAddToQueue');
+  if (btnAdd) btnAdd.title = 'Anadir a cola (' + mod + '+Shift+Enter)';
+  document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+    btn.title = (btn.title || btn.textContent.trim()) + ' (Alt+' + (i+1) + ')';
+  });
+}
+updateShortcutTooltips();
+```
+
+- [ ] **Paso 4: Actualizar comandos de CmdK con shortcuts dinamicos**
+
+Actualizar la inicializacion de `CmdK.commands` para usar `KBD.mod`:
+
+```javascript
+// En CmdK.init(), actualizar shortcuts:
+// shortcut: KBD.mod + '+Enter' en vez de 'Ctrl+Enter'
+// shortcut: 'Alt+1' a 'Alt+5' (estos no cambian por OS)
+```
+
+- [ ] **Paso 5: Verificar**
+
+1. Alt+1 → Dashboard. Alt+2 → Calendario. Alt+3 → Convocatoria. Alt+4 → Catalogos. Alt+5 → XML.
+2. Ctrl+Enter (Windows) / Cmd+Enter (Mac) en tab Convocatoria → dispara envio.
+3. Ctrl+Shift+Enter → anade a cola.
+4. Escape → cierra dialogo visible, luego paleta si esta abierta.
+5. Tras 3 interacciones con atajos, los tooltips muestran los shortcuts.
+6. En Mac, tooltips muestran Cmd. En Windows, Ctrl.
+
+- [ ] **Paso 6: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.2): global keyboard shortcuts with OS detection and progressive tooltip reveal"
+```
+
+---
+
+### Task F3.3: Empty states contextuales unificados (todas las pestanas)
+
+**Files:**
+- Modify: `convocatoria.html:1265-1280` (CSS — ampliar `.empty-state` existente)
+- Modify: `convocatoria.html:3131` (HTML — `#emptyState` tabla personas destinatarias)
+- Modify: `convocatoria.html:3402` (HTML — `#calEmptyState` calendario)
+- Modify: `convocatoria.html:3455` (HTML — `#dashEmptyState` dashboard)
+- Modify: `convocatoria.html:7902-7910` (JS — `renderTable()` empty state)
+- Modify: `convocatoria.html:10816-10835` (JS — `renderEmptyState()` dashboard)
+- Modify: `convocatoria.html:8219-8311` (JS — `renderQueue()` / `renderQueuePanel()`)
+
+**Contexto:** La app tiene 3 tipos de empty state: `.empty-state` en tabla (linea 1265), `.cal-empty-state` en calendario (linea 3402), `.dash-empty` en dashboard (linea 10816). Unificar en un sistema de componentes `.empty-state` con variantes por contexto. Cada variante explica: que datos necesita, donde se introducen, y un CTA accionable.
+
+- [ ] **Paso 1: Ampliar CSS del sistema de empty states**
+
+Reemplazar el bloque `.empty-state` existente (~linea 1265):
+
+```css
+/* ═══ Unified Empty States ═══ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state-icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 4px;
+  opacity: 0.6;
+}
+.empty-state-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.empty-state-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+.empty-state-cta {
+  margin-top: 8px;
+}
+```
+
+- [ ] **Paso 2: Crear funcion generadora de empty states**
+
+Funcion reutilizable en JS (zona helpers, ~linea 6670):
+
+```javascript
+function createEmptyState(opts) {
+  // opts: { icon, title, desc, ctaText, ctaAction }
+  var wrap = document.createElement('div');
+  wrap.className = 'empty-state';
+  if (opts.icon) {
+    var ic = document.createElement('div');
+    ic.className = 'empty-state-icon';
+    ic.textContent = opts.icon;
+    wrap.appendChild(ic);
+  }
+  if (opts.title) {
+    var t = document.createElement('div');
+    t.className = 'empty-state-title';
+    t.textContent = opts.title;
+    wrap.appendChild(t);
+  }
+  if (opts.desc) {
+    var d = document.createElement('div');
+    d.className = 'empty-state-desc';
+    d.textContent = opts.desc;
+    wrap.appendChild(d);
+  }
+  if (opts.ctaText && opts.ctaAction) {
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-primary empty-state-cta';
+    btn.textContent = opts.ctaText;
+    btn.addEventListener('click', opts.ctaAction);
+    wrap.appendChild(btn);
+  }
+  return wrap;
+}
+```
+
+- [ ] **Paso 3: Aplicar empty states a tabla de personas destinatarias**
+
+En `renderTable()` (linea ~7902), reemplazar la logica existente:
+
+```javascript
+// Sin datos cargados
+if (!state.employees || state.employees.length === 0) {
+  emptyState.textContent = '';
+  emptyState.appendChild(createEmptyState({
+    icon: '\u2B06',
+    title: 'Carga tu censo de personas trabajadoras',
+    desc: 'Arrastra un archivo Excel o haz click en "Cargar Excel" en el panel izquierdo.',
+    ctaText: 'Cargar Excel',
+    ctaAction: function() { document.getElementById('fileInput').click(); }
+  }));
+  emptyState.style.display = '';
+  return;
+}
+
+// Sin resultados de filtro
+if (filtered.length === 0) {
+  emptyState.textContent = '';
+  emptyState.appendChild(createEmptyState({
+    icon: '\uD83D\uDD0D',
+    title: 'Sin resultados',
+    desc: 'Ningun registro coincide con los filtros actuales.',
+    ctaText: 'Limpiar filtros',
+    ctaAction: function() { /* limpiar filtros existentes */ }
+  }));
+  emptyState.style.display = '';
+  return;
+}
+```
+
+- [ ] **Paso 4: Aplicar empty states al dashboard**
+
+Actualizar `renderEmptyState()` existente (linea 10816) para usar el sistema unificado:
+
+```javascript
+function renderEmptyState(container, hint) {
+  container.textContent = '';
+  container.appendChild(createEmptyState({
+    icon: '?',
+    title: 'Sin datos disponibles',
+    desc: hint || ''
+  }));
+}
+```
+
+Actualizar el empty state global del dashboard (`#dashEmptyState`, linea 3455) con contenido contextual.
+
+- [ ] **Paso 5: Aplicar empty states a calendario, cola e historial**
+
+Para calendario (`#calEmptyState`):
+```javascript
+createEmptyState({
+  icon: '\uD83D\uDCC5',
+  title: 'Calendario vacio',
+  desc: 'Las acciones formativas con fechas aparecen aqui automaticamente.',
+  ctaText: 'Ir a Catalogos',
+  ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
+});
+```
+
+Para cola (`renderQueue()` / `renderQueuePanel()`):
+```javascript
+createEmptyState({
+  icon: '\uD83D\uDCE5',
+  title: 'Cola vacia',
+  desc: 'Anade convocatorias a la cola para enviarlas en lote.'
+});
+```
+
+Para historial:
+```javascript
+createEmptyState({
+  icon: '\uD83D\uDD52',
+  title: 'Sin historial',
+  desc: 'Las convocatorias que envies se registraran aqui.'
+});
+```
+
+- [ ] **Paso 6: Verificar**
+
+1. Sin Excel cargado → tabla muestra empty state con CTA "Cargar Excel".
+2. Filtros sin resultados → empty state con CTA "Limpiar filtros".
+3. Dashboard sin catalogo → cada modulo muestra hint contextual.
+4. Calendario sin acciones → empty state con CTA "Ir a Catalogos".
+5. Cola vacia → empty state descriptivo.
+6. Historial vacio → empty state descriptivo.
+
+- [ ] **Paso 7: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.3): unified empty states system across all tabs with contextual CTAs"
+```
+
+---
+
+### Task F3.4: Divulgacion progresiva en dashboard
+
+**Files:**
+- Modify: `convocatoria.html:1601-1662` (CSS — `.dash-card`, collapsed state ya existe)
+- Modify: `convocatoria.html:13047-15000` (JS — `renderDashboard()`, aplicar colapso por defecto)
+
+**Contexto:** El dashboard ya tiene soporte para colapsar tarjetas (`.dash-card.collapsed`, lineas 1647-1662). Los modulos avanzados (ROI, equidad, interempresarial, riesgo, gestor, formacion cruzada) se colapsan por defecto. Los modulos operativos (KPIs, alertas, plazos, credito, estado, completitud, compliance) permanecen abiertos. La seleccion se persiste en `localStorage` key `convocatoria_dashCollapsed`.
+
+- [ ] **Paso 1: Definir modulos por defecto colapsados**
+
+```javascript
+const DASH_COLLAPSED_DEFAULTS = [
+  'dash-roi', 'dash-equity', 'dash-crosscompany',
+  'dash-risk', 'dash-manager', 'dash-crosstrain'
+];
+
+function getDashCollapsedState() {
+  try {
+    var saved = localStorage.getItem('convocatoria_dashCollapsed');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return DASH_COLLAPSED_DEFAULTS.slice();
+}
+
+function saveDashCollapsedState(collapsed) {
+  try { localStorage.setItem('convocatoria_dashCollapsed', JSON.stringify(collapsed)); } catch(e) {}
+}
+```
+
+- [ ] **Paso 2: Aplicar estado colapsado al renderizar**
+
+En `renderDashboard()`, despues de renderizar todas las tarjetas:
+
+```javascript
+var collapsed = getDashCollapsedState();
+document.querySelectorAll('.dash-card[data-module]').forEach(function(card) {
+  if (collapsed.indexOf(card.dataset.module) >= 0) {
+    card.classList.add('collapsed');
+  } else {
+    card.classList.remove('collapsed');
+  }
+});
+```
+
+- [ ] **Paso 3: Persistir cambios de colapso al click**
+
+En el handler de click de `.dash-card-title` (ya existente para toggle):
+
+```javascript
+// Dentro del handler de toggle existente:
+var collapsed = getDashCollapsedState();
+var mod = card.dataset.module;
+if (card.classList.contains('collapsed')) {
+  collapsed = collapsed.filter(function(m) { return m !== mod; });
+} else {
+  if (collapsed.indexOf(mod) < 0) collapsed.push(mod);
+}
+saveDashCollapsedState(collapsed);
+```
+
+- [ ] **Paso 4: Verificar**
+
+1. Al abrir dashboard por primera vez → modulos avanzados colapsados.
+2. Click en titulo de modulo avanzado → se expande, se persiste.
+3. Recargar → mantiene el estado de colapso personalizado.
+4. Modulos operativos (KPIs, alertas) → siempre visibles por defecto.
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.4): progressive disclosure in dashboard with persisted collapsed state"
+```
+
+---
+
+### Task F3.5: Dashboard accionable
+
+**Files:**
+- Modify: `convocatoria.html:13047-15000` (JS — `renderDashboard()`, anadir handlers onclick a alertas y KPIs)
+- Modify: `convocatoria.html:1509-1600` (CSS — cursor pointer en KPIs accionables)
+
+**Contexto:** El dashboard muestra alertas (`dash-alerts-widget`, linea 2061), KPIs (`.dash-kpi`, linea 1516), y tarjetas de datos. Actualmente son presentacionales. Cada alerta y KPI que tenga una accion correctiva enlaza a la pestana y vista correspondiente con filtros preaplicados.
+
+- [ ] **Paso 1: Anadir CSS para KPIs accionables**
+
+```css
+.dash-kpi[data-action], .dash-alert-item[data-action] {
+  cursor: pointer;
+}
+.dash-kpi[data-action]:hover {
+  border-left-width: 4px;
+}
+```
+
+- [ ] **Paso 2: Implementar funcion de navegacion con contexto**
+
+```javascript
+function dashNavigateTo(tab, context) {
+  // tab: 'tabCatalogos', 'tabXml', 'tabConvocatoria', etc.
+  // context: { filter, scrollTo, subView }
+  var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+  if (btn) btn.click();
+  if (context && context.scrollTo) {
+    setTimeout(function() {
+      var el = document.getElementById(context.scrollTo) || document.querySelector(context.scrollTo);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
+  }
+}
+```
+
+- [ ] **Paso 3: Anadir acciones a alertas del dashboard**
+
+Dentro de la funcion que renderiza alertas (en `renderDashboard()`), anadir `data-action` y handlers:
+
+```javascript
+// Ejemplo para alertas FUNDAE:
+alertItem.dataset.action = 'navigate';
+alertItem.addEventListener('click', function() {
+  dashNavigateTo('tabXml');
+});
+
+// Ejemplo para alertas de compliance:
+alertItem.dataset.action = 'navigate';
+alertItem.addEventListener('click', function() {
+  dashNavigateTo('tabCatalogos', { scrollTo: 'complianceSection' });
+});
+
+// Ejemplo para alertas de credito:
+alertItem.dataset.action = 'navigate';
+alertItem.addEventListener('click', function() {
+  dashNavigateTo('tabDashboard', { scrollTo: 'dash-credit' });
+});
+```
+
+- [ ] **Paso 4: Anadir acciones a KPIs**
+
+En las KPIs que tengan accion correctiva (grupos sin participantes, formaciones caducadas, etc.):
+
+```javascript
+kpiElement.dataset.action = 'navigate';
+kpiElement.style.cursor = 'pointer';
+kpiElement.addEventListener('click', function() {
+  dashNavigateTo('tabCatalogos');
+});
+```
+
+- [ ] **Paso 5: Verificar**
+
+1. Click en alerta FUNDAE → navega a pestana XML.
+2. Click en alerta de compliance → navega a catalogos, seccion compliance.
+3. Click en KPI de participantes → navega a catalogos.
+4. Cursor pointer en elementos accionables, cursor default en los demas.
+
+- [ ] **Paso 6: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.5): actionable dashboard with click-through navigation from alerts and KPIs"
+```
+
+---
+
+### Task F3.6: PDF de convocatoria con branding Formacion_AGORA
+
+**Files:**
+- Modify: `convocatoria.html:~8653-8743` (JS — zona de envio, anadir boton export)
+- Modify: `convocatoria.html:3155-3165` (HTML — action bar, nuevo boton "Exportar PDF")
+- Modify: `convocatoria.html:~1447` (CSS — estilos print para documento generado)
+
+**Contexto:** PDF generado con `window.open()` + HTML inline con `@media print` + `@page`. Cabecera con borde inferior 3px en `--accent` (#4F46E5), titulo del evento, metadata, tabla de personas destinatarias con filas alternas, pie con fecha. Boton en la action bar junto a "Abrir en Outlook". Todo contenido dinamico del Excel sanitizado con `esc()`.
+
+- [ ] **Paso 1: Anadir boton en la action bar**
+
+En la action bar (linea ~3160), junto a `btnOpenOutlook`:
+
+```html
+<button class="btn btn-secondary" id="btnExportPDF" title="Exportar convocatoria como PDF">Exportar PDF</button>
+```
+
+- [ ] **Paso 2: Implementar funcion de generacion**
+
+```javascript
+function exportConvocatoriaPDF() {
+  var ev = validateEvent();
+  if (!ev) return;
+  var selected = getSelectedEmployees();
+  if (selected.length === 0) { showToast('Selecciona al menos una persona destinataria', 'warning'); return; }
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite las ventanas emergentes para exportar', 'warning'); return; }
+
+  var rows = selected.map(function(emp) {
+    return '<tr><td>' + esc(emp['NOMBRE'] || '') + '</td><td>' + esc(emp['EMAIL'] || '') + '</td>'
+      + '<td>' + esc(emp['DEPARTAMENTO'] || '') + '</td><td>' + esc(emp['UBICACION'] || '') + '</td></tr>';
+  }).join('');
+
+  var locationLine = ev.location ? '<p><strong>Ubicacion:</strong> ' + esc(ev.location) + '</p>' : '';
+  var dateLine = ev.date ? '<p><strong>Fecha:</strong> ' + esc(ev.date) + '</p>' : '';
+  var timeLine = (ev.startTime && ev.endTime) ? '<p><strong>Horario:</strong> ' + esc(ev.startTime) + ' - ' + esc(ev.endTime) + '</p>' : '';
+
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8">'
+    + '<title>Convocatoria - ' + esc(ev.title || 'Sin titulo') + '</title>'
+    + '<style>@page{size:A4;margin:20mm}'
+    + 'body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+    + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.header-brand{font-size:11px;color:#94a3b8}'
+    + '.header-title{font-size:20px;font-weight:600}'
+    + '.meta{margin-bottom:24px} .meta p{margin:4px 0;font-size:13px}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:16px}'
+    + 'th{background:#f1f5f9;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e2e8f0}'
+    + 'td{padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}'
+    + 'tr:nth-child(even) td{background:#f8fafc}'
+    + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+    + '.count{margin-top:16px;font-size:13px;color:#475569}'
+    + '</style></head><body>'
+    + '<div class="header"><div><div class="header-title">' + esc(ev.title || 'Convocatoria') + '</div></div><div class="header-brand">Formacion_AGORA</div></div>'
+    + '<div class="meta">' + dateLine + timeLine + locationLine + '</div>'
+    + '<div class="count">' + selected.length + ' personas destinatarias</div>'
+    + '<table><thead><tr><th>Nombre</th><th>Email</th><th>Departamento</th><th>Ubicacion</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+    + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+
+document.getElementById('btnExportPDF').addEventListener('click', exportConvocatoriaPDF);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Con datos y evento completo → "Exportar PDF" → nueva ventana con documento formateado.
+2. Cabecera con borde indigo, tabla con filas alternas, pie con fecha.
+3. Sin personas seleccionadas → toast de advertencia.
+4. Contenido sanitizado con `esc()`.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.6): branded PDF export for convocatoria with print-ready layout"
+```
+
+---
+
+### Task F3.7: Certificados y hojas de firmas mejorados
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — zona catalogo, nuevas funciones en ficha de accion)
+- Modify: `convocatoria.html:~5200` (JS — renderCatalogForm(), botones "Hoja de firmas" y "Certificados")
+
+**Contexto:** Branding unificado (cabecera "Formacion_AGORA", paleta indigo, misma tipografia). Hoja de firmas genera tabla por sesion. Certificados generan documento por participante con asistencia >= 75%. Ambos con `window.open()` + `window.print()`. Datos del catalogo. Contenido sanitizado con `esc()`.
+
+- [ ] **Paso 1: Implementar hojas de firmas**
+
+```javascript
+function generateAttendanceSheet(actionId) {
+  var action = getCatalogAction(actionId);
+  if (!action) { showToast('Accion no encontrada', 'error'); return; }
+  var sessions = action.sessions || [];
+  if (sessions.length === 0) { showToast('No hay sesiones registradas', 'warning'); return; }
+  var participants = (action.participants || []).slice().sort(function(a, b) {
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  var sheetsHtml = sessions.map(function(session, idx) {
+    var rows = participants.map(function(p) {
+      return '<tr><td>' + esc(p.name || '') + '</td><td>' + esc(p.nif || '') + '</td>'
+        + '<td class="sign"></td><td class="time"></td><td class="time"></td></tr>';
+    }).join('');
+    return '<div class="sheet' + (idx > 0 ? ' pb' : '') + '">'
+      + '<div class="hdr"><div class="htitle">HOJA DE FIRMAS</div><div class="hbrand">Formacion_AGORA</div></div>'
+      + '<div class="meta"><p><strong>Formacion:</strong> ' + esc(action.title || '') + '</p>'
+      + '<p><strong>Fecha:</strong> ' + esc(session.date || '') + ' | <strong>Horario:</strong> ' + esc(session.startTime || '') + ' - ' + esc(session.endTime || '') + '</p>'
+      + '<p><strong>Lugar:</strong> ' + esc(action.location || '') + ' | <strong>Formador/a:</strong> ' + esc(action.trainer || '') + '</p></div>'
+      + '<table><thead><tr><th>Nombre</th><th>NIF</th><th>Firma</th><th>H. entrada</th><th>H. salida</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      + '<div class="tsign"><p>Firma formador/a:</p><div class="sline"></div></div></div>';
+  }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoja de firmas - ' + esc(action.title || '') + '</title>'
+    + '<style>@page{size:A4;margin:15mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:11px}'
+    + '.pb{page-break-before:always} .hdr{border-bottom:3px solid #4F46E5;padding-bottom:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.htitle{font-size:16px;font-weight:600} .hbrand{font-size:10px;color:#94a3b8} .meta p{margin:2px 0}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:12px} th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+    + 'td{padding:12px 8px;border-bottom:1px solid #e2e8f0} .sign{width:120px} .time{width:80px}'
+    + '.tsign{margin-top:40px} .sline{border-bottom:1px solid #0f172a;width:250px;margin-top:40px}'
+    + '</style></head><body>' + sheetsHtml + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+```
+
+- [ ] **Paso 2: Implementar certificados**
+
+```javascript
+function generateCertificates(actionId) {
+  var action = getCatalogAction(actionId);
+  if (!action) { showToast('Accion no encontrada', 'error'); return; }
+  var minAtt = 75;
+  var eligible = (action.participants || []).filter(function(p) { return (p.attendancePercent || 0) >= minAtt; });
+  if (eligible.length === 0) { showToast('Sin participantes con asistencia >= ' + minAtt + '%', 'warning'); return; }
+
+  var year = new Date().getFullYear();
+  var certsHtml = eligible.map(function(p, idx) {
+    var num = 'CERT-' + year + '-' + String(idx+1).padStart(4,'0');
+    return '<div class="cert' + (idx > 0 ? ' pb' : '') + '">'
+      + '<div class="chdr"><div class="cbrand">Formacion_AGORA</div><div class="cnum">' + num + '</div></div>'
+      + '<h1 class="ctitle">CERTIFICADO DE ASISTENCIA</h1>'
+      + '<div class="cbody"><p>Se certifica que <strong>' + esc(p.name || '') + '</strong>, '
+      + 'con NIF <strong>' + esc(p.nif || '') + '</strong>, ha completado la accion formativa:</p>'
+      + '<div class="caction"><p class="cat">' + esc(action.title || '') + '</p>'
+      + '<p>' + (action.hours || 0) + ' horas | ' + esc(action.modality || 'Presencial') + '</p>'
+      + (action.trainer ? '<p>Formador/a: ' + esc(action.trainer) + '</p>' : '') + '</div></div>'
+      + '<div class="cfooter"><div class="cdate">Emision: ' + new Date().toLocaleDateString('es-ES') + '</div>'
+      + '<div class="csign"><div class="sline"></div><p>Firma y sello</p></div></div></div>';
+  }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificados - ' + esc(action.title || '') + '</title>'
+    + '<style>@page{size:A4;margin:25mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a}'
+    + '.cert{min-height:700px;display:flex;flex-direction:column} .pb{page-break-before:always}'
+    + '.chdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:40px}'
+    + '.cbrand{font-size:12px;color:#94a3b8} .cnum{font-size:11px;color:#94a3b8}'
+    + '.ctitle{text-align:center;font-size:22px;font-weight:600;margin-bottom:32px;letter-spacing:.05em}'
+    + '.cbody{flex:1;font-size:14px;line-height:1.8}'
+    + '.caction{background:#f8fafc;border-left:3px solid #4F46E5;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0}'
+    + '.cat{font-size:16px;font-weight:600;margin-bottom:4px} .caction p{margin:2px 0;font-size:13px;color:#475569}'
+    + '.cfooter{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:20px}'
+    + '.cdate{font-size:12px;color:#475569} .csign{text-align:center}'
+    + '.sline{border-bottom:1px solid #0f172a;width:200px;margin-bottom:8px} .csign p{font-size:11px;color:#475569;margin:0}'
+    + '</style></head><body>' + certsHtml + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+  showToast(eligible.length + ' certificados generados', 'success');
+}
+```
+
+- [ ] **Paso 3: Anadir botones en ficha de accion del catalogo**
+
+En `renderCatalogForm()`, crear grupo de botones de documentacion:
+
+```javascript
+var docsGroup = document.createElement('div');
+docsGroup.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+var btnSheet = document.createElement('button');
+btnSheet.className = 'btn btn-secondary'; btnSheet.textContent = 'Hoja de firmas';
+btnSheet.addEventListener('click', function() { generateAttendanceSheet(currentActionId); });
+var btnCerts = document.createElement('button');
+btnCerts.className = 'btn btn-secondary'; btnCerts.textContent = 'Certificados';
+btnCerts.addEventListener('click', function() { generateCertificates(currentActionId); });
+docsGroup.appendChild(btnSheet); docsGroup.appendChild(btnCerts);
+```
+
+- [ ] **Paso 4: Verificar**
+
+1. Hoja de firmas con sesiones → tabla por sesion, page-break, espacio firma formador.
+2. Certificados con asistencia registrada → certificado por persona >= 75% asistencia.
+3. Branding unificado. Contenido sanitizado. Numeracion automatica.
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.7): attendance sheets and certificates with unified branding"
+```
+
+---
+
+### Task F3.8: Dossier de inspeccion
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — zona catalogo, funcion dossier)
+- Modify: `convocatoria.html:~5200` (JS — renderCatalogForm(), boton "Dossier inspeccion")
+
+**Contexto:** Boton en ficha de accion. Recopila datos disponibles (FUNDAE, asistencia, XML, RLT), genera HTML con indice y checklist de documentacion requerida vs. disponible. Mismo patron `window.open()` + branding.
+
+- [ ] **Paso 1: Implementar checklist y generacion**
+
+```javascript
+function buildInspectionChecklist(action) {
+  return [
+    { label: 'Datos de la accion formativa', ok: !!(action.title && action.hours && action.modality) },
+    { label: 'Participantes registrados', ok: (action.participants || []).length > 0 },
+    { label: 'Sesiones con fechas', ok: (action.sessions || []).length > 0 },
+    { label: 'Asistencia registrada', ok: (action.participants || []).some(function(p) { return p.attendancePercent > 0; }) },
+    { label: 'Hoja de firmas', ok: !!action.attendanceSheetGenerated },
+    { label: 'Certificados emitidos', ok: !!action.certificatesGenerated },
+    { label: 'XML FUNDAE', ok: !!action.xmlGenerated },
+    { label: 'Comunicacion inicio FUNDAE', ok: ['Inicio comunicado','Fin comunicado','Cerrada'].indexOf(action.fundaeStatus) >= 0 },
+    { label: 'Comunicacion fin FUNDAE', ok: ['Fin comunicado','Cerrada'].indexOf(action.fundaeStatus) >= 0 },
+    { label: 'Comunicacion RLT', ok: !!(action.rlt && action.rlt.status !== 'Pendiente') },
+    { label: 'Encuesta de satisfaccion', ok: !!action.surveyStatus },
+  ];
+}
+
+function generateInspectionDossier(actionId) {
+  var action = getCatalogAction(actionId);
+  if (!action) { showToast('Accion no encontrada', 'error'); return; }
+  var checklist = buildInspectionChecklist(action);
+  var done = checklist.filter(function(i) { return i.ok; }).length;
+
+  var clRows = checklist.map(function(i) {
+    var c = i.ok ? '#16a34a' : '#dc2626';
+    return '<tr><td style="color:' + c + ';font-weight:600;width:24px">' + (i.ok ? '\u2713' : '\u2717') + '</td>'
+      + '<td>' + i.label + '</td><td style="color:' + c + '">' + (i.ok ? 'Disponible' : 'Pendiente') + '</td></tr>';
+  }).join('');
+
+  var pRows = (action.participants || []).map(function(p) {
+    return '<tr><td>' + esc(p.name || '') + '</td><td>' + esc(p.nif || '') + '</td><td>' + (p.attendancePercent || 0) + '%</td></tr>';
+  }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dossier - ' + esc(action.title || '') + '</title>'
+    + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+    + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.ht{font-size:18px;font-weight:600} .hb{font-size:11px;color:#94a3b8}'
+    + 'h2{font-size:14px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+    + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+    + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+    + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
+    + '.sbox{background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0}'
+    + '.sbox p{margin:4px 0} .prog{font-size:14px;font-weight:600;margin-top:12px}'
+    + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+    + '</style></head><body>'
+    + '<div class="header"><div class="ht">DOSSIER DE INSPECCION</div><div class="hb">Formacion_AGORA</div></div>'
+    + '<div class="sbox"><p><strong>Accion:</strong> ' + esc(action.title || '') + '</p>'
+    + '<p><strong>Horas:</strong> ' + (action.hours || 0) + ' | <strong>Modalidad:</strong> ' + esc(action.modality || '') + '</p>'
+    + '<div class="prog">Documentacion: ' + done + ' de ' + checklist.length + ' elementos</div></div>'
+    + '<h2>Checklist de documentacion</h2>'
+    + '<table><thead><tr><th></th><th>Documento</th><th>Estado</th></tr></thead><tbody>' + clRows + '</tbody></table>'
+    + '<h2>Participantes</h2>'
+    + '<table><thead><tr><th>Nombre</th><th>NIF</th><th>Asistencia</th></tr></thead><tbody>' + pRows + '</tbody></table>'
+    + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+    + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+```
+
+- [ ] **Paso 2: Anadir boton en ficha de accion**
+
+```javascript
+var btnDossier = document.createElement('button');
+btnDossier.className = 'btn btn-secondary'; btnDossier.textContent = 'Dossier inspeccion';
+btnDossier.addEventListener('click', function() { generateInspectionDossier(currentActionId); });
+docsGroup.appendChild(btnDossier);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Checklist muestra verde/rojo segun datos disponibles.
+2. Progreso correcto. Tabla de participantes. Branding unificado.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.8): inspection dossier with documentation checklist"
+```
+
+---
+
+### Task F3.9: Informe de ejecucion para Direccion
+
+**Files:**
+- Modify: `convocatoria.html:13047-15000` (JS — dashboard, funcion de generacion)
+- Modify: `convocatoria.html:3501-3700` (HTML — dashboard, boton "Informe para Direccion")
+
+**Contexto:** Boton en el dashboard. Genera informe ejecutivo con KPIs, distribucion por modalidad/departamento. Datos ya calculados en `renderDashboard()`. Formato HTML imprimible con branding unificado.
+
+- [ ] **Paso 1: Anadir boton en dashboard**
+
+```html
+<button class="btn btn-secondary" id="btnReportDirection" style="font-size:12px;">Informe para Direccion</button>
+```
+
+- [ ] **Paso 2: Implementar generacion**
+
+```javascript
+function generateDirectionReport() {
+  var year = new Date().getFullYear();
+  var actions = getAllCatalogActions().filter(function(a) {
+    return a.startDate && a.startDate.startsWith(String(year));
+  });
+  var totalActions = actions.length;
+  var totalHours = actions.reduce(function(s,a) { return s + (parseFloat(a.hours)||0); }, 0);
+  var uniqueNifs = new Set();
+  var totalParts = 0;
+  var byMod = {}, byDept = {};
+  actions.forEach(function(a) {
+    var m = a.modality || 'Sin definir'; byMod[m] = (byMod[m]||0) + 1;
+    (a.participants||[]).forEach(function(p) {
+      totalParts++;
+      if (p.nif) uniqueNifs.add(p.nif);
+      var d = p.department || 'Sin asignar'; byDept[d] = (byDept[d]||0) + 1;
+    });
+  });
+
+  var modRows = Object.keys(byMod).map(function(k) { return '<tr><td>'+esc(k)+'</td><td>'+byMod[k]+'</td></tr>'; }).join('');
+  var deptRows = Object.keys(byDept).sort(function(a,b){return byDept[b]-byDept[a];}).slice(0,10)
+    .map(function(k) { return '<tr><td>'+esc(k)+'</td><td>'+byDept[k]+'</td></tr>'; }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
+    + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+    + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.ht{font-size:20px;font-weight:600} .hs{font-size:13px;color:#475569;margin-top:4px} .hb{font-size:11px;color:#94a3b8}'
+    + '.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}'
+    + '.kpi{background:#f8fafc;border-radius:8px;padding:16px;text-align:center;border-left:3px solid #4F46E5}'
+    + '.kv{font-size:28px;font-weight:700;color:#4F46E5} .kl{font-size:11px;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}'
+    + 'h2{font-size:14px;font-weight:600;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+    + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+    + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+    + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
+    + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+    + '</style></head><body>'
+    + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>'
+    + '<div class="kpis">'
+    + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
+    + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
+    + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
+    + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
+    + '</div>'
+    + '<h2>Distribucion por modalidad</h2>'
+    + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>'
+    + '<h2>Participacion por departamento (Top 10)</h2>'
+    + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>'
+    + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+    + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+
+document.getElementById('btnReportDirection').addEventListener('click', generateDirectionReport);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Dashboard con catalogo → "Informe para Direccion" → documento con KPIs, tablas.
+2. Sin datos → informe con 0s (no error).
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.9): direction report with KPI grid and department breakdown"
+```
+
+---
+
+### Task F3.10: Balance formativo RLT
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — zona catalogo, funcion balance)
+- Modify: `convocatoria.html:~5200` (JS — seccion RLT, boton "Balance anual RLT")
+
+**Contexto:** Complementa F2.11. Informe anual: acciones, horas, participantes, distribucion tipo/modalidad, espacio para firmas empresa y RLT. Mismo patron `window.open()` + branding.
+
+- [ ] **Paso 1: Implementar generacion**
+
+```javascript
+function generateRLTBalance(year) {
+  year = year || new Date().getFullYear();
+  var actions = getAllCatalogActions().filter(function(a) {
+    return a.startDate && a.startDate.startsWith(String(year));
+  });
+  var total = actions.length;
+  var hours = actions.reduce(function(s,a) { return s+(parseFloat(a.hours)||0); }, 0);
+  var uniq = new Set();
+  actions.forEach(function(a) { (a.participants||[]).forEach(function(p) { if(p.nif) uniq.add(p.nif); }); });
+
+  var byType = {};
+  actions.forEach(function(a) { var t=a.type||'Sin tipo'; byType[t]=(byType[t]||0)+1; });
+  var typeRows = Object.keys(byType).map(function(k) { return '<tr><td>'+esc(k)+'</td><td>'+byType[k]+'</td></tr>'; }).join('');
+  var actRows = actions.map(function(a) {
+    return '<tr><td>'+esc(a.title||'')+'</td><td>'+esc(a.modality||'')+'</td><td>'+(a.hours||0)+'</td><td>'+(a.participants||[]).length+'</td></tr>';
+  }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Balance RLT ' + year + '</title>'
+    + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+    + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px}'
+    + '.ht{font-size:18px;font-weight:600;text-align:center} .hs{font-size:13px;color:#475569;text-align:center;margin-top:4px}'
+    + '.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}'
+    + '.si{background:#f8fafc;border-radius:8px;padding:14px;text-align:center}'
+    + '.sv{font-size:24px;font-weight:700;color:#4F46E5} .sl{font-size:11px;color:#475569}'
+    + 'h2{font-size:14px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+    + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+    + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+    + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0;font-size:11px}'
+    + '.signs{margin-top:60px;display:flex;justify-content:space-between}'
+    + '.sb{text-align:center} .sline{border-bottom:1px solid #0f172a;width:200px;margin-bottom:6px;margin-top:50px} .sb p{font-size:11px;color:#475569;margin:0}'
+    + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+    + '</style></head><body>'
+    + '<div class="header"><div class="ht">BALANCE DE ACCIONES FORMATIVAS</div><div class="hs">Ejercicio ' + year + '</div></div>'
+    + '<div class="sum"><div class="si"><div class="sv">' + total + '</div><div class="sl">Acciones</div></div>'
+    + '<div class="si"><div class="sv">' + hours + '</div><div class="sl">Horas</div></div>'
+    + '<div class="si"><div class="sv">' + uniq.size + '</div><div class="sl">Personas</div></div></div>'
+    + '<h2>Por tipo</h2><table><thead><tr><th>Tipo</th><th>Acciones</th></tr></thead><tbody>' + typeRows + '</tbody></table>'
+    + '<h2>Listado de acciones</h2><table><thead><tr><th>Denominacion</th><th>Modalidad</th><th>Horas</th><th>Participantes</th></tr></thead><tbody>' + actRows + '</tbody></table>'
+    + '<div class="signs"><div class="sb"><div class="sline"></div><p>Por la empresa</p></div><div class="sb"><div class="sline"></div><p>Por la RLT</p></div></div>'
+    + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+    + '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+```
+
+- [ ] **Paso 2: Anadir boton**
+
+```javascript
+var btnBalance = document.createElement('button');
+btnBalance.className = 'btn btn-secondary'; btnBalance.textContent = 'Balance anual RLT';
+btnBalance.addEventListener('click', function() { generateRLTBalance(); });
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.10): annual RLT training balance report"
+```
+
+---
+
+### Task F3.11: Animacion de seleccion/deseleccion en tabla
+
+**Files:**
+- Modify: `convocatoria.html:~400-450` (CSS — nueva clase `.row-excluded`)
+- Modify: `convocatoria.html:7881-8030` (JS — renderTable(), aplicar clase)
+
+**Contexto:** Transicion 200ms a `opacity: 0.4` con `text-decoration: line-through` al excluir. Volver a `opacity: 1` al reincluir. Sin flash de color, sin verde, sin escala. Solo opacidad como indicador. Usa `state.excludedNIFs` (contiene `_id`, no NIFs reales).
+
+- [ ] **Paso 1: CSS**
+
+```css
+tr.row-excluded td {
+  opacity: 0.4;
+  text-decoration: line-through;
+  transition: opacity 0.2s ease, text-decoration 0.2s ease;
+}
+tr:not(.row-excluded) td {
+  opacity: 1;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+```
+
+- [ ] **Paso 2: Aplicar en renderTable()**
+
+```javascript
+var isExcluded = state.excludedNIFs && state.excludedNIFs.indexOf(emp._id) >= 0;
+tr.className = isExcluded ? 'row-excluded' : '';
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.11): table row exclusion animation with opacity transition"
+```
+
+---
+
+### Task F3.12: Exportacion .ics
+
+**Files:**
+- Modify: `convocatoria.html:14620-15000` (JS — renderCalendarTab(), boton export)
+- Modify: `convocatoria.html:~3402` (HTML — pestana calendario, boton "Exportar .ics")
+
+**Contexto:** Boton en la pestana Calendario. Exporta archivo .ics con acciones formativas visibles (respetando filtros activos). Formato VCALENDAR con SUMMARY, DTSTART/DTEND, LOCATION, DESCRIPTION. Si accion tiene multiples sesiones, un evento por sesion. Genera Blob y descarga via `URL.createObjectURL`. ~30 lineas de JS.
+
+- [ ] **Paso 1: Implementar generacion ICS**
+
+```javascript
+function generateICS(actions) {
+  var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FormacionAGORA//ES', 'CALSCALE:GREGORIAN'];
+
+  actions.forEach(function(action) {
+    var sessions = action.sessions && action.sessions.length > 0 ? action.sessions : [action];
+    sessions.forEach(function(session) {
+      if (!session.date && !session.startDate) return;
+      var dateStr = (session.date || session.startDate || '').replace(/-/g, '');
+      var startTime = (session.startTime || '09:00').replace(':', '') + '00';
+      var endTime = (session.endTime || '14:00').replace(':', '') + '00';
+      var uid = 'agora-' + (action.id || Math.random().toString(36).substr(2)) + '-' + dateStr + '@formacionagora';
+
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:' + uid);
+      lines.push('DTSTART:' + dateStr + 'T' + startTime);
+      lines.push('DTEND:' + dateStr + 'T' + endTime);
+      lines.push('SUMMARY:' + icsEscape(action.title || 'Formacion'));
+      if (action.location) lines.push('LOCATION:' + icsEscape(action.location));
+      var desc = [];
+      if (action.trainer) desc.push('Formador/a: ' + action.trainer);
+      if (action.participants) desc.push('Participantes: ' + action.participants.length);
+      if (action.modality) desc.push('Modalidad: ' + action.modality);
+      if (desc.length) lines.push('DESCRIPTION:' + icsEscape(desc.join('\\n')));
+      lines.push('STATUS:' + (action.status === 'Cerrada' ? 'CONFIRMED' : 'TENTATIVE'));
+      lines.push('END:VEVENT');
+    });
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+function icsEscape(str) {
+  return (str || '').replace(/[\\;,\n]/g, function(c) {
+    if (c === '\\') return '\\\\';
+    if (c === ';') return '\\;';
+    if (c === ',') return '\\,';
+    if (c === '\n') return '\\n';
+    return c;
+  });
+}
+
+function exportCalendarICS() {
+  var actions = getVisibleCalendarActions();
+  if (!actions || actions.length === 0) {
+    showToast('No hay acciones formativas con fechas para exportar', 'warning');
+    return;
+  }
+  var icsContent = generateICS(actions);
+  var blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'formacion_agora_' + new Date().toISOString().slice(0,10) + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(actions.length + ' eventos exportados a .ics', 'success');
+}
+```
+
+- [ ] **Paso 2: Anadir boton en pestana Calendario**
+
+```html
+<button class="btn btn-secondary" id="btnExportICS" style="font-size:12px;">Exportar .ics</button>
+```
+
+```javascript
+document.getElementById('btnExportICS').addEventListener('click', exportCalendarICS);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Con acciones con fechas → "Exportar .ics" → descarga archivo .ics.
+2. Sin acciones → toast de advertencia.
+3. Archivo importable en Outlook/Google Calendar.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.12): ICS calendar export with per-session events"
+```
+
+---
+
+### Task F3.13: View Transitions API para cambio de pestanas
+
+**Files:**
+- Modify: `convocatoria.html:3931-3952` (JS — tab navigation, wrap con startViewTransition)
+
+**Contexto:** Al cambiar de pestana, usar `document.startViewTransition()` para cross-fade de 150ms. Degradacion elegante en navegadores sin soporte. Refactorizar el bloque de tab navigation existente (lineas 3931-3952) para extraer la logica de cambio a una funcion `applyTabChange(tabId)`.
+
+- [ ] **Paso 1: Refactorizar tab navigation**
+
+Extraer la logica actual del listener de click a una funcion:
+
+```javascript
+function applyTabChange(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+  var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+  var content = document.getElementById(tabId);
+  if (content) content.classList.add('active');
+  if (tabId === 'tabDashboard') { showDashboardSkeleton(); requestAnimationFrame(function() { renderDashboard(); }); }
+  if (tabId === 'tabCalendario') renderCalendarTab();
+  if (tabId === 'tabCatalogos') {
+    var savedModes = getCatalogViewModes();
+    var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+    toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+    if (savedMode === 'ficha') { renderCatalogList(); renderCatalogForm(); }
+  }
+  if (tabId === 'tabXml') refreshXmlSelects();
+}
+
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var tabId = btn.dataset.tab;
+    if (document.startViewTransition) {
+      document.startViewTransition(function() { applyTabChange(tabId); });
+    } else {
+      applyTabChange(tabId);
+    }
+  });
+});
+```
+
+- [ ] **Paso 2: Anadir CSS para view transitions**
+
+```css
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 150ms;
+}
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. En Chrome/Edge (con soporte) → cross-fade suave de 150ms al cambiar pestana.
+2. En Firefox/Safari (sin soporte) → cambio instantaneo sin error.
+3. La funcionalidad de cada pestana sigue intacta.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.13): View Transitions API for tab switching with graceful fallback"
+```
+
+---
+
+### Task F3.14: Blur sistematico en overlays
+
+**Files:**
+- Modify: `convocatoria.html:1370-1380` (CSS — `.dialog-overlay`, cambiar blur(4px) a blur(8px))
+- Modify: `convocatoria.html:2747-2756` (CSS — `.queue-panel-overlay`, anadir blur)
+
+**Contexto:** Unificar `backdrop-filter: blur(8px)` en todos los overlays. Actualmente `.dialog-overlay` usa `blur(4px)` (linea 1375). El overlay de CmdK ya usa `blur(8px)` (F3.1). Unificar para coherencia.
+
+- [ ] **Paso 1: Actualizar dialog-overlay**
+
+En linea 1375, cambiar:
+```css
+/* Antes: */
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
+
+/* Despues: */
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+```
+
+- [ ] **Paso 2: Actualizar queue-panel-overlay**
+
+En `.queue-panel-overlay` (~linea 2747), anadir:
+```css
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Abrir cualquier dialogo → blur de 8px en el fondo.
+2. Abrir panel de cola → blur de 8px.
+3. Abrir CmdK → blur de 8px (ya tenia).
+4. Todos los overlays con el mismo nivel de blur.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.14): unify backdrop blur to 8px across all overlays"
+```
+
+---
+
+### Task F3.15: Precomputacion del dashboard al cargar datos
+
+**Files:**
+- Modify: `convocatoria.html:7401-7540` (JS — handleFile(), anadir requestIdleCallback post-carga)
+- Modify: `convocatoria.html:13047-15000` (JS — renderDashboard(), cache de metricas)
+
+**Contexto:** Al completar la carga del Excel, calcular metricas del dashboard en un `requestIdleCallback()`. Cuando Laura navega al dashboard, renderizar instantaneamente si los datos no han cambiado. Key en estado: `state._dashboardCache` con hash de datos. Si el hash coincide, usar cache; si no, recalcular.
+
+- [ ] **Paso 1: Implementar precomputacion**
+
+```javascript
+var _dashCache = { hash: null, data: null };
+
+function precomputeDashboard() {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(function() {
+      _dashCache.data = computeDashboardMetrics();
+      _dashCache.hash = computeDashHash();
+    });
+  }
+}
+
+function computeDashHash() {
+  var catalog = getAllCatalogActions();
+  var empCount = (state.employees || []).length;
+  return catalog.length + ':' + empCount + ':' + (catalog[0]?.title || '') + ':' + (catalog[catalog.length-1]?.title || '');
+}
+
+function computeDashboardMetrics() {
+  // Extraer los calculos de renderDashboard() que son puros (sin DOM)
+  // Retornar objeto con todas las metricas precalculadas
+  var actions = getAllCatalogActions();
+  return {
+    totalActions: actions.length,
+    totalHours: actions.reduce(function(s,a) { return s + (parseFloat(a.hours)||0); }, 0),
+    // ... demas metricas
+    computedAt: Date.now()
+  };
+}
+```
+
+- [ ] **Paso 2: Invocar tras carga de Excel**
+
+En `handleFile()`, despues de parsear y guardar:
+
+```javascript
+// Tras completar la carga exitosa del Excel:
+precomputeDashboard();
+```
+
+- [ ] **Paso 3: Usar cache en renderDashboard()**
+
+Al inicio de `renderDashboard()`:
+
+```javascript
+var currentHash = computeDashHash();
+if (_dashCache.hash === currentHash && _dashCache.data) {
+  // Usar datos precalculados — render instantaneo
+  renderDashboardFromCache(_dashCache.data);
+  return;
+}
+// Si no hay cache valida, calcular normalmente
+```
+
+- [ ] **Paso 4: Verificar**
+
+1. Cargar Excel → esperar 2s → navegar a Dashboard → carga instantanea.
+2. Modificar datos del catalogo → navegar a Dashboard → recalcula (hash diferente).
+3. Sin `requestIdleCallback` (Safari antiguo) → funciona sin precomputar.
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.15): dashboard precomputation with requestIdleCallback and hash-based cache"
+```
+
+---
+
+### Task F3.16: Checklist de activacion persistente
+
+**Files:**
+- Modify: `convocatoria.html:~2956` (HTML — zona Convocatoria, panel colapsable)
+- Modify: `convocatoria.html:~1265` (CSS — estilos `.activation-checklist`)
+- Modify: `convocatoria.html:~9135` (JS — zona init, logica de checklist)
+
+**Contexto:** Panel colapsable en la parte superior de la app (visible solo las primeras sesiones). 7 pasos: (1) Cargar organigrama, (2) Enviar primera convocatoria, (3) Crear accion formativa, (4) Generar primer XML, (5) Definir formaciones obligatorias, (6) Generar primer informe, (7) Explorar el dashboard. Progreso persistido en `convocatoria_activationChecklist` (localStorage). Se oculta al completar o al pulsar "No mostrar mas".
+
+- [ ] **Paso 1: CSS del checklist**
+
+```css
+/* ═══ Activation Checklist ═══ */
+.activation-checklist {
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-light);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 0 16px 16px;
+}
+.activation-checklist.hidden { display: none; }
+.activation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.activation-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.activation-progress {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.activation-dismiss {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 4px 8px;
+}
+.activation-dismiss:hover { color: var(--text-secondary); }
+.activation-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.activation-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.activation-step.done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.activation-check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: all var(--transition);
+}
+.activation-step.done .activation-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+```
+
+- [ ] **Paso 2: Implementar logica del checklist**
+
+```javascript
+const ActivationChecklist = {
+  STORAGE_KEY: 'convocatoria_activationChecklist',
+  steps: [
+    { id: 'loadOrg', label: 'Cargar organigrama', action: function() { document.getElementById('fileInput').click(); } },
+    { id: 'sendFirst', label: 'Enviar primera convocatoria', action: function() { applyTabChange('tabConvocatoria'); } },
+    { id: 'createAction', label: 'Crear accion formativa', action: function() { applyTabChange('tabCatalogos'); } },
+    { id: 'generateXml', label: 'Generar primer XML', action: function() { applyTabChange('tabXml'); } },
+    { id: 'setupCompliance', label: 'Definir formaciones obligatorias', action: function() { applyTabChange('tabCatalogos'); } },
+    { id: 'generateReport', label: 'Generar primer informe', action: function() { applyTabChange('tabDashboard'); } },
+    { id: 'exploreDash', label: 'Explorar el dashboard', action: function() { applyTabChange('tabDashboard'); } },
+  ],
+
+  getState() {
+    try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+  },
+
+  saveState(s) {
+    try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
+  },
+
+  markDone(stepId) {
+    var s = this.getState();
+    s[stepId] = true;
+    this.saveState(s);
+    this.render();
+  },
+
+  isDismissed() {
+    var s = this.getState();
+    return s._dismissed === true;
+  },
+
+  dismiss() {
+    var s = this.getState();
+    s._dismissed = true;
+    this.saveState(s);
+    var el = document.getElementById('activationChecklist');
+    if (el) el.classList.add('hidden');
+  },
+
+  render() {
+    var container = document.getElementById('activationChecklist');
+    if (!container) return;
+    if (this.isDismissed()) { container.classList.add('hidden'); return; }
+
+    var s = this.getState();
+    var doneCount = this.steps.filter(function(step) { return s[step.id]; }).length;
+
+    if (doneCount >= this.steps.length) { container.classList.add('hidden'); return; }
+
+    container.classList.remove('hidden');
+    container.innerHTML = '';
+
+    var header = document.createElement('div');
+    header.className = 'activation-header';
+    var title = document.createElement('div');
+    title.className = 'activation-title';
+    title.textContent = 'Primeros pasos con Formacion_AGORA';
+    var progress = document.createElement('span');
+    progress.className = 'activation-progress';
+    progress.textContent = doneCount + ' de ' + this.steps.length;
+    var dismiss = document.createElement('button');
+    dismiss.className = 'activation-dismiss';
+    dismiss.textContent = 'No mostrar mas';
+    dismiss.addEventListener('click', this.dismiss.bind(this));
+    header.appendChild(title);
+    header.appendChild(progress);
+    header.appendChild(dismiss);
+    container.appendChild(header);
+
+    var stepsDiv = document.createElement('div');
+    stepsDiv.className = 'activation-steps';
+    var self = this;
+    this.steps.forEach(function(step) {
+      var item = document.createElement('div');
+      item.className = 'activation-step' + (s[step.id] ? ' done' : '');
+      var check = document.createElement('div');
+      check.className = 'activation-check';
+      check.textContent = s[step.id] ? '\u2713' : '';
+      var label = document.createElement('span');
+      label.textContent = step.label;
+      item.appendChild(check);
+      item.appendChild(label);
+      if (!s[step.id] && step.action) {
+        item.addEventListener('click', function() { step.action(); });
+      }
+      stepsDiv.appendChild(item);
+    });
+    container.appendChild(stepsDiv);
+  },
+
+  init() {
+    this.render();
+  }
+};
+```
+
+- [ ] **Paso 3: Anadir HTML y conectar triggers**
+
+En el HTML, despues de la tab-bar (~linea 2955):
+```html
+<div class="activation-checklist" id="activationChecklist"></div>
+```
+
+En la zona de init:
+```javascript
+ActivationChecklist.init();
+```
+
+Conectar triggers automaticos (en las funciones correspondientes):
+```javascript
+// En handleFile(), tras carga exitosa:
+ActivationChecklist.markDone('loadOrg');
+
+// En btnOpenOutlook handler, tras envio exitoso:
+ActivationChecklist.markDone('sendFirst');
+
+// En renderDashboard(), al renderizar por primera vez:
+ActivationChecklist.markDone('exploreDash');
+```
+
+- [ ] **Paso 4: Verificar**
+
+1. Primera apertura → checklist visible con 7 pasos.
+2. Cargar Excel → paso 1 se marca como completado.
+3. "No mostrar mas" → checklist desaparece y no vuelve.
+4. Completar todos los pasos → checklist desaparece automaticamente.
+5. Estado persistido en localStorage.
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F3.16): persistent activation checklist with 7-step onboarding"
+```
+
+---
+
+## Fase 4: Extensiones avanzadas (variable, sin deadline)
+
+**Objetivo:** Features opcionales que amplian el alcance de la app. Algunas requieren Power Automate. Solo se abordan cuando Fases 0-3 estan completadas.
+
+**Prerequisitos:** Fases 0, 1, 2 y 3 completadas y mergeadas a main.
+
+---
+
+### Task F4.1: Convocatoria por lotes
+
+**Files:**
+- Modify: `convocatoria.html:3155-3165` (HTML — action bar, nuevo boton "Envio por lotes")
+- Modify: `convocatoria.html:~8653` (JS — zona envio, logica de lotes)
+- Modify: `convocatoria.html:~1370` (CSS — dialogo de preview de lotes)
+
+**Contexto:** Nuevo modo "Envio por lotes". Laura configura datos del evento una vez, selecciona campo de agrupacion (Ubicacion, Departamento, Empresa), la app muestra preview de los lotes generados, al confirmar se anaden a la cola. Mayor ratio de ahorro de tiempo: convierte 15 min en 3 min para misma formacion con N ubicaciones.
+
+- [ ] **Paso 1: Anadir boton en action bar**
+
+```html
+<button class="btn btn-secondary" id="btnBatchSend" title="Enviar por lotes">Por lotes</button>
+```
+
+- [ ] **Paso 2: Implementar dialogo de configuracion de lotes**
+
+```javascript
+function showBatchDialog() {
+  var ev = validateEvent();
+  if (!ev) return;
+  var employees = getSelectedEmployees();
+  if (employees.length === 0) { showToast('Selecciona personas destinatarias', 'warning'); return; }
+
+  var groupFields = ['UBICACION', 'DEPARTAMENTO', 'EMPRESA'];
+  var available = groupFields.filter(function(f) {
+    return employees.some(function(e) { return e[f] && e[f].trim(); });
+  });
+
+  if (available.length === 0) { showToast('No hay campos de agrupacion disponibles', 'warning'); return; }
+
+  // Crear dialogo de seleccion de campo de agrupacion
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay visible';
+  overlay.id = 'batchDialog';
+  var box = document.createElement('div');
+  box.className = 'dialog-box';
+  box.style.maxWidth = '520px';
+  box.innerHTML = '<h3>Envio por lotes</h3>'
+    + '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">Agrupar personas destinatarias por:</p>'
+    + '<div id="batchFieldSelect" style="display:flex;gap:8px;margin-bottom:16px;justify-content:center;"></div>'
+    + '<div id="batchPreview" style="max-height:300px;overflow-y:auto;text-align:left;"></div>'
+    + '<div class="dialog-buttons" style="margin-top:16px;">'
+    + '<button class="btn btn-secondary" id="batchCancel">Cancelar</button>'
+    + '<button class="btn btn-primary" id="batchConfirm" disabled>Anadir a cola</button>'
+    + '</div>';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  var selectedField = null;
+
+  available.forEach(function(field) {
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    btn.textContent = field.charAt(0) + field.slice(1).toLowerCase();
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#batchFieldSelect .btn').forEach(function(b) { b.classList.remove('btn-primary'); b.classList.add('btn-secondary'); });
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
+      selectedField = field;
+      renderBatchPreview(field, employees, ev);
+      document.getElementById('batchConfirm').disabled = false;
+    });
+    document.getElementById('batchFieldSelect').appendChild(btn);
+  });
+
+  document.getElementById('batchCancel').addEventListener('click', function() {
+    overlay.remove();
+  });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('batchConfirm').addEventListener('click', function() {
+    if (!selectedField) return;
+    addBatchToQueue(selectedField, employees, ev);
+    overlay.remove();
+  });
+}
+
+function renderBatchPreview(field, employees, ev) {
+  var groups = {};
+  employees.forEach(function(emp) {
+    var key = emp[field] || 'Sin ' + field.toLowerCase();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(emp);
+  });
+
+  var preview = document.getElementById('batchPreview');
+  preview.textContent = '';
+  var keys = Object.keys(groups).sort();
+  keys.forEach(function(key) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;';
+    row.innerHTML = '<span>' + esc(key) + '</span><span class="chip" style="font-size:11px;">' + groups[key].length + ' personas</span>';
+    preview.appendChild(row);
+  });
+
+  var summary = document.createElement('div');
+  summary.style.cssText = 'padding:12px;font-size:12px;color:var(--text-muted);text-align:center;';
+  summary.textContent = keys.length + ' lotes se anadiran a la cola';
+  preview.appendChild(summary);
+}
+
+function addBatchToQueue(field, employees, ev) {
+  var groups = {};
+  employees.forEach(function(emp) {
+    var key = emp[field] || 'Sin ' + field.toLowerCase();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(emp);
+  });
+
+  var keys = Object.keys(groups).sort();
+  keys.forEach(function(key) {
+    var queueItem = {
+      title: ev.title + ' — ' + key,
+      date: ev.date,
+      startTime: ev.startTime,
+      endTime: ev.endTime,
+      location: ev.location || key,
+      employees: groups[key],
+      groupField: field,
+      groupValue: key
+    };
+    state.queue.push(queueItem);
+  });
+
+  renderQueue();
+  saveState();
+  showToast(keys.length + ' convocatorias anadidas a la cola', 'success');
+}
+
+document.getElementById('btnBatchSend').addEventListener('click', showBatchDialog);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Seleccionar personas de multiples ubicaciones → "Por lotes" → dialogo con opciones de agrupacion.
+2. Seleccionar "Ubicacion" → preview muestra lotes con conteos.
+3. "Anadir a cola" → N items en la cola, uno por ubicacion.
+4. Sin campo disponible → toast de advertencia.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.1): batch send with grouping by location, department, or company"
+```
+
+---
+
+### Task F4.2: Seleccion por lista de NIFs/emails
+
+**Files:**
+- Modify: `convocatoria.html:~3040-3060` (HTML — panel izquierdo, seccion filtros, textarea)
+- Modify: `convocatoria.html:~7585-7881` (JS — renderFilters()/renderTable(), logica de match)
+
+**Contexto:** Textarea donde Laura pega lista de NIFs o emails. La app hace match con el organigrama y selecciona exactamente esas personas. El match es case-insensitive, ignora espacios, acepta separadores variados (coma, punto y coma, salto de linea, tabulacion). Las personas sin match se muestran como advertencia.
+
+- [ ] **Paso 1: Anadir textarea en panel izquierdo**
+
+En la seccion de filtros, anadir un `<details>` colapsado:
+
+```html
+<details class="form-section" id="nifListSection">
+  <summary>Seleccion por lista</summary>
+  <textarea class="input-field" id="nifListInput" rows="4"
+    placeholder="Pega NIFs o emails separados por comas, puntos y coma, o saltos de linea..."
+    style="font-size:12px;resize:vertical;"></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <button class="btn btn-primary" id="btnApplyNifList" style="font-size:12px;flex:1;">Aplicar</button>
+    <button class="link-btn link-clear" id="btnClearNifList" style="font-size:12px;">Limpiar</button>
+  </div>
+  <div id="nifListFeedback" style="font-size:11px;color:var(--text-muted);margin-top:8px;"></div>
+</details>
+```
+
+- [ ] **Paso 2: Implementar logica de matching**
+
+```javascript
+document.getElementById('btnApplyNifList').addEventListener('click', function() {
+  var raw = document.getElementById('nifListInput').value.trim();
+  if (!raw) { showToast('Pega una lista de NIFs o emails', 'warning'); return; }
+
+  var items = raw.split(/[,;\t\n]+/).map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
+  var matched = [];
+  var unmatched = [];
+
+  items.forEach(function(item) {
+    var found = (state.employees || []).find(function(emp) {
+      var nif = (emp['NIF'] || '').toLowerCase().trim();
+      var email = (emp['EMAIL'] || '').toLowerCase().trim();
+      return nif === item || email === item;
+    });
+    if (found) { matched.push(found); } else { unmatched.push(item); }
+  });
+
+  if (matched.length === 0) {
+    showToast('Ningun NIF o email coincide con el organigrama', 'warning');
+    return;
+  }
+
+  // Deseleccionar todos, luego seleccionar solo los matched
+  state.excludedNIFs = (state.employees || [])
+    .filter(function(emp) { return !matched.some(function(m) { return m._id === emp._id; }); })
+    .map(function(emp) { return emp._id; });
+
+  renderTable();
+  saveState();
+
+  var feedback = document.getElementById('nifListFeedback');
+  var msg = matched.length + ' personas encontradas.';
+  if (unmatched.length > 0) {
+    msg += ' ' + unmatched.length + ' sin coincidencia: ' + unmatched.slice(0, 5).join(', ') + (unmatched.length > 5 ? '...' : '');
+  }
+  feedback.textContent = msg;
+  showToast(matched.length + ' personas seleccionadas', 'success');
+});
+
+document.getElementById('btnClearNifList').addEventListener('click', function() {
+  document.getElementById('nifListInput').value = '';
+  document.getElementById('nifListFeedback').textContent = '';
+  state.excludedNIFs = [];
+  renderTable();
+  saveState();
+});
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Pegar lista de NIFs → "Aplicar" → solo esas personas seleccionadas.
+2. Pegar emails → match correcto, case-insensitive.
+3. NIFs sin match → feedback con listado.
+4. "Limpiar" → restaura seleccion completa.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.2): select employees by pasting NIF or email list"
+```
+
+---
+
+### Task F4.3: Recordatorios automaticos via PA
+
+**Files:**
+- Modify: `convocatoria.html:~3060-3090` (HTML — datos del evento, checkbox recordatorio)
+- Modify: `convocatoria.html:~8653-8743` (JS — zona envio, enviar payload recordatorio a PA)
+
+**Contexto:** Checkbox en datos del evento: "Enviar recordatorio X dias antes" que usa el webhook de PA para programar email de recordatorio. Reutiliza `sendSurveyEmail()` con `type: "reminder"`. El flujo de PA necesita un branch adicional `if type == 'reminder'` → `Delay until` + `Send email (V2)`. La parte de PA no se implementa aqui — solo el JS.
+
+- [ ] **Paso 1: Anadir checkbox en datos del evento**
+
+```html
+<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+  <input type="checkbox" id="chkReminder" style="margin:0;">
+  <label for="chkReminder" style="font-size:12px;color:var(--text-secondary);">Enviar recordatorio</label>
+  <select id="selReminderDays" class="filter-select" style="font-size:12px;width:auto;padding:4px 8px;" disabled>
+    <option value="1">1 dia antes</option>
+    <option value="2" selected>2 dias antes</option>
+    <option value="3">3 dias antes</option>
+  </select>
+</div>
+```
+
+```javascript
+document.getElementById('chkReminder').addEventListener('change', function() {
+  document.getElementById('selReminderDays').disabled = !this.checked;
+});
+```
+
+- [ ] **Paso 2: Integrar en flujo de envio**
+
+En el handler de `btnOpenOutlook`, despues del envio exitoso:
+
+```javascript
+if (document.getElementById('chkReminder').checked) {
+  var daysBeforeReminder = parseInt(document.getElementById('selReminderDays').value, 10);
+  var eventDate = new Date(ev.date);
+  var reminderDate = new Date(eventDate);
+  reminderDate.setDate(reminderDate.getDate() - daysBeforeReminder);
+  reminderDate.setHours(9, 0, 0, 0);
+
+  var reminderPayload = {
+    type: 'reminder',
+    to: selectedEmails,
+    subject: 'Recordatorio: ' + ev.title,
+    eventTitle: ev.title,
+    eventDate: ev.date,
+    eventTime: ev.startTime,
+    eventLocation: ev.location || '',
+    scheduledTime: reminderDate.toISOString()
+  };
+
+  // Reutilizar el webhook existente de PA
+  fetch(getSurveyWebhookUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reminderPayload)
+  }).then(function() {
+    showToast('Recordatorio programado para ' + reminderDate.toLocaleDateString('es-ES'), 'success');
+  }).catch(function(err) {
+    showToast('Error al programar recordatorio: ' + err.message, 'warning');
+  });
+}
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Checkbox desactivado por defecto → select deshabilitado.
+2. Activar checkbox → select se habilita.
+3. Enviar convocatoria con recordatorio → payload enviado al webhook con type "reminder".
+4. Sin webhook configurado → error capturado en catch.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.3): pre-training reminders via Power Automate webhook"
+```
+
+---
+
+### Task F4.4: Sync automatica encuestas PA (reenvio)
+
+**Files:**
+- Modify: `convocatoria.html:~8653-8743` (JS — zona envio, programar reenvio de encuesta)
+
+**Contexto:** Al enviar encuesta de satisfaccion, programar automaticamente reenvio 7 dias despues via PA. Tipo `survey_reminder`. Extension minima del flujo PA existente. No sabe quien ha respondido (limitacion aceptable). La parte PA necesita branch `if type == 'survey_reminder'`.
+
+- [ ] **Paso 1: Implementar reenvio automatico**
+
+En la funcion que envia encuestas (`sendSurveyEmail`), despues de enviar la encuesta original:
+
+```javascript
+function scheduleSurveyReminder(surveyPayload) {
+  var reminderDate = new Date(surveyPayload.scheduledTime || Date.now());
+  reminderDate.setDate(reminderDate.getDate() + 7);
+
+  var reminderPayload = {
+    type: 'survey_reminder',
+    to: surveyPayload.to,
+    subject: 'Recordatorio: Tu opinion nos importa',
+    formsUrl: surveyPayload.formsUrl,
+    eventTitle: surveyPayload.eventTitle || '',
+    scheduledTime: reminderDate.toISOString()
+  };
+
+  fetch(getSurveyWebhookUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reminderPayload)
+  }).catch(function(err) {
+    console.warn('Error al programar reenvio de encuesta:', err);
+  });
+}
+```
+
+- [ ] **Paso 2: Invocar tras envio de encuesta**
+
+En la logica existente de `sendSurveyEmail`, tras el `.then()` exitoso:
+
+```javascript
+// Dentro del .then() de sendSurveyEmail:
+scheduleSurveyReminder(payload);
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.4): automatic survey reminder via PA 7 days after initial send"
+```
+
+---
+
+### Task F4.5: Virtual scrolling en tabla de personas destinatarias
+
+**Files:**
+- Modify: `convocatoria.html:~400-450` (CSS — tabla, altura fija y overflow)
+- Modify: `convocatoria.html:7881-8030` (JS — renderTable(), virtual scrolling)
+
+**Contexto:** Para datasets >500 filas, renderizar solo las filas visibles + 20 de buffer. Sin dependencias externas. El contenedor de la tabla `#employeeTableContainer` ya tiene `overflow-y: auto`. La clave es calcular la posicion del scroll, determinar que filas son visibles, y renderizar solo esas con spacers arriba y abajo.
+
+- [ ] **Paso 1: Implementar virtual scrolling**
+
+```javascript
+const VirtualScroll = {
+  ROW_HEIGHT: 36,
+  BUFFER: 20,
+  THRESHOLD: 500,
+
+  isActive(totalRows) { return totalRows > this.THRESHOLD; },
+
+  setup(container, tbody, allRows) {
+    if (!this.isActive(allRows.length)) {
+      // Render normal para datasets pequenos
+      allRows.forEach(function(row) { tbody.appendChild(row); });
+      return;
+    }
+
+    var totalHeight = allRows.length * this.ROW_HEIGHT;
+    var spacerTop = document.createElement('tr');
+    spacerTop.id = 'vsSpacerTop';
+    var spacerBottom = document.createElement('tr');
+    spacerBottom.id = 'vsSpacerBottom';
+
+    tbody.appendChild(spacerTop);
+    tbody.appendChild(spacerBottom);
+
+    var self = this;
+    var rafId = null;
+
+    function onScroll() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(function() {
+        rafId = null;
+        self.renderVisible(container, tbody, allRows, spacerTop, spacerBottom, totalHeight);
+      });
+    }
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    self.renderVisible(container, tbody, allRows, spacerTop, spacerBottom, totalHeight);
+  },
+
+  renderVisible(container, tbody, allRows, spacerTop, spacerBottom, totalHeight) {
+    var scrollTop = container.scrollTop;
+    var viewHeight = container.clientHeight;
+    var startIndex = Math.max(0, Math.floor(scrollTop / this.ROW_HEIGHT) - this.BUFFER);
+    var endIndex = Math.min(allRows.length, Math.ceil((scrollTop + viewHeight) / this.ROW_HEIGHT) + this.BUFFER);
+
+    // Remove old visible rows
+    while (tbody.children.length > 2) {
+      var child = tbody.children[1];
+      if (child === spacerBottom) break;
+      tbody.removeChild(child);
+    }
+
+    // Set spacer heights
+    spacerTop.style.height = (startIndex * this.ROW_HEIGHT) + 'px';
+    spacerBottom.style.height = ((allRows.length - endIndex) * this.ROW_HEIGHT) + 'px';
+
+    // Insert visible rows
+    var frag = document.createDocumentFragment();
+    for (var i = startIndex; i < endIndex; i++) {
+      frag.appendChild(allRows[i]);
+    }
+    tbody.insertBefore(frag, spacerBottom);
+  }
+};
+```
+
+- [ ] **Paso 2: Integrar en renderTable()**
+
+En `renderTable()`, despues de construir todas las filas como array:
+
+```javascript
+// En vez de: filtered.forEach(emp => tbody.appendChild(createRow(emp)));
+// Hacer:
+var allRowElements = filtered.map(function(emp) { return createRow(emp); });
+VirtualScroll.setup(tableContainer, tbody, allRowElements);
+```
+
+- [ ] **Paso 3: Verificar**
+
+1. Dataset < 500 → render normal completo.
+2. Dataset > 500 → solo filas visibles + buffer renderizadas.
+3. Scroll rapido → filas se actualizan fluidamente.
+4. Seleccion/exclusion funciona correctamente con virtual scroll.
+
+- [ ] **Paso 4: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.5): virtual scrolling for large datasets (>500 rows)"
+```
+
+---
+
+### Task F4.6: Dark mode
+
+**Files:**
+- Modify: `convocatoria.html:13-55` (CSS — `:root`, tokens dark bajo `[data-theme="dark"]`)
+- Modify: `convocatoria.html:3712-3770` (HTML — settingsDialog, toggle dark mode)
+- Modify: `convocatoria.html:~6711` (JS — getSettings(), persistir tema)
+
+**Contexto:** Tokens dark bajo `[data-theme="dark"]` en `:root`. Toggle en ajustes con 3 opciones: Claro, Oscuro, Sistema. Depende de que F0.1 (migracion de estilos inline) este significativamente avanzada. Los estilos inline que queden NO responderan al tema oscuro — por eso es Fase 4.
+
+- [ ] **Paso 1: Definir tokens dark**
+
+Despues del bloque `:root` existente (linea ~55):
+
+```css
+[data-theme="dark"] {
+  --accent: #818CF8; /* Indigo-400 */
+  --accent-hover: #6366F1; /* Indigo-500 */
+  --accent-light: #312E81; /* Indigo-900 */
+  --accent-subtle: #1E1B4B; /* Indigo-950 */
+  --text-primary: #f1f5f9; /* Slate-100 */
+  --text-secondary: #94a3b8; /* Slate-400 */
+  --text-muted: #64748b; /* Slate-500 */
+  --bg-primary: #0f172a; /* Slate-900 */
+  --bg-panel: #1e293b; /* Slate-800 */
+  --bg-input: #334155; /* Slate-700 */
+  --border: #334155; /* Slate-700 */
+  --border-strong: #475569; /* Slate-600 */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --accent: #818CF8;
+    --accent-hover: #6366F1;
+    --accent-light: #312E81;
+    --accent-subtle: #1E1B4B;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --bg-primary: #0f172a;
+    --bg-panel: #1e293b;
+    --bg-input: #334155;
+    --border: #334155;
+    --border-strong: #475569;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  }
+}
+```
+
+- [ ] **Paso 2: Anadir selector en ajustes**
+
+En `#settingsDialog`:
+
+```html
+<label style="font-size:13px;color:var(--text-secondary);">Tema</label>
+<select id="themeSelect" class="input-field" style="font-size:13px;">
+  <option value="light">Claro</option>
+  <option value="dark">Oscuro</option>
+  <option value="system">Sistema</option>
+</select>
+```
+
+- [ ] **Paso 3: Implementar cambio de tema**
+
+```javascript
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  try { var s = getSettings(); s.theme = theme; saveSettings(s); } catch(e) {}
+}
+
+function initTheme() {
+  var s = getSettings();
+  var theme = s.theme || 'light';
+  applyTheme(theme);
+  var sel = document.getElementById('themeSelect');
+  if (sel) sel.value = theme;
+}
+
+document.getElementById('themeSelect')?.addEventListener('change', function() {
+  applyTheme(this.value);
+});
+
+initTheme();
+```
+
+- [ ] **Paso 4: Verificar**
+
+1. Claro → paleta original. Oscuro → fondo slate-900, textos claros.
+2. Sistema → respeta `prefers-color-scheme` del OS.
+3. Persistencia: al recargar mantiene el tema elegido.
+4. Los estilos inline que no usen variables CSS quedaran incoherentes (esperado si F0.1 no esta completa).
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.6): dark mode with light/dark/system toggle"
+```
+
+---
+
+### Task F4.7: Backup JSON
+
+**Files:**
+- Modify: `convocatoria.html:3712-3770` (HTML — settingsDialog, botones export/import)
+- Modify: `convocatoria.html:~6711` (JS — funciones de backup)
+
+**Contexto:** Boton "Exportar datos" que serializa todo el estado a JSON. Boton "Importar datos" que lee JSON y restaura. Recordatorio en `convocatoria_lastBackup`: tras 7 dias sin backup, toast suave al abrir la app.
+
+- [ ] **Paso 1: Implementar export/import**
+
+```javascript
+function exportBackup() {
+  var data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state: null, employees: null, fileName: null,
+    catalog: null, settings: null, history: null,
+    queue: null, presets: null, templates: null
+  };
+  try {
+    data.state = JSON.parse(localStorage.getItem('convocatoria_state') || 'null');
+    data.employees = JSON.parse(localStorage.getItem('convocatoria_employees') || 'null');
+    data.fileName = localStorage.getItem('convocatoria_fileName');
+    data.catalog = JSON.parse(localStorage.getItem('fundae_catalogActions') || '[]');
+    data.settings = JSON.parse(localStorage.getItem('convocatoria_settings') || '{}');
+    data.history = JSON.parse(localStorage.getItem('convocatoria_history') || '[]');
+    data.queue = JSON.parse(localStorage.getItem('convocatoria_queue') || '[]');
+    data.presets = JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
+    data.templates = JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+  } catch(e) {}
+
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'formacion_agora_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  try { localStorage.setItem('convocatoria_lastBackup', new Date().toISOString()); } catch(e) {}
+  showToast('Backup exportado correctamente', 'success');
+}
+
+function importBackup() {
+  var input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        var data = JSON.parse(evt.target.result);
+        if (!data.version) { showToast('Archivo de backup no valido', 'error'); return; }
+        if (data.state) localStorage.setItem('convocatoria_state', JSON.stringify(data.state));
+        if (data.employees) localStorage.setItem('convocatoria_employees', JSON.stringify(data.employees));
+        if (data.fileName) localStorage.setItem('convocatoria_fileName', data.fileName);
+        if (data.catalog) localStorage.setItem('fundae_catalogActions', JSON.stringify(data.catalog));
+        if (data.settings) localStorage.setItem('convocatoria_settings', JSON.stringify(data.settings));
+        if (data.history) localStorage.setItem('convocatoria_history', JSON.stringify(data.history));
+        if (data.queue) localStorage.setItem('convocatoria_queue', JSON.stringify(data.queue));
+        if (data.presets) localStorage.setItem('convocatoria_presets', JSON.stringify(data.presets));
+        if (data.templates) localStorage.setItem('convocatoria_templates', JSON.stringify(data.templates));
+        showToast('Backup restaurado. Recargando...', 'success');
+        setTimeout(function() { location.reload(); }, 1500);
+      } catch(err) { showToast('Error al leer backup: ' + err.message, 'error'); }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
+// Recordatorio de backup
+function checkBackupReminder() {
+  try {
+    var last = localStorage.getItem('convocatoria_lastBackup');
+    if (!last) return;
+    var daysSince = (Date.now() - new Date(last).getTime()) / (1000*60*60*24);
+    if (daysSince >= 7) {
+      showToast('Hace ' + Math.floor(daysSince) + ' dias que no exportas un backup', 'info', 6000);
+    }
+  } catch(e) {}
+}
+```
+
+- [ ] **Paso 2: Anadir botones en ajustes**
+
+```html
+<div style="display:flex;gap:8px;margin-top:12px;">
+  <button class="btn btn-secondary" onclick="exportBackup()" style="flex:1;font-size:12px;">Exportar datos</button>
+  <button class="btn btn-secondary" onclick="importBackup()" style="flex:1;font-size:12px;">Importar datos</button>
+</div>
+```
+
+- [ ] **Paso 3: Invocar recordatorio al abrir**
+
+En init: `checkBackupReminder();`
+
+- [ ] **Paso 4: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.7): JSON backup export/import with weekly reminder"
+```
+
+---
+
+### Task F4.8: Perfil formativo persona trabajadora
+
+**Files:**
+- Modify: `convocatoria.html:13047-15000` (JS — dashboard, nueva funcion de busqueda y perfil)
+- Modify: `convocatoria.html:~3501` (HTML — dashboard, campo de busqueda)
+
+**Contexto:** Buscador en el dashboard para localizar una persona trabajadora. Perfil con: formaciones recibidas, horas acumuladas, formaciones obligatorias vigentes/caducadas, certificados emitidos. Datos cruzados entre organigrama, catalogo y compliance. Panel inline (no dialogo).
+
+- [ ] **Paso 1: Anadir buscador en dashboard**
+
+```html
+<div style="margin:12px 16px;">
+  <input class="input-field" id="workerSearchInput" type="text"
+    placeholder="Buscar persona trabajadora por nombre o NIF..." style="font-size:13px;">
+</div>
+<div id="workerProfilePanel" style="display:none; margin:0 16px 16px; padding:16px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);"></div>
+```
+
+- [ ] **Paso 2: Implementar busqueda y renderizado de perfil**
+
+```javascript
+document.getElementById('workerSearchInput').addEventListener('input', debounce(function() {
+  var q = this.value.trim().toLowerCase();
+  if (q.length < 2) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+
+  var match = (state.employees || []).find(function(emp) {
+    return (emp['NOMBRE'] || '').toLowerCase().includes(q) || (emp['NIF'] || '').toLowerCase().includes(q);
+  });
+
+  if (!match) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+  renderWorkerProfile(match);
+}, 300));
+
+function renderWorkerProfile(emp) {
+  var panel = document.getElementById('workerProfilePanel');
+  panel.style.display = '';
+
+  var actions = getAllCatalogActions();
+  var participated = actions.filter(function(a) {
+    return (a.participants || []).some(function(p) { return p.nif === emp['NIF']; });
+  });
+  var totalHours = participated.reduce(function(s, a) { return s + (parseFloat(a.hours) || 0); }, 0);
+
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+    + '<div><strong style="font-size:14px;">' + esc(emp['NOMBRE'] || '') + '</strong>'
+    + '<div style="font-size:12px;color:var(--text-muted);">' + esc(emp['NIF'] || '') + ' | ' + esc(emp['DEPARTAMENTO'] || '') + ' | ' + esc(emp['PUESTO'] || '') + '</div></div>'
+    + '<div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:var(--accent);">' + totalHours + 'h</div>'
+    + '<div style="font-size:11px;color:var(--text-muted);">' + participated.length + ' formaciones</div></div></div>';
+
+  if (participated.length > 0) {
+    html += '<div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Formaciones recibidas</div>';
+    html += '<div style="max-height:200px;overflow-y:auto;">';
+    participated.forEach(function(a) {
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">'
+        + '<span>' + esc(a.title || '') + '</span><span style="color:var(--text-muted);">' + (a.hours || 0) + 'h | ' + esc(a.dateRange || '') + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  panel.innerHTML = html;
+}
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.8): worker training profile with participation history"
+```
+
+---
+
+### Task F4.9: Informe personalizable
+
+**Files:**
+- Modify: `convocatoria.html:13047-15000` (JS — dashboard, dialogo de seleccion de secciones)
+
+**Contexto:** Extension de F3.9 (informe para Direccion). Antes de generar, mostrar checklist de secciones a incluir. Opcion de anadir header con logo de empresa (data URL). Reutilizar la funcion `generateDirectionReport()` con parametros de configuracion.
+
+- [ ] **Paso 1: Implementar dialogo de personalizacion**
+
+```javascript
+function showCustomReportDialog() {
+  var sections = [
+    { id: 'kpis', label: 'KPIs resumen', checked: true },
+    { id: 'modality', label: 'Distribucion por modalidad', checked: true },
+    { id: 'department', label: 'Participacion por departamento', checked: true },
+    { id: 'actions', label: 'Listado de acciones', checked: false },
+    { id: 'compliance', label: 'Estado de compliance', checked: false },
+    { id: 'credit', label: 'Credito FUNDAE', checked: false },
+  ];
+
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay visible';
+  var box = document.createElement('div');
+  box.className = 'dialog-box';
+  box.style.maxWidth = '420px';
+  box.style.textAlign = 'left';
+
+  var html = '<h3 style="text-align:center;">Personalizar informe</h3>';
+  sections.forEach(function(s) {
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;cursor:pointer;">'
+      + '<input type="checkbox" data-section="' + s.id + '"' + (s.checked ? ' checked' : '') + '>'
+      + s.label + '</label>';
+  });
+  html += '<div class="dialog-buttons" style="margin-top:16px;text-align:center;">'
+    + '<button class="btn btn-secondary" id="customReportCancel">Cancelar</button>'
+    + '<button class="btn btn-primary" id="customReportGenerate">Generar</button></div>';
+  box.innerHTML = html;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('customReportCancel').addEventListener('click', function() { overlay.remove(); });
+  document.getElementById('customReportGenerate').addEventListener('click', function() {
+    var selected = {};
+    box.querySelectorAll('input[data-section]').forEach(function(cb) {
+      selected[cb.dataset.section] = cb.checked;
+    });
+    overlay.remove();
+    generateDirectionReport(selected);
+  });
+}
+```
+
+- [ ] **Paso 2: Actualizar boton para usar el dialogo**
+
+```javascript
+document.getElementById('btnReportDirection').removeEventListener('click', generateDirectionReport);
+document.getElementById('btnReportDirection').addEventListener('click', showCustomReportDialog);
+```
+
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.9): customizable report with section selector dialog"
+```
+
+---
+
+### Task F4.10: Diff de organigrama
+
+**Files:**
+- Modify: `convocatoria.html:7401-7540` (JS — handleFile(), comparar con datos previos)
+
+**Contexto:** Al cargar nuevo Excel con datos previos en sesion, comparar por NIF. Avisar de participantes en acciones activas que ya no estan.
+
+- [ ] **Paso 1: Implementar comparacion**
+
+```javascript
+function compareOrganigrams(oldEmps, newEmps) {
+  var oldByNif = {}, newByNif = {};
+  (oldEmps || []).forEach(function(e) { if (e.NIF) oldByNif[e.NIF] = e; });
+  (newEmps || []).forEach(function(e) { if (e.NIF) newByNif[e.NIF] = e; });
+  var added = [], removed = [], changed = [];
+  Object.keys(newByNif).forEach(function(nif) {
+    if (!oldByNif[nif]) added.push(newByNif[nif]);
+    else if (oldByNif[nif].DEPARTAMENTO !== newByNif[nif].DEPARTAMENTO) changed.push(nif);
+  });
+  Object.keys(oldByNif).forEach(function(nif) { if (!newByNif[nif]) removed.push(oldByNif[nif]); });
+  return { added: added, removed: removed, changed: changed };
+}
+```
+
+- [ ] **Paso 2: Invocar en handleFile() y verificar**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.10): organigrm diff with change summary and participant warnings"
+```
+
+---
+
+### Task F4.11: Datos de ejemplo en dashboard
+
+**Files:**
+- Modify: `convocatoria.html:13047-15000` (JS — dashboard, datos sinteticos)
+
+**Contexto:** Boton en empty state del dashboard. Dataset sintetico de 3-5 acciones. Solo en memoria, no persiste. Banner visual "Datos de ejemplo".
+
+- [ ] **Paso 1: Implementar loadDemoData() y clearDemoData()**
+
+Datos sinteticos con 3 acciones: PRL (cerrada, 3 participantes), LOPD (convocada, 2 participantes), Liderazgo (en preparacion, 1 participante). Boton en empty state. Banner en modo demo.
+
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.11): demo data in dashboard with non-persistent synthetic dataset"
+```
+
+---
+
+### Task F4.12: Tipografia fluida con clamp()
+
+**Files:**
+- Modify: `convocatoria.html:13-55` (CSS — `:root`, clamp() en font-sizes)
+- Modify: `convocatoria.html:~6` (HTML — Inter variable font import)
+
+**Contexto:** Inter variable font (`wght@300..700`), clamp() en tamanos principales.
+
+- [ ] **Paso 1: Actualizar import y aplicar clamp()**
+
+```css
+body { font-size: clamp(12px, 0.8vw + 8px, 14px); }
+```
+
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.12): fluid typography with clamp() and Inter variable font"
+```
+
+---
+
+### Task F4.13: Unificacion de templates
+
+**Files:**
+- Modify: `convocatoria.html:6729-7013` (JS — 3 sistemas de templates → 1)
+- Modify: `convocatoria.html:~3040` (HTML — dropdown unificado)
+
+**Contexto:** Unificar convocatoria_templates, convocatoria_filterTemplates, convocatoria_trainingTemplates en convocatoria_unifiedTemplates. Migracion automatica.
+
+- [ ] **Paso 1: Implementar estructura unificada y migracion**
+
+Un solo dropdown "Plantillas", boton "Guardar", boton "Cargar". Cada plantilla guarda filtros + evento + exclusiones + vinculacion catalogo.
+
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.13): unified template system with automatic migration"
+```
+
+---
+
+### Task F4.14: Plan anual de formacion
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — catalogo, sub-vista "Plan anual")
+
+**Contexto:** Sub-pestana en Catalogos con acciones "Planificadas" agrupadas por trimestre. Vista plan vs. ejecucion. Boton "Activar" que cambia estado a "En preparacion".
+
+- [ ] **Paso 1: Implementar renderAnnualPlan()**
+
+Vista por trimestres Q1-Q4, conteo de acciones, boton "Activar" por accion.
+
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.14): annual training plan with quarterly view"
+```
+
+---
+
+### Task F4.15: Gestion ampliada de proveedores
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — catalogo, ampliar ficha proveedores)
+
+**Contexto:** Campos adicionales: contacto, telefono, email, especialidades, tarifa. Scorecard automatico: acciones, coste medio, ultima colaboracion.
+
+- [ ] **Paso 1: Ampliar formulario y calcular scorecard**
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.15): extended provider management with scorecard"
+```
+
+---
+
+### Task F4.16: Listas de espera
+
+**Files:**
+- Modify: `convocatoria.html:~3060` (HTML — campo "Aforo maximo")
+- Modify: `convocatoria.html:~8653` (JS — logica espera)
+
+**Contexto:** Campo opcional aforo. Si seleccionadas > aforo, crear lista de espera. Paso automatico al eliminar confirmado.
+
+- [ ] **Paso 1: Implementar checkWaitlist()**
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.16): waitlist management with capacity overflow"
+```
+
+---
+
+### Task F4.17: Mini-TNA
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — catalogo, sub-vista "Necesidades")
+
+**Contexto:** Formulario de solicitud de formacion (area, tema, justificacion, urgencia). Exportable/importable. Boton "Crear accion formativa" que pre-rellena. Sub-pestana en Catalogos.
+
+- [ ] **Paso 1: Implementar renderTNAView() con CRUD de solicitudes**
+- [ ] **Paso 2: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.17): mini-TNA with training request management"
+```
+
+---
+
+### Task F4.18: Evaluacion Kirkpatrick L1-L2
+
+**Files:**
+- Modify: `convocatoria.html:4933-6440` (JS — catalogo, seccion evaluacion en ficha)
+- Modify: `convocatoria.html:13047-15000` (JS — dashboard, metricas evaluacion)
+
+**Contexto:** L1: utilidad (1-5), calidad formador (1-5), materiales (1-5), NPS (0-10), num. respuestas. L2: puntuacion pre/post test (%), mejora calculada. Resultados agregados por accion y proveedor. L3-L4 fuera de alcance.
+
+- [ ] **Paso 1: Ampliar modelo de datos con evaluation y renderizar seccion**
+- [ ] **Paso 2: Integrar metricas en dashboard**
+- [ ] **Paso 3: Verificar y commit**
+
+```bash
+git add convocatoria.html
+git commit -m "feat(F4.18): Kirkpatrick L1-L2 evaluation with NPS and pre/post scores"
+```
+
+---
+
+## Mapa de paralelismo Fases 3-4
+
+### Fase 3: 4 lanes paralelas
+
+```
+Prerequisito: Fases 0-2 mergeadas a main
+  │
+  ├── Lane E (worktree-e): F3.1 → F3.2
+  │     Command palette + atajos de teclado
+  │     Secciones: CSS ~1421, HTML ~3696, JS ~3952
+  │
+  ├── Lane F (worktree-f): F3.3 → F3.4 → F3.5 → F3.16
+  │     Empty states + dashboard + checklist activacion
+  │     Secciones: CSS ~1265, JS ~10816/13047, HTML ~3131/3402/3455/2955
+  │
+  ├── Lane G (worktree-g): F3.6 → F3.7 → F3.8 → F3.9 → F3.10
+  │     Documentos y reporting (PDF, firmas, certs, dossier, informes)
+  │     Secciones: JS ~4933/8653/13047, HTML ~3160/3501
+  │
+  └── Lane H (worktree-h): F3.11 → F3.12 → F3.13 → F3.14 → F3.15
+        Pulido visual + rendimiento
+        Secciones: CSS ~400/1370, JS ~3931/7401/7881/14620
+```
+
+### Dependencias Fase 3
+
+| Tarea | Depende de | Razon |
+|-------|-----------|-------|
+| F3.2 | F3.1 | Atajos dependen de CmdK |
+| F3.4 | F3.3 | Empty states antes de divulgacion progresiva |
+| F3.5 | F3.4 | Dashboard progresivo antes de accionable |
+| F3.7 | F3.6 | Branding PDF antes de firmas/certificados |
+| F3.8 | F3.7 | Hojas de firmas antes de dossier |
+| F3.15 | F3.13 | View transitions antes de precomputacion |
+| F3.16 | F3.3 | Checklist usa createEmptyState() |
+
+### Orden de merge Fase 3
+
+1. Lane H (pulido — bajo riesgo de conflicto)
+2. Lane E (paleta/atajos — nuevo overlay, bajo conflicto)
+3. Lane F (empty states/dashboard — toca renderDashboard)
+4. Lane G (documentos — toca catalogo y dashboard)
+
+### Fase 4: 7 lanes bajo demanda
+
+```
+Prerequisito: Fases 0-3 mergeadas a main
+  │
+  ├── Lane I: F4.1 → F4.2 → F4.16   (Convocatoria: lotes, NIFs, espera)
+  ├── Lane J: F4.3 → F4.4            (Power Automate: recordatorios, reenvio)
+  ├── Lane K: F4.5 → F4.12           (Rendimiento: virtual scroll, tipografia)
+  ├── Lane L: F4.6 → F4.7            (Infraestructura: dark mode, backup)
+  ├── Lane M: F4.8 → F4.9 → F4.11   (Dashboard: perfil, informe, datos ejemplo)
+  ├── Lane N: F4.10 → F4.13          (Datos: diff organigrama, templates)
+  └── Lane O: F4.14 → F4.15 → F4.17 → F4.18  (Catalogo: plan, proveedores, TNA, Kirkpatrick)
+```
+
+---
+
+## Resumen final: todas las fases
+
+| Fase | Tareas | Esfuerzo est. | Lanes | Prerequisitos |
+|------|--------|---------------|-------|---------------|
+| **Fase 0** | 4 (F0.1-F0.4) | 7-10h | 1 (secuencial) | Ninguno |
+| **Fase 1** | 9 (F1.1-F1.9) | 16-21h | 4 (A-D) | Fase 0 |
+| **Fase 2** | 12 (F2.1-F2.12) | 40-55h | Por definir | Fase 1 |
+| **Fase 3** | 16 (F3.1-F3.16) | 40-55h | 4 (E-H) | Fase 2 |
+| **Fase 4** | 18 (F4.1-F4.18) | 55-80h | 7 (I-O) | Fase 3 |
+
+| Metrica | Valor |
+|---------|-------|
+| **Total tareas** | 59 |
+| **Total esfuerzo secuencial** | 158-221h (~20-28 dias) |
+| **Lanes paralelas maximas** | 7 (Fase 4) |
+| **Timeline con paralelismo** | ~12-18 dias laborables |
+
+### Timeline estimado
+
+```
+Semana 1-2:   Fase 0 (secuencial) + Fase 1 (4 lanes)
+Semana 3-4:   Fase 2 (lanes por definir en Parte 2)
+Semana 5-7:   Fase 3 (4 lanes: E, F, G, H)
+Semana 8+:    Fase 4 (bajo demanda, sin deadline)
+```
+
+### Directivas clave
+
+1. **NO semaforos, NO sound design, NO confetti, NO flash de color** — solo opacidad como indicador de estado.
+2. **Atajos:** Alt+1..5 para pestanas, deteccion OS con `navigator.userAgentData?.platform || navigator.platform`.
+3. **Terminologia:** persona trabajadora, persona destinataria, formacion obligatoria, Formacion_AGORA.
+4. **Fase 4 es YAGNI** — implementar solo cuando Laura lo pida.
+5. **Cada commit es un incremento funcional** — la app nunca queda rota.
+6. **`prefers-reduced-motion`** — todas las animaciones nuevas deben respetarlo.
+7. **`esc()`** — todo contenido dinamico del Excel sanitizado antes de innerHTML.
