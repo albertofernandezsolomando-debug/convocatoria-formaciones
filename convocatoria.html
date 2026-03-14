@@ -6223,14 +6223,43 @@
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           sectionEnd +
 
-        // 5. Seguimiento (default: expanded)
+        // 5. Comunicación RLT (default: collapsed)
+        (function() {
+          var rltEstado = record.rltEstado || 'Pendiente';
+          var rltFechaEnvio = record.rltFechaEnvio || '';
+          var rltFilled = (rltEstado !== 'Pendiente' ? 1 : 0) + (rltFechaEnvio ? 1 : 0);
+          var statusColor = rltEstado === 'Pendiente' ? 'var(--warning)' : 'var(--success)';
+          var deadlineHtml = '';
+          if (rltFechaEnvio) {
+            var deadlineDate = addBusinessDays(new Date(rltFechaEnvio + 'T00:00:00'), 15);
+            var deadlineStr = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            deadlineHtml = '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Plazo vencimiento (15 d\u00EDas h\u00E1biles)</label>' +
+              '<span style="font-size:13px; font-weight:500; color:var(--text-primary);">' + esc(deadlineStr) + '</span>' +
+              '</div>';
+          }
+          return sectionHeader('rlt', 'Comunicaci\u00F3n RLT', rltFilled, 2, false) +
+            '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Estado comunicaci\u00F3n</label>' +
+              '<span style="font-size:13px; font-weight:600; color:' + statusColor + ';">' + esc(rltEstado) + '</span>' +
+            '</div>' +
+            '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
+              '<input class="input-field" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '" style="font-size:13px;">' +
+            '</div>' +
+            deadlineHtml +
+            '<button class="btn btn-secondary" id="btnGenerateRLT" style="font-size:12px; margin-top:4px;">Generar comunicaci\u00F3n RLT</button>' +
+            sectionEnd;
+        })() +
+
+        // 6. Seguimiento (default: expanded)
         sectionHeader('seguimiento', 'Seguimiento', (record.notas || []).length, 0, true) +
           renderNotasTimelineHtml(record) +
           renderAsistenciaHtml(record) +
           renderConfirmacionesHtml(record) +
           sectionEnd +
 
-        // 6. Participantes (default: collapsed)
+        // 7. Participantes (default: collapsed)
         sectionHeader('participantes', 'Participantes', (record.participantes || []).length, 0, false) +
           '<div id="cfParticipantWarning" style="display:none; font-size:11px; color:var(--warning); margin-bottom:8px;">' +
             '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
@@ -6406,6 +6435,31 @@
         if (duplicateBtn) {
           duplicateBtn.addEventListener('click', function() {
             duplicateAction(record.codigo);
+          });
+        }
+
+        // RLT communication
+        var btnRLT = document.getElementById('btnGenerateRLT');
+        if (btnRLT) {
+          btnRLT.addEventListener('click', function() {
+            generateRLTDocument([record]);
+          });
+        }
+        var rltDateInput = document.getElementById('cf_rltSentDate');
+        if (rltDateInput) {
+          rltDateInput.addEventListener('change', function() {
+            var dateVal = rltDateInput.value;
+            record.rltFechaEnvio = dateVal;
+            record.rltEstado = dateVal ? 'Enviada' : 'Pendiente';
+            upsertCatalogRecord('acciones', 'codigo', record);
+            renderCatalogForm();
+            if (dateVal) {
+              var deadline = addBusinessDays(new Date(dateVal + 'T00:00:00'), 15);
+              var deadlineStr = deadline.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+              showToast('Comunicaci\u00F3n RLT marcada como enviada. Plazo: ' + deadlineStr, 'success');
+            } else {
+              showToast('Fecha de env\u00EDo RLT eliminada', 'info');
+            }
           });
         }
 
@@ -7112,6 +7166,8 @@
         record.confirmaciones = existingAccion ? (existingAccion.confirmaciones || {}) : {};
         record.comunicacionInicioEnviada = existingAccion ? (existingAccion.comunicacionInicioEnviada || false) : false;
         record.comunicacionFinEnviada = existingAccion ? (existingAccion.comunicacionFinEnviada || false) : false;
+        record.rltEstado = existingAccion ? (existingAccion.rltEstado || 'Pendiente') : 'Pendiente';
+        record.rltFechaEnvio = existingAccion ? (existingAccion.rltFechaEnvio || '') : '';
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
@@ -7591,6 +7647,71 @@
     // Helper to escape HTML entities (prevents XSS from crafted Excel values)
     function esc(s) {
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function addBusinessDays(startDate, days) {
+      var date = new Date(startDate);
+      var added = 0;
+      while (added < days) {
+        date.setDate(date.getDate() + 1);
+        if (date.getDay() !== 0 && date.getDay() !== 6) added++;
+      }
+      return date;
+    }
+
+    function generateRLTDocument(selectedActions) {
+      var w = window.open('', '_blank');
+      if (!w) { showToast('El navegador bloqueó la ventana emergente. Permite pop-ups e inténtalo de nuevo.', 'warning'); return; }
+      var rows = '';
+      selectedActions.forEach(function(a) {
+        var horas = '';
+        if (a.horasPresenciales) horas += esc(String(a.horasPresenciales)) + 'h pres.';
+        if (a.horasTeleformacion) horas += (horas ? ' + ' : '') + esc(String(a.horasTeleformacion)) + 'h telef.';
+        if (!horas) horas = '-';
+        var fechas = '';
+        if (a.fechaInicio) fechas += esc(a.fechaInicio);
+        if (a.fechaFin) fechas += (fechas ? ' a ' : '') + esc(a.fechaFin);
+        if (!fechas) fechas = '-';
+        var destinatarios = (a.participantes || []).length > 0 ? esc(String((a.participantes || []).length)) + ' participante(s)' : '-';
+        rows += '<tr>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + esc(a.codigo || '') + ' - ' + esc(a.nombre || '') + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + esc(a.modalidad || '-') + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + horas + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + fechas + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + destinatarios + '</td>' +
+          '</tr>';
+      });
+      var today = new Date();
+      var dateStr = today.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+      var docContent = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+        '<title>Comunicaci\u00F3n RLT</title>' +
+        '<style>' +
+          'body { font-family: "Inter", system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1e293b; line-height: 1.6; }' +
+          'h1 { font-size: 18px; text-align: center; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px; }' +
+          'p { font-size: 13px; margin-bottom: 12px; }' +
+          'table { width: 100%; border-collapse: collapse; margin: 20px 0; }' +
+          'th { border: 1px solid #ccc; padding: 8px 10px; font-size: 12px; background: #f1f5f9; text-align: left; font-weight: 600; }' +
+          '.footer { margin-top: 48px; font-size: 13px; }' +
+          '.signature { margin-top: 60px; border-top: 1px solid #1e293b; width: 250px; padding-top: 8px; font-size: 12px; }' +
+          '@media print { body { margin: 20px; } }' +
+        '</style></head><body>' +
+        '<h1>Comunicaci\u00F3n a la Representaci\u00F3n Legal de los Trabajadores</h1>' +
+        '<p>De conformidad con lo establecido en el art\u00EDculo 64 del Estatuto de los Trabajadores y en el art\u00EDculo 15 del Real Decreto 694/2017, se comunica a la Representaci\u00F3n Legal de los Trabajadores la realizaci\u00F3n de las siguientes acciones formativas:</p>' +
+        '<table>' +
+          '<thead><tr>' +
+            '<th>Acci\u00F3n</th><th>Modalidad</th><th>Horas</th><th>Fechas</th><th>Destinatarios</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+        '<div class="footer">' +
+          '<p>Se concede un plazo de 15 d\u00EDas h\u00E1biles desde la recepci\u00F3n de la presente comunicaci\u00F3n para emitir informe al respecto.</p>' +
+          '<p>En ' + esc(dateStr) + '</p>' +
+          '<div class="signature">Firma y sello de la empresa</div>' +
+        '</div>' +
+        '</body></html>';
+      w.document.open();
+      w.document.writeln(docContent);
+      w.document.close();
     }
 
     function showToast(message, type, duration, options) {
