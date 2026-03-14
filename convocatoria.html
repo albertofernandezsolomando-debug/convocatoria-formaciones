@@ -10393,8 +10393,174 @@
     });
 
     // ═══════════════════════════════════
+    // VIRTUAL SCROLL FOR LARGE DATASETS
+    // ═══════════════════════════════════
+
+    var VirtualScroll = {
+      ROW_HEIGHT: 36,
+      BUFFER: 20,
+      THRESHOLD: 500,
+      _scrollHandler: null,
+      _allRows: null,
+
+      isActive: function(totalRows) { return totalRows > this.THRESHOLD; },
+
+      cleanup: function(container) {
+        if (this._scrollHandler && container) {
+          container.removeEventListener('scroll', this._scrollHandler);
+        }
+        this._scrollHandler = null;
+        this._allRows = null;
+      },
+
+      setup: function(container, tbody, allRows) {
+        this.cleanup(container);
+
+        if (!this.isActive(allRows.length)) {
+          allRows.forEach(function(row) { tbody.appendChild(row); });
+          return;
+        }
+
+        this._allRows = allRows;
+
+        var totalHeight = allRows.length * this.ROW_HEIGHT;
+        var spacerTop = document.createElement('tr');
+        spacerTop.id = 'vsSpacerTop';
+        var spacerTopTd = document.createElement('td');
+        spacerTopTd.colSpan = 5;
+        spacerTopTd.style.padding = '0';
+        spacerTopTd.style.border = 'none';
+        spacerTop.appendChild(spacerTopTd);
+        var spacerBottom = document.createElement('tr');
+        spacerBottom.id = 'vsSpacerBottom';
+        var spacerBottomTd = document.createElement('td');
+        spacerBottomTd.colSpan = 5;
+        spacerBottomTd.style.padding = '0';
+        spacerBottomTd.style.border = 'none';
+        spacerBottom.appendChild(spacerBottomTd);
+
+        tbody.appendChild(spacerTop);
+        tbody.appendChild(spacerBottom);
+
+        var self = this;
+        var rafId = null;
+
+        function onScroll() {
+          if (rafId) return;
+          rafId = requestAnimationFrame(function() {
+            rafId = null;
+            self.renderVisible(container, tbody, allRows, spacerTop, spacerBottom, totalHeight);
+          });
+        }
+
+        this._scrollHandler = onScroll;
+        container.addEventListener('scroll', onScroll, { passive: true });
+        self.renderVisible(container, tbody, allRows, spacerTop, spacerBottom, totalHeight);
+      },
+
+      renderVisible: function(container, tbody, allRows, spacerTop, spacerBottom, totalHeight) {
+        var scrollTop = container.scrollTop;
+        var viewHeight = container.clientHeight;
+        var startIndex = Math.max(0, Math.floor(scrollTop / this.ROW_HEIGHT) - this.BUFFER);
+        var endIndex = Math.min(allRows.length, Math.ceil((scrollTop + viewHeight) / this.ROW_HEIGHT) + this.BUFFER);
+
+        while (tbody.children.length > 2) {
+          var child = tbody.children[1];
+          if (child === spacerBottom) break;
+          tbody.removeChild(child);
+        }
+
+        var topTd = spacerTop.firstChild;
+        var bottomTd = spacerBottom.firstChild;
+        if (topTd) topTd.style.height = (startIndex * this.ROW_HEIGHT) + 'px';
+        if (bottomTd) bottomTd.style.height = ((allRows.length - endIndex) * this.ROW_HEIGHT) + 'px';
+
+        var frag = document.createDocumentFragment();
+        for (var i = startIndex; i < endIndex; i++) {
+          frag.appendChild(allRows[i]);
+        }
+        tbody.insertBefore(frag, spacerBottom);
+      }
+    };
+
+    // ═══════════════════════════════════
     // ATTENDEE TABLE
     // ═══════════════════════════════════
+
+    function createRowElement(emp) {
+      var hasEmail = isValidEmail(emp['Email trabajo']);
+      var isExcluded = state.excludedNIFs.has(emp._id);
+      var isExternal = emp._source === 'external';
+      var rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
+
+      var tr = document.createElement('tr');
+      tr.className = rowClass;
+      tr.style.cursor = 'pointer';
+
+      // Checkbox cell
+      var tdCheck = document.createElement('td');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.id = emp._id;
+      if (hasEmail && !isExcluded) cb.checked = true;
+      if (!hasEmail) cb.disabled = true;
+      tdCheck.appendChild(cb);
+      tr.appendChild(tdCheck);
+
+      // Name cell
+      var tdName = document.createElement('td');
+      tdName.textContent = emp.Empleado || '';
+      if (isExternal) {
+        var badge = document.createElement('span');
+        badge.className = 'chip';
+        badge.style.background = 'var(--accent-light)';
+        badge.textContent = 'ext';
+        tdName.appendChild(document.createTextNode(' '));
+        tdName.appendChild(badge);
+      }
+      tr.appendChild(tdName);
+
+      // Position cell
+      var tdPuesto = document.createElement('td');
+      tdPuesto.style.color = 'var(--text-secondary)';
+      tdPuesto.textContent = emp.Puesto || '';
+      tr.appendChild(tdPuesto);
+
+      // Location cell
+      var tdUbi = document.createElement('td');
+      tdUbi.style.color = 'var(--text-secondary)';
+      tdUbi.textContent = emp['Ubicación'] || '';
+      tr.appendChild(tdUbi);
+
+      // Email cell
+      var tdEmail = document.createElement('td');
+      tdEmail.style.color = hasEmail ? 'var(--accent)' : 'var(--danger)';
+      tdEmail.textContent = hasEmail ? (emp['Email trabajo'] || '') : '\u26A0 Sin email';
+      tr.appendChild(tdEmail);
+
+      // Checkbox change handler
+      cb.addEventListener('change', function() {
+        if (cb.checked) {
+          state.excludedNIFs.delete(cb.dataset.id);
+          tr.classList.remove('row-excluded');
+        } else {
+          state.excludedNIFs.add(cb.dataset.id);
+          tr.classList.add('row-excluded');
+        }
+        updateCounts();
+      });
+
+      // Row click toggles checkbox
+      tr.addEventListener('click', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (cb && !cb.disabled) {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+
+      return tr;
+    }
 
     function renderTable() {
       const allEmployees = [...state.employees, ...state.externalEmployees];
@@ -10450,58 +10616,13 @@
         emptyState.style.display = 'none';
       }
 
-      // Note: innerHTML is used here with escaped values (via esc()) to safely render
-      // the dynamic table. All user-sourced data from Excel is sanitized through esc()
-      // before insertion, preventing XSS from crafted spreadsheet values.
-      tbody.innerHTML = allSorted.map(emp => {
-        const hasEmail = isValidEmail(emp['Email trabajo']);
-        const isExcluded = state.excludedNIFs.has(emp._id);
-        const isExternal = emp._source === 'external';
-        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
-        const sourceBadge = isExternal ? ' <span class="chip" style="background:var(--accent-light);">ext</span>' : '';
-
-        return '<tr class="' + rowClass + '">' +
-          '<td>' +
-            '<input type="checkbox"' +
-            ' data-id="' + esc(emp._id) + '"' +
-            (hasEmail && !isExcluded ? ' checked' : '') +
-            (!hasEmail ? ' disabled' : '') + '>' +
-          '</td>' +
-          '<td>' + esc(emp.Empleado) + sourceBadge + '</td>' +
-          '<td style="color: var(--text-secondary);">' + esc(emp.Puesto) + '</td>' +
-          '<td style="color: var(--text-secondary);">' + esc(emp['Ubicación']) + '</td>' +
-          '<td style="color: ' + (hasEmail ? 'var(--accent)' : 'var(--danger)') + ';">' +
-            (hasEmail ? esc(emp['Email trabajo']) : '⚠ Sin email') +
-          '</td>' +
-        '</tr>';
-      }).join('');
-
-      tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', () => {
-          var row = cb.closest('tr');
-          if (cb.checked) {
-            state.excludedNIFs.delete(cb.dataset.id);
-            if (row) row.classList.remove('row-excluded');
-          } else {
-            state.excludedNIFs.add(cb.dataset.id);
-            if (row) row.classList.add('row-excluded');
-          }
-          updateCounts();
-        });
-      });
-
-      // Row click toggles checkbox
-      tbody.querySelectorAll('tr').forEach(row => {
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', e => {
-          if (e.target.tagName === 'INPUT') return; // Don't double-toggle
-          const cb = row.querySelector('input[type="checkbox"]');
-          if (cb && !cb.disabled) {
-            cb.checked = !cb.checked;
-            cb.dispatchEvent(new Event('change'));
-          }
-        });
-      });
+      // Build row DOM elements using safe DOM methods (textContent, createElement)
+      // and use virtual scroll for large datasets (>500 rows)
+      var container = document.getElementById('tableWrap');
+      VirtualScroll.cleanup(container);
+      while (tbody.firstChild) { tbody.removeChild(tbody.firstChild); }
+      var allRowElements = allSorted.map(function(emp) { return createRowElement(emp); });
+      VirtualScroll.setup(container, tbody, allRowElements);
 
       document.getElementById('selectAll').checked =
         valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
@@ -12177,10 +12298,19 @@
 
     document.getElementById('tableSearchInput').addEventListener('input', () => {
       const query = document.getElementById('tableSearchInput').value.toLowerCase();
-      document.querySelectorAll('#attendeeBody tr').forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-      });
+      // When virtual scroll is active, filter across all rows (including off-DOM ones)
+      var rows = VirtualScroll._allRows || [];
+      if (rows.length > 0) {
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      } else {
+        document.querySelectorAll('#attendeeBody tr').forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      }
     });
 
     // ═══════════════════════════════════
