@@ -3249,7 +3249,7 @@
         <div class="workflow-stepper" id="workflowStepper">
           <div class="workflow-step pending" id="wfStep1" title="Carga de datos">1</div>
           <div class="workflow-step-line"></div>
-          <div class="workflow-step pending" id="wfStep2" title="Seleccionar asistentes">2</div>
+          <div class="workflow-step pending" id="wfStep2" title="Seleccionar personas destinatarias">2</div>
           <div class="workflow-step-line"></div>
           <div class="workflow-step pending" id="wfStep3" title="Datos del evento">3</div>
         </div>
@@ -3291,7 +3291,7 @@
 
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none; position:relative; z-index:10;">
-        <div class="section-label">2. Selecciona asistentes</div>
+        <div class="section-label">2. Selecciona personas destinatarias</div>
         <div id="presetBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
           <span style="font-size:11px; color:var(--text-muted);">Presets:</span>
           <div id="presetList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
@@ -3383,13 +3383,13 @@
         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:12px 28px;">
           <div style="display: flex; align-items: baseline; gap: 6px;">
             <span class="attendee-count" id="attendeeCount">0</span>
-            <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;" id="attendeeTotal">de 0 empleados</span>
+            <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;" id="attendeeTotal">de 0 personas trabajadoras</span>
           </div>
           <div id="filterChips" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;"></div>
         </div>
         <!-- Row 2: Search + actions -->
         <div id="tableSearch" style="display:none; padding:0 28px 10px; display:flex; gap:8px; align-items:center;">
-          <input class="input-field" type="text" id="tableSearchInput" placeholder="Buscar empleado, puesto o email..." style="font-size:12px; flex:1;">
+          <input class="input-field" type="text" id="tableSearchInput" placeholder="Buscar persona trabajadora, puesto o email..." style="font-size:12px; flex:1;">
         </div>
       </div>
 
@@ -3418,7 +3418,7 @@
           <thead>
             <tr role="row">
               <th scope="col" style="width:40px;"><input type="checkbox" id="selectAll" checked aria-label="Seleccionar todos"></th>
-              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado">Empleado <span class="sort-arrow active">▲</span></th>
+              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado">Persona trabajadora <span class="sort-arrow active">▲</span></th>
               <th scope="col" style="width:25%;" class="sortable" data-sort="Puesto">Puesto <span class="sort-arrow">▲</span></th>
               <th scope="col" style="width:20%;" class="sortable" data-sort="Ubicación">Ubicación <span class="sort-arrow">▲</span></th>
               <th scope="col" style="width:30%;" class="sortable" data-sort="Email trabajo">Email <span class="sort-arrow">▲</span></th>
@@ -3656,7 +3656,7 @@
               <thead>
                 <tr style="border-bottom:2px solid var(--border); position:sticky; top:0; background:var(--bg-panel);">
                   <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px; width:30px;"></th>
-                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Empleado</th>
+                  <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Persona trabajadora</th>
                   <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">NIF</th>
                   <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Tipo Doc</th>
                   <th style="padding:8px 6px; text-align:left; font-weight:600; color:var(--text-muted); font-size:11px;">Email</th>
@@ -3721,7 +3721,7 @@
           </select>
         </div>
         <div class="cal-filter-group">
-          <span class="cal-filter-label">Empleado:</span>
+          <span class="cal-filter-label">Persona trabajadora:</span>
           <input class="input-field" type="text" id="calEmployeeSearch" placeholder="Nombre o NIF" style="font-size:12px; padding:4px 8px; width:180px;">
           <button class="link-btn link-clear" id="calEmployeeClear" style="font-size:11px; display:none;">Limpiar</button>
         </div>
@@ -3786,7 +3786,7 @@
 
       <!-- Employee search + Export -->
       <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
-        <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar empleado (nombre o NIF)" style="width:300px; font-size:13px;">
+        <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar persona trabajadora (nombre o NIF)" style="width:300px; font-size:13px;">
         <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
         <div style="flex:1;"></div>
         <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
@@ -4143,7 +4143,7 @@
   <!-- Employee selection dialog (multiple matches) -->
   <div class="dialog-overlay" id="employeeSelectDialog" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-narrow-scrollable">
-      <h3 class="dialog-employee-select-title">Selecciona un empleado</h3>
+      <h3 class="dialog-employee-select-title">Selecciona una persona trabajadora</h3>
       <div id="employeeSelectList"></div>
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary dialog-btn-sm" id="employeeSelectCancel">Cancelar</button>
@@ -4158,11 +4158,11 @@
       <p class="dialog-onboarding-intro">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
       <div class="onboarding-step">
         <div class="onboarding-step-num">1</div>
-        <div class="onboarding-step-text"><strong>Carga tu organigrama Excel</strong> con los datos de empleados (nombre, NIF, email, departamento).</div>
+        <div class="onboarding-step-text"><strong>Carga tu organigrama Excel</strong> con los datos de personas trabajadoras (nombre, NIF, email, departamento).</div>
       </div>
       <div class="onboarding-step">
         <div class="onboarding-step-num">2</div>
-        <div class="onboarding-step-text"><strong>Filtra y selecciona asistentes</strong> por empresa, departamento, ubicacion o puesto.</div>
+        <div class="onboarding-step-text"><strong>Filtra y selecciona personas destinatarias</strong> por empresa, departamento, ubicacion o puesto.</div>
       </div>
       <div class="onboarding-step">
         <div class="onboarding-step-num">3</div>
@@ -5282,7 +5282,7 @@
               '<option value="interno">interno</option>' +
               '<option value="proveedor">proveedor</option>' +
               '<option value="FUNDAE">FUNDAE</option>' +
-              '<option value="empleado">empleado</option>' +
+              '<option value="empleado">persona trabajadora</option>' +
             '</select>' +
             '<input class="input-field" id="cfNotaText" placeholder="Escribe una nota..." style="font-size:12px; flex:1;">' +
             '<button class="btn btn-secondary" id="btnAddNota" style="font-size:12px; white-space:nowrap;">A\u00F1adir</button>' +
@@ -6328,7 +6328,7 @@
         if (!listEl) return;
 
         if (filtered.length === 0) {
-          listEl.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:12px;">No se encontraron empleados</div>';
+          listEl.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:12px;">No se encontraron personas trabajadoras</div>';
           return;
         }
 
@@ -6825,7 +6825,7 @@
         });
 
       if (employees.length === 0) {
-        errors.push('No hay empleados activos (Alta/Baja = 1).');
+        errors.push('No hay personas trabajadoras activas (Alta/Baja = 1).');
       }
 
       return { employees, errors };
@@ -7726,14 +7726,14 @@
           showToast(dupNifs.length + ' NIF' + (dupNifs.length > 1 ? 's' : '') + ' duplicado' + (dupNifs.length > 1 ? 's' : '') + ' detectado' + (dupNifs.length > 1 ? 's' : ''), 'warning', 6000);
         }
         if (emptyNifs > 0) {
-          showToast(emptyNifs + ' empleado' + (emptyNifs > 1 ? 's' : '') + ' sin NIF', 'warning', 5000);
+          showToast(emptyNifs + (emptyNifs > 1 ? ' personas trabajadoras' : ' persona trabajadora') + ' sin NIF', 'warning', 5000);
         }
         if (invalidEmails.length > 0) {
           showToast(invalidEmails.length + ' email' + (invalidEmails.length > 1 ? 's' : '') + ' con formato incorrecto', 'warning', 6000);
         }
 
         // Always show summary toast
-        showToast(state.employees.length + ' empleados activos' +
+        showToast(state.employees.length + ' personas trabajadoras activas' +
           (emptyEmails > 0 ? ' · ' + emptyEmails + ' sin email' : ''), 'info', 4000);
 
         state.activeFilters = {};
@@ -7747,7 +7747,7 @@
         uploadPrompt.style.display = 'none';
         uploadInfo.style.display = 'block';
         fileNameEl.textContent = file.name;
-        fileStats.textContent = state.employees.length + ' empleados activos · hoja ORGANIGRAMA';
+        fileStats.textContent = state.employees.length + ' personas trabajadoras activas · hoja Organigrama';
 
         try { localStorage.setItem('lastFile', file.name); } catch(e) {}
         try {
@@ -7818,7 +7818,7 @@
       uploadPrompt.style.display = 'none';
       uploadInfo.style.display = 'block';
       fileNameEl.textContent = 'datos-ejemplo.xlsx';
-      fileStats.textContent = employees.length + ' empleados de ejemplo';
+      fileStats.textContent = employees.length + ' personas trabajadoras de ejemplo';
 
       document.getElementById('filtrosSection').style.display = '';
       document.getElementById('eventoSection').style.display = '';
@@ -7829,7 +7829,7 @@
 
       renderFilters();
       renderTable();
-      showToast('Datos de ejemplo cargados (25 empleados). Reemplazalos con tu organigrama real.', 'info', 6000);
+      showToast('Datos de ejemplo cargados (25 personas trabajadoras). Reemplazalos con tu organigrama real.', 'info', 6000);
     }
 
     // ═══════════════════════════════════
@@ -8189,7 +8189,7 @@
       if (allSorted.length === 0) {
         table.style.display = 'none';
         emptyState.style.display = '';
-        emptyState.textContent = 'Ningún empleado coincide con estos filtros.';
+        emptyState.textContent = 'Ninguna persona trabajadora coincide con estos filtros.';
       } else {
         table.style.display = '';
         emptyState.style.display = 'none';
@@ -8296,11 +8296,11 @@
 
       const totalActive = allEmployees.length;
       document.getElementById('attendeeCount').textContent = selected.length;
-      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' empleados';
+      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' personas trabajadoras';
 
       const warningEl = document.getElementById('noEmailWarning');
       if (noEmail.length > 0) {
-        warningEl.textContent = '⚠️ ' + noEmail.length + ' empleado' + (noEmail.length > 1 ? 's' : '') + ' sin Email trabajo — excluidos';
+        warningEl.textContent = '⚠️ ' + (noEmail.length > 1 ? noEmail.length + ' personas trabajadoras' : noEmail.length + ' persona trabajadora') + ' sin Email trabajo — excluidas';
       } else {
         warningEl.textContent = '';
       }
@@ -8313,7 +8313,7 @@
 
       if (selected.length > 50) {
         btnCopy.style.display = '';
-        btnOutlook.textContent = 'Abrir evento (sin asistentes)';
+        btnOutlook.textContent = 'Abrir evento (sin personas destinatarias)';
       } else {
         btnCopy.style.display = 'none';
         btnOutlook.textContent = 'Abrir en Outlook';
@@ -8618,7 +8618,7 @@
         var metaDiv = document.createElement('div');
         metaDiv.className = 'queue-item-meta';
         var type = item.event && item.event.isTeams ? 'Teams' : 'Presencial';
-        metaDiv.textContent = (item.event ? item.event.date : 'Sin fecha') + ' | ' + (item.attendeeCount || 0) + ' asistentes | ' + type;
+        metaDiv.textContent = (item.event ? item.event.date : 'Sin fecha') + ' | ' + (item.attendeeCount || 0) + ' personas destinatarias | ' + type;
         var actionsDiv = document.createElement('div');
         actionsDiv.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
         var editBtn = document.createElement('button');
@@ -8913,7 +8913,7 @@
       for (var i = 0; i < conflicts.length; i++) {
         var c = conflicts[i];
         html += '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">' +
-          esc(String(c.emails.length)) + ' asistentes ya convocados a \u00ab' + esc(c.title) + '\u00bb el mismo dia/hora: ' +
+          esc(String(c.emails.length)) + ' personas ya convocadas a \u00ab' + esc(c.title) + '\u00bb el mismo dia/hora: ' +
           '<span style="font-size:11px; color:var(--text-muted);">' + c.emails.map(function(e) { return esc(e); }).join(', ') + '</span>' +
           '</div>';
       }
@@ -8952,10 +8952,10 @@
       summary += dateStr + ', ' + event.startTime + ' – ' + event.endTime + '<br>';
       summary += typeLabel;
       if (event.location && !event.isTeams) summary += ' · ' + esc(event.location);
-      summary += '<br><strong>' + selected.length + '</strong> asistentes';
+      summary += '<br><strong>' + selected.length + '</strong> personas destinatarias';
       if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
       if (selected.length > 50) {
-        summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 asistentes)</span>';
+        summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 personas destinatarias)</span>';
       }
 
       // Schedule conflict detection — non-blocking warnings
@@ -9064,7 +9064,7 @@
       const emails = selected.map(e => e['Email trabajo']);
 
       if (selected.length === 0) {
-        showToast('No hay asistentes seleccionados', 'warning');
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
         return;
       }
 
@@ -9200,7 +9200,7 @@
     document.getElementById('btnExport').addEventListener('click', () => {
       const selected = getSelectedAttendees();
       if (selected.length === 0) {
-        showToast('No hay asistentes seleccionados', 'warning');
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
         return;
       }
 
@@ -9215,14 +9215,14 @@
 
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Asistentes');
+      XLSX.utils.book_append_sheet(wb, ws, 'Destinatarias');
 
       const title = document.getElementById('eventTitle').value.trim() || 'convocatoria';
       const date = document.getElementById('eventDate').value || 'sin-fecha';
-      const filename = title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_') + '_' + date + '_asistentes.xlsx';
+      const filename = title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_') + '_' + date + '_destinatarias.xlsx';
 
       XLSX.writeFile(wb, filename);
-      showToast('Exportados ' + selected.length + ' asistentes', 'success');
+      showToast('Exportadas ' + selected.length + ' personas destinatarias', 'success');
     });
 
     function openSeriesSequentially(baseEvent, emails) {
@@ -9392,7 +9392,7 @@
 
           renderFilters();
           renderTable();
-          showToast(externalEmps.length + ' empleados externos importados', 'success');
+          showToast(externalEmps.length + ' personas externas importadas', 'success');
         } catch (err) {
           showToast('Error al leer el fichero: ' + err.message, 'error');
         }
@@ -9428,7 +9428,7 @@
           const restoreDiv = document.createElement('div');
           restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:12px; color:var(--accent); text-align:center;';
           restoreDiv.innerHTML = '<strong>Usar organigrama anterior</strong><br>' +
-            employees.length + ' empleados · ' + (savedFileName || 'fichero anterior');
+            employees.length + ' personas trabajadoras · ' + (savedFileName || 'fichero anterior');
           restoreDiv.addEventListener('click', e => {
             e.stopPropagation();
             state.employees = employees;
@@ -9471,7 +9471,7 @@
             uploadPrompt.style.display = 'none';
             uploadInfo.style.display = 'block';
             fileNameEl.textContent = savedFileName || 'Organigrama (sesión anterior)';
-            fileStats.textContent = state.employees.length + ' empleados activos · sesión restaurada';
+            fileStats.textContent = state.employees.length + ' personas trabajadoras activas · sesión restaurada';
 
             document.getElementById('filtrosSection').style.display = '';
             document.getElementById('eventoSection').style.display = '';
@@ -9828,7 +9828,7 @@
                 eventDate + ' · ' + (h.startTime||'') + '\u2013' + (h.endTime||'') + ' · ' + type +
               '</div>' +
               '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' +
-                h.attendeeCount + ' asistentes · ' + esc(filterSummary) +
+                h.attendeeCount + ' personas destinatarias · ' + esc(filterSummary) +
               '</div>' +
               '<div style="font-size:10px; color:var(--text-muted); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">' +
                 'Enviado: ' + date + ' ' + statusBadge + ' ' + surveyBadge + ' ' + actionBadge +
@@ -12165,7 +12165,7 @@
 
         // Y label
         var yLabel = svgEl('text', { x: '4', y: padT + chartH / 2, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '7', 'font-family': 'Inter, sans-serif', transform: 'rotate(-90, 4, ' + (padT + chartH / 2) + ')' });
-        yLabel.textContent = 'Empleados';
+        yLabel.textContent = 'Personas trabajadoras';
         svg.appendChild(yLabel);
 
         bins.forEach(function(bin, idx) {
@@ -12258,7 +12258,7 @@
       if (zeroTraining.length > 0) {
         var zeroEl = document.createElement('div');
         zeroEl.style.cssText = 'margin-top:8px; padding:6px 10px; background:var(--warning-light); border-radius:var(--radius-sm); font-size:11px; color:var(--warning);';
-        zeroEl.innerHTML = '<strong>' + zeroTraining.length + '</strong> empleados del Excel sin ninguna formación vinculada';
+        zeroEl.innerHTML = '<strong>' + zeroTraining.length + '</strong> personas del Excel sin ninguna formación vinculada';
         container.appendChild(zeroEl);
       }
     }
@@ -12493,7 +12493,7 @@
       if (totalAttendees > 0) {
         var footer = document.createElement('div');
         footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
-        footer.textContent = totalAttendees + ' asistentes procesados en total';
+        footer.textContent = totalAttendees + ' personas destinatarias procesadas en total';
         container.appendChild(footer);
       }
 
@@ -14267,7 +14267,7 @@
           var details = document.createElement('details');
           var summary = document.createElement('summary');
           summary.style.cssText = 'cursor:pointer;font-size:12px;color:var(--text-secondary);padding:4px 0;';
-          summary.textContent = cov.sinFormacion.length + ' empleados sin formacion';
+          summary.textContent = cov.sinFormacion.length + ' personas sin formacion';
           details.appendChild(summary);
           var list = document.createElement('div');
           list.style.cssText = 'max-height:200px;overflow-y:auto;font-size:11px;margin-top:4px;';
@@ -14470,7 +14470,7 @@
         var hRow = document.createElement('tr');
         var thCorner = document.createElement('th');
         thCorner.style.cssText = 'padding:4px;text-align:left;font-size:9px;color:var(--text-muted);';
-        thCorner.textContent = 'Pagadora \\ Empleados';
+        thCorner.textContent = 'Pagadora \\ Personas trabajadoras';
         hRow.appendChild(thCorner);
         receptoras.forEach(function(r) {
           var th = document.createElement('th');
@@ -15537,7 +15537,7 @@
       });
 
       if (matches.length === 0) {
-        showToast('Empleado no encontrado', 'warning');
+        showToast('Persona trabajadora no encontrada', 'warning');
         return;
       }
 
@@ -15600,7 +15600,7 @@
       '</div>';
 
       if (empAcciones.length === 0) {
-        html += '<div style="font-size:13px; color:var(--text-muted); padding:20px 0; text-align:center;">Este empleado no tiene acciones formativas asignadas.</div>';
+        html += '<div style="font-size:13px; color:var(--text-muted); padding:20px 0; text-align:center;">Esta persona trabajadora no tiene acciones formativas asignadas.</div>';
       } else {
         // Table
         html += '<div style="width:100%; overflow-x:auto;">' +
@@ -15747,7 +15747,7 @@
 
       var ws = XLSX.utils.json_to_sheet(rows);
       var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Ficha empleado');
+      XLSX.utils.book_append_sheet(wb, ws, 'Ficha persona trabajadora');
       XLSX.writeFile(wb, 'Ficha_' + nif + '.xlsx');
       showToast('Ficha exportada: Ficha_' + nif + '.xlsx', 'success');
     }
