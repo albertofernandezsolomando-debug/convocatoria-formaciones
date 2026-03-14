@@ -2257,6 +2257,16 @@
     .post-send-detail-item { display: flex; align-items: center; gap: 6px; }
     .post-send-detail-label { color: var(--text-muted); min-width: 80px; }
 
+    /* --- Tracking formacion obligatoria --- */
+    .compliance-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    .compliance-table th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+    .compliance-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+    .compliance-expired { color: var(--danger); font-weight: 600; }
+    .compliance-summary { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+    .compliance-type-card { padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .compliance-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+    .compliance-type-meta { font-size: 11px; color: var(--text-muted); }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -4103,6 +4113,7 @@
         <button class="catalog-tab" data-catalog="centros">Centros</button>
         <button class="catalog-tab" data-catalog="tutores">Tutores</button>
         <button class="catalog-tab" data-catalog="acciones">Acciones</button>
+        <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
       </div>
       <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
         <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
@@ -4136,6 +4147,7 @@
         <div class="catalog-list-table-wrapper" id="catalogListTableWrapper"></div>
         <div class="catalog-list-new-row" id="catalogListNewRow"></div>
       </div>
+      <div id="complianceViewContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
     </div>
   </div>
 
@@ -5858,6 +5870,210 @@
       });
     }
 
+    // ═══════════════════════════════════
+    // COMPLIANCE VIEW (Formación obligatoria)
+    // ═══════════════════════════════════
+
+    function renderComplianceView() {
+      var container = document.getElementById('complianceViewContainer');
+      if (!container) return;
+
+      var now = new Date();
+      var types = state.complianceTypes;
+      var records = state.complianceRecords;
+      var employees = state.employees || [];
+      var limitedEmployees = employees.slice(0, 100);
+
+      // Count expired
+      var expiredItems = [];
+      limitedEmployees.forEach(function(emp) {
+        var nif = emp['NIF'] || '';
+        if (!nif) return;
+        types.forEach(function(ct) {
+          var key = nif + '|' + ct.id;
+          var rec = records[key];
+          if (rec && rec.date) {
+            var completionDate = new Date(rec.date);
+            var expiryDate = new Date(completionDate);
+            expiryDate.setMonth(expiryDate.getMonth() + (ct.periodMonths || 12));
+            if (expiryDate < now) {
+              expiredItems.push({ emp: emp, type: ct, expiry: expiryDate });
+            }
+          } else if (!rec || !rec.date) {
+            expiredItems.push({ emp: emp, type: ct, expiry: null });
+          }
+        });
+      });
+
+      var parts = [];
+
+      parts.push('<div style="display:flex; height:100%; min-height:0;">');
+
+      // Left panel: compliance types
+      parts.push('<div style="width:320px; min-width:320px; border-right:1px solid var(--border); padding:16px; overflow-y:auto;">');
+      parts.push('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">');
+      parts.push('<span style="font-size:14px; font-weight:600; color:var(--text-primary);">Tipos de formación</span>');
+      parts.push('<button class="btn btn-primary" id="btnAddComplianceType" style="font-size:11px; padding:4px 10px;">+ Añadir</button>');
+      parts.push('</div>');
+
+      if (types.length === 0) {
+        parts.push('<div style="color:var(--text-muted); font-size:12px; padding:20px 0; text-align:center;">No hay tipos definidos.<br>Añade un tipo de formación obligatoria.</div>');
+      } else {
+        types.forEach(function(ct) {
+          parts.push('<div class="compliance-type-card" data-compliance-id="' + esc(ct.id) + '">');
+          parts.push('<div>');
+          parts.push('<div class="compliance-type-name">' + esc(ct.name) + '</div>');
+          parts.push('<div class="compliance-type-meta">Caduca cada ' + ct.periodMonths + ' meses</div>');
+          parts.push('</div>');
+          parts.push('<button class="link-btn compliance-delete-type" data-compliance-id="' + esc(ct.id) + '" style="color:var(--danger); font-size:11px;">Eliminar</button>');
+          parts.push('</div>');
+        });
+      }
+      parts.push('</div>');
+
+      // Right panel: matrix table
+      parts.push('<div style="flex:1; min-width:0; overflow:auto; padding:16px;">');
+
+      if (types.length === 0 || employees.length === 0) {
+        parts.push('<div style="color:var(--text-muted); font-size:13px; padding:40px; text-align:center;">');
+        if (employees.length === 0) {
+          parts.push('Carga un archivo de personas trabajadoras para ver la matriz de cumplimiento.');
+        } else {
+          parts.push('Añade tipos de formación obligatoria en el panel izquierdo.');
+        }
+        parts.push('</div>');
+      } else {
+        // Summary
+        parts.push('<div class="compliance-summary">');
+        parts.push('<strong>' + expiredItems.length + '</strong> registro' + (expiredItems.length !== 1 ? 's' : '') + ' caducado' + (expiredItems.length !== 1 ? 's' : '') + ' o sin completar');
+        if (employees.length > 100) {
+          parts.push(' <span style="color:var(--warning);">(mostrando primeras 100 personas trabajadoras)</span>');
+        }
+        parts.push('</div>');
+
+        // Create convocatoria button
+        if (expiredItems.length > 0) {
+          parts.push('<div style="padding:8px 0 12px;">');
+          parts.push('<button class="btn btn-primary" id="btnComplianceConvocatoria" style="font-size:12px;">Crear convocatoria con personas afectadas</button>');
+          parts.push('</div>');
+        }
+
+        // Matrix table
+        parts.push('<table class="compliance-table"><thead><tr>');
+        parts.push('<th>Persona trabajadora</th><th>NIF</th>');
+        types.forEach(function(ct) {
+          parts.push('<th>' + esc(ct.name) + '</th>');
+        });
+        parts.push('</tr></thead><tbody>');
+
+        limitedEmployees.forEach(function(emp) {
+          var nif = emp['NIF'] || '';
+          var empName = emp['Empleado'] || '';
+          parts.push('<tr>');
+          parts.push('<td>' + esc(empName) + '</td>');
+          parts.push('<td>' + esc(nif) + '</td>');
+          types.forEach(function(ct) {
+            var key = nif + '|' + ct.id;
+            var rec = records[key];
+            if (rec && rec.date) {
+              var completionDate = new Date(rec.date);
+              var expiryDate = new Date(completionDate);
+              expiryDate.setMonth(expiryDate.getMonth() + (ct.periodMonths || 12));
+              var isExpired = expiryDate < now;
+              var dateStr = completionDate.toLocaleDateString('es-ES');
+              var expiryStr = expiryDate.toLocaleDateString('es-ES');
+              if (isExpired) {
+                parts.push('<td class="compliance-expired" title="Caducó el ' + esc(expiryStr) + '">' + esc(dateStr) + ' (caducado)</td>');
+              } else {
+                parts.push('<td title="Caduca el ' + esc(expiryStr) + '">' + esc(dateStr) + '</td>');
+              }
+            } else {
+              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:11px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;"></td>');
+            }
+          });
+          parts.push('</tr>');
+        });
+        parts.push('</tbody></table>');
+      }
+
+      parts.push('</div>');
+      parts.push('</div>');
+
+      container.textContent = '';
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = parts.join('');
+      while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
+
+      // Bind: add type
+      var btnAdd = document.getElementById('btnAddComplianceType');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function() {
+          var name = prompt('Nombre de la formación obligatoria:');
+          if (!name || !name.trim()) return;
+          var months = prompt('Periodo de caducidad (meses):', '12');
+          var periodMonths = parseInt(months, 10);
+          if (isNaN(periodMonths) || periodMonths <= 0) {
+            showToast('El periodo debe ser un número positivo', 'error');
+            return;
+          }
+          state.complianceTypes.push({
+            id: 'ct_' + Date.now(),
+            name: name.trim(),
+            periodMonths: periodMonths
+          });
+          saveCompliance();
+          renderComplianceView();
+          showToast('Tipo de formación añadido', 'success');
+        });
+      }
+
+      // Bind: delete type
+      container.querySelectorAll('.compliance-delete-type').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = btn.dataset.complianceId;
+          if (!confirm('¿Eliminar este tipo de formación obligatoria?')) return;
+          state.complianceTypes = state.complianceTypes.filter(function(ct) { return ct.id !== id; });
+          // Clean related records
+          Object.keys(state.complianceRecords).forEach(function(key) {
+            if (key.endsWith('|' + id)) delete state.complianceRecords[key];
+          });
+          saveCompliance();
+          renderComplianceView();
+          showToast('Tipo eliminado', 'success');
+        });
+      });
+
+      // Bind: date inputs
+      container.querySelectorAll('.compliance-date-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+          var nif = input.dataset.nif;
+          var typeId = input.dataset.typeId;
+          var key = nif + '|' + typeId;
+          if (input.value) {
+            state.complianceRecords[key] = { date: input.value };
+          } else {
+            delete state.complianceRecords[key];
+          }
+          saveCompliance();
+          renderComplianceView();
+        });
+      });
+
+      // Bind: create convocatoria with affected people
+      var btnConv = document.getElementById('btnComplianceConvocatoria');
+      if (btnConv) {
+        btnConv.addEventListener('click', function() {
+          // Collect unique NIFs of people with expired/missing compliance
+          var affectedNIFs = new Set();
+          expiredItems.forEach(function(item) {
+            var nif = item.emp['NIF'];
+            if (nif) affectedNIFs.add(nif);
+          });
+          showToast(affectedNIFs.size + ' persona' + (affectedNIFs.size !== 1 ? 's' : '') + ' trabajadora' + (affectedNIFs.size !== 1 ? 's' : '') + ' afectada' + (affectedNIFs.size !== 1 ? 's' : ''), 'info');
+        });
+      }
+    }
+
     // Sub-tab switching
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5873,13 +6089,33 @@
           listViewState.filters = {};
           listViewState.selectedPKs = new Set();
           listViewState.lastClickedPK = null;
-          // Restore saved view mode for this catalog
-          var savedModes = getCatalogViewModes();
-          var savedMode = savedModes[btn.dataset.catalog] || 'ficha';
-          toggleCatalogViewMode(btn.dataset.catalog, savedMode);
-          if (savedMode === 'ficha') {
-            renderCatalogList();
-            renderCatalogForm();
+
+          // Handle compliance tab specially
+          var complianceContainer = document.getElementById('complianceViewContainer');
+          var listPanel = document.getElementById('catalogListPanel');
+          var formPanel = document.getElementById('catalogFormPanel');
+          var listViewContainer = document.getElementById('catalogListViewContainer');
+          var viewToggle = document.getElementById('catalogViewToggle');
+
+          if (btn.dataset.catalog === 'compliance') {
+            listPanel.style.display = 'none';
+            formPanel.style.display = 'none';
+            listViewContainer.style.display = 'none';
+            complianceContainer.style.display = '';
+            if (viewToggle) viewToggle.style.display = 'none';
+            loadCompliance();
+            renderComplianceView();
+          } else {
+            complianceContainer.style.display = 'none';
+            if (viewToggle) viewToggle.style.display = '';
+            // Restore saved view mode for this catalog
+            var savedModes = getCatalogViewModes();
+            var savedMode = savedModes[btn.dataset.catalog] || 'ficha';
+            toggleCatalogViewMode(btn.dataset.catalog, savedMode);
+            if (savedMode === 'ficha') {
+              renderCatalogList();
+              renderCatalogForm();
+            }
           }
         });
       });
@@ -6304,7 +6540,60 @@
           '</div>' +
           textarea('Objetivos', 'objetivos', v('objetivos')) +
           textarea('Contenidos', 'contenidos', v('contenidos')) +
-          '</div></details>';
+          sectionEnd +
+
+        // 4. Vinculaciones (default: collapsed)
+        sectionHeader('vinculaciones', 'Vinculaciones', countFilled(secVinculacionFields), secVinculacionFields.length, false) +
+          select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+          select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+          sectionEnd +
+
+        // 5. Comunicación RLT (default: collapsed)
+        (function() {
+          var rltEstado = record.rltEstado || 'Pendiente';
+          var rltFechaEnvio = record.rltFechaEnvio || '';
+          var rltFilled = (rltEstado !== 'Pendiente' ? 1 : 0) + (rltFechaEnvio ? 1 : 0);
+          var statusColor = rltEstado === 'Pendiente' ? 'var(--warning)' : 'var(--success)';
+          var deadlineHtml = '';
+          if (rltFechaEnvio) {
+            var deadlineDate = addBusinessDays(new Date(rltFechaEnvio + 'T00:00:00'), 15);
+            var deadlineStr = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            deadlineHtml = '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Plazo vencimiento (15 d\u00EDas h\u00E1biles)</label>' +
+              '<span style="font-size:13px; font-weight:500; color:var(--text-primary);">' + esc(deadlineStr) + '</span>' +
+              '</div>';
+          }
+          return sectionHeader('rlt', 'Comunicaci\u00F3n RLT', rltFilled, 2, false) +
+            '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Estado comunicaci\u00F3n</label>' +
+              '<span style="font-size:13px; font-weight:600; color:' + statusColor + ';">' + esc(rltEstado) + '</span>' +
+            '</div>' +
+            '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
+              '<input class="input-field" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '" style="font-size:13px;">' +
+            '</div>' +
+            deadlineHtml +
+            '<button class="btn btn-secondary" id="btnGenerateRLT" style="font-size:12px; margin-top:4px;">Generar comunicaci\u00F3n RLT</button>' +
+            sectionEnd;
+        })() +
+
+        // 6. Seguimiento (default: expanded)
+        sectionHeader('seguimiento', 'Seguimiento', (record.notas || []).length, 0, true) +
+          renderNotasTimelineHtml(record) +
+          renderAsistenciaHtml(record) +
+          renderConfirmacionesHtml(record) +
+          sectionEnd +
+
+        // 7. Participantes (default: collapsed)
+        sectionHeader('participantes', 'Participantes', (record.participantes || []).length, 0, false) +
+          '<div id="cfParticipantWarning" style="display:none; font-size:11px; color:var(--warning); margin-bottom:8px;">' +
+            '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
+          '</div>' +
+          '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
+          '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
+          ' <button class="link-btn link-add" id="btnCopyParticipants" style="font-size:11px; margin-left:8px;">Copiar de otra acci\u00F3n</button>' +
+          sectionEnd;
       }
 
       return '<div style="display:flex; flex-direction:column; height:100%;">' +
@@ -6472,6 +6761,31 @@
         if (duplicateBtn) {
           duplicateBtn.addEventListener('click', function() {
             duplicateAction(record.codigo);
+          });
+        }
+
+        // RLT communication
+        var btnRLT = document.getElementById('btnGenerateRLT');
+        if (btnRLT) {
+          btnRLT.addEventListener('click', function() {
+            generateRLTDocument([record]);
+          });
+        }
+        var rltDateInput = document.getElementById('cf_rltSentDate');
+        if (rltDateInput) {
+          rltDateInput.addEventListener('change', function() {
+            var dateVal = rltDateInput.value;
+            record.rltFechaEnvio = dateVal;
+            record.rltEstado = dateVal ? 'Enviada' : 'Pendiente';
+            upsertCatalogRecord('acciones', 'codigo', record);
+            renderCatalogForm();
+            if (dateVal) {
+              var deadline = addBusinessDays(new Date(dateVal + 'T00:00:00'), 15);
+              var deadlineStr = deadline.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+              showToast('Comunicaci\u00F3n RLT marcada como enviada. Plazo: ' + deadlineStr, 'success');
+            } else {
+              showToast('Fecha de env\u00EDo RLT eliminada', 'info');
+            }
           });
         }
 
@@ -7178,6 +7492,8 @@
         record.confirmaciones = existingAccion ? (existingAccion.confirmaciones || {}) : {};
         record.comunicacionInicioEnviada = existingAccion ? (existingAccion.comunicacionInicioEnviada || false) : false;
         record.comunicacionFinEnviada = existingAccion ? (existingAccion.comunicacionFinEnviada || false) : false;
+        record.rltEstado = existingAccion ? (existingAccion.rltEstado || 'Pendiente') : 'Pendiente';
+        record.rltFechaEnvio = existingAccion ? (existingAccion.rltFechaEnvio || '') : '';
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
@@ -7888,6 +8204,71 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function addBusinessDays(startDate, days) {
+      var date = new Date(startDate);
+      var added = 0;
+      while (added < days) {
+        date.setDate(date.getDate() + 1);
+        if (date.getDay() !== 0 && date.getDay() !== 6) added++;
+      }
+      return date;
+    }
+
+    function generateRLTDocument(selectedActions) {
+      var w = window.open('', '_blank');
+      if (!w) { showToast('El navegador bloqueó la ventana emergente. Permite pop-ups e inténtalo de nuevo.', 'warning'); return; }
+      var rows = '';
+      selectedActions.forEach(function(a) {
+        var horas = '';
+        if (a.horasPresenciales) horas += esc(String(a.horasPresenciales)) + 'h pres.';
+        if (a.horasTeleformacion) horas += (horas ? ' + ' : '') + esc(String(a.horasTeleformacion)) + 'h telef.';
+        if (!horas) horas = '-';
+        var fechas = '';
+        if (a.fechaInicio) fechas += esc(a.fechaInicio);
+        if (a.fechaFin) fechas += (fechas ? ' a ' : '') + esc(a.fechaFin);
+        if (!fechas) fechas = '-';
+        var destinatarios = (a.participantes || []).length > 0 ? esc(String((a.participantes || []).length)) + ' participante(s)' : '-';
+        rows += '<tr>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + esc(a.codigo || '') + ' - ' + esc(a.nombre || '') + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + esc(a.modalidad || '-') + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + horas + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + fechas + '</td>' +
+          '<td style="border:1px solid #ccc; padding:8px 10px; font-size:13px;">' + destinatarios + '</td>' +
+          '</tr>';
+      });
+      var today = new Date();
+      var dateStr = today.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+      var docContent = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+        '<title>Comunicaci\u00F3n RLT</title>' +
+        '<style>' +
+          'body { font-family: "Inter", system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1e293b; line-height: 1.6; }' +
+          'h1 { font-size: 18px; text-align: center; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px; }' +
+          'p { font-size: 13px; margin-bottom: 12px; }' +
+          'table { width: 100%; border-collapse: collapse; margin: 20px 0; }' +
+          'th { border: 1px solid #ccc; padding: 8px 10px; font-size: 12px; background: #f1f5f9; text-align: left; font-weight: 600; }' +
+          '.footer { margin-top: 48px; font-size: 13px; }' +
+          '.signature { margin-top: 60px; border-top: 1px solid #1e293b; width: 250px; padding-top: 8px; font-size: 12px; }' +
+          '@media print { body { margin: 20px; } }' +
+        '</style></head><body>' +
+        '<h1>Comunicaci\u00F3n a la Representaci\u00F3n Legal de los Trabajadores</h1>' +
+        '<p>De conformidad con lo establecido en el art\u00EDculo 64 del Estatuto de los Trabajadores y en el art\u00EDculo 15 del Real Decreto 694/2017, se comunica a la Representaci\u00F3n Legal de los Trabajadores la realizaci\u00F3n de las siguientes acciones formativas:</p>' +
+        '<table>' +
+          '<thead><tr>' +
+            '<th>Acci\u00F3n</th><th>Modalidad</th><th>Horas</th><th>Fechas</th><th>Destinatarios</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+        '<div class="footer">' +
+          '<p>Se concede un plazo de 15 d\u00EDas h\u00E1biles desde la recepci\u00F3n de la presente comunicaci\u00F3n para emitir informe al respecto.</p>' +
+          '<p>En ' + esc(dateStr) + '</p>' +
+          '<div class="signature">Firma y sello de la empresa</div>' +
+        '</div>' +
+        '</body></html>';
+      w.document.open();
+      w.document.writeln(docContent);
+      w.document.close();
+    }
+
     function showToast(message, type, duration, options) {
       if (type === undefined) type = 'info';
       if (duration === undefined) duration = 4000;
@@ -7967,6 +8348,8 @@
       sortDirection: 'asc',
       queue: [],
       dataQualityIssues: [],
+      complianceTypes: [],
+      complianceRecords: {},
     };
 
     // ═══════════════════════════════════
@@ -7978,6 +8361,26 @@
     }
     function loadQueue() {
       try { state.queue = JSON.parse(localStorage.getItem('convocatoria_queue') || '[]'); } catch(e) { state.queue = []; }
+    }
+
+    // ═══════════════════════════════════
+    // COMPLIANCE PERSISTENCE
+    // ═══════════════════════════════════
+
+    function saveCompliance() {
+      try {
+        localStorage.setItem('convocatoria_compliance_types', JSON.stringify(state.complianceTypes));
+        localStorage.setItem('convocatoria_compliance_records', JSON.stringify(state.complianceRecords));
+      } catch(e) {}
+    }
+    function loadCompliance() {
+      try {
+        state.complianceTypes = JSON.parse(localStorage.getItem('convocatoria_compliance_types') || '[]');
+        state.complianceRecords = JSON.parse(localStorage.getItem('convocatoria_compliance_records') || '{}');
+      } catch(e) {
+        state.complianceTypes = [];
+        state.complianceRecords = {};
+      }
     }
 
     // ═══════════════════════════════════
@@ -12533,6 +12936,7 @@
     // ═══════════════════════════════════
 
     loadQueue();
+    loadCompliance();
     renderQueue();
 
     // ── Session recovery banner ──
