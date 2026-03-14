@@ -1596,6 +1596,12 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── View Transitions API ── */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 150ms;
+    }
+
     /* ── Toast notifications ── */
     .toast {
       display: grid;
@@ -4911,34 +4917,47 @@
     // ═══════════════════════════════════
     // TAB NAVIGATION
     // ═══════════════════════════════════
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-        document.getElementById(btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'tabDashboard') {
-          showDashboardSkeleton();
-          requestAnimationFrame(function() {
-            renderDashboard();
-            var alerts = evaluateAlerts();
-            updateAlertBanner(alerts);
-            updateDashboardAlerts(alerts);
-          });
+    function applyTabChange(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+      if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+      var content = document.getElementById(tabId);
+      if (content) content.classList.add('active');
+      // Trigger tab-specific rendering
+      if (tabId === 'tabDashboard') {
+        showDashboardSkeleton();
+        requestAnimationFrame(function() {
+          renderDashboard();
+          var alerts = evaluateAlerts();
+          updateAlertBanner(alerts);
+          updateDashboardAlerts(alerts);
+        });
+      }
+      if (tabId === 'tabCalendario') renderCalendarTab();
+      if (tabId === 'tabCatalogos') {
+        var savedModes = getCatalogViewModes ? getCatalogViewModes() : {};
+        var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+        if (typeof toggleCatalogViewMode === 'function') toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+        if (savedMode === 'ficha') {
+          renderCatalogList();
+          renderCatalogForm();
         }
-        if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
-        if (btn.dataset.tab === 'tabCatalogos') {
-          // Restore saved view mode
-          var savedModes = getCatalogViewModes();
-          var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
-          toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
-          if (savedMode === 'ficha') {
-            renderCatalogList();
-            renderCatalogForm();
-          }
+      }
+      if (tabId === 'tabXml' && typeof refreshXmlSelects === 'function') refreshXmlSelects();
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var tabId = btn.dataset.tab;
+        if (document.startViewTransition) {
+          document.startViewTransition(function() { applyTabChange(tabId); });
+        } else {
+          applyTabChange(tabId);
         }
-        if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
     });
 
