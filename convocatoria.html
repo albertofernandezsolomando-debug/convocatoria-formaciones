@@ -467,6 +467,146 @@
       color: white;
     }
 
+    /* --- Annual plan view --- */
+    .annual-plan-wrapper {
+      padding: 20px;
+    }
+    .annual-plan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .annual-plan-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .annual-plan-year-select {
+      font-size: 13px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+    .annual-plan-quarter {
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .annual-plan-quarter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--accent-subtle);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .annual-plan-quarter-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .annual-plan-quarter-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .annual-plan-quarter-stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .annual-plan-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .annual-plan-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .annual-plan-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .annual-plan-table tr:last-child td {
+      border-bottom: none;
+    }
+    .annual-plan-table tr:hover td {
+      background: var(--accent-subtle);
+    }
+    .annual-plan-estado {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .annual-plan-estado.completed {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .annual-plan-estado.in-progress {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .annual-plan-estado.planned {
+      background: var(--bg-input);
+      color: var(--text-muted);
+    }
+    .annual-plan-empty-quarter {
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+    .annual-plan-back-btn {
+      font-size: 12px;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .annual-plan-back-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-activate {
+      font-size: 11px;
+      padding: 3px 10px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent-subtle);
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all var(--transition);
+    }
+    .btn-activate:hover {
+      background: var(--accent);
+      color: white;
+    }
+
     /* --- Catalog list view table --- */
     .catalog-list-view-container {
       flex: 1;
@@ -4296,6 +4436,7 @@
         <button class="catalog-tab" data-catalog="acciones">Acciones</button>
         <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
       </div>
+      <button class="catalog-view-toggle-btn" id="btnAnnualPlan" style="display:none; margin-left:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:11px; font-weight:500; padding:5px 14px; background:var(--bg-input); color:var(--text-secondary); cursor:pointer;" title="Plan anual de formación">&#128197; Plan anual</button>
       <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
         <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
         <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista">&#9783; Lista</button>
@@ -4329,6 +4470,7 @@
         <div class="catalog-list-new-row" id="catalogListNewRow"></div>
       </div>
       <div id="complianceViewContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
+      <div id="annualPlanContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
     </div>
   </div>
 
@@ -5637,7 +5779,7 @@
         columns: [
           { key: 'codigo',          label: 'Código',       editable: false, type: 'text',   width: '80px' },
           { key: 'nombre',          label: 'Nombre',       editable: true,  type: 'text',   width: '2fr' },
-          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
+          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Planificada','Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
           { key: 'departamento',    label: 'Departamento',  editable: true,  type: 'text',   width: '150px' },
           { key: 'empresaPagadora', label: 'Empresa',       editable: true,  type: 'select', width: '180px', options: function() { return getEmpresasGrupo().map(function(e) { return e.razonSocial; }); } },
           { key: 'fechaInicio',     label: 'F. inicio',     editable: true,  type: 'date',   width: '120px' },
@@ -6186,7 +6328,7 @@
       bh += '<div class="bulk-separator"></div>';
       if (catalogKey === 'acciones') {
         bh += '<select id="bulkEstado" style="font-size:12px;"><option value="">Cambiar estado...</option>';
-        ['Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
+        ['Planificada','Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
         bh += '</select>';
         bh += '<select id="bulkEmpresa" style="font-size:12px;"><option value="">Cambiar empresa...</option>';
         getEmpresasGrupo().forEach(function(e) { bh += '<option value="' + esc(e.razonSocial) + '">' + esc(e.razonSocial) + '</option>'; });
@@ -6594,6 +6736,248 @@
       }
     }
 
+    // ═══════════════════════════════════
+    // ANNUAL PLAN VIEW
+    // ═══════════════════════════════════
+
+    var annualPlanState = { active: false, year: new Date().getFullYear() };
+
+    function getQuarter(dateStr) {
+      if (!dateStr) return null;
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
+      var m = d.getMonth(); // 0-11
+      if (m <= 2) return 1;
+      if (m <= 5) return 2;
+      if (m <= 8) return 3;
+      return 4;
+    }
+
+    function getEstadoClass(estado) {
+      if (!estado) return 'planned';
+      var e = estado.toLowerCase();
+      if (e === 'terminada') return 'completed';
+      if (e === 'en marcha' || e === 'en preparación' || e === 'buscando') return 'in-progress';
+      return 'planned';
+    }
+
+    function renderAnnualPlan() {
+      var container = document.getElementById('annualPlanContainer');
+      if (!container) return;
+
+      var year = annualPlanState.year;
+      var acciones = getCatalog('acciones');
+
+      // Group actions by quarter for selected year
+      var quarters = { 1: [], 2: [], 3: [], 4: [] };
+      var unscheduled = [];
+
+      acciones.forEach(function(a, idx) {
+        a._originalIndex = idx;
+        var q = getQuarter(a.fechaInicio);
+        if (q && a.fechaInicio) {
+          var actionYear = new Date(a.fechaInicio).getFullYear();
+          if (actionYear === year) {
+            quarters[q].push(a);
+          }
+        } else {
+          // Actions without date — check if they should appear
+          // Only show unscheduled if they exist
+          unscheduled.push(a);
+        }
+      });
+
+      var quarterNames = {
+        1: 'Q1 — Enero - Marzo',
+        2: 'Q2 — Abril - Junio',
+        3: 'Q3 — Julio - Septiembre',
+        4: 'Q4 — Octubre - Diciembre'
+      };
+
+      // Year selector
+      var currentYear = new Date().getFullYear();
+      var yearOptions = '';
+      for (var y = currentYear - 2; y <= currentYear + 2; y++) {
+        yearOptions += '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>';
+      }
+
+      var html = '<div class="annual-plan-wrapper">';
+      html += '<div class="annual-plan-header">';
+      html += '<div style="display:flex; align-items:center; gap:12px;">';
+      html += '<button class="annual-plan-back-btn" id="btnAnnualPlanBack">&larr; Volver</button>';
+      html += '<h2>Plan anual de formaci\u00f3n</h2>';
+      html += '</div>';
+      html += '<select class="annual-plan-year-select" id="annualPlanYear">' + yearOptions + '</select>';
+      html += '</div>';
+
+      // Render each quarter
+      for (var qi = 1; qi <= 4; qi++) {
+        var qActions = quarters[qi];
+        var totalHours = 0;
+        var totalBudget = 0;
+
+        qActions.forEach(function(a) {
+          totalHours += (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+          totalBudget += parseFloat(a.presupuesto) || 0;
+        });
+
+        html += '<div class="annual-plan-quarter">';
+        html += '<div class="annual-plan-quarter-header">';
+        html += '<h3>' + esc(quarterNames[qi]) + '</h3>';
+        html += '<div class="annual-plan-quarter-stats">';
+        html += '<span><strong>' + qActions.length + '</strong> acciones</span>';
+        html += '<span><strong>' + totalHours + '</strong> horas</span>';
+        html += '<span><strong>' + formatCurrency(totalBudget) + '</strong></span>';
+        html += '</div>';
+        html += '</div>';
+
+        if (qActions.length === 0) {
+          html += '<div class="annual-plan-empty-quarter">Sin acciones programadas en este trimestre</div>';
+        } else {
+          html += '<table class="annual-plan-table">';
+          html += '<thead><tr>';
+          html += '<th>Nombre</th>';
+          html += '<th>Modalidad</th>';
+          html += '<th>Estado</th>';
+          html += '<th>Horas</th>';
+          html += '<th>Participantes</th>';
+          html += '<th></th>';
+          html += '</tr></thead>';
+          html += '<tbody>';
+
+          qActions.forEach(function(a) {
+            var hours = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+            var partCount = (a.participantes || []).length;
+            var estadoClass = getEstadoClass(a.estado);
+
+            html += '<tr>';
+            html += '<td>' + esc(a.nombre || 'Sin nombre') + '</td>';
+            html += '<td>' + esc(a.modalidad || '-') + '</td>';
+            html += '<td><span class="annual-plan-estado ' + estadoClass + '">' + esc(a.estado || 'Sin estado') + '</span></td>';
+            html += '<td>' + hours + 'h</td>';
+            html += '<td>' + partCount + '</td>';
+            html += '<td>';
+            if (a.estado === 'Planificada') {
+              html += '<button class="btn-activate" data-action-index="' + a._originalIndex + '">Activar</button>';
+            }
+            html += '</td>';
+            html += '</tr>';
+          });
+
+          html += '</tbody></table>';
+        }
+        html += '</div>';
+      }
+
+      // Unscheduled actions summary
+      if (unscheduled.length > 0) {
+        html += '<div class="annual-plan-quarter" style="border-color: var(--warning-light);">';
+        html += '<div class="annual-plan-quarter-header" style="background: var(--warning-light);">';
+        html += '<h3>Sin fecha programada</h3>';
+        html += '<div class="annual-plan-quarter-stats">';
+        html += '<span><strong>' + unscheduled.length + '</strong> acciones sin fecha de inicio</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="annual-plan-empty-quarter">Estas acciones no tienen fecha de inicio asignada y no aparecen en ning\u00fan trimestre.</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Bind: year selector
+      var yearSelect = document.getElementById('annualPlanYear');
+      if (yearSelect) {
+        yearSelect.addEventListener('change', function() {
+          annualPlanState.year = parseInt(yearSelect.value, 10);
+          renderAnnualPlan();
+        });
+      }
+
+      // Bind: back button
+      var backBtn = document.getElementById('btnAnnualPlanBack');
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          closeAnnualPlan();
+        });
+      }
+
+      // Bind: activate buttons
+      container.querySelectorAll('.btn-activate').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(btn.dataset.actionIndex, 10);
+          activatePlannedAction(idx);
+        });
+      });
+    }
+
+    function activatePlannedAction(actionIndex) {
+      var catalog = getCatalog('acciones');
+      if (catalog[actionIndex]) {
+        catalog[actionIndex].estado = 'En preparaci\u00f3n';
+        saveCatalog('acciones', catalog);
+        renderAnnualPlan();
+        showToast('Acci\u00f3n activada', 'success');
+      }
+    }
+
+    function showAnnualPlan() {
+      annualPlanState.active = true;
+      var listPanel = document.getElementById('catalogListPanel');
+      var formPanel = document.getElementById('catalogFormPanel');
+      var listViewContainer = document.getElementById('catalogListViewContainer');
+      var complianceContainer = document.getElementById('complianceViewContainer');
+      var annualPlanContainer = document.getElementById('annualPlanContainer');
+      var viewToggle = document.getElementById('catalogViewToggle');
+      var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+      listPanel.style.display = 'none';
+      formPanel.style.display = 'none';
+      listViewContainer.style.display = 'none';
+      complianceContainer.style.display = 'none';
+      annualPlanContainer.style.display = '';
+      if (viewToggle) viewToggle.style.display = 'none';
+      if (btnAnnualPlan) {
+        btnAnnualPlan.style.background = 'var(--accent)';
+        btnAnnualPlan.style.color = 'white';
+        btnAnnualPlan.style.borderColor = 'var(--accent)';
+      }
+      renderAnnualPlan();
+    }
+
+    function closeAnnualPlan() {
+      annualPlanState.active = false;
+      var annualPlanContainer = document.getElementById('annualPlanContainer');
+      var viewToggle = document.getElementById('catalogViewToggle');
+      var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+      annualPlanContainer.style.display = 'none';
+      if (viewToggle) viewToggle.style.display = '';
+      if (btnAnnualPlan) {
+        btnAnnualPlan.style.background = 'var(--bg-input)';
+        btnAnnualPlan.style.color = 'var(--text-secondary)';
+        btnAnnualPlan.style.borderColor = 'var(--border)';
+      }
+
+      // Restore the normal catalog view
+      var savedModes = getCatalogViewModes();
+      var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+      toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+      if (savedMode === 'ficha') {
+        renderCatalogList();
+        renderCatalogForm();
+      }
+    }
+
+    // Bind: Annual plan button
+    document.getElementById('btnAnnualPlan').addEventListener('click', function() {
+      if (annualPlanState.active) {
+        closeAnnualPlan();
+      } else {
+        showAnnualPlan();
+      }
+    });
+
     // Sub-tab switching
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6612,10 +6996,26 @@
 
           // Handle compliance tab specially
           var complianceContainer = document.getElementById('complianceViewContainer');
+          var annualPlanContainer = document.getElementById('annualPlanContainer');
           var listPanel = document.getElementById('catalogListPanel');
           var formPanel = document.getElementById('catalogFormPanel');
           var listViewContainer = document.getElementById('catalogListViewContainer');
           var viewToggle = document.getElementById('catalogViewToggle');
+          var btnAnnualPlan = document.getElementById('btnAnnualPlan');
+
+          // Always reset annual plan state when switching tabs
+          annualPlanState.active = false;
+          annualPlanContainer.style.display = 'none';
+          if (btnAnnualPlan) {
+            btnAnnualPlan.style.background = 'var(--bg-input)';
+            btnAnnualPlan.style.color = 'var(--text-secondary)';
+            btnAnnualPlan.style.borderColor = 'var(--border)';
+          }
+
+          // Show annual plan button only for acciones tab
+          if (btnAnnualPlan) {
+            btnAnnualPlan.style.display = (btn.dataset.catalog === 'acciones') ? '' : 'none';
+          }
 
           if (btn.dataset.catalog === 'compliance') {
             listPanel.style.display = 'none';
@@ -6994,6 +7394,7 @@
           field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
           field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
           select('Estado', 'estado', record.estado || '', [
+            { value: 'Planificada', label: 'Planificada' },
             { value: 'Pendiente', label: 'Pendiente' },
             { value: 'Buscando', label: 'Buscando' },
             { value: 'En preparación', label: 'En preparación' },
@@ -8471,6 +8872,10 @@
       var accionesTab = document.querySelector('.catalog-tab[data-catalog="acciones"]');
       if (accionesTab) accionesTab.classList.add('active');
       catalogState.activeCatalog = 'acciones';
+
+      // Show annual plan button for acciones
+      var btnAP = document.getElementById('btnAnnualPlan');
+      if (btnAP) btnAP.style.display = '';
 
       // Select the action - force ficha mode
       catalogState.selectedPK = code;
@@ -17339,6 +17744,7 @@
       // --- Estado chart (donut, uses cached estadoCounts from metrics) ---
       var estadoCounts = metrics.estadoCounts;
       var estadoColorMap = {
+        'Planificada': '#a3a3a3',
         'En marcha': DS.accent,
         'Terminada': DS.chart3,
         'Anulada': DS.chart5,
@@ -18135,6 +18541,7 @@
     // ═══════════════════════════════════
 
     var CAL_ESTADO_COLORS = {
+      'Planificada': '#a3a3a3',
       'Pendiente': DS.textMuted,
       'En preparación': DS.chart2,
       'En marcha': DS.accent,
@@ -18482,7 +18889,7 @@
       summaryEl.innerHTML = '<strong>' + visible.length + '</strong> formaciones &middot; <strong>' + totalPart + '</strong> participantes &middot; <strong>' + Math.round(totalHoras) + '</strong> horas';
 
       // Legend
-      var legendEstados = ['Pendiente', 'Buscando', 'En preparación', 'En marcha', 'Terminada', 'Anulada', 'Retrasada'];
+      var legendEstados = ['Planificada', 'Pendiente', 'Buscando', 'En preparación', 'En marcha', 'Terminada', 'Anulada', 'Retrasada'];
       legendEl.innerHTML = legendEstados.map(function(e) {
         return '<div class="cal-legend-item">' +
           '<div class="cal-legend-dot" style="background:' + (CAL_ESTADO_COLORS[e] || DS.textMuted) + ';"></div>' +
