@@ -5035,6 +5035,38 @@
     </div>
   </div>
 
+  <!-- Custom report section selector dialog -->
+  <div class="dialog-overlay" id="customReportDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box" style="max-width:460px; text-align:left;">
+      <h3 style="text-align:center; margin-bottom:16px;">Secciones del informe</h3>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">Selecciona las secciones que deseas incluir en el informe para Direccion.</p>
+      <div id="customReportSections" style="display:flex; flex-direction:column; gap:10px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="kpis" checked> KPIs resumen
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="modalidad" checked> Distribucion por modalidad
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="departamento" checked> Participacion por departamento
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="listado"> Listado de acciones
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="compliance"> Estado de compliance
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="fundae"> Credito FUNDAE
+        </label>
+      </div>
+      <div class="dialog-buttons dialog-buttons-mt-lg">
+        <button class="btn btn-secondary" id="customReportCancel">Cancelar</button>
+        <button class="btn btn-primary" id="customReportGenerate">Generar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Onboarding overlay -->
   <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-compact">
@@ -17423,7 +17455,7 @@
       // Wire direction report button
       var dirReportBtn = document.getElementById('btnReportDirection');
       if (dirReportBtn) {
-        dirReportBtn.onclick = function() { generateDirectionReport(); };
+        dirReportBtn.onclick = function() { showCustomReportDialog(); };
       }
 
       // Phase 2: Render analytics modules incrementally
@@ -18879,7 +18911,39 @@
     // DIRECTION REPORT (F3.9)
     // ═══════════════════════════════════
 
-    function generateDirectionReport() {
+    function showCustomReportDialog() {
+      var dialog = document.getElementById('customReportDialog');
+      // Reset checkboxes to defaults
+      var checks = dialog.querySelectorAll('input[data-section]');
+      checks.forEach(function(cb) {
+        var s = cb.getAttribute('data-section');
+        cb.checked = (s === 'kpis' || s === 'modalidad' || s === 'departamento');
+      });
+      dialog.classList.add('visible');
+
+      var cancelBtn = document.getElementById('customReportCancel');
+      var generateBtn = document.getElementById('customReportGenerate');
+
+      cancelBtn.onclick = function() { closeDialogAnimated(dialog); };
+      generateBtn.onclick = function() {
+        var sections = {};
+        dialog.querySelectorAll('input[data-section]').forEach(function(cb) {
+          sections[cb.getAttribute('data-section')] = cb.checked;
+        });
+        closeDialogAnimated(dialog);
+        generateDirectionReport(sections);
+      };
+
+      // Close on overlay click
+      dialog.onclick = function(e) {
+        if (e.target === dialog) closeDialogAnimated(dialog);
+      };
+    }
+
+    function generateDirectionReport(sections) {
+      if (!sections) {
+        sections = { kpis: true, modalidad: true, departamento: true, listado: true, compliance: true, fundae: true };
+      }
       var year = new Date().getFullYear();
       var allActions = getCatalog('acciones') || [];
       var actions = allActions.filter(function(a) {
@@ -18905,9 +18969,59 @@
       var deptRows = Object.keys(byDept).sort(function(a, b) { return byDept[b] - byDept[a]; }).slice(0, 10)
         .map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byDept[k] + '</td></tr>'; }).join('');
 
+      // Listado de acciones rows
+      var actionRows = '';
+      if (sections.listado !== false) {
+        actionRows = actions.map(function(a) {
+          var horas = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+          var nPart = (a.participantes || []).length;
+          return '<tr><td>' + esc(a.codigo || '') + '</td><td>' + esc(a.nombre || '') + '</td><td>' + esc(a.modalidad || '-') + '</td><td style="text-align:center">' + horas + '</td><td style="text-align:center">' + nPart + '</td></tr>';
+        }).join('');
+      }
+
+      // Compliance data
+      var complianceHtml = '';
+      if (sections.compliance !== false) {
+        var completed = actions.filter(function(a) { return a.estado === 'Completada' || a.estado === 'Finalizada'; }).length;
+        var inProgress = actions.filter(function(a) { return a.estado === 'En curso' || a.estado === 'En progreso'; }).length;
+        var pending = actions.filter(function(a) { return a.estado === 'Pendiente' || a.estado === 'Planificada'; }).length;
+        var other = totalActions - completed - inProgress - pending;
+        complianceHtml = '<h2>Estado de compliance</h2>'
+          + '<table><thead><tr><th>Estado</th><th>Acciones</th><th>%</th></tr></thead><tbody>'
+          + '<tr><td>Completadas</td><td>' + completed + '</td><td>' + (totalActions > 0 ? Math.round(completed / totalActions * 100) : 0) + '%</td></tr>'
+          + '<tr><td>En curso</td><td>' + inProgress + '</td><td>' + (totalActions > 0 ? Math.round(inProgress / totalActions * 100) : 0) + '%</td></tr>'
+          + '<tr><td>Pendientes</td><td>' + pending + '</td><td>' + (totalActions > 0 ? Math.round(pending / totalActions * 100) : 0) + '%</td></tr>'
+          + (other > 0 ? '<tr><td>Otros</td><td>' + other + '</td><td>' + Math.round(other / totalActions * 100) + '%</td></tr>' : '')
+          + '</tbody></table>';
+      }
+
+      // FUNDAE credit data
+      var fundaeHtml = '';
+      if (sections.fundae !== false) {
+        var empresas = getEmpresasGrupo();
+        var bonificables = actions.filter(function(a) { return a.bonificable === 'Si' || a.bonificable === 'Sí'; });
+        var consumido = {};
+        bonificables.forEach(function(a) {
+          if (a.empresaPagadora && Number(a.presupuesto)) {
+            consumido[a.empresaPagadora] = (consumido[a.empresaPagadora] || 0) + Number(a.presupuesto);
+          }
+        });
+        var totalCredito = empresas.reduce(function(s, e) { return s + e.credito; }, 0);
+        var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+        var fundaeRows = empresas.map(function(e) {
+          var cons = consumido[e.cif] || 0;
+          var pct = e.credito > 0 ? Math.round(cons / e.credito * 100) : 0;
+          return '<tr><td>' + esc(e.razonSocial) + '</td><td>' + e.credito.toLocaleString('es-ES') + ' &euro;</td><td>' + cons.toLocaleString('es-ES') + ' &euro;</td><td>' + pct + '%</td></tr>';
+        }).join('');
+        fundaeHtml = '<h2>Credito FUNDAE</h2>'
+          + '<table><thead><tr><th>Empresa</th><th>Credito</th><th>Consumido</th><th>% Uso</th></tr></thead><tbody>' + fundaeRows + '</tbody></table>'
+          + '<div style="font-size:11px; color:#475569; margin-top:4px;">Total credito: ' + totalCredito.toLocaleString('es-ES') + ' &euro; | Consumido: ' + totalConsumido.toLocaleString('es-ES') + ' &euro; | Disponible: ' + (totalCredito - totalConsumido).toLocaleString('es-ES') + ' &euro;</div>';
+      }
+
       var w = window.open('', '_blank');
       if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
-      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
+
+      var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
         + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
         + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}'
         + '.ht{font-size:20px;font-weight:600} .hs{font-size:13px;color:#475569;margin-top:4px} .hb{font-size:11px;color:#94a3b8}'
@@ -18920,19 +19034,44 @@
         + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
         + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
         + '</style></head><body>'
-        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>'
-        + '<div class="kpis">'
-        + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
-        + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
-        + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
-        + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
-        + '</div>'
-        + '<h2>Distribucion por modalidad</h2>'
-        + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>'
-        + '<h2>Participacion por departamento (Top 10)</h2>'
-        + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>'
-        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
-        + '</body></html>');
+        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>';
+
+      if (sections.kpis !== false) {
+        html += '<div class="kpis">'
+          + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
+          + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
+          + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
+          + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
+          + '</div>';
+      }
+
+      if (sections.modalidad !== false) {
+        html += '<h2>Distribucion por modalidad</h2>'
+          + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>';
+      }
+
+      if (sections.departamento !== false) {
+        html += '<h2>Participacion por departamento (Top 10)</h2>'
+          + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>';
+      }
+
+      if (sections.listado !== false) {
+        html += '<h2>Listado de acciones formativas</h2>'
+          + '<table><thead><tr><th>Codigo</th><th>Nombre</th><th>Modalidad</th><th style="text-align:center">Horas</th><th style="text-align:center">Participantes</th></tr></thead><tbody>' + actionRows + '</tbody></table>';
+      }
+
+      if (sections.compliance !== false) {
+        html += complianceHtml;
+      }
+
+      if (sections.fundae !== false) {
+        html += fundaeHtml;
+      }
+
+      html += '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>';
+
+      w.document.write(html);
       w.document.close();
       setTimeout(function() { w.print(); }, 300);
     }
