@@ -16780,6 +16780,33 @@
       }
     }
 
+    // ═══════════════════════════════════
+    // DEMO DATA (F4.11)
+    // ═══════════════════════════════════
+
+    function loadDemoData() {
+      // Guard: remove any existing demo actions first to avoid duplicates
+      var catalog = getCatalog('acciones').filter(function(a) { return !(a.codigo && a.codigo.startsWith('DEMO-')); });
+      var demoActions = [
+        { nombre: 'Prevención de Riesgos Laborales', codigo: 'DEMO-PRL', modalidad: 'Presencial', horasPresenciales: 8, horasTeleformacion: 0, fechaInicio: '2026-01-15', fechaFin: '2026-01-15', estado: 'Cerrada', participantes: ['DEMO001','DEMO002','DEMO003'], bonificable: 'Sí', presupuesto: 1200 },
+        { nombre: 'Protección de Datos (LOPD/RGPD)', codigo: 'DEMO-LOPD', modalidad: 'Teleformación', horasPresenciales: 0, horasTeleformacion: 4, fechaInicio: '2026-02-10', fechaFin: '2026-02-28', estado: 'Convocada', participantes: ['DEMO001','DEMO004'], bonificable: 'Sí', presupuesto: 800 },
+        { nombre: 'Liderazgo y Gestión de Equipos', codigo: 'DEMO-LID', modalidad: 'Mixta', horasPresenciales: 12, horasTeleformacion: 8, fechaInicio: '2026-03-01', fechaFin: '2026-03-31', estado: 'En preparación', participantes: ['DEMO005'], bonificable: 'No', presupuesto: 3500 }
+      ];
+      state._demoMode = true;
+      demoActions.forEach(function(a) { catalog.push(a); });
+      saveCatalog('acciones', catalog);
+      renderDashboard();
+      showToast('Datos de ejemplo cargados', 'info');
+    }
+
+    function clearDemoData() {
+      var catalog = getCatalog('acciones').filter(function(a) { return !(a.codigo && a.codigo.startsWith('DEMO-')); });
+      saveCatalog('acciones', catalog);
+      state._demoMode = false;
+      renderDashboard();
+      showToast('Datos de ejemplo eliminados', 'info');
+    }
+
     function renderDashboard() {
       hideDashboardSkeleton();
       autoTransitionEstados();
@@ -16799,13 +16826,21 @@
       var dashContainer = document.getElementById('dashContainer');
       if (allAcciones.length === 0) {
         dashEmpty.textContent = '';
-        dashEmpty.appendChild(createEmptyState({
+        var emptyWidget = createEmptyState({
           icon: '\uD83D\uDCCA',
           title: 'Sin datos en el cuadro de mando',
           desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
           ctaText: 'Ir a Catálogos',
           ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
-        }));
+        });
+        // F4.11: Demo data button in empty state
+        var demoBtn = document.createElement('button');
+        demoBtn.className = 'btn empty-state-cta';
+        demoBtn.textContent = 'Ver datos de ejemplo';
+        demoBtn.style.cssText = 'background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);';
+        demoBtn.addEventListener('click', loadDemoData);
+        emptyWidget.appendChild(demoBtn);
+        dashEmpty.appendChild(emptyWidget);
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
@@ -16813,6 +16848,24 @@
         dashEmpty.style.display = 'none';
         dashContainer.style.display = '';
         ActivationChecklist.markDone('exploreDash');
+      }
+
+      // F4.11: Demo mode banner
+      var existingBanner = document.getElementById('demoBanner');
+      if (existingBanner) existingBanner.remove();
+      if (state._demoMode) {
+        var banner = document.createElement('div');
+        banner.id = 'demoBanner';
+        banner.style.cssText = 'background:var(--warning);color:white;padding:8px 16px;border-radius:var(--radius);margin:0 16px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center;';
+        var bannerText = document.createElement('span');
+        bannerText.textContent = 'Est\u00e1s viendo datos de ejemplo';
+        banner.appendChild(bannerText);
+        var bannerBtn = document.createElement('button');
+        bannerBtn.textContent = 'Eliminar datos de ejemplo';
+        bannerBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:white;padding:4px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;';
+        bannerBtn.addEventListener('click', clearDemoData);
+        banner.appendChild(bannerBtn);
+        dashContainer.insertBefore(banner, dashContainer.firstChild);
       }
 
       // --- Computed stats (F3.15: use cache if hash matches) ---
