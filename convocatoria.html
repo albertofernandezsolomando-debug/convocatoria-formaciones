@@ -4105,14 +4105,11 @@
       <!-- 2. Filtros -->
       <div class="section" id="filtrosSection" style="display:none; position:relative; z-index:10;">
         <div class="section-label">2. Selecciona personas destinatarias</div>
-        <div id="presetBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-          <span style="font-size:11px; color:var(--text-muted);">Presets:</span>
-          <div id="presetList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
-          <button class="link-btn link-add" id="btnSavePreset" style="font-size:11px;">+ Guardar filtro actual</button>
-          <span style="color: var(--border-strong); font-size: 11px;">|</span>
-          <button class="link-btn link-add" onclick="saveAsFilterTemplate()" style="font-size:11px;">+ Plantilla completa</button>
+        <div id="unifiedTemplateBar" style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+          <span style="font-size:11px; color:var(--text-muted);">Plantillas:</span>
+          <div id="unifiedTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+          <button class="link-btn link-add" id="btnSaveUnifiedTemplate" style="font-size:11px;">+ Guardar plantilla</button>
         </div>
-        <div id="filterTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
         <div id="filterContainer"></div>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
@@ -4127,16 +4124,9 @@
       <div class="section" id="eventoSection" style="display:none;">
         <div class="section-label">3. Datos del evento</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <select class="input-field" id="trainingTemplateSelect" style="flex:1; font-size:12px;">
-            <option value="">Cargar formacion recurrente...</option>
+          <select class="input-field" id="unifiedTemplateSelect" style="flex:1; font-size:12px;">
+            <option value="">Cargar plantilla...</option>
           </select>
-          <button class="link-btn link-add" onclick="saveAsTrainingTemplate()" style="font-size:12px; white-space:nowrap;">+ Recurrente</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <select class="input-field" id="templateSelect" style="flex:1; font-size:12px;">
-            <option value="">Selecciona plantilla...</option>
-          </select>
-          <button class="link-btn link-add" id="btnSaveTemplate" style="font-size:12px; white-space:nowrap;">Guardar como plantilla</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div>
@@ -4889,7 +4879,7 @@
       </div>
       <div class="dialog-section">
         <div class="dialog-section-title">Plantillas guardadas</div>
-        <div id="settingsTemplatesList"></div>
+        <div id="settingsUnifiedTemplatesList"></div>
       </div>
       <div class="dialog-section">
         <div class="dialog-section-title">Copia de seguridad</div>
@@ -5450,7 +5440,10 @@
       'convocatoria_history',
       'convocatoria_queue',
       'convocatoria_presets',
-      'convocatoria_templates'
+      'convocatoria_templates',
+      'convocatoria_filterTemplates',
+      'convocatoria_trainingTemplates',
+      'convocatoria_unifiedTemplates'
     ];
 
     function exportBackup() {
@@ -9199,199 +9192,343 @@
     }
 
     // ═══════════════════════════════════
-    // CONVOCATORIA TEMPLATES
+    // UNIFIED TEMPLATE SYSTEM
     // ═══════════════════════════════════
 
-    function getTemplates() {
+    function getUnifiedTemplates() {
       try {
-        return JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+        return JSON.parse(localStorage.getItem('convocatoria_unifiedTemplates') || '[]');
       } catch(e) { return []; }
     }
 
-    function saveTemplates(templates) {
+    function saveUnifiedTemplatesStore(templates) {
       try {
-        localStorage.setItem('convocatoria_templates', JSON.stringify(templates));
+        localStorage.setItem('convocatoria_unifiedTemplates', JSON.stringify(templates));
       } catch(e) {
         showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
       }
     }
 
-    function populateTemplateSelect() {
-      const select = document.getElementById('templateSelect');
-      if (!select) return;
-      const templates = getTemplates();
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">Selecciona plantilla...</option>';
-      templates.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = String(t.id);
-        opt.textContent = t.name;
-        select.appendChild(opt);
+    function migrateTemplates() {
+      if (localStorage.getItem('convocatoria_unifiedTemplates')) return;
+      var unified = [];
+
+      // Migrate convocatoria_templates (event-only)
+      try {
+        var old1 = JSON.parse(localStorage.getItem('convocatoria_templates') || '[]');
+        old1.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'convocatoria',
+            data: { event: t.event || {} },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_presets (filter-only)
+      try {
+        var old2 = JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
+        old2.forEach(function(p) {
+          unified.push({
+            id: Date.now() + Math.random(),
+            name: p.name || 'Sin nombre',
+            type: 'filter',
+            data: { filters: p.filters || {} },
+            createdAt: p.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_filterTemplates (filter+event)
+      try {
+        var old3 = JSON.parse(localStorage.getItem('convocatoria_filterTemplates') || '[]');
+        old3.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'convocatoria',
+            data: {
+              filters: t.filters || {},
+              event: t.event || {}
+            },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Migrate convocatoria_trainingTemplates (training)
+      try {
+        var old4 = JSON.parse(localStorage.getItem('convocatoria_trainingTemplates') || '[]');
+        old4.forEach(function(t) {
+          unified.push({
+            id: t.id || Date.now() + Math.random(),
+            name: t.name || 'Sin nombre',
+            type: 'training',
+            data: {
+              filters: t.filters || {},
+              event: {
+                title: t.eventTitle || '',
+                isTeams: t.eventIsTeams || false,
+                location: t.eventLocation || '',
+                formador: t.eventFormador || '',
+                startTime: t.eventStartTime || '',
+                endTime: t.eventEndTime || '',
+                body: t.eventBody || ''
+              }
+            },
+            createdAt: t.createdAt || new Date().toISOString()
+          });
+        });
+      } catch(e) {}
+
+      // Deduplicate by name+type
+      var seen = {};
+      unified = unified.filter(function(t) {
+        var key = t.type + '::' + t.name;
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
       });
-      // Restore selection if still valid
-      if (currentVal && templates.some(t => String(t.id) === currentVal)) {
-        select.value = currentVal;
+
+      if (unified.length > 0) {
+        saveUnifiedTemplatesStore(unified);
+      } else {
+        localStorage.setItem('convocatoria_unifiedTemplates', '[]');
       }
+
+      // Clean up old keys
+      localStorage.removeItem('convocatoria_templates');
+      localStorage.removeItem('convocatoria_presets');
+      localStorage.removeItem('convocatoria_filterTemplates');
+      localStorage.removeItem('convocatoria_trainingTemplates');
     }
 
-    function loadTemplate(templateId) {
-      const templates = getTemplates();
-      const tpl = templates.find(t => String(t.id) === String(templateId));
-      if (!tpl || !tpl.event) return;
+    function saveUnifiedTemplate(name, type, data) {
+      var templates = getUnifiedTemplates();
+      templates.push({
+        id: Date.now(),
+        name: name,
+        type: type,
+        data: data,
+        createdAt: new Date().toISOString()
+      });
+      saveUnifiedTemplatesStore(templates);
+      renderUnifiedTemplateChips();
+      populateUnifiedTemplateSelect();
+      renderSettingsUnifiedTemplates();
+    }
 
-      const ev = tpl.event;
-      document.getElementById('eventTitle').value = ev.title || '';
-      document.getElementById('eventTitle').classList.remove('error');
-      document.getElementById('eventLocation').value = ev.location || '';
-      document.getElementById('eventBody').value = ev.body || '';
-      document.getElementById('eventFormador').value = ev.formador || '';
+    function loadUnifiedTemplate(template) {
+      if (!template) return;
+      var d = template.data || {};
 
-      if (ev.isTeams) {
-        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-      } else {
-        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+      // Apply filters if present
+      if (d.filters && Object.keys(d.filters).length > 0) {
+        state.activeFilters = JSON.parse(JSON.stringify(d.filters));
+        renderFilters();
+        renderTable();
+      }
+
+      // Apply event data if present
+      if (d.event) {
+        var ev = d.event;
+        if (ev.title) { document.getElementById('eventTitle').value = ev.title; document.getElementById('eventTitle').classList.remove('error'); }
+        if (ev.startTime) document.getElementById('eventStart').value = ev.startTime;
+        if (ev.endTime) document.getElementById('eventEnd').value = ev.endTime;
+        if (ev.location) document.getElementById('eventLocation').value = ev.location;
+        if (ev.body) document.getElementById('eventBody').value = ev.body;
+        if (ev.formador) document.getElementById('eventFormador').value = ev.formador;
+        if (ev.isTeams) {
+          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+        } else if (ev.isTeams === false) {
+          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+        }
       }
 
       saveState();
-      showToast('Plantilla «' + tpl.name + '» cargada', 'success');
+      showToast('Plantilla «' + esc(template.name) + '» cargada', 'success');
     }
 
-    function showSaveTemplateDialog() {
-      var existing = document.getElementById('templateSaveOverlay');
-      if (existing) existing.remove();
+    function deleteUnifiedTemplate(id) {
+      var templates = getUnifiedTemplates();
+      var tpl = templates.find(function(t) { return t.id === id; });
+      var name = tpl ? tpl.name : '';
+      templates = templates.filter(function(t) { return t.id !== id; });
+      saveUnifiedTemplatesStore(templates);
+      renderUnifiedTemplateChips();
+      populateUnifiedTemplateSelect();
+      renderSettingsUnifiedTemplates();
+      showToast('Plantilla «' + esc(name) + '» eliminada', 'success');
+    }
 
-      var overlay = document.createElement('div');
-      overlay.id = 'templateSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
+    function getTypeLabel(type) {
+      if (type === 'filter') return 'Filtro';
+      if (type === 'training') return 'Recurrente';
+      return 'Convocatoria';
+    }
 
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar como plantilla</h3>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre de la plantilla</label>' +
-        '<input type="text" class="input-field" id="templateNameInput" placeholder="Ej: PRL Obligatoria" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="templateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="templateSaveConfirm">Guardar</button>' +
-        '</div>' +
-      '</div>';
+    function getTypeColor(type) {
+      if (type === 'filter') return { bg: 'var(--bg-input)', border: 'var(--border)', text: 'var(--text-secondary)' };
+      if (type === 'training') return { bg: 'var(--success-light)', border: 'var(--success)', text: 'var(--success)' };
+      return { bg: 'var(--accent-subtle)', border: 'var(--accent)', text: 'var(--accent)' };
+    }
 
-      document.body.appendChild(overlay);
+    function populateUnifiedTemplateSelect() {
+      var sel = document.getElementById('unifiedTemplateSelect');
+      if (!sel) return;
+      var templates = getUnifiedTemplates();
+      var currentVal = sel.value;
+      sel.replaceChildren();
+      var opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = 'Cargar plantilla...';
+      sel.appendChild(opt0);
 
-      var nameInput = document.getElementById('templateNameInput');
-      nameInput.focus();
-
-      function doSave() {
-        var name = nameInput.value.trim();
-        if (!name) {
-          showToast('Introduce un nombre para la plantilla', 'warning');
-          return;
-        }
-        var templates = getTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          event: {
-            title: document.getElementById('eventTitle').value,
-            isTeams: isTeams,
-            location: document.getElementById('eventLocation').value,
-            body: document.getElementById('eventBody').value,
-            formador: document.getElementById('eventFormador').value
-          }
-        });
-        saveTemplates(templates);
-        populateTemplateSelect();
-        renderSettingsTemplates();
-        overlay.remove();
-        showToast('Plantilla «' + name + '» guardada', 'success');
-      }
-
-      document.getElementById('templateSaveConfirm').addEventListener('click', doSave);
-      nameInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') doSave();
+      // Group by type
+      var groups = { convocatoria: [], training: [], filter: [] };
+      templates.forEach(function(t) {
+        if (groups[t.type]) groups[t.type].push(t);
+        else groups.convocatoria.push(t);
       });
-      document.getElementById('templateSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+      var groupLabels = { convocatoria: 'Convocatoria', training: 'Recurrentes', filter: 'Solo filtros' };
+      ['convocatoria', 'training', 'filter'].forEach(function(type) {
+        if (groups[type].length === 0) return;
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = groupLabels[type];
+        groups[type].forEach(function(t) {
+          var opt = document.createElement('option');
+          opt.value = String(t.id);
+          opt.textContent = t.name;
+          optgroup.appendChild(opt);
+        });
+        sel.appendChild(optgroup);
+      });
+
+      if (currentVal && templates.some(function(t) { return String(t.id) === currentVal; })) {
+        sel.value = currentVal;
+      }
     }
 
-    function renderSettingsTemplates() {
-      var container = document.getElementById('settingsTemplatesList');
+    function renderUnifiedTemplateChips() {
+      var container = document.getElementById('unifiedTemplateChips');
       if (!container) return;
-      var templates = getTemplates();
-      if (templates.length === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">No hay plantillas guardadas.</div>';
-        return;
-      }
-      container.innerHTML = templates.map(function(t) {
-        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">' +
-          '<span style="font-size:12px; color:var(--text-primary);">' + esc(t.name) + '</span>' +
-          '<button class="link-btn link-clear" data-delete-template="' + t.id + '" style="font-size:11px;" title="Eliminar plantilla">&times;</button>' +
-        '</div>';
-      }).join('');
-
-      container.querySelectorAll('[data-delete-template]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var id = parseInt(this.getAttribute('data-delete-template'), 10);
-          var templates = getTemplates();
-          var tpl = templates.find(function(t) { return t.id === id; });
-          var name = tpl ? tpl.name : '';
-          templates = templates.filter(function(t) { return t.id !== id; });
-          saveTemplates(templates);
-          populateTemplateSelect();
-          renderSettingsTemplates();
-          showToast('Plantilla «' + name + '» eliminada', 'success');
-        });
+      var templates = getUnifiedTemplates();
+      container.replaceChildren();
+      if (templates.length === 0) return;
+      templates.forEach(function(t) {
+        var colors = getTypeColor(t.type);
+        var chip = document.createElement('span');
+        chip.className = 'preset-chip';
+        chip.style.background = colors.bg;
+        chip.style.borderColor = colors.border;
+        chip.style.color = colors.text;
+        chip.textContent = t.name;
+        chip.title = getTypeLabel(t.type);
+        chip.onclick = function() { loadUnifiedTemplate(t); };
+        var del = document.createElement('span');
+        del.className = 'preset-delete';
+        del.textContent = '\u00d7';
+        del.setAttribute('aria-label', 'Eliminar');
+        del.setAttribute('role', 'button');
+        del.onclick = function(e) { e.stopPropagation(); deleteUnifiedTemplate(t.id); };
+        chip.appendChild(del);
+        container.appendChild(chip);
       });
     }
 
-    // ═══════════════════════════════════
-    // FILTER+EVENT TEMPLATES (plantillas reutilizables)
-    // ═══════════════════════════════════
-
-    function loadFilterTemplates() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_filterTemplates') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function saveFilterTemplates(templates) {
-      try {
-        localStorage.setItem('convocatoria_filterTemplates', JSON.stringify(templates));
-      } catch(e) {
-        showToast('Error al guardar plantillas: almacenamiento lleno', 'error');
-      }
-    }
-
-    function saveAsFilterTemplate() {
-      var existing = document.getElementById('filterTemplateSaveOverlay');
+    function showSaveUnifiedTemplateDialog() {
+      var existing = document.getElementById('unifiedTemplateSaveOverlay');
       if (existing) existing.remove();
 
       var overlay = document.createElement('div');
-      overlay.id = 'filterTemplateSaveOverlay';
+      overlay.id = 'unifiedTemplateSaveOverlay';
       overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar plantilla completa</h3>' +
-        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Incluye filtros activos + datos del evento (excepto fecha).</p>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
-        '<input type="text" class="input-field" id="filterTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="filterTemplateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="filterTemplateSaveConfirm">Guardar</button>' +
-        '</div></div>';
-      document.body.appendChild(overlay);
 
-      var nameInput = document.getElementById('filterTemplateNameInput');
+      var dialogBox = document.createElement('div');
+      dialogBox.className = 'dialog-box';
+      dialogBox.style.maxWidth = '420px';
+
+      var title = document.createElement('h3');
+      title.style.cssText = 'margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);';
+      title.textContent = 'Guardar plantilla';
+      dialogBox.appendChild(title);
+
+      var desc = document.createElement('p');
+      desc.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:10px;';
+      desc.textContent = 'Guarda filtros y datos del evento para reutilizar.';
+      dialogBox.appendChild(desc);
+
+      var nameLabel = document.createElement('label');
+      nameLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      nameLabel.textContent = 'Nombre';
+      dialogBox.appendChild(nameLabel);
+
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'input-field';
+      nameInput.id = 'unifiedTemplateNameInput';
+      nameInput.placeholder = 'Ej: PRL Obligatoria';
+      nameInput.style.cssText = 'width:100%; margin-bottom:10px;';
+      dialogBox.appendChild(nameInput);
+
+      var typeLabel = document.createElement('label');
+      typeLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      typeLabel.textContent = 'Tipo';
+      dialogBox.appendChild(typeLabel);
+
+      var typeSelect = document.createElement('select');
+      typeSelect.className = 'input-field';
+      typeSelect.id = 'unifiedTemplateTypeInput';
+      typeSelect.style.width = '100%';
+      var typeOptions = [
+        { value: 'convocatoria', text: 'Convocatoria (filtros + evento)' },
+        { value: 'training', text: 'Recurrente (filtros + evento)' },
+        { value: 'filter', text: 'Solo filtros' }
+      ];
+      typeOptions.forEach(function(o) {
+        var opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.text;
+        typeSelect.appendChild(opt);
+      });
+      dialogBox.appendChild(typeSelect);
+
+      var btnRow = document.createElement('div');
+      btnRow.className = 'dialog-buttons';
+      btnRow.style.marginTop = '16px';
+
+      var btnCancel = document.createElement('button');
+      btnCancel.className = 'link-btn link-clear';
+      btnCancel.textContent = 'Cancelar';
+      btnRow.appendChild(btnCancel);
+
+      var btnConfirm = document.createElement('button');
+      btnConfirm.className = 'btn btn-primary';
+      btnConfirm.textContent = 'Guardar';
+      btnRow.appendChild(btnConfirm);
+
+      dialogBox.appendChild(btnRow);
+      overlay.appendChild(dialogBox);
+      document.body.appendChild(overlay);
       nameInput.focus();
 
       function doSave() {
         var name = nameInput.value.trim();
-        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
-        var templates = loadFilterTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          filters: JSON.parse(JSON.stringify(state.activeFilters)),
-          event: {
+        if (!name) { showToast('Introduce un nombre para la plantilla', 'warning'); return; }
+        var type = typeSelect.value;
+
+        var data = {};
+        var activeKeys = Object.keys(state.activeFilters).filter(function(k) { return state.activeFilters[k] && state.activeFilters[k].length > 0; });
+        if (type !== 'filter' || activeKeys.length > 0) {
+          data.filters = JSON.parse(JSON.stringify(state.activeFilters));
+        }
+
+        if (type !== 'filter') {
+          var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
+          data.event = {
             title: document.getElementById('eventTitle').value || '',
             isTeams: isTeams,
             startTime: document.getElementById('eventStart').value || '',
@@ -9399,191 +9536,71 @@
             location: document.getElementById('eventLocation').value || '',
             body: document.getElementById('eventBody').value || '',
             formador: document.getElementById('eventFormador').value || ''
-          },
-          createdAt: new Date().toISOString()
-        });
-        saveFilterTemplates(templates);
-        renderFilterTemplateChips();
-        overlay.remove();
-        showToast('Plantilla "' + name + '" guardada', 'success');
-      }
-
-      document.getElementById('filterTemplateSaveConfirm').addEventListener('click', doSave);
-      nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
-      document.getElementById('filterTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-    }
-
-    function applyFilterTemplate(id) {
-      var templates = loadFilterTemplates();
-      var t = templates.find(function(x) { return x.id === id; });
-      if (!t) return;
-      // Aplicar filtros
-      if (t.filters) {
-        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
-      }
-      // Aplicar evento (excepto fecha)
-      if (t.event) {
-        if (t.event.title) document.getElementById('eventTitle').value = t.event.title;
-        if (t.event.startTime) document.getElementById('eventStart').value = t.event.startTime;
-        if (t.event.endTime) document.getElementById('eventEnd').value = t.event.endTime;
-        if (t.event.location) document.getElementById('eventLocation').value = t.event.location;
-        if (t.event.body) document.getElementById('eventBody').value = t.event.body;
-        if (t.event.formador) document.getElementById('eventFormador').value = t.event.formador;
-        if (t.event.isTeams) {
-          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-        } else {
-          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+          };
         }
-      }
-      renderFilters();
-      renderTable();
-      showToast('Plantilla "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
-    }
 
-    function deleteFilterTemplate(id) {
-      var templates = loadFilterTemplates();
-      var t = templates.find(function(x) { return x.id === id; });
-      templates = templates.filter(function(x) { return x.id !== id; });
-      saveFilterTemplates(templates);
-      renderFilterTemplateChips();
-      showToast('Plantilla "' + (t ? t.name : '') + '" eliminada', 'info');
-    }
+        if (type === 'filter' && activeKeys.length === 0) {
+          showToast('No hay filtros activos para guardar', 'warning');
+          return;
+        }
 
-    function renderFilterTemplateChips() {
-      var container = document.getElementById('filterTemplateChips');
-      if (!container) return;
-      var templates = loadFilterTemplates();
-      container.replaceChildren();
-      if (templates.length === 0) return;
-      templates.forEach(function(t) {
-        var chip = document.createElement('span');
-        chip.className = 'preset-chip';
-        chip.style.background = 'var(--accent-subtle)';
-        chip.style.borderColor = 'var(--accent)';
-        chip.style.color = 'var(--accent)';
-        chip.textContent = t.name;
-        chip.onclick = function() { applyFilterTemplate(t.id); };
-        var del = document.createElement('span');
-        del.className = 'preset-delete';
-        del.textContent = '\u00d7';
-        del.style.opacity = '0.6';
-        del.setAttribute('aria-label', 'Eliminar');
-        del.setAttribute('role', 'button');
-        del.onclick = function(e) { e.stopPropagation(); deleteFilterTemplate(t.id); };
-        chip.appendChild(del);
-        container.appendChild(chip);
-      });
-    }
-
-    // ═══════════════════════════════════
-    // RECURRING TRAINING TEMPLATES (formaciones recurrentes)
-    // ═══════════════════════════════════
-
-    function loadTrainingTemplates() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_trainingTemplates') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function saveTrainingTemplates(templates) {
-      try {
-        localStorage.setItem('convocatoria_trainingTemplates', JSON.stringify(templates));
-      } catch(e) {
-        showToast('Error al guardar: almacenamiento lleno', 'error');
-      }
-    }
-
-    function saveAsTrainingTemplate() {
-      var existing = document.getElementById('trainingTemplateSaveOverlay');
-      if (existing) existing.remove();
-
-      var overlay = document.createElement('div');
-      overlay.id = 'trainingTemplateSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar formacion recurrente</h3>' +
-        '<p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Guarda todos los campos excepto la fecha para reutilizar en futuras convocatorias.</p>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre</label>' +
-        '<input type="text" class="input-field" id="trainingTemplateNameInput" placeholder="Ej: Onboarding mensual" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="trainingTemplateSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="trainingTemplateSaveConfirm">Guardar</button>' +
-        '</div></div>';
-      document.body.appendChild(overlay);
-
-      var nameInput = document.getElementById('trainingTemplateNameInput');
-      nameInput.focus();
-
-      function doSave() {
-        var name = nameInput.value.trim();
-        if (!name) { showToast('Introduce un nombre', 'warning'); return; }
-        var templates = loadTrainingTemplates();
-        var isTeams = document.querySelector('input[name="eventType"]:checked').value === 'teams';
-        templates.push({
-          id: Date.now(),
-          name: name,
-          eventTitle: document.getElementById('eventTitle').value || '',
-          eventIsTeams: isTeams,
-          eventLocation: document.getElementById('eventLocation').value || '',
-          eventFormador: document.getElementById('eventFormador').value || '',
-          eventStartTime: document.getElementById('eventStart').value || '',
-          eventEndTime: document.getElementById('eventEnd').value || '',
-          eventBody: document.getElementById('eventBody').value || '',
-          filters: JSON.parse(JSON.stringify(state.activeFilters)),
-          createdAt: new Date().toISOString()
-        });
-        saveTrainingTemplates(templates);
-        showToast('Formacion recurrente "' + name + '" guardada', 'success');
-        renderTrainingTemplateSelector();
+        saveUnifiedTemplate(name, type, data);
         overlay.remove();
+        showToast('Plantilla «' + esc(name) + '» guardada', 'success');
       }
 
-      document.getElementById('trainingTemplateSaveConfirm').addEventListener('click', doSave);
+      btnConfirm.addEventListener('click', doSave);
       nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
-      document.getElementById('trainingTemplateSaveCancel').addEventListener('click', function() { overlay.remove(); });
+      btnCancel.addEventListener('click', function() { overlay.remove(); });
       overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     }
 
-    function renderTrainingTemplateSelector() {
-      var sel = document.getElementById('trainingTemplateSelect');
-      if (!sel) return;
-      var templates = loadTrainingTemplates();
-      sel.replaceChildren();
-      var opt0 = document.createElement('option');
-      opt0.value = '';
-      opt0.textContent = 'Cargar formacion recurrente...';
-      sel.appendChild(opt0);
+    function renderSettingsUnifiedTemplates() {
+      var container = document.getElementById('settingsUnifiedTemplatesList');
+      if (!container) return;
+      var templates = getUnifiedTemplates();
+      if (templates.length === 0) {
+        container.textContent = '';
+        var emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'font-size:12px; color:var(--text-muted); padding:6px 0;';
+        emptyMsg.textContent = 'No hay plantillas guardadas.';
+        container.appendChild(emptyMsg);
+        return;
+      }
+      container.replaceChildren();
       templates.forEach(function(t) {
-        var opt = document.createElement('option');
-        opt.value = String(t.id);
-        opt.textContent = t.name;
-        sel.appendChild(opt);
-      });
-    }
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);';
 
-    function applyTrainingTemplate(id) {
-      var templates = loadTrainingTemplates();
-      var t = templates.find(function(x) { return x.id == id; });
-      if (!t) return;
-      // Rellenar campos excepto fecha
-      if (t.eventTitle) document.getElementById('eventTitle').value = t.eventTitle;
-      if (t.eventLocation) document.getElementById('eventLocation').value = t.eventLocation;
-      if (t.eventFormador) document.getElementById('eventFormador').value = t.eventFormador;
-      if (t.eventStartTime) document.getElementById('eventStart').value = t.eventStartTime;
-      if (t.eventEndTime) document.getElementById('eventEnd').value = t.eventEndTime;
-      if (t.eventBody) document.getElementById('eventBody').value = t.eventBody;
-      if (t.eventIsTeams) {
-        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-      } else {
-        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
-      }
-      if (t.filters) {
-        state.activeFilters = JSON.parse(JSON.stringify(t.filters));
-        renderFilters();
-        renderTable();
-      }
-      showToast('Formacion recurrente "' + t.name + '" aplicada. Ajusta la fecha.', 'success');
+        var left = document.createElement('div');
+        left.style.cssText = 'display:flex; align-items:center; gap:6px;';
+
+        var badge = document.createElement('span');
+        var colors = getTypeColor(t.type);
+        badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:var(--radius-lg); background:' + colors.bg + '; color:' + colors.text + '; border:1px solid ' + colors.border + ';';
+        badge.textContent = getTypeLabel(t.type);
+        left.appendChild(badge);
+
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:12px; color:var(--text-primary);';
+        nameSpan.textContent = t.name;
+        left.appendChild(nameSpan);
+
+        row.appendChild(left);
+
+        var delBtn = document.createElement('button');
+        delBtn.className = 'link-btn link-clear';
+        delBtn.style.fontSize = '11px';
+        delBtn.title = 'Eliminar plantilla';
+        delBtn.textContent = '\u00d7';
+        delBtn.setAttribute('data-delete-unified', String(t.id));
+        delBtn.addEventListener('click', function() {
+          deleteUnifiedTemplate(t.id);
+        });
+        row.appendChild(delBtn);
+
+        container.appendChild(row);
+      });
     }
 
     function substituteTemplateVars(bodyText, event) {
@@ -10307,93 +10324,10 @@
       ).join(' ');
 
       saveState();
-      renderPresets();
-      renderFilterTemplateChips();
+      renderUnifiedTemplateChips();
     }
 
-    // FILTER PRESETS
-    function getPresets() {
-      try {
-        return JSON.parse(localStorage.getItem('convocatoria_presets') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function savePresets(presets) {
-      try { localStorage.setItem('convocatoria_presets', JSON.stringify(presets)); } catch(e) {}
-    }
-
-    function renderPresets() {
-      const presets = getPresets();
-      const list = document.getElementById('presetList');
-      if (!list) return;
-      list.innerHTML = presets.map((p, i) =>
-        '<span class="preset-chip" data-index="' + i + '">' +
-          esc(p.name) +
-          ' <span class="preset-delete" data-delete="' + i + '" role="button" aria-label="Eliminar">&times;</span>' +
-        '</span>'
-      ).join('');
-
-      list.querySelectorAll('.preset-chip').forEach(chip => {
-        chip.addEventListener('click', e => {
-          if (e.target.classList.contains('preset-delete')) {
-            // Delete preset
-            const idx = parseInt(e.target.dataset.delete);
-            const presets = getPresets();
-            presets.splice(idx, 1);
-            savePresets(presets);
-            renderPresets();
-            return;
-          }
-          // Load preset
-          const idx = parseInt(chip.dataset.index);
-          const presets = getPresets();
-          if (presets[idx]) {
-            state.activeFilters = JSON.parse(JSON.stringify(presets[idx].filters));
-            renderFilters();
-            renderTable();
-            showToast('Preset "' + presets[idx].name + '" cargado', 'info');
-          }
-        });
-      });
-    }
-
-    document.getElementById('btnSavePreset').addEventListener('click', () => {
-      const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
-      if (activeKeys.length === 0) {
-        showToast('No hay filtros activos para guardar', 'warning');
-        return;
-      }
-      var existingOvl = document.getElementById('presetSaveOverlay');
-      if (existingOvl) existingOvl.remove();
-      var overlay = document.createElement('div');
-      overlay.id = 'presetSaveOverlay';
-      overlay.className = 'dialog-overlay visible';
-      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
-        '<h3 style="margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Guardar preset de filtros</h3>' +
-        '<label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Nombre del preset</label>' +
-        '<input type="text" class="input-field" id="presetNameInput" placeholder="Ej: Fábrica Madrid" style="width:100%;">' +
-        '<div class="dialog-buttons" style="margin-top:16px;">' +
-          '<button class="link-btn link-clear" id="presetSaveCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="presetSaveConfirm">Guardar</button>' +
-        '</div>' +
-      '</div>';
-      document.body.appendChild(overlay);
-      var presetInput = document.getElementById('presetNameInput');
-      presetInput.focus();
-      function doSavePreset() {
-        var name = presetInput.value.trim();
-        if (!name) { showToast('Introduce un nombre para el preset', 'warning'); return; }
-        var presets = getPresets();
-        presets.push({ name: name, filters: JSON.parse(JSON.stringify(state.activeFilters)) });
-        savePresets(presets);
-        renderPresets();
-        overlay.remove();
-        showToast('Preset "' + name + '" guardado', 'success');
-      }
-      document.getElementById('presetSaveCancel').addEventListener('click', function() { overlay.remove(); });
-      document.getElementById('presetSaveConfirm').addEventListener('click', doSavePreset);
-      presetInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSavePreset(); });
-    });
+    document.getElementById('btnSaveUnifiedTemplate').addEventListener('click', showSaveUnifiedTemplateDialog);
 
     document.addEventListener('click', () => {
       document.querySelectorAll('.filter-dropdown.open').forEach(d => {
@@ -10864,25 +10798,20 @@
       });
     }());
 
-    // Template select and save
-    document.getElementById('templateSelect').addEventListener('change', function() {
+    // Unified template select
+    document.getElementById('unifiedTemplateSelect').addEventListener('change', function() {
       if (this.value) {
-        loadTemplate(this.value);
+        var templates = getUnifiedTemplates();
+        var tpl = templates.find(function(t) { return String(t.id) === String(document.getElementById('unifiedTemplateSelect').value); });
+        if (tpl) loadUnifiedTemplate(tpl);
+        document.getElementById('unifiedTemplateSelect').value = '';
       }
     });
-    document.getElementById('btnSaveTemplate').addEventListener('click', showSaveTemplateDialog);
 
-    // Populate template dropdown on init
-    populateTemplateSelect();
-
-    // Training template (recurring) selector
-    document.getElementById('trainingTemplateSelect').addEventListener('change', function() {
-      if (this.value) {
-        applyTrainingTemplate(this.value);
-        this.value = '';
-      }
-    });
-    renderTrainingTemplateSelector();
+    // Run migration and populate on init
+    migrateTemplates();
+    populateUnifiedTemplateSelect();
+    renderUnifiedTemplateChips();
 
     function updateSeriesTabs() {
       const tabsEl = document.getElementById('sessionTabs');
@@ -12298,7 +12227,7 @@
       document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
-      renderSettingsTemplates();
+      renderSettingsUnifiedTemplates();
       renderEmpresasGrupoSettings();
       document.getElementById('settingsDialog').classList.add('visible');
     });
