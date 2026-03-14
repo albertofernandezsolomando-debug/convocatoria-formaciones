@@ -1515,8 +1515,8 @@
       position: fixed;
       inset: 0;
       background: rgba(15,23,42,0.5);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -1682,6 +1682,12 @@
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── View Transitions API ── */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 150ms;
     }
 
     /* ── Toast notifications ── */
@@ -3682,6 +3688,8 @@
       position: fixed;
       inset: 0;
       background: rgba(15,23,42,0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 999;
       opacity: 0;
       pointer-events: none;
@@ -3835,12 +3843,18 @@
       padding-bottom: 8px;
     }
 
-    /* ── Excluded rows ── */
-    .attendee-row.excluded td {
+    /* --- Animacion exclusion tabla --- */
+    tr.row-excluded td {
       opacity: 0.4;
       text-decoration: line-through;
+      transition: opacity 0.2s ease, text-decoration 0.2s ease;
     }
-    .attendee-row.excluded:hover td {
+    tr:not(.row-excluded) td {
+      opacity: 1;
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+    tr.row-excluded:hover td {
       opacity: 0.6;
     }
 
@@ -4450,6 +4464,7 @@
           <button class="cal-zoom-btn active" data-zoom="quarter">Trimestre</button>
           <button class="cal-zoom-btn" data-zoom="year">Año</button>
         </div>
+        <button class="btn btn-secondary" id="btnExportICS" style="font-size:12px;">Exportar .ics</button>
       </div>
       <div class="cal-filters">
         <div class="cal-filter-group">
@@ -4999,34 +5014,47 @@
     // ═══════════════════════════════════
     // TAB NAVIGATION
     // ═══════════════════════════════════
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-        document.getElementById(btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'tabDashboard') {
-          showDashboardSkeleton();
-          requestAnimationFrame(function() {
-            renderDashboard();
-            var alerts = evaluateAlerts();
-            updateAlertBanner(alerts);
-            updateDashboardAlerts(alerts);
-          });
+    function applyTabChange(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+      if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+      var content = document.getElementById(tabId);
+      if (content) content.classList.add('active');
+      // Trigger tab-specific rendering
+      if (tabId === 'tabDashboard') {
+        showDashboardSkeleton();
+        requestAnimationFrame(function() {
+          renderDashboard();
+          var alerts = evaluateAlerts();
+          updateAlertBanner(alerts);
+          updateDashboardAlerts(alerts);
+        });
+      }
+      if (tabId === 'tabCalendario') renderCalendarTab();
+      if (tabId === 'tabCatalogos') {
+        var savedModes = getCatalogViewModes ? getCatalogViewModes() : {};
+        var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
+        if (typeof toggleCatalogViewMode === 'function') toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
+        if (savedMode === 'ficha') {
+          renderCatalogList();
+          renderCatalogForm();
         }
-        if (btn.dataset.tab === 'tabCalendario') renderCalendarTab();
-        if (btn.dataset.tab === 'tabCatalogos') {
-          // Restore saved view mode
-          var savedModes = getCatalogViewModes();
-          var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
-          toggleCatalogViewMode(catalogState.activeCatalog, savedMode);
-          if (savedMode === 'ficha') {
-            renderCatalogList();
-            renderCatalogForm();
-          }
+      }
+      if (tabId === 'tabXml' && typeof refreshXmlSelects === 'function') refreshXmlSelects();
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var tabId = btn.dataset.tab;
+        if (document.startViewTransition) {
+          document.startViewTransition(function() { applyTabChange(tabId); });
+        } else {
+          applyTabChange(tabId);
         }
-        if (btn.dataset.tab === 'tabXml') refreshXmlSelects();
       });
     });
 
@@ -8648,6 +8676,9 @@
       complianceRecords: {},
     };
 
+    // Dashboard precomputation cache (F3.15)
+    var _dashCache = { hash: null, data: null };
+
     // ═══════════════════════════════════
     // QUEUE PERSISTENCE
     // ═══════════════════════════════════
@@ -9498,6 +9529,9 @@
       renderFilters();
       renderTable();
       checkOrphanParticipants();
+
+      // F3.15: Precompute dashboard metrics in idle time after Excel load
+      precomputeDashboard();
     }
 
     function buildSheetSelectorList(sheetNames, onSelect) {
@@ -10033,7 +10067,7 @@
         const hasEmail = isValidEmail(emp['Email trabajo']);
         const isExcluded = state.excludedNIFs.has(emp._id);
         const isExternal = emp._source === 'external';
-        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' excluded' : '');
+        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
         const sourceBadge = isExternal ? ' <span class="chip" style="background:var(--accent-light);">ext</span>' : '';
 
         return '<tr class="' + rowClass + '">' +
@@ -10057,10 +10091,10 @@
           var row = cb.closest('tr');
           if (cb.checked) {
             state.excludedNIFs.delete(cb.dataset.id);
-            if (row) row.classList.remove('excluded');
+            if (row) row.classList.remove('row-excluded');
           } else {
             state.excludedNIFs.add(cb.dataset.id);
-            if (row) row.classList.add('excluded');
+            if (row) row.classList.add('row-excluded');
           }
           updateCounts();
         });
@@ -15983,33 +16017,23 @@
       containerEl.appendChild(sim);
     }
 
-    function renderDashboard() {
-      hideDashboardSkeleton();
-      autoTransitionEstados();
-      var allAcciones = getCatalog('acciones');
-      var proveedores = getCatalog('proveedores');
-      var centros = getCatalog('centros');
-      var tutores = getCatalog('tutores');
+    // ═══════════════════════════════════
+    // DASHBOARD PRECOMPUTATION (F3.15)
+    // ═══════════════════════════════════
 
-      // Initialize filters (before filtering, so all empresas/estados are shown)
-      initDashFilters(allAcciones);
-
-      // Apply global filters
-      var acciones = applyDashFilters(allAcciones);
-
-      // Empty state
-      var dashEmpty = document.getElementById('dashEmptyState');
-      var dashContainer = document.getElementById('dashContainer');
-      if (allAcciones.length === 0) {
-        dashEmpty.style.display = 'flex';
-        dashContainer.style.display = 'none';
-        return;
-      } else {
-        dashEmpty.style.display = 'none';
-        dashContainer.style.display = '';
+    function computeDashHash(filteredAcciones) {
+      var catalog = getCatalog('acciones');
+      var empCount = (state.employees || []).length;
+      var base = catalog.length + ':' + empCount + ':' + (catalog[0] ? catalog[0].nombre || '' : '') + ':' + (catalog[catalog.length - 1] ? catalog[catalog.length - 1].nombre || '' : '');
+      // Include filtered count so filter changes invalidate cache
+      if (filteredAcciones) {
+        base += ':f' + filteredAcciones.length;
       }
+      return base;
+    }
 
-      // --- Computed stats ---
+    function computeDashboardMetrics(acciones) {
+      if (!acciones) acciones = getCatalog('acciones');
       var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
 
       var totalHorasP = 0, totalHorasT = 0;
@@ -16038,6 +16062,152 @@
         }
       });
       var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+
+      // Monthly data for sparklines
+      var monthlyAcciones = {};
+      var monthlyHoras = {};
+      var monthlyParticipantes = {};
+      var monthlyPresupuesto = {};
+      acciones.forEach(function(a) {
+        var fecha = a.fechaInicio;
+        if (!fecha) return;
+        var d = new Date(fecha + 'T00:00:00');
+        if (isNaN(d.getTime())) return;
+        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        monthlyAcciones[key] = (monthlyAcciones[key] || 0) + 1;
+        monthlyHoras[key] = (monthlyHoras[key] || 0) + (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+        var parts = a.participantes || [];
+        monthlyParticipantes[key] = (monthlyParticipantes[key] || 0) + parts.length;
+        monthlyPresupuesto[key] = (monthlyPresupuesto[key] || 0) + (Number(a.presupuesto) || 0);
+      });
+
+      function monthlyValues(obj) {
+        var keys = Object.keys(obj).sort();
+        if (keys.length > 6) keys = keys.slice(-6);
+        return keys.map(function(k) { return obj[k]; });
+      }
+
+      // Breakdowns for charts
+      var estadoCounts = {};
+      acciones.forEach(function(a) {
+        var est = a.estado || '(Sin estado)';
+        estadoCounts[est] = (estadoCounts[est] || 0) + 1;
+      });
+
+      var modalidadHoras = {};
+      acciones.forEach(function(a) {
+        var mod = a.modalidad || '(Sin modalidad)';
+        var horas = (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+        modalidadHoras[mod] = (modalidadHoras[mod] || 0) + horas;
+      });
+
+      var areaCounts = {};
+      acciones.forEach(function(a) {
+        var area = a.areaProfesional || '(Sin área)';
+        areaCounts[area] = (areaCounts[area] || 0) + 1;
+      });
+
+      var deptCounts = {};
+      acciones.forEach(function(a) {
+        var dept = a.departamento || '(Sin departamento)';
+        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+      });
+
+      var gastoProveedor = {};
+      acciones.forEach(function(a) {
+        if (a.proveedorVinculado && Number(a.presupuesto) > 0) {
+          gastoProveedor[a.proveedorVinculado] = (gastoProveedor[a.proveedorVinculado] || 0) + Number(a.presupuesto);
+        }
+      });
+
+      return {
+        totalAcciones: acciones.length,
+        bonificablesCount: bonificables.length,
+        totalHorasP: totalHorasP,
+        totalHorasT: totalHorasT,
+        totalHoras: totalHoras,
+        totalParticipantes: totalParticipantes,
+        accionesConParticipantes: accionesConParticipantes,
+        totalPresupuesto: totalPresupuesto,
+        totalCredito: totalCredito,
+        consumido: consumido,
+        totalConsumido: totalConsumido,
+        sparkAcciones: monthlyValues(monthlyAcciones),
+        sparkHoras: monthlyValues(monthlyHoras),
+        sparkParticipantes: monthlyValues(monthlyParticipantes),
+        sparkPresupuesto: monthlyValues(monthlyPresupuesto),
+        estadoCounts: estadoCounts,
+        modalidadHoras: modalidadHoras,
+        areaCounts: areaCounts,
+        deptCounts: deptCounts,
+        gastoProveedor: gastoProveedor
+      };
+    }
+
+    function precomputeDashboard() {
+      var cb = function() {
+        var allAcciones = getCatalog('acciones');
+        _dashCache.data = computeDashboardMetrics(allAcciones);
+        _dashCache.hash = computeDashHash(allAcciones);
+      };
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(cb);
+      } else {
+        setTimeout(cb, 100);
+      }
+    }
+
+    function renderDashboard() {
+      hideDashboardSkeleton();
+      autoTransitionEstados();
+      var allAcciones = getCatalog('acciones');
+      var proveedores = getCatalog('proveedores');
+      var centros = getCatalog('centros');
+      var tutores = getCatalog('tutores');
+
+      // Initialize filters (before filtering, so all empresas/estados are shown)
+      initDashFilters(allAcciones);
+
+      // Apply global filters
+      var acciones = applyDashFilters(allAcciones);
+
+      // Empty state
+      var dashEmpty = document.getElementById('dashEmptyState');
+      var dashContainer = document.getElementById('dashContainer');
+      if (allAcciones.length === 0) {
+        dashEmpty.style.display = 'flex';
+        dashContainer.style.display = 'none';
+        return;
+      } else {
+        dashEmpty.style.display = 'none';
+        dashContainer.style.display = '';
+      }
+
+      // --- Computed stats (F3.15: use cache if hash matches) ---
+      var currentHash = computeDashHash(acciones);
+      var metrics;
+      if (_dashCache.hash === currentHash && _dashCache.data) {
+        metrics = _dashCache.data;
+      } else {
+        metrics = computeDashboardMetrics(acciones);
+        _dashCache.data = metrics;
+        _dashCache.hash = currentHash;
+      }
+
+      var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
+      var totalHorasP = metrics.totalHorasP;
+      var totalHorasT = metrics.totalHorasT;
+      var totalHoras = metrics.totalHoras;
+      var totalParticipantes = metrics.totalParticipantes;
+      var accionesConParticipantes = metrics.accionesConParticipantes;
+      var totalPresupuesto = metrics.totalPresupuesto;
+      var totalCredito = metrics.totalCredito;
+      var consumido = metrics.consumido;
+      var totalConsumido = metrics.totalConsumido;
+      var sparkAcciones = metrics.sparkAcciones;
+      var sparkHoras = metrics.sparkHoras;
+      var sparkParticipantes = metrics.sparkParticipantes;
+      var sparkPresupuesto = metrics.sparkPresupuesto;
 
       // --- Sparkline helper (safe: only uses numeric values, no user data) ---
       function buildSparklineSvg(values, width, height, color) {
@@ -16076,35 +16246,6 @@
         var pct = Math.round(((curr - prev) / prev) * 100);
         return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat') };
       }
-
-      // --- Monthly data for sparklines ---
-      var monthlyAcciones = {};
-      var monthlyHoras = {};
-      var monthlyParticipantes = {};
-      var monthlyPresupuesto = {};
-      acciones.forEach(function(a) {
-        var fecha = a.fechaInicio;
-        if (!fecha) return;
-        var d = new Date(fecha + 'T00:00:00');
-        if (isNaN(d.getTime())) return;
-        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        monthlyAcciones[key] = (monthlyAcciones[key] || 0) + 1;
-        monthlyHoras[key] = (monthlyHoras[key] || 0) + (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
-        var parts = a.participantes || [];
-        monthlyParticipantes[key] = (monthlyParticipantes[key] || 0) + parts.length;
-        monthlyPresupuesto[key] = (monthlyPresupuesto[key] || 0) + (Number(a.presupuesto) || 0);
-      });
-
-      function monthlyValues(obj) {
-        var keys = Object.keys(obj).sort();
-        if (keys.length > 6) keys = keys.slice(-6);
-        return keys.map(function(k) { return obj[k]; });
-      }
-
-      var sparkAcciones = monthlyValues(monthlyAcciones);
-      var sparkHoras = monthlyValues(monthlyHoras);
-      var sparkParticipantes = monthlyValues(monthlyParticipantes);
-      var sparkPresupuesto = monthlyValues(monthlyPresupuesto);
 
       // --- KPI Cards ---
       var kpisEl = document.getElementById('dashKpis');
@@ -16536,13 +16677,8 @@
       // --- Credit Simulator (F1.9) ---
       renderCreditSimulator(document.getElementById('dashCreditSimulator'));
 
-      // --- Gasto por proveedor chart ---
-      var gastoProveedor = {};
-      acciones.forEach(function(a) {
-        if (a.proveedorVinculado && Number(a.presupuesto) > 0) {
-          gastoProveedor[a.proveedorVinculado] = (gastoProveedor[a.proveedorVinculado] || 0) + Number(a.presupuesto);
-        }
-      });
+      // --- Gasto por proveedor chart (uses cached gastoProveedor from metrics) ---
+      var gastoProveedor = metrics.gastoProveedor;
       var proveedorMap = {};
       proveedores.forEach(function(p) { proveedorMap[p.cif] = p.razonSocial || p.cif; });
       var proveedorItems = Object.keys(gastoProveedor).map(function(cif, idx) {
@@ -16556,12 +16692,8 @@
         valueFormatter: function(v) { return formatCurrency(v); }
       });
 
-      // --- Estado chart (donut) ---
-      var estadoCounts = {};
-      acciones.forEach(function(a) {
-        var est = a.estado || '(Sin estado)';
-        estadoCounts[est] = (estadoCounts[est] || 0) + 1;
-      });
+      // --- Estado chart (donut, uses cached estadoCounts from metrics) ---
+      var estadoCounts = metrics.estadoCounts;
       var estadoColorMap = {
         'En marcha': DS.accent,
         'Terminada': DS.chart3,
@@ -16580,18 +16712,13 @@
         centerValue: acciones.length
       });
 
-      // --- Modalidad chart ---
-      var modalidadHoras = {};
+      // --- Modalidad chart (uses cached modalidadHoras from metrics) ---
+      var modalidadHoras = metrics.modalidadHoras;
       var modalidadColorMap = {
         'Presencial': DS.accent,
         'Teleformación': DS.chart2,
         'Mixta': DS.chart3
       };
-      acciones.forEach(function(a) {
-        var mod = a.modalidad || '(Sin modalidad)';
-        var horas = (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
-        modalidadHoras[mod] = (modalidadHoras[mod] || 0) + horas;
-      });
       var modalidadItems = Object.keys(modalidadHoras).map(function(k) {
         return { label: k, value: modalidadHoras[k], color: modalidadColorMap[k] || DS.textMuted };
       }).sort(function(a, b) { return b.value - a.value; });
@@ -16600,12 +16727,8 @@
         centerValue: totalHoras
       });
 
-      // --- Area chart ---
-      var areaCounts = {};
-      acciones.forEach(function(a) {
-        var area = a.areaProfesional || '(Sin área)';
-        areaCounts[area] = (areaCounts[area] || 0) + 1;
-      });
+      // --- Area chart (uses cached areaCounts from metrics) ---
+      var areaCounts = metrics.areaCounts;
       var areaItems = Object.keys(areaCounts).map(function(k, idx) {
         return { label: k, value: areaCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
@@ -16619,12 +16742,8 @@
         valueFormatter: function(v) { return v; }
       });
 
-      // --- Department chart ---
-      var deptCounts = {};
-      acciones.forEach(function(a) {
-        var dept = a.departamento || '(Sin departamento)';
-        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-      });
+      // --- Department chart (uses cached deptCounts from metrics) ---
+      var deptCounts = metrics.deptCounts;
       var deptItems = Object.keys(deptCounts).map(function(k, idx) {
         return { label: k, value: deptCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
@@ -17560,6 +17679,8 @@
         empClear.style.display = 'none';
         renderCalendarTab();
       });
+
+      document.getElementById('btnExportICS').addEventListener('click', exportCalendarICS);
     }
 
     function renderCalendarTab() {
@@ -17980,6 +18101,94 @@
           renderCalendarTab();
         });
       });
+    }
+
+    // ── ICS calendar export (F3.12) ──
+
+    function icsEscape(str) {
+      return (str || '').replace(/[\\;,\n]/g, function(c) {
+        if (c === '\\') return '\\\\';
+        if (c === ';') return '\\;';
+        if (c === ',') return '\\,';
+        if (c === '\n') return '\\n';
+        return c;
+      });
+    }
+
+    function getVisibleCalendarActions() {
+      var acciones = getCatalog('acciones');
+      return acciones.filter(function(a) { return a.fechaInicio && a.fechaFin; });
+    }
+
+    function generateICS(actions) {
+      var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FormacionAGORA//ES', 'CALSCALE:GREGORIAN'];
+
+      actions.forEach(function(action) {
+        var sesiones = (action.asistencia && action.asistencia.sesiones && action.asistencia.sesiones.length > 0)
+          ? action.asistencia.sesiones
+          : null;
+
+        if (sesiones) {
+          // One VEVENT per session date
+          sesiones.forEach(function(dateStr) {
+            var cleanDate = dateStr.replace(/-/g, '');
+            var uid = 'agora-' + (action.codigo || Math.random().toString(36).substr(2)) + '-' + cleanDate + '@formacionagora';
+
+            lines.push('BEGIN:VEVENT');
+            lines.push('UID:' + uid);
+            lines.push('DTSTART;VALUE=DATE:' + cleanDate);
+            lines.push('DTEND;VALUE=DATE:' + cleanDate);
+            lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
+            var desc = [];
+            if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
+            if (action.participantes && action.participantes.length) desc.push('Participantes: ' + action.participantes.length);
+            if (action.estado) desc.push('Estado: ' + action.estado);
+            if (desc.length) lines.push('DESCRIPTION:' + icsEscape(desc.join('\\n')));
+            lines.push('STATUS:' + (action.estado === 'Cerrada' ? 'CONFIRMED' : 'TENTATIVE'));
+            lines.push('END:VEVENT');
+          });
+        } else {
+          // Single VEVENT spanning fechaInicio to fechaFin
+          var startDate = action.fechaInicio.replace(/-/g, '');
+          var endDate = action.fechaFin.replace(/-/g, '');
+          var uid = 'agora-' + (action.codigo || Math.random().toString(36).substr(2)) + '-' + startDate + '@formacionagora';
+
+          lines.push('BEGIN:VEVENT');
+          lines.push('UID:' + uid);
+          lines.push('DTSTART;VALUE=DATE:' + startDate);
+          lines.push('DTEND;VALUE=DATE:' + endDate);
+          lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
+          var desc = [];
+          if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
+          if (action.participantes && action.participantes.length) desc.push('Participantes: ' + action.participantes.length);
+          if (action.estado) desc.push('Estado: ' + action.estado);
+          if (desc.length) lines.push('DESCRIPTION:' + icsEscape(desc.join('\\n')));
+          lines.push('STATUS:' + (action.estado === 'Cerrada' ? 'CONFIRMED' : 'TENTATIVE'));
+          lines.push('END:VEVENT');
+        }
+      });
+
+      lines.push('END:VCALENDAR');
+      return lines.join('\r\n');
+    }
+
+    function exportCalendarICS() {
+      var actions = getVisibleCalendarActions();
+      if (!actions || actions.length === 0) {
+        showToast('No hay acciones formativas con fechas para exportar', 'warning');
+        return;
+      }
+      var icsContent = generateICS(actions);
+      var blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'formacion_agora_' + new Date().toISOString().slice(0, 10) + '.ics';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(actions.length + ' eventos exportados a .ics', 'success');
     }
 
     function showCalDetail(item) {
