@@ -6339,6 +6339,7 @@
             '<button class="btn btn-secondary" id="btnPrintSignSheet" style="font-size:12px;">Imprimir hoja de firmas</button>' +
             '<button class="btn btn-secondary" id="btnAttendanceSheet" style="font-size:12px;">Hoja de firmas por sesi\u00F3n</button>' +
             '<button class="btn btn-secondary" id="btnGenerateCerts" style="font-size:12px;">Certificados</button>' +
+            '<button class="btn btn-secondary" id="btnDossierInspeccion" style="font-size:12px;">Dossier inspecci\u00F3n</button>' +
           '</div>' : '') +
         '</div>' +
       '</div>';
@@ -6992,6 +6993,14 @@
           generateCatalogCertificates(record.codigo);
         });
       }
+
+      // Dossier inspección button
+      var btnDossier = document.getElementById('btnDossierInspeccion');
+      if (btnDossier) {
+        btnDossier.addEventListener('click', function() {
+          generateInspectionDossier(record.codigo);
+        });
+      }
     }
 
     function renderConfirmacionesHtml(record) {
@@ -7264,6 +7273,65 @@
       w.document.close();
       setTimeout(function() { w.print(); }, 300);
       showToast(eligible.length + ' certificados generados', 'success');
+    }
+
+    function buildInspectionChecklist(action) {
+      return [
+        { label: 'Datos de la accion formativa', ok: !!(action.nombre && (action.horasPresenciales || action.horasTeleformacion) && action.modalidad) },
+        { label: 'Participantes registrados', ok: (action.participantes || []).length > 0 },
+        { label: 'Sesiones con fechas', ok: !!(action.asistencia && action.asistencia.sesiones && action.asistencia.sesiones.length > 0) },
+        { label: 'Asistencia registrada', ok: !!(action.asistencia && action.asistencia.registro && Object.keys(action.asistencia.registro).length > 0) },
+        { label: 'Comunicacion RLT', ok: !!(action.rltEstado && action.rltEstado !== 'Pendiente') },
+        { label: 'Encuesta satisfaccion', ok: !!action.surveyStatus },
+      ];
+    }
+
+    function generateInspectionDossier(actionId) {
+      var action = getCatalogAction(actionId);
+      if (!action) { showToast('Accion no encontrada', 'error'); return; }
+      var checklist = buildInspectionChecklist(action);
+      var done = checklist.filter(function(i) { return i.ok; }).length;
+
+      var clRows = checklist.map(function(i) {
+        var c = i.ok ? '#16a34a' : '#dc2626';
+        return '<tr><td style="color:' + c + ';font-weight:600;width:24px">' + (i.ok ? '\u2713' : '\u2717') + '</td>'
+          + '<td>' + esc(i.label) + '</td><td style="color:' + c + '">' + (i.ok ? 'Disponible' : 'Pendiente') + '</td></tr>';
+      }).join('');
+
+      var participants = action.participantes || [];
+      var pRows = participants.map(function(nif) {
+        var emp = (state.employees || []).find(function(e) { return e.NIF === nif || e._id === nif; });
+        return '<tr><td>' + esc(emp ? (emp.Empleado || emp.NOMBRE || '') : nif) + '</td><td>' + esc(nif) + '</td></tr>';
+      }).join('');
+
+      var totalHours = (parseFloat(action.horasPresenciales) || 0) + (parseFloat(action.horasTeleformacion) || 0);
+
+      var w = window.open('', '_blank');
+      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
+      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dossier - ' + esc(action.nombre || '') + '</title>'
+        + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
+        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}'
+        + '.ht{font-size:18px;font-weight:600} .hb{font-size:11px;color:#94a3b8}'
+        + 'h2{font-size:14px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
+        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
+        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
+        + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
+        + '.sbox{background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0}'
+        + '.sbox p{margin:4px 0} .prog{font-size:14px;font-weight:600;margin-top:12px}'
+        + '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
+        + '</style></head><body>'
+        + '<div class="header"><div class="ht">DOSSIER DE INSPECCION</div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="sbox"><p><strong>Accion:</strong> ' + esc(action.nombre || '') + '</p>'
+        + '<p><strong>Horas:</strong> ' + totalHours + ' | <strong>Modalidad:</strong> ' + esc(action.modalidad || '') + '</p>'
+        + '<div class="prog">Documentacion: ' + done + ' de ' + checklist.length + ' elementos</div></div>'
+        + '<h2>Checklist de documentacion</h2>'
+        + '<table><thead><tr><th></th><th>Documento</th><th>Estado</th></tr></thead><tbody>' + clRows + '</tbody></table>'
+        + '<h2>Participantes (' + participants.length + ')</h2>'
+        + '<table><thead><tr><th>Nombre</th><th>NIF</th></tr></thead><tbody>' + pRows + '</tbody></table>'
+        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>');
+      w.document.close();
+      setTimeout(function() { w.print(); }, 300);
     }
 
     function renderAccionParticipants(record) {
