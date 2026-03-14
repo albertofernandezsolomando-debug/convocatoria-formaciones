@@ -5531,6 +5531,32 @@
       return html;
     }
 
+    function renderProveedorScorecard(proveedor) {
+      if (!proveedor || !proveedor.cif) return '';
+      var acciones = getCatalog('acciones').filter(function(a) {
+        return a.proveedorVinculado === proveedor.cif;
+      });
+      var totalAcciones = acciones.length;
+      var totalGasto = 0;
+      var lastDate = '';
+      acciones.forEach(function(a) {
+        totalGasto += Number(a.presupuesto) || 0;
+        if (a.fechaFin && a.fechaFin > lastDate) lastDate = a.fechaFin;
+      });
+      var costeMedia = totalAcciones > 0 ? totalGasto / totalAcciones : 0;
+      var lastDateFormatted = lastDate ? lastDate.split('-').reverse().join('/') : '—';
+
+      return '<div style="margin-top:16px; background:var(--accent-subtle); border-radius:8px; padding:14px 16px;">' +
+        '<div style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Scorecard del proveedor</div>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+          '<div style="font-size:12px; color:var(--text-muted);">Total acciones<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + totalAcciones + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Coste medio/acción<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + formatCurrency(costeMedia) + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Gasto total<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + formatCurrency(totalGasto) + '</div></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">Última colaboración<div style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:2px;">' + esc(lastDateFormatted) + '</div></div>' +
+        '</div>' +
+      '</div>';
+    }
+
     function exportCatalogsJSON() {
       const data = {
         proveedores: getCatalog('proveedores'),
@@ -5668,14 +5694,14 @@
     // ═══════════════════════════════════
 
     const CATALOG_TEMPLATE_HEADERS = {
-      proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Teléfono', 'Email', 'Responsable'],
+      proveedores: ['CIF', 'Razón social', 'Dirección', 'CP', 'Localidad', 'Provincia', 'Contacto', 'Teléfono', 'Email', 'Responsable', 'Especialidades', 'Tarifa hora'],
       centros: ['Tipo documento', 'Documento', 'Nombre', 'Dirección', 'CP', 'Localidad', 'Provincia'],
       tutores: ['Tipo documento', 'Documento', 'Nombre', 'Apellido 1', 'Apellido 2', 'Teléfono', 'Email', 'Horas dedicación'],
       acciones: ['Código', 'Nombre', 'Código grupo', 'Área profesional', 'Modalidad', 'Horas presenciales', 'Horas teleformación', 'Nivel formación', 'Objetivos', 'Contenidos']
     };
 
     const CATALOG_FIELD_MAP = {
-      proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'telefono', 'email', 'responsable'],
+      proveedores: ['cif', 'razonSocial', 'direccion', 'cp', 'localidad', 'provincia', 'contacto', 'telefono', 'email', 'responsable', 'especialidades', 'tarifaHora'],
       centros: ['tipoDocumento', 'documento', 'nombre', 'direccion', 'cp', 'localidad', 'provincia'],
       tutores: ['tipoDocumento', 'documento', 'nombre', 'apellido1', 'apellido2', 'telefono', 'email', 'horasDedicacion'],
       acciones: ['codigo', 'nombre', 'codigoGrupo', 'areaProfesional', 'modalidad', 'horasPresenciales', 'horasTeleformacion', 'nivelFormacion', 'objetivos', 'contenidos']
@@ -5799,9 +5825,11 @@
         columns: [
           { key: 'cif',           label: 'CIF',           editable: false, type: 'text',  width: '100px' },
           { key: 'razonSocial',   label: 'Razón social',  editable: true,  type: 'text',  width: '2fr' },
+          { key: 'contacto',      label: 'Contacto',       editable: true,  type: 'text',  width: '150px' },
           { key: 'email',         label: 'Email',          editable: true,  type: 'text',  width: '200px' },
           { key: 'telefono',      label: 'Teléfono',       editable: true,  type: 'text',  width: '120px' },
-          { key: 'responsable',   label: 'Responsable',    editable: true,  type: 'text',  width: '180px' },
+          { key: 'especialidades',label: 'Especialidades', editable: true,  type: 'text',  width: '180px' },
+          { key: 'tarifaHora',    label: 'Tarifa/h',       editable: true,  type: 'number', width: '90px', step: 1, min: 0 },
           { key: '_acciones',     label: 'Acciones',       editable: false, type: 'count', width: '80px',  countFn: function(r) { return getLinkedAcciones('proveedores', r.cif).length; } },
         ],
         defaultSort: { key: 'razonSocial', dir: 'asc' },
@@ -7328,10 +7356,14 @@
           field('Código postal', 'cp', v('cp')) +
           field('Localidad', 'localidad', v('localidad')) +
           field('Provincia', 'provincia', v('provincia')) +
+          field('Persona de contacto', 'contacto', v('contacto')) +
           field('Teléfono contacto', 'telefono', v('telefono')) +
           field('Email contacto', 'email', v('email'), { type: 'email' }) +
           field('Responsable formación', 'responsable', v('responsable')) +
-          renderLinkedAccionesHtml('proveedores', record.cif);
+          field('Especialidades', 'especialidades', v('especialidades'), { placeholder: 'Ej: Idiomas, PRL, Ofimática' }) +
+          field('Tarifa hora', 'tarifaHora', v('tarifaHora'), { type: 'number', placeholder: '€/hora' }) +
+          renderLinkedAccionesHtml('proveedores', record.cif) +
+          renderProveedorScorecard(record);
       } else if (key === 'centros') {
         title = isNew ? 'Nuevo centro' : esc(cfg.title(record));
         body = select('Tipo documento centro', 'tipoDocumento', record.tipoDocumento || '', [
@@ -8582,12 +8614,18 @@
         record.cp = val('cp');
         record.localidad = val('localidad');
         record.provincia = val('provincia');
+        record.contacto = val('contacto');
         record.telefono = val('telefono');
         record.email = val('email');
         record.responsable = val('responsable');
+        record.especialidades = val('especialidades');
+        record.tarifaHora = val('tarifaHora');
 
         if (!record.cif) markError('cif', 'El CIF es obligatorio');
         else if (!/^[A-Za-z]\d{7}[A-Za-z0-9]$/.test(record.cif)) markError('cif', 'Formato de CIF no válido (Ej: B12345678)');
+        if (record.tarifaHora && (isNaN(Number(record.tarifaHora)) || Number(record.tarifaHora) < 0)) {
+          markError('tarifaHora', 'La tarifa hora debe ser un número positivo');
+        }
       } else if (key === 'centros') {
         record.tipoDocumento = val('tipoDocumento');
         record.documento = val('documento');
