@@ -4628,6 +4628,13 @@
         <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
       </div>
 
+      <!-- Worker profile search (F4.8) -->
+      <div style="margin:12px 0;">
+        <input class="input-field" id="workerSearchInput" type="text"
+          placeholder="Buscar persona trabajadora por nombre o NIF..." style="font-size:13px;">
+      </div>
+      <div id="workerProfilePanel" style="display:none; margin:0 0 16px; padding:16px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);"></div>
+
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
 
@@ -19174,6 +19181,114 @@
       XLSX.writeFile(wb, 'Informe_Formacion_' + new Date().getFullYear() + '.xlsx');
       showToast('Informe exportado', 'success');
     }
+
+    // ═══════════════════════════════════
+    // WORKER TRAINING PROFILE (F4.8)
+    // ═══════════════════════════════════
+
+    function renderWorkerProfile(emp) {
+      var panel = document.getElementById('workerProfilePanel');
+      if (!panel) return;
+      var acciones = getCatalog('acciones');
+      var nif = emp.NIF || '';
+      var empAcciones = acciones.filter(function(a) {
+        return (a.participantes || []).indexOf(nif) !== -1;
+      });
+
+      var totalHours = 0;
+      empAcciones.forEach(function(a) {
+        totalHours += (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+      });
+
+      var parts = [];
+      // Header
+      parts.push('<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">');
+      parts.push('<div>');
+      parts.push('<div style="font-size:15px; font-weight:700; color:var(--text-primary);">');
+      parts.push(esc(emp.Empleado || ''));
+      parts.push('</div>');
+      parts.push('<div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">');
+      parts.push('NIF: ' + esc(nif));
+      if (emp.Empresa) parts.push(' &middot; ' + esc(emp.Empresa));
+      if (emp.Departamento) parts.push(' &middot; ' + esc(emp.Departamento));
+      if (emp.Puesto) parts.push(' &middot; ' + esc(emp.Puesto));
+      parts.push('</div></div>');
+      // Close button
+      var closeBtn = document.createElement('button');
+      closeBtn.textContent = '\u00D7';
+      closeBtn.title = 'Cerrar';
+      closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;';
+      closeBtn.onclick = function() {
+        document.getElementById('workerProfilePanel').style.display = 'none';
+        document.getElementById('workerSearchInput').value = '';
+      };
+
+      parts.push('</div>');
+
+      // Summary KPIs
+      parts.push('<div style="display:flex; gap:16px; margin-bottom:12px;">');
+      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
+      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(empAcciones.length)) + '</div>');
+      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Formaciones</div>');
+      parts.push('</div>');
+      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
+      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(totalHours)) + '</div>');
+      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Horas totales</div>');
+      parts.push('</div></div>');
+
+      if (empAcciones.length === 0) {
+        parts.push('<div style="font-size:13px; color:var(--text-muted); padding:12px 0; text-align:center;">Sin participaciones registradas.</div>');
+      } else {
+        parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Historial de participaciones</div>');
+        parts.push('<div style="max-height:260px; overflow-y:auto;">');
+        empAcciones.forEach(function(a) {
+          var hP = Number(a.horasPresenciales) || 0;
+          var hT = Number(a.horasTeleformacion) || 0;
+          var horas = hP + hT;
+          var fechas = '';
+          if (a.fechaInicio) {
+            fechas = esc(a.fechaInicio);
+            if (a.fechaFin) fechas += ' \u2013 ' + esc(a.fechaFin);
+          }
+          parts.push('<div style="padding:8px 10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">');
+          parts.push('<div style="flex:1; min-width:0;">');
+          parts.push('<div style="font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(a.nombre || a.codigo || '') + '</div>');
+          if (fechas) parts.push('<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + fechas + '</div>');
+          parts.push('</div>');
+          parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-left:12px; white-space:nowrap; font-variant-numeric:tabular-nums;">' + esc(String(horas)) + ' h</div>');
+          parts.push('</div>');
+        });
+        parts.push('</div>');
+      }
+
+      panel.textContent = '';
+      // Build a wrapper for the HTML content
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = parts.join('');
+      // Insert close button into the header flex container
+      var headerFlex = wrapper.querySelector('div');
+      if (headerFlex) headerFlex.appendChild(closeBtn);
+      panel.appendChild(wrapper);
+      panel.style.display = '';
+    }
+
+    (function() {
+      var input = document.getElementById('workerSearchInput');
+      if (!input) return;
+      input.addEventListener('input', function() {
+        var self = this;
+        clearTimeout(self._timer);
+        self._timer = setTimeout(function() {
+          var q = self.value.trim().toLowerCase();
+          if (q.length < 2) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+          var match = (state.employees || []).find(function(emp) {
+            return (emp.Empleado || '').toLowerCase().indexOf(q) !== -1 || (emp.NIF || '').toLowerCase().indexOf(q) !== -1;
+          });
+          if (!match) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+          renderWorkerProfile(match);
+        }, 300);
+      });
+    })();
 
     // ═══════════════════════════════════
     // EMPLOYEE TRAINING REPORT
