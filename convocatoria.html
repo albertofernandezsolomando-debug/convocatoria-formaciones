@@ -9373,12 +9373,13 @@
 
       var acciones = getCatalog('acciones');
       var titleNorm = (event.title || '').trim().toLowerCase();
-      var accion = acciones.find(function(a) {
-        return (a.nombre || '').trim().toLowerCase() === titleNorm;
-      });
-      if (!accion) return;
+      var accion = acciones.find(function(a) { return (a.nombre || '').trim().toLowerCase() === titleNorm; });
 
-      // Build NIF list from emails
+      if (!accion) {
+        showToast('No se encontró acción "' + event.title + '" en el catálogo.', 'info', 5000);
+        return;
+      }
+
       var attendeeNIFs = [];
       if (state.employees && state.employees.length > 0) {
         var emailSet = {};
@@ -9389,38 +9390,54 @@
       }
       if (attendeeNIFs.length === 0) return;
 
-      // Add participants if not already present
       if (!accion.participantes) accion.participantes = [];
       var added = 0;
       attendeeNIFs.forEach(function(nif) {
-        if (accion.participantes.indexOf(nif) === -1) {
-          accion.participantes.push(nif);
-          added++;
-        }
+        if (accion.participantes.indexOf(nif) === -1) { accion.participantes.push(nif); added++; }
       });
 
-      // Create asistencia session if event has a date
       if (event.date) {
         if (!accion.asistencia) accion.asistencia = { sesiones: [], registro: {} };
         if (!accion.asistencia.sesiones) accion.asistencia.sesiones = [];
         if (!accion.asistencia.registro) accion.asistencia.registro = {};
         if (accion.asistencia.sesiones.indexOf(event.date) === -1) {
-          accion.asistencia.sesiones.push(event.date);
-          accion.asistencia.sesiones.sort();
+          accion.asistencia.sesiones.push(event.date); accion.asistencia.sesiones.sort();
         }
-        // Ensure registro arrays match sesiones length
         accion.participantes.forEach(function(nif) {
           if (!accion.asistencia.registro[nif]) accion.asistencia.registro[nif] = [];
-          while (accion.asistencia.registro[nif].length < accion.asistencia.sesiones.length) {
-            accion.asistencia.registro[nif].push(false);
-          }
+          while (accion.asistencia.registro[nif].length < accion.asistencia.sesiones.length) accion.asistencia.registro[nif].push(false);
         });
       }
 
-      if (added > 0) {
-        upsertCatalogRecord('acciones', 'codigo', accion);
-        showToast('Sincronizado con ' + accion.codigo + ': ' + added + ' participantes añadidos', 'info', 4000);
+      // Copy formador to tutor
+      if (!accion.tutorVinculado && event.formador) {
+        var tutores = getCatalog('tutores');
+        var matchTutor = tutores.find(function(t) {
+          return [t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ').toLowerCase() === event.formador.toLowerCase();
+        });
+        if (matchTutor) accion.tutorVinculado = matchTutor.documento;
       }
+
+      // Copy location to centro
+      if (!accion.centroVinculado && event.location && !event.isTeams) {
+        var centros = getCatalog('centros');
+        var matchCentro = centros.find(function(c) { return (c.nombre||'').toLowerCase() === event.location.toLowerCase(); });
+        if (matchCentro) accion.centroVinculado = matchCentro.documento;
+      }
+
+      // Update status
+      if (accion.estado === 'En preparacion' || !accion.estado) {
+        var today = new Date().toISOString().slice(0, 10);
+        accion.estado = (accion.fechaInicio && accion.fechaInicio <= today) ? 'En marcha' : 'Convocada';
+      }
+
+      upsertCatalogRecord('acciones', 'codigo', accion);
+      var parts = [];
+      if (added > 0) parts.push(added + ' participantes');
+      if (accion.tutorVinculado) parts.push('tutor');
+      if (accion.centroVinculado) parts.push('centro');
+      parts.push('estado: ' + accion.estado);
+      showToast('Sync ' + accion.codigo + ': ' + parts.join(', '), 'info', 5000);
     }
 
     function checkFundaeReadiness(eventTitle) {
