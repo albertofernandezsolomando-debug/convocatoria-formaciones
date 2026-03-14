@@ -935,6 +935,58 @@
       animation: spin 0.6s linear infinite;
     }
 
+    /* ── Upload animated check SVG ── */
+    .upload-check {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 52px;
+      height: 52px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .upload-zone.loaded .upload-check {
+      display: block;
+    }
+    .upload-check-circle {
+      fill: none;
+      stroke: var(--success);
+      stroke-width: 2.5;
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      stroke-linecap: round;
+    }
+    .upload-zone.loaded .upload-check-circle {
+      animation: uploadCheckCircle 0.5s ease-out forwards;
+    }
+    .upload-check-mark {
+      fill: none;
+      stroke: var(--success);
+      stroke-width: 2.5;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .upload-zone.loaded .upload-check-mark {
+      animation: uploadCheckMark 0.35s ease-out 0.4s forwards;
+    }
+    @keyframes uploadCheckCircle {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes uploadCheckMark {
+      to { stroke-dashoffset: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .upload-zone.loaded .upload-check-circle,
+      .upload-zone.loaded .upload-check-mark {
+        animation: none;
+        stroke-dashoffset: 0;
+      }
+    }
+
     .onboarding-step {
       display: flex;
       align-items: flex-start;
@@ -1140,6 +1192,43 @@
     .input-field.error {
       border-color: var(--danger);
       box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+    }
+
+    /* ── On-blur field validation ── */
+    .input-field.incomplete {
+      border-color: var(--warning);
+      box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
+      animation: fieldIncomplete 0.25s ease-out;
+    }
+    .input-field.has-error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+      animation: fieldIncomplete 0.25s ease-out;
+    }
+    @keyframes fieldIncomplete {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-4px); }
+      75%  { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .input-field.incomplete,
+      .input-field.has-error {
+        animation: none;
+      }
+    }
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      min-height: 16px;
+      transition: color var(--transition);
+    }
+    .field-hint.field-error {
+      color: var(--danger);
+    }
+    .field-hint.field-warning {
+      color: var(--warning);
     }
 
     .input-field::placeholder {
@@ -1455,7 +1544,12 @@
 
     /* ── Toast notifications ── */
     .toast {
-      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 0 10px;
+      padding: 12px 14px 0 14px;
       border-radius: var(--radius);
       font-size: 13px;
       font-weight: 500;
@@ -1463,20 +1557,87 @@
       box-shadow: var(--shadow-lg);
       animation: toastIn 0.3s ease-out;
       max-width: 380px;
+      min-width: 260px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .toast-icon {
+      grid-column: 1;
+      grid-row: 1;
+      font-size: 16px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+    .toast-message {
+      grid-column: 2;
+      grid-row: 1;
       line-height: 1.4;
+      padding-top: 4px;
+      padding-bottom: 10px;
+      word-break: break-word;
+    }
+    .toast-action {
+      grid-column: 3;
+      grid-row: 1;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--transition);
+      margin-bottom: 10px;
+      align-self: center;
+    }
+    .toast-action:hover { background: rgba(255,255,255,0.35); }
+    .toast-progress {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      height: 3px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 0 0 var(--radius) var(--radius);
+      margin: 0 -14px;
+      overflow: hidden;
+    }
+    .toast-progress-bar {
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      border-radius: inherit;
+      transform-origin: left;
+      animation: toastProgress var(--toast-duration, 4000ms) linear forwards;
     }
     .toast-success { background: var(--success); }
-    .toast-error { background: var(--danger); }
+    .toast-error   { background: var(--danger); }
     .toast-warning { background: var(--warning); }
-    .toast-info { background: var(--accent); }
+    .toast-info    { background: var(--accent); }
 
     @keyframes toastIn {
       from { opacity: 0; transform: translateX(40px); }
-      to { opacity: 1; transform: translateX(0); }
+      to   { opacity: 1; transform: translateX(0); }
     }
     @keyframes toastOut {
       from { opacity: 1; transform: translateX(0); }
-      to { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 0; transform: translateX(40px); }
+    }
+    @keyframes toastProgress {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .toast { animation: none; }
+      .toast-progress-bar { animation: none; transform: scaleX(0); }
     }
 
     /* ── Toast container ── */
@@ -1488,6 +1649,56 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+
+    /* ── Save indicator ── */
+    .save-indicator {
+      padding: 8px 24px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+      text-align: right;
+      transition: color var(--transition), background var(--transition);
+      flex-shrink: 0;
+    }
+    .save-indicator.just-saved {
+      color: var(--success);
+      background: var(--success-light);
+      animation: saveFlash 1.5s ease-out forwards;
+    }
+    @keyframes saveFlash {
+      0%   { background: var(--success-light); color: var(--success); }
+      70%  { background: var(--success-light); color: var(--success); }
+      100% { background: var(--bg-panel);      color: var(--text-muted); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .save-indicator.just-saved { animation: none; }
+    }
+
+    /* ── Session recovery banner ── */
+    .session-banner {
+      display: none;
+      padding: 10px 28px;
+      background: var(--warning-light);
+      border-bottom: 1px solid var(--warning);
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .session-banner.visible {
+      display: flex;
+    }
+    .session-banner-text {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .session-banner-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
     /* ── Queue bar ── */
@@ -3285,6 +3496,10 @@
             <button class="link-btn link-add upload-change-btn" id="btnChangeFile">Cambiar archivo</button>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
+          <svg class="upload-check" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+            <circle class="upload-check-circle" cx="26" cy="26" r="24"/>
+            <path class="upload-check-mark" d="M14 27l8 8 16-16"/>
+          </svg>
         </div>
         <a href="#" class="link-btn link-add" id="btnDemoData" onclick="loadDemoData(); return false;" style="margin-top:8px; display:block; text-align:center; font-size:12px;">Probar con datos de ejemplo</a>
       </div>
@@ -3326,11 +3541,17 @@
           <button class="link-btn link-add" id="btnSaveTemplate" style="font-size:12px; white-space:nowrap;">Guardar como plantilla</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
-          <div class="event-row">
-            <input class="input-field" type="date" id="eventDate" style="flex:1;">
-            <input class="input-field" type="time" id="eventStart" style="width:80px;" value="10:00">
-            <input class="input-field" type="time" id="eventEnd" style="width:80px;" value="12:00">
+          <div>
+            <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
+            <span class="field-hint" id="eventTitleHint"></span>
+          </div>
+          <div>
+            <div class="event-row">
+              <input class="input-field" type="date" id="eventDate" style="flex:1;">
+              <input class="input-field" type="time" id="eventStart" style="width:80px;" value="10:00">
+              <input class="input-field" type="time" id="eventEnd" style="width:80px;" value="12:00">
+            </div>
+            <span class="field-hint" id="eventDateHint"></span>
           </div>
           <div class="radio-group">
             <label><input type="radio" name="eventType" value="presencial" checked> Presencial</label>
@@ -3372,6 +3593,8 @@
         </div>
       </div>
 
+      <div class="save-indicator" id="saveIndicator">Sin cambios</div>
+
     </div>
 
     <!-- RIGHT PANEL -->
@@ -3390,6 +3613,15 @@
         <!-- Row 2: Search + actions -->
         <div id="tableSearch" style="display:none; padding:0 28px 10px; display:flex; gap:8px; align-items:center;">
           <input class="input-field" type="text" id="tableSearchInput" placeholder="Buscar persona trabajadora, puesto o email..." style="font-size:12px; flex:1;">
+        </div>
+      </div>
+
+      <!-- Session recovery banner -->
+      <div id="sessionBanner" class="session-banner" role="alert">
+        <span class="session-banner-text" id="sessionBannerText">Hay convocatorias pendientes en la cola de la sesión anterior.</span>
+        <div class="session-banner-actions">
+          <button class="btn btn-primary" id="btnSessionContinue" style="font-size:12px; padding:5px 12px;">Continuar</button>
+          <button class="btn btn-secondary" id="btnSessionDiscard" style="font-size:12px; padding:5px 12px;">Descartar</button>
         </div>
       </div>
 
@@ -3978,7 +4210,7 @@
     </div>
   </div>
 
-  <div id="toastContainer"></div>
+  <div id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
   <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
@@ -6948,16 +7180,68 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function showToast(message, type = 'info', duration = 4000) {
+    function showToast(message, type, duration, options) {
+      if (type === undefined) type = 'info';
+      if (duration === undefined) duration = 4000;
+      if (options === undefined) options = {};
+
+      const ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+      const icon = ICONS[type] || ICONS.info;
+
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       toast.className = 'toast toast-' + type;
-      toast.textContent = message;
+      toast.style.setProperty('--toast-duration', duration + 'ms');
+      toast.setAttribute('role', 'alert');
+
+      // Icon
+      const iconEl = document.createElement('div');
+      iconEl.className = 'toast-icon';
+      iconEl.setAttribute('aria-hidden', 'true');
+      iconEl.textContent = icon;
+      toast.appendChild(iconEl);
+
+      // Message
+      const msgEl = document.createElement('div');
+      msgEl.className = 'toast-message';
+      msgEl.textContent = message;
+      toast.appendChild(msgEl);
+
+      // Optional undo button
+      if (typeof options.undoFn === 'function') {
+        const undoBtn = document.createElement('button');
+        undoBtn.className = 'toast-action';
+        undoBtn.textContent = 'Deshacer';
+        undoBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          options.undoFn();
+          dismiss();
+        });
+        toast.appendChild(undoBtn);
+      }
+
+      // Progress bar
+      const progressWrap = document.createElement('div');
+      progressWrap.className = 'toast-progress';
+      const progressBar = document.createElement('div');
+      progressBar.className = 'toast-progress-bar';
+      progressWrap.appendChild(progressBar);
+      toast.appendChild(progressWrap);
+
+      // Click to dismiss
+      toast.addEventListener('click', dismiss);
+
       container.appendChild(toast);
-      setTimeout(() => {
+
+      var dismissTimer = setTimeout(dismiss, duration);
+
+      function dismiss() {
+        clearTimeout(dismissTimer);
         toast.style.animation = 'toastOut 0.3s ease-in forwards';
-        toast.addEventListener('animationend', () => toast.remove());
-      }, duration);
+        toast.addEventListener('animationend', function() { toast.remove(); }, { once: true });
+        // Fallback removal in case animationend doesn't fire (reduced-motion)
+        setTimeout(function() { if (toast.parentNode) toast.remove(); }, 400);
+      }
     }
 
     // ═══════════════════════════════════
@@ -7571,18 +7855,13 @@
 
       var totalOrphans = orphanData.reduce(function(sum, d) { return sum + d.orphanNifs.length; }, 0);
 
-      // Build clickable toast
-      var container = document.getElementById('toastContainer');
-      var toast = document.createElement('div');
-      toast.className = 'toast toast-warning';
-      toast.style.cursor = 'pointer';
-      toast.textContent = totalOrphans + ' participante' + (totalOrphans > 1 ? 's' : '') + ' de acciones formativas no encontrado' + (totalOrphans > 1 ? 's' : '') + ' en el organigrama';
-      toast.addEventListener('click', function() { showOrphanDialog(); });
-      container.appendChild(toast);
-      setTimeout(function() {
-        toast.style.animation = 'toastOut 0.3s ease-in forwards';
-        toast.addEventListener('animationend', function() { toast.remove(); });
-      }, 8000);
+      // Build clickable toast using showToast
+      showToast(
+        totalOrphans + ' participante' + (totalOrphans > 1 ? 's' : '') + ' de acciones formativas no encontrado' + (totalOrphans > 1 ? 's' : '') + ' en el organigrama',
+        'warning',
+        8000,
+        { undoFn: function() { showOrphanDialog(); } }
+      );
     }
 
     function showOrphanDialog() {
@@ -7743,6 +8022,9 @@
         extBtn.textContent = '+ Añadir lista externa';
         extBtn.style.color = '';
 
+        // Re-trigger SVG check animation on each successful load
+        uploadZone.classList.remove('loaded');
+        void uploadZone.offsetWidth; // force reflow
         uploadZone.classList.add('loaded');
         uploadPrompt.style.display = 'none';
         uploadInfo.style.display = 'block';
@@ -7859,9 +8141,50 @@
             timestamp: Date.now()
           };
           localStorage.setItem('convocatoria_state', JSON.stringify(snapshot));
+          updateSaveIndicator(Date.now());
         } catch(e) {}
       }, 500);
     }
+
+    // ── Save indicator helpers ──
+    var _lastSaveTime = null;
+    var _saveIndicatorInterval = null;
+
+    function updateSaveIndicator(ts) {
+      _lastSaveTime = ts || _lastSaveTime;
+      var el = document.getElementById('saveIndicator');
+      if (!el) return;
+      if (!_lastSaveTime) {
+        el.textContent = 'Sin cambios';
+        el.classList.remove('just-saved');
+        return;
+      }
+      el.classList.remove('just-saved');
+      void el.offsetWidth; // force reflow to restart animation
+      el.classList.add('just-saved');
+
+      // Remove class after animation ends
+      setTimeout(function() { el.classList.remove('just-saved'); }, 2000);
+
+      _renderSaveIndicatorRelative();
+    }
+
+    function _renderSaveIndicatorRelative() {
+      var el = document.getElementById('saveIndicator');
+      if (!el || !_lastSaveTime) return;
+      var diffMs  = Date.now() - _lastSaveTime;
+      var diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1) {
+        el.textContent = 'Guardado hace un momento';
+      } else if (diffMin === 1) {
+        el.textContent = 'Guardado hace 1 min';
+      } else {
+        el.textContent = 'Guardado hace ' + diffMin + ' min';
+      }
+    }
+
+    // Update relative time every 30 seconds
+    _saveIndicatorInterval = setInterval(_renderSaveIndicatorRelative, 30000);
 
     // ═══════════════════════════════════
     // FILTER RENDERING
@@ -8439,6 +8762,72 @@
     document.getElementById('eventBody').addEventListener('input', saveState);
     document.getElementById('eventFormador').addEventListener('input', saveState);
     document.getElementById('surveyCheck').addEventListener('change', saveState);
+
+    // ── On-blur validation for required event fields ──
+    (function() {
+      var titleEl = document.getElementById('eventTitle');
+      var dateEl  = document.getElementById('eventDate');
+      var startEl = document.getElementById('eventStart');
+      var endEl   = document.getElementById('eventEnd');
+      var titleHint = document.getElementById('eventTitleHint');
+      var dateHint  = document.getElementById('eventDateHint');
+
+      function validateTitle() {
+        if (!titleEl.value.trim()) {
+          titleEl.classList.add('incomplete');
+          titleEl.classList.remove('has-error');
+          titleHint.textContent = 'Campo obligatorio';
+          titleHint.className = 'field-hint field-warning';
+        } else {
+          titleEl.classList.remove('incomplete', 'has-error');
+          titleHint.textContent = '';
+          titleHint.className = 'field-hint';
+        }
+      }
+
+      function validateDate() {
+        var dateVal  = dateEl.value;
+        var startVal = startEl.value;
+        var endVal   = endEl.value;
+
+        if (!dateVal) {
+          dateEl.classList.add('incomplete');
+          dateEl.classList.remove('has-error');
+          dateHint.textContent = 'Campo obligatorio';
+          dateHint.className = 'field-hint field-warning';
+        } else if (startVal && endVal && endVal <= startVal) {
+          endEl.classList.add('has-error');
+          endEl.classList.remove('incomplete');
+          dateEl.classList.remove('incomplete', 'has-error');
+          dateHint.textContent = 'La hora de fin debe ser posterior a la de inicio';
+          dateHint.className = 'field-hint field-error';
+        } else {
+          dateEl.classList.remove('incomplete', 'has-error');
+          endEl.classList.remove('incomplete', 'has-error');
+          dateHint.textContent = '';
+          dateHint.className = 'field-hint';
+        }
+      }
+
+      titleEl.addEventListener('blur', validateTitle);
+      titleEl.addEventListener('input', function() {
+        if (titleEl.classList.contains('incomplete') || titleEl.classList.contains('has-error')) {
+          validateTitle();
+        }
+      });
+
+      dateEl.addEventListener('blur', validateDate);
+      dateEl.addEventListener('change', function() {
+        if (dateEl.classList.contains('incomplete') || dateHint.textContent) validateDate();
+      });
+      endEl.addEventListener('blur', validateDate);
+      endEl.addEventListener('change', function() {
+        if (endEl.classList.contains('has-error') || dateHint.textContent) validateDate();
+      });
+      startEl.addEventListener('change', function() {
+        if (endEl.classList.contains('has-error') || dateHint.textContent) validateDate();
+      });
+    }());
 
     // Template select and save
     document.getElementById('templateSelect').addEventListener('change', function() {
@@ -10962,6 +11351,36 @@
 
     loadQueue();
     renderQueue();
+
+    // ── Session recovery banner ──
+    (function() {
+      if (state.queue && state.queue.length > 0) {
+        var banner = document.getElementById('sessionBanner');
+        var bannerText = document.getElementById('sessionBannerText');
+        if (banner) {
+          var n = state.queue.length;
+          bannerText.textContent = 'Tienes ' + n + ' convocatoria' + (n > 1 ? 's' : '') + ' pendiente' + (n > 1 ? 's' : '') + ' de la sesión anterior.';
+          banner.classList.add('visible');
+        }
+      }
+
+      var btnContinue = document.getElementById('btnSessionContinue');
+      var btnDiscard  = document.getElementById('btnSessionDiscard');
+      if (btnContinue) {
+        btnContinue.addEventListener('click', function() {
+          document.getElementById('sessionBanner').classList.remove('visible');
+        });
+      }
+      if (btnDiscard) {
+        btnDiscard.addEventListener('click', function() {
+          state.queue = [];
+          saveQueue();
+          renderQueue();
+          document.getElementById('sessionBanner').classList.remove('visible');
+          showToast('Cola descartada', 'info');
+        });
+      }
+    }());
 
     // ═══════════════════════════════════
     // TAB 4: CUADRO DE MANDO
