@@ -4456,7 +4456,7 @@
       </div>
 
       <!-- Plazos FUNDAE -->
-      <div class="dash-card" id="dashPlazosFundae" data-card-id="plazos" style="display:none; margin-bottom:16px;">
+      <div class="dash-card" id="dashPlazosFundae" data-card-id="plazos" data-module="dash-plazos" style="display:none; margin-bottom:16px;">
         <div class="dash-card-title">Plazos FUNDAE</div>
         <div id="dashPlazosList"></div>
       </div>
@@ -4467,13 +4467,13 @@
 
       <!-- Charts row 1: Credit + Estado donut -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="credito">
+        <div class="dash-card" data-card-id="credito" data-module="dash-credito">
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
           <div id="dashCreditChart"></div>
           <div id="dashCreditProjection" style="margin-top: 12px;"></div>
           <div id="dashCreditSimulator"></div>
         </div>
-        <div class="dash-card" data-card-id="estado">
+        <div class="dash-card" data-card-id="estado" data-module="dash-estado">
           <div class="dash-card-title">Acciones por estado</div>
           <div id="dashEstadoChart"></div>
         </div>
@@ -4481,7 +4481,7 @@
       </div>
 
       <!-- Completeness -->
-      <div class="dash-card" data-card-id="completitud" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="completitud" data-module="dash-completitud" style="margin-bottom:16px;">
         <div class="dash-card-title">Completitud del catálogo</div>
         <div id="dashCompletenessChart"></div>
       </div>
@@ -4492,11 +4492,11 @@
 
       <!-- Charts row 2: Gasto por proveedor + Modalidad -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="proveedor">
+        <div class="dash-card" data-card-id="proveedor" data-module="dash-proveedor">
           <div class="dash-card-title">Gasto por proveedor</div>
           <div id="dashProveedorChart"></div>
         </div>
-        <div class="dash-card" data-card-id="modalidad">
+        <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad">
           <div class="dash-card-title">Horas por modalidad</div>
           <div id="dashModalidadChart"></div>
         </div>
@@ -4504,11 +4504,11 @@
 
       <!-- Charts row 3: Area + Department -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="area">
+        <div class="dash-card" data-card-id="area" data-module="dash-area">
           <div class="dash-card-title">Acciones por área profesional</div>
           <div id="dashAreaChart"></div>
         </div>
-        <div class="dash-card" data-card-id="departamento">
+        <div class="dash-card" data-card-id="departamento" data-module="dash-departamento">
           <div class="dash-card-title">Acciones por departamento</div>
           <div id="dashDeptChart"></div>
         </div>
@@ -4522,11 +4522,11 @@
 
       <!-- Charts row 4: Attendance + Confirmations -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="asistencia">
+        <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia">
           <div class="dash-card-title">Monitor de asistencia y abandono</div>
           <div id="dashAttendance"></div>
         </div>
-        <div class="dash-card" data-card-id="confirmaciones">
+        <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones">
           <div class="dash-card-title">Efectividad de confirmaciones</div>
           <div id="dashConfirmations"></div>
         </div>
@@ -4534,11 +4534,11 @@
 
       <!-- Charts row 5: Seasonality + Recurrence -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="estacionalidad">
+        <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad">
           <div class="dash-card-title">Estacionalidad formativa</div>
           <div id="dashSeasonality"></div>
         </div>
-        <div class="dash-card" data-card-id="recurrencia">
+        <div class="dash-card" data-card-id="recurrencia" data-module="dash-recurrencia">
           <div class="dash-card-title">Recurrencia de participantes</div>
           <div id="dashRecurrence"></div>
         </div>
@@ -4551,11 +4551,11 @@
 
       <!-- Charts row 6: Survey Coverage + Scorecard -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="encuestas">
+        <div class="dash-card" data-card-id="encuestas" data-module="dash-encuestas">
           <div class="dash-card-title">Cobertura de encuestas</div>
           <div id="dashSurveyCoverage"></div>
         </div>
-        <div class="dash-card" data-card-id="scorecard">
+        <div class="dash-card" data-card-id="scorecard" data-module="dash-scorecard">
           <div class="dash-card-title">Scorecard de proveedores</div>
           <div id="dashProviderScorecard"></div>
         </div>
@@ -4566,32 +4566,32 @@
       <div id="dash-group-analytics">
       <div class="dash-section-heading">Analytics avanzado</div>
 
-      <div class="dash-card" data-card-id="riesgo-fundae" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk" style="margin-bottom:16px;">
         <div class="dash-card-title">Riesgo de Bonificación FUNDAE</div>
         <div id="dashRiskScoring"></div>
       </div>
 
-      <div class="dash-card" data-card-id="roi-formacion" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi" style="margin-bottom:16px;">
         <div class="dash-card-title">ROI de Formación por Empresa</div>
         <div id="dashROI"></div>
       </div>
 
-      <div class="dash-card" data-card-id="cobertura" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura" style="margin-bottom:16px;">
         <div class="dash-card-title">Cobertura Formativa</div>
         <div id="dashCoverage"></div>
       </div>
 
-      <div class="dash-card" data-card-id="equidad" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="equidad" data-module="dash-equity" style="margin-bottom:16px;">
         <div class="dash-card-title">Equidad en Acceso a Formación</div>
         <div id="dashEquity"></div>
       </div>
 
-      <div class="dash-card" data-card-id="inversion-manager" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager" style="margin-bottom:16px;">
         <div class="dash-card-title">Inversión Formativa por Responsable</div>
         <div id="dashByManager"></div>
       </div>
 
-      <div class="dash-card" data-card-id="cross-company" style="margin-bottom:16px;">
+      <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany" style="margin-bottom:16px;">
         <div class="dash-card-title">Formación Interempresarial</div>
         <div id="dashCrossCompany"></div>
       </div>
@@ -4604,7 +4604,7 @@
 
       <!-- Gestor Activity -->
       <div class="dash-chart-row" style="grid-template-columns:1fr;">
-        <div class="dash-card" data-card-id="gestor">
+        <div class="dash-card" data-card-id="gestor" data-module="dash-crosstrain">
           <div class="dash-card-title">Productividad del gestor</div>
           <div id="dashGestorActivity"></div>
         </div>
@@ -15730,6 +15730,24 @@
       containerEl.appendChild(sim);
     }
 
+    // --- Progressive disclosure: collapse state management ---
+    var DASH_COLLAPSED_DEFAULTS = [
+      'dash-roi', 'dash-equity', 'dash-crosscompany',
+      'dash-risk', 'dash-manager', 'dash-crosstrain'
+    ];
+
+    function getDashCollapsedState() {
+      try {
+        var saved = localStorage.getItem('convocatoria_dashCollapsed');
+        if (saved) return JSON.parse(saved);
+      } catch(e) {}
+      return DASH_COLLAPSED_DEFAULTS.slice();
+    }
+
+    function saveDashCollapsedState(collapsed) {
+      try { localStorage.setItem('convocatoria_dashCollapsed', JSON.stringify(collapsed)); } catch(e) {}
+    }
+
     function renderDashboard() {
       hideDashboardSkeleton();
       autoTransitionEstados();
@@ -17054,18 +17072,10 @@
       });
       applyDashMode(dashMode);
 
-      // --- Collapsible cards with localStorage persistence ---
-      var dashCollapsed = {};
-      try { dashCollapsed = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
-      // Default collapsed cards (secondary/periodic analytics)
-      var defaultCollapsed = { modalidad: true, area: true, departamento: true, recurrencia: true, encuestas: true, gestor: true, 'roi-formacion': true, cobertura: true, equidad: true, 'inversion-manager': true, 'cross-company': true };
-      // On first run (no stored state), use defaults
-      var hasStoredCollapsed = localStorage.getItem('convocatoria_dash_collapsed') !== null;
-      if (!hasStoredCollapsed) dashCollapsed = defaultCollapsed;
+      // --- Collapsible cards with localStorage persistence (progressive disclosure) ---
+      var collapsed = getDashCollapsedState();
 
-      document.querySelectorAll('#dashContainer .dash-card[data-card-id]').forEach(function(card) {
-        var cardId = card.getAttribute('data-card-id');
-
+      document.querySelectorAll('#dashContainer .dash-card[data-module]').forEach(function(card) {
         // Wrap non-title children in a .dash-card-body for smooth collapse
         if (!card.querySelector('.dash-card-body')) {
           var body = document.createElement('div');
@@ -17077,28 +17087,38 @@
             }
           });
           card.appendChild(body);
-          // Set initial max-height from content
-          if (!card.classList.contains('collapsed')) {
-            body.style.maxHeight = body.scrollHeight + 'px';
-          }
         }
 
-        if (dashCollapsed[cardId]) {
+        // Apply collapsed state from persistence
+        if (collapsed.indexOf(card.dataset.module) >= 0) {
           card.classList.add('collapsed');
+        } else {
+          card.classList.remove('collapsed');
         }
+
+        // Set initial max-height for expanded cards
+        var cardBody = card.querySelector('.dash-card-body');
+        if (cardBody && !card.classList.contains('collapsed')) {
+          cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
+        }
+
         var title = card.querySelector('.dash-card-title');
         if (title) {
           title.addEventListener('click', function() {
             var cardBody = card.querySelector('.dash-card-body');
+            var collapsed = getDashCollapsedState();
+            var mod = card.dataset.module;
             if (card.classList.contains('collapsed')) {
               // Expand
               card.classList.remove('collapsed');
+              collapsed = collapsed.filter(function(m) { return m !== mod; });
               if (cardBody) {
                 cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
                 cardBody.style.opacity = '1';
               }
             } else {
               // Collapse
+              if (collapsed.indexOf(mod) < 0) collapsed.push(mod);
               if (cardBody) {
                 cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
                 // Force reflow then set to 0
@@ -17108,14 +17128,7 @@
               }
               card.classList.add('collapsed');
             }
-            var currentState = {};
-            try { currentState = JSON.parse(localStorage.getItem('convocatoria_dash_collapsed') || '{}'); } catch(e) {}
-            if (card.classList.contains('collapsed')) {
-              currentState[cardId] = true;
-            } else {
-              delete currentState[cardId];
-            }
-            try { localStorage.setItem('convocatoria_dash_collapsed', JSON.stringify(currentState)); } catch(e) {}
+            saveDashCollapsedState(collapsed);
           });
         }
       });
