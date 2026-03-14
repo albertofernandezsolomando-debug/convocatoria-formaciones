@@ -8380,6 +8380,9 @@
       complianceRecords: {},
     };
 
+    // Dashboard precomputation cache (F3.15)
+    var _dashCache = { hash: null, data: null };
+
     // ═══════════════════════════════════
     // QUEUE PERSISTENCE
     // ═══════════════════════════════════
@@ -9230,6 +9233,9 @@
       renderFilters();
       renderTable();
       checkOrphanParticipants();
+
+      // F3.15: Precompute dashboard metrics in idle time after Excel load
+      precomputeDashboard();
     }
 
     function buildSheetSelectorList(sheetNames, onSelect) {
@@ -15715,33 +15721,23 @@
       containerEl.appendChild(sim);
     }
 
-    function renderDashboard() {
-      hideDashboardSkeleton();
-      autoTransitionEstados();
-      var allAcciones = getCatalog('acciones');
-      var proveedores = getCatalog('proveedores');
-      var centros = getCatalog('centros');
-      var tutores = getCatalog('tutores');
+    // ═══════════════════════════════════
+    // DASHBOARD PRECOMPUTATION (F3.15)
+    // ═══════════════════════════════════
 
-      // Initialize filters (before filtering, so all empresas/estados are shown)
-      initDashFilters(allAcciones);
-
-      // Apply global filters
-      var acciones = applyDashFilters(allAcciones);
-
-      // Empty state
-      var dashEmpty = document.getElementById('dashEmptyState');
-      var dashContainer = document.getElementById('dashContainer');
-      if (allAcciones.length === 0) {
-        dashEmpty.style.display = 'flex';
-        dashContainer.style.display = 'none';
-        return;
-      } else {
-        dashEmpty.style.display = 'none';
-        dashContainer.style.display = '';
+    function computeDashHash(filteredAcciones) {
+      var catalog = getCatalog('acciones');
+      var empCount = (state.employees || []).length;
+      var base = catalog.length + ':' + empCount + ':' + (catalog[0] ? catalog[0].nombre || '' : '') + ':' + (catalog[catalog.length - 1] ? catalog[catalog.length - 1].nombre || '' : '');
+      // Include filtered count so filter changes invalidate cache
+      if (filteredAcciones) {
+        base += ':f' + filteredAcciones.length;
       }
+      return base;
+    }
 
-      // --- Computed stats ---
+    function computeDashboardMetrics(acciones) {
+      if (!acciones) acciones = getCatalog('acciones');
       var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
 
       var totalHorasP = 0, totalHorasT = 0;
@@ -15770,6 +15766,152 @@
         }
       });
       var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+
+      // Monthly data for sparklines
+      var monthlyAcciones = {};
+      var monthlyHoras = {};
+      var monthlyParticipantes = {};
+      var monthlyPresupuesto = {};
+      acciones.forEach(function(a) {
+        var fecha = a.fechaInicio;
+        if (!fecha) return;
+        var d = new Date(fecha + 'T00:00:00');
+        if (isNaN(d.getTime())) return;
+        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        monthlyAcciones[key] = (monthlyAcciones[key] || 0) + 1;
+        monthlyHoras[key] = (monthlyHoras[key] || 0) + (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+        var parts = a.participantes || [];
+        monthlyParticipantes[key] = (monthlyParticipantes[key] || 0) + parts.length;
+        monthlyPresupuesto[key] = (monthlyPresupuesto[key] || 0) + (Number(a.presupuesto) || 0);
+      });
+
+      function monthlyValues(obj) {
+        var keys = Object.keys(obj).sort();
+        if (keys.length > 6) keys = keys.slice(-6);
+        return keys.map(function(k) { return obj[k]; });
+      }
+
+      // Breakdowns for charts
+      var estadoCounts = {};
+      acciones.forEach(function(a) {
+        var est = a.estado || '(Sin estado)';
+        estadoCounts[est] = (estadoCounts[est] || 0) + 1;
+      });
+
+      var modalidadHoras = {};
+      acciones.forEach(function(a) {
+        var mod = a.modalidad || '(Sin modalidad)';
+        var horas = (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+        modalidadHoras[mod] = (modalidadHoras[mod] || 0) + horas;
+      });
+
+      var areaCounts = {};
+      acciones.forEach(function(a) {
+        var area = a.areaProfesional || '(Sin área)';
+        areaCounts[area] = (areaCounts[area] || 0) + 1;
+      });
+
+      var deptCounts = {};
+      acciones.forEach(function(a) {
+        var dept = a.departamento || '(Sin departamento)';
+        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+      });
+
+      var gastoProveedor = {};
+      acciones.forEach(function(a) {
+        if (a.proveedorVinculado && Number(a.presupuesto) > 0) {
+          gastoProveedor[a.proveedorVinculado] = (gastoProveedor[a.proveedorVinculado] || 0) + Number(a.presupuesto);
+        }
+      });
+
+      return {
+        totalAcciones: acciones.length,
+        bonificablesCount: bonificables.length,
+        totalHorasP: totalHorasP,
+        totalHorasT: totalHorasT,
+        totalHoras: totalHoras,
+        totalParticipantes: totalParticipantes,
+        accionesConParticipantes: accionesConParticipantes,
+        totalPresupuesto: totalPresupuesto,
+        totalCredito: totalCredito,
+        consumido: consumido,
+        totalConsumido: totalConsumido,
+        sparkAcciones: monthlyValues(monthlyAcciones),
+        sparkHoras: monthlyValues(monthlyHoras),
+        sparkParticipantes: monthlyValues(monthlyParticipantes),
+        sparkPresupuesto: monthlyValues(monthlyPresupuesto),
+        estadoCounts: estadoCounts,
+        modalidadHoras: modalidadHoras,
+        areaCounts: areaCounts,
+        deptCounts: deptCounts,
+        gastoProveedor: gastoProveedor
+      };
+    }
+
+    function precomputeDashboard() {
+      var cb = function() {
+        var allAcciones = getCatalog('acciones');
+        _dashCache.data = computeDashboardMetrics(allAcciones);
+        _dashCache.hash = computeDashHash(allAcciones);
+      };
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(cb);
+      } else {
+        setTimeout(cb, 100);
+      }
+    }
+
+    function renderDashboard() {
+      hideDashboardSkeleton();
+      autoTransitionEstados();
+      var allAcciones = getCatalog('acciones');
+      var proveedores = getCatalog('proveedores');
+      var centros = getCatalog('centros');
+      var tutores = getCatalog('tutores');
+
+      // Initialize filters (before filtering, so all empresas/estados are shown)
+      initDashFilters(allAcciones);
+
+      // Apply global filters
+      var acciones = applyDashFilters(allAcciones);
+
+      // Empty state
+      var dashEmpty = document.getElementById('dashEmptyState');
+      var dashContainer = document.getElementById('dashContainer');
+      if (allAcciones.length === 0) {
+        dashEmpty.style.display = 'flex';
+        dashContainer.style.display = 'none';
+        return;
+      } else {
+        dashEmpty.style.display = 'none';
+        dashContainer.style.display = '';
+      }
+
+      // --- Computed stats (F3.15: use cache if hash matches) ---
+      var currentHash = computeDashHash(acciones);
+      var metrics;
+      if (_dashCache.hash === currentHash && _dashCache.data) {
+        metrics = _dashCache.data;
+      } else {
+        metrics = computeDashboardMetrics(acciones);
+        _dashCache.data = metrics;
+        _dashCache.hash = currentHash;
+      }
+
+      var bonificables = acciones.filter(function(a) { return a.bonificable === 'Sí'; });
+      var totalHorasP = metrics.totalHorasP;
+      var totalHorasT = metrics.totalHorasT;
+      var totalHoras = metrics.totalHoras;
+      var totalParticipantes = metrics.totalParticipantes;
+      var accionesConParticipantes = metrics.accionesConParticipantes;
+      var totalPresupuesto = metrics.totalPresupuesto;
+      var totalCredito = metrics.totalCredito;
+      var consumido = metrics.consumido;
+      var totalConsumido = metrics.totalConsumido;
+      var sparkAcciones = metrics.sparkAcciones;
+      var sparkHoras = metrics.sparkHoras;
+      var sparkParticipantes = metrics.sparkParticipantes;
+      var sparkPresupuesto = metrics.sparkPresupuesto;
 
       // --- Sparkline helper (safe: only uses numeric values, no user data) ---
       function buildSparklineSvg(values, width, height, color) {
@@ -15808,35 +15950,6 @@
         var pct = Math.round(((curr - prev) / prev) * 100);
         return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat') };
       }
-
-      // --- Monthly data for sparklines ---
-      var monthlyAcciones = {};
-      var monthlyHoras = {};
-      var monthlyParticipantes = {};
-      var monthlyPresupuesto = {};
-      acciones.forEach(function(a) {
-        var fecha = a.fechaInicio;
-        if (!fecha) return;
-        var d = new Date(fecha + 'T00:00:00');
-        if (isNaN(d.getTime())) return;
-        var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        monthlyAcciones[key] = (monthlyAcciones[key] || 0) + 1;
-        monthlyHoras[key] = (monthlyHoras[key] || 0) + (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
-        var parts = a.participantes || [];
-        monthlyParticipantes[key] = (monthlyParticipantes[key] || 0) + parts.length;
-        monthlyPresupuesto[key] = (monthlyPresupuesto[key] || 0) + (Number(a.presupuesto) || 0);
-      });
-
-      function monthlyValues(obj) {
-        var keys = Object.keys(obj).sort();
-        if (keys.length > 6) keys = keys.slice(-6);
-        return keys.map(function(k) { return obj[k]; });
-      }
-
-      var sparkAcciones = monthlyValues(monthlyAcciones);
-      var sparkHoras = monthlyValues(monthlyHoras);
-      var sparkParticipantes = monthlyValues(monthlyParticipantes);
-      var sparkPresupuesto = monthlyValues(monthlyPresupuesto);
 
       // --- KPI Cards ---
       var kpisEl = document.getElementById('dashKpis');
@@ -16268,13 +16381,8 @@
       // --- Credit Simulator (F1.9) ---
       renderCreditSimulator(document.getElementById('dashCreditSimulator'));
 
-      // --- Gasto por proveedor chart ---
-      var gastoProveedor = {};
-      acciones.forEach(function(a) {
-        if (a.proveedorVinculado && Number(a.presupuesto) > 0) {
-          gastoProveedor[a.proveedorVinculado] = (gastoProveedor[a.proveedorVinculado] || 0) + Number(a.presupuesto);
-        }
-      });
+      // --- Gasto por proveedor chart (uses cached gastoProveedor from metrics) ---
+      var gastoProveedor = metrics.gastoProveedor;
       var proveedorMap = {};
       proveedores.forEach(function(p) { proveedorMap[p.cif] = p.razonSocial || p.cif; });
       var proveedorItems = Object.keys(gastoProveedor).map(function(cif, idx) {
@@ -16288,12 +16396,8 @@
         valueFormatter: function(v) { return formatCurrency(v); }
       });
 
-      // --- Estado chart (donut) ---
-      var estadoCounts = {};
-      acciones.forEach(function(a) {
-        var est = a.estado || '(Sin estado)';
-        estadoCounts[est] = (estadoCounts[est] || 0) + 1;
-      });
+      // --- Estado chart (donut, uses cached estadoCounts from metrics) ---
+      var estadoCounts = metrics.estadoCounts;
       var estadoColorMap = {
         'En marcha': DS.accent,
         'Terminada': DS.chart3,
@@ -16312,18 +16416,13 @@
         centerValue: acciones.length
       });
 
-      // --- Modalidad chart ---
-      var modalidadHoras = {};
+      // --- Modalidad chart (uses cached modalidadHoras from metrics) ---
+      var modalidadHoras = metrics.modalidadHoras;
       var modalidadColorMap = {
         'Presencial': DS.accent,
         'Teleformación': DS.chart2,
         'Mixta': DS.chart3
       };
-      acciones.forEach(function(a) {
-        var mod = a.modalidad || '(Sin modalidad)';
-        var horas = (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
-        modalidadHoras[mod] = (modalidadHoras[mod] || 0) + horas;
-      });
       var modalidadItems = Object.keys(modalidadHoras).map(function(k) {
         return { label: k, value: modalidadHoras[k], color: modalidadColorMap[k] || DS.textMuted };
       }).sort(function(a, b) { return b.value - a.value; });
@@ -16332,12 +16431,8 @@
         centerValue: totalHoras
       });
 
-      // --- Area chart ---
-      var areaCounts = {};
-      acciones.forEach(function(a) {
-        var area = a.areaProfesional || '(Sin área)';
-        areaCounts[area] = (areaCounts[area] || 0) + 1;
-      });
+      // --- Area chart (uses cached areaCounts from metrics) ---
+      var areaCounts = metrics.areaCounts;
       var areaItems = Object.keys(areaCounts).map(function(k, idx) {
         return { label: k, value: areaCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
@@ -16351,12 +16446,8 @@
         valueFormatter: function(v) { return v; }
       });
 
-      // --- Department chart ---
-      var deptCounts = {};
-      acciones.forEach(function(a) {
-        var dept = a.departamento || '(Sin departamento)';
-        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-      });
+      // --- Department chart (uses cached deptCounts from metrics) ---
+      var deptCounts = metrics.deptCounts;
       var deptItems = Object.keys(deptCounts).map(function(k, idx) {
         return { label: k, value: deptCounts[k], color: CHART_PALETTE[idx % CHART_PALETTE.length] };
       }).sort(function(a, b) { return b.value - a.value; });
