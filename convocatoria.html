@@ -2056,6 +2056,25 @@
       .confirm-dialog-enter { animation: none; }
     }
 
+    /* --- Resumen post-envio --- */
+    .post-send-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .post-send-check { width: 40px; height: 40px; flex-shrink: 0; }
+    .post-send-check circle { fill: var(--accent-light); }
+    .post-send-check polyline {
+      fill: none; stroke: var(--accent); stroke-width: 2.5;
+      stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 24; stroke-dashoffset: 24;
+      animation: postSendDraw 0.5s ease-out 0.2s forwards;
+    }
+    @keyframes postSendDraw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .post-send-check polyline { animation: none; stroke-dashoffset: 0; }
+    }
+    .post-send-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .post-send-details { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; padding-left: 52px; }
+    .post-send-detail-item { display: flex; align-items: center; gap: 6px; }
+    .post-send-detail-label { color: var(--text-muted); min-width: 80px; }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -4489,6 +4508,17 @@
       <div class="dialog-buttons" style="padding:12px 16px; border-top:1px solid var(--border);">
         <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
         <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post-send summary dialog -->
+  <div class="dialog-overlay" id="postSendDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box" style="max-width:460px; text-align:left;">
+      <div id="postSendContent"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" id="postSendClose">Cerrar</button>
+        <button class="btn btn-primary" id="postSendNext">Preparar siguiente</button>
       </div>
     </div>
   </div>
@@ -9452,6 +9482,73 @@
       }
     }
 
+    function showPostSendSummary(event, attendeeCount, emails) {
+      var svgCheck = '<svg class="post-send-check" viewBox="0 0 40 40">' +
+        '<circle cx="20" cy="20" r="18"/>' +
+        '<polyline points="12,21 18,27 28,15"/>' +
+        '</svg>';
+
+      var html = '<div class="post-send-header">' + svgCheck +
+        '<span class="post-send-title">Convocatoria enviada</span></div>';
+
+      var dateStr = '';
+      if (event.date) {
+        dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+          weekday: 'long', day: 'numeric', month: 'long'
+        });
+      }
+
+      html += '<div class="post-send-details">';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Título</span><span>' + esc(event.title) + '</span></div>';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Fecha</span><span>' + esc(dateStr) + '</span></div>';
+      html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Destinatarios</span><span>' + attendeeCount + ' personas</span></div>';
+
+      // Check for FUNDAE action
+      var acciones = getCatalog('acciones');
+      var titleNorm = (event.title || '').trim().toLowerCase();
+      var accion = acciones.find(function(a) {
+        return (a.nombre || '').trim().toLowerCase() === titleNorm;
+      });
+      if (accion && accion.bonificable === 'Sí' && accion.fechaInicio) {
+        var fi = new Date(accion.fechaInicio + 'T00:00:00');
+        fi.setDate(fi.getDate() - 2);
+        var deadlineStr = fi.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">FUNDAE</span><span>Comunicar inicio antes del ' + esc(deadlineStr) + '</span></div>';
+      }
+
+      // Check survey
+      if (document.getElementById('surveyCheck').checked) {
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Encuesta</span><span>Programada</span></div>';
+      }
+
+      html += '</div>';
+
+      document.getElementById('postSendContent').innerHTML = html;
+      document.getElementById('postSendDialog').classList.add('visible');
+
+      document.getElementById('postSendClose').onclick = function() {
+        document.getElementById('postSendDialog').classList.remove('visible');
+      };
+
+      document.getElementById('postSendNext').onclick = function() {
+        document.getElementById('postSendDialog').classList.remove('visible');
+        // Clear event form fields
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDate').value = '';
+        document.getElementById('eventStart').value = '10:00';
+        document.getElementById('eventEnd').value = '12:00';
+        document.getElementById('eventLocation').value = '';
+        document.getElementById('eventBody').value = '';
+        document.getElementById('eventFormador').value = '';
+        document.getElementById('eventTitle').classList.remove('error');
+        document.getElementById('eventDate').classList.remove('error');
+        // Reset excludedNIFs
+        state.excludedNIFs = new Set();
+        // Re-render attendee table
+        renderTable();
+      };
+    }
+
     function checkFundaeReadiness(eventTitle) {
       var acciones = getCatalog('acciones');
       var titleNorm = (eventTitle || '').trim().toLowerCase();
@@ -9659,6 +9756,8 @@
           }
           // Sync with matching acción formativa
           syncConvocatoriaWithAccion(event, emails);
+          // Show post-send summary
+          showPostSendSummary(event, selected.length, emails);
         }
 
         // Duplicate detection
