@@ -2042,6 +2042,17 @@
     .catalog-details-body { padding: 10px 12px; }
     .catalog-details-pending { font-size: 11px; font-weight: 400; color: var(--text-muted); }
 
+    /* --- Panel readiness FUNDAE --- */
+    .fundae-readiness { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
+    .fundae-readiness-title { font-weight: 600; color: var(--text-primary); margin-bottom: 6px; font-size: 13px; }
+    .fundae-readiness-ok { color: var(--text-secondary); }
+    .fundae-readiness-list { list-style: none; padding: 0; margin: 8px 0 0 0; }
+    .fundae-readiness-list li { padding: 4px 0; display: flex; align-items: center; gap: 6px; }
+    .fundae-readiness-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+    .fundae-readiness-list li.missing::before { background: var(--danger); }
+    .fundae-readiness-link { color: var(--accent); cursor: pointer; font-size: 11px; }
+    .fundae-readiness-link:hover { text-decoration: underline; }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3873,6 +3884,7 @@
               <option value="">-- Seleccionar acción --</option>
             </select>
             <div id="xmlAccionInfo" class="text-sm text-muted mt-sm"></div>
+            <div id="fundaeReadinessPanel" class="fundae-readiness" style="display:none;"></div>
           </div>
 
           <!-- Grupo datos -->
@@ -9477,6 +9489,128 @@
         '</ul></div>';
     }
 
+    function checkFundaeReadinessDetailed(actionCode) {
+      var acciones = getCatalog('acciones');
+      var accion = acciones.find(function(a) { return a.codigo === actionCode; });
+      if (!accion) return { complete: false, items: ['Accion no encontrada en catalogos'], narrative: 'No se encontro la accion en el catalogo.' };
+
+      var items = [];
+
+      if (!accion.nombre) items.push('Falta el nombre de la accion');
+      if (!accion.fechaInicio) items.push('Falta la fecha de inicio');
+      if (!accion.fechaFin) items.push('Falta la fecha de fin');
+      if (!accion.modalidad) items.push('Falta la modalidad');
+      var hours = Number(accion.horasPresenciales || 0) + Number(accion.horasTeleformacion || 0);
+      if (hours <= 0) items.push('No hay horas definidas (presenciales ni teleformacion)');
+      if (!accion.areaProfesional) items.push('Falta el area profesional');
+
+      var mod = (accion.modalidad || '').toLowerCase();
+      if (mod === 'presencial' || mod === 'mixta') {
+        if (!accion.centroVinculado) {
+          items.push('Sin centro de imparticion vinculado (requerido para modalidad ' + (accion.modalidad) + ')');
+        } else {
+          var centros = getCatalog('centros');
+          var centro = centros.find(function(c) { return c.documento === accion.centroVinculado; });
+          if (!centro) {
+            items.push('Centro vinculado no encontrado en catalogos');
+          } else {
+            if (!centro.nombre) items.push('Centro: falta nombre');
+            if (!centro.direccion) items.push('Centro: falta direccion');
+          }
+        }
+      }
+
+      if (!accion.tutorVinculado) {
+        items.push('Sin tutor vinculado');
+      } else {
+        var tutores = getCatalog('tutores');
+        var tutor = tutores.find(function(t) { return t.documento === accion.tutorVinculado; });
+        if (!tutor) {
+          items.push('Tutor vinculado no encontrado en catalogos');
+        } else {
+          if (!tutor.nombre) items.push('Tutor: falta nombre');
+          if (!tutor.email) items.push('Tutor: falta email');
+        }
+      }
+
+      var participantes = accion.participantes || [];
+      if (participantes.length === 0) {
+        items.push('Sin participantes asignados');
+      } else {
+        var emps = state.employees || [];
+        var sinNSS = [];
+        participantes.forEach(function(nif) {
+          var emp = emps.find(function(e) { return e.NIF === nif; });
+          if (!emp) {
+            sinNSS.push(nif);
+          } else if (!emp['_f_Numero Seguridad Social']) {
+            sinNSS.push(emp.Empleado || nif);
+          }
+        });
+        if (sinNSS.length > 0) {
+          items.push(sinNSS.length + ' de ' + participantes.length + ' participantes sin NSS: ' + sinNSS.slice(0, 3).join(', ') + (sinNSS.length > 3 ? '...' : ''));
+        }
+      }
+
+      var narrative = '';
+      if (items.length === 0) {
+        narrative = 'Todos los datos necesarios estan completos.';
+      } else {
+        narrative = 'Faltan ' + items.length + ' dato' + (items.length > 1 ? 's' : '') + ' para poder generar el XML FUNDAE correctamente.';
+      }
+
+      return { complete: items.length === 0, items: items, narrative: narrative };
+    }
+
+    function renderFundaeReadinessPanel(actionCode) {
+      var panel = document.getElementById('fundaeReadinessPanel');
+      if (!panel) return;
+      if (!actionCode) {
+        panel.style.display = 'none';
+        panel.textContent = '';
+        return;
+      }
+
+      var result = checkFundaeReadinessDetailed(actionCode);
+      panel.style.display = '';
+
+      while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+      var titleEl = document.createElement('div');
+      titleEl.className = 'fundae-readiness-title';
+      titleEl.textContent = 'Readiness FUNDAE';
+      panel.appendChild(titleEl);
+
+      if (result.complete) {
+        var okEl = document.createElement('div');
+        okEl.className = 'fundae-readiness-ok';
+        okEl.textContent = 'Todos los datos listos para generar XML';
+        panel.appendChild(okEl);
+      } else {
+        var narEl = document.createElement('div');
+        narEl.textContent = result.narrative;
+        panel.appendChild(narEl);
+
+        var ul = document.createElement('ul');
+        ul.className = 'fundae-readiness-list';
+        result.items.forEach(function(item) {
+          var li = document.createElement('li');
+          li.className = 'missing';
+          li.textContent = item;
+          ul.appendChild(li);
+        });
+        panel.appendChild(ul);
+
+        var link = document.createElement('span');
+        link.className = 'fundae-readiness-link';
+        link.textContent = 'Ir a Catalogos';
+        link.addEventListener('click', function() {
+          document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click();
+        });
+        panel.appendChild(link);
+      }
+    }
+
     function detectConflicts(emails, eventDate, startTime, endTime) {
       var history = getHistory();
       var conflicts = [];
@@ -10705,6 +10839,7 @@
         xmlState.participantes = [];
         renderXmlParticipants();
         document.getElementById('xmlAccionInfo').textContent = '';
+        renderFundaeReadinessPanel(null);
         return;
       }
 
@@ -10734,6 +10869,9 @@
       const nifs = accion.participantes || [];
       xmlState.participantes = nifs.map(nif => buildParticipantRow(nif));
       renderXmlParticipants();
+
+      // Show FUNDAE readiness panel
+      renderFundaeReadinessPanel(codigo);
     });
 
     function buildParticipantRow(nif) {
