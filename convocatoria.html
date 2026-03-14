@@ -4694,6 +4694,13 @@
         <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
       </div>
 
+      <!-- Worker profile search (F4.8) -->
+      <div style="margin:12px 0;">
+        <input class="input-field" id="workerSearchInput" type="text"
+          placeholder="Buscar persona trabajadora por nombre o NIF..." style="font-size:13px;">
+      </div>
+      <div id="workerProfilePanel" style="display:none; margin:0 0 16px; padding:16px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);"></div>
+
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
 
@@ -4812,6 +4819,13 @@
           <div id="dashProviderScorecard"></div>
         </div>
       </div>
+
+      <!-- Evaluation Kirkpatrick L1-L2 summary -->
+      <div class="dash-card" data-card-id="evaluacion-kirkpatrick" data-module="dash-evaluacion" style="margin-bottom:16px; display:none;" id="dashEvaluacionCard">
+        <div class="dash-card-title">Evaluaci&oacute;n Kirkpatrick L1-L2</div>
+        <div id="dashEvaluacion"></div>
+      </div>
+
       </div>
 
       <!-- Section: Analytics avanzado -->
@@ -5118,6 +5132,38 @@
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary dialog-btn-sm" id="batchCancel">Cancelar</button>
         <button class="btn btn-primary dialog-btn-sm" id="batchAddToQueue" disabled>Añadir a cola</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom report section selector dialog -->
+  <div class="dialog-overlay" id="customReportDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box" style="max-width:460px; text-align:left;">
+      <h3 style="text-align:center; margin-bottom:16px;">Secciones del informe</h3>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">Selecciona las secciones que deseas incluir en el informe para Direccion.</p>
+      <div id="customReportSections" style="display:flex; flex-direction:column; gap:10px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="kpis" checked> KPIs resumen
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="modalidad" checked> Distribucion por modalidad
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="departamento" checked> Participacion por departamento
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="listado"> Listado de acciones
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="compliance"> Estado de compliance
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" data-section="fundae"> Credito FUNDAE
+        </label>
+      </div>
+      <div class="dialog-buttons dialog-buttons-mt-lg">
+        <button class="btn btn-secondary" id="customReportCancel">Cancelar</button>
+        <button class="btn btn-primary" id="customReportGenerate">Generar</button>
       </div>
     </div>
   </div>
@@ -6985,6 +7031,29 @@
         var pendingFundae = countPending(pendingFundaeFields);
         var pendingFundaeHtml = pendingFundae > 0 ? '<span class="catalog-details-pending">' + pendingFundae + ' pendientes</span>' : '';
 
+        // --- Section builder helpers ---
+        var sectionEnd = '</div></details>';
+
+        function sectionHeader(id, label, filled, total, defaultOpen) {
+          var badge = '';
+          if (total > 0) {
+            badge = ' <span class="catalog-details-pending">' + filled + '/' + total + '</span>';
+          } else if (filled > 0) {
+            badge = ' <span class="catalog-details-pending">' + filled + '</span>';
+          }
+          return '<details class="catalog-details"' + (defaultOpen ? ' open' : '') + '>' +
+            '<summary>' + label + badge + '</summary>' +
+            '<div class="catalog-details-body">';
+        }
+
+        function countFilled(fields) {
+          var n = 0;
+          fields.forEach(function(f) { if (record[f]) n++; });
+          return n;
+        }
+
+        var secVinculacionFields = ['proveedorVinculado','centroVinculado','tutorVinculado'];
+
         // 1. Datos básicos (open by default)
         body = '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
@@ -7116,7 +7185,62 @@
           '<div id="cfParticipantList" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>' +
           '<button class="btn btn-secondary" id="btnAssignParticipants" style="font-size:12px;">Asignar participantes</button>' +
           ' <button class="link-btn link-add" id="btnCopyParticipants" style="font-size:11px; margin-left:8px;">Copiar de otra acci\u00F3n</button>' +
-          sectionEnd;
+          sectionEnd +
+
+        // 8. Evaluación Kirkpatrick L1-L2 (default: collapsed)
+        (function() {
+          var ev = record.evaluacion || {};
+          var l1 = ev.l1 || {};
+          var l2 = ev.l2 || {};
+          var hasData = (l1.utilidad != null || l1.calidadFormador != null || l1.materiales != null || l1.nps != null || l1.respuestas != null || l2.preTest != null || l2.postTest != null);
+          var mejora = (l2.preTest != null && l2.postTest != null && l2.preTest !== '' && l2.postTest !== '')
+            ? (parseFloat(l2.postTest) - parseFloat(l2.preTest)).toFixed(1) : '';
+          var mejoraColor = mejora !== '' ? (parseFloat(mejora) > 0 ? 'var(--success)' : parseFloat(mejora) < 0 ? 'var(--danger)' : 'var(--text-muted)') : 'var(--text-muted)';
+          var mejoraPrefix = mejora !== '' && parseFloat(mejora) > 0 ? '+' : '';
+
+          return sectionHeader('evaluacion', 'Evaluaci\u00F3n (Kirkpatrick L1-L2)', hasData ? 1 : 0, 0, false) +
+            '<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:8px;">L1 \u2014 Reacci\u00F3n</div>' +
+            '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;">' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Utilidad (1-5)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL1Utilidad" value="' + (l1.utilidad != null ? esc(String(l1.utilidad)) : '') + '" min="1" max="5" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Calidad formador (1-5)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL1CalidadFormador" value="' + (l1.calidadFormador != null ? esc(String(l1.calidadFormador)) : '') + '" min="1" max="5" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Materiales (1-5)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL1Materiales" value="' + (l1.materiales != null ? esc(String(l1.materiales)) : '') + '" min="1" max="5" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">NPS (0-10)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL1Nps" value="' + (l1.nps != null ? esc(String(l1.nps)) : '') + '" min="0" max="10" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">N\u00BA respuestas</label>' +
+                '<input class="input-field" type="number" id="cf_evalL1Respuestas" value="' + (l1.respuestas != null ? esc(String(l1.respuestas)) : '') + '" min="0" step="1" style="font-size:13px;">' +
+              '</div>' +
+            '</div>' +
+            '<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin:12px 0 8px;">L2 \u2014 Aprendizaje</div>' +
+            '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px 12px;">' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Pre-test (%)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL2PreTest" value="' + (l2.preTest != null ? esc(String(l2.preTest)) : '') + '" min="0" max="100" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Post-test (%)</label>' +
+                '<input class="input-field" type="number" id="cf_evalL2PostTest" value="' + (l2.postTest != null ? esc(String(l2.postTest)) : '') + '" min="0" max="100" step="0.1" style="font-size:13px;">' +
+              '</div>' +
+              '<div style="margin-bottom:6px;">' +
+                '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Mejora (auto)</label>' +
+                '<div id="cf_evalL2Mejora" style="font-size:15px; font-weight:700; color:' + mejoraColor + '; padding:6px 0;">' +
+                  (mejora !== '' ? mejoraPrefix + mejora + ' pp' : '\u2014') +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            sectionEnd;
+        })();
       }
 
       return '<div style="display:flex; flex-direction:column; height:100%;">' +
@@ -7320,6 +7444,30 @@
 
         // Confirmation tracking
         bindConfirmacionesEvents(record);
+
+        // Evaluation L2 auto-calculate mejora
+        var evalPreEl = document.getElementById('cf_evalL2PreTest');
+        var evalPostEl = document.getElementById('cf_evalL2PostTest');
+        if (evalPreEl && evalPostEl) {
+          function updateMejora() {
+            var mejoraEl = document.getElementById('cf_evalL2Mejora');
+            if (!mejoraEl) return;
+            var pre = parseFloat(evalPreEl.value);
+            var post = parseFloat(evalPostEl.value);
+            if (!isNaN(pre) && !isNaN(post)) {
+              var diff = (post - pre).toFixed(1);
+              var color = parseFloat(diff) > 0 ? 'var(--success)' : parseFloat(diff) < 0 ? 'var(--danger)' : 'var(--text-muted)';
+              var prefix = parseFloat(diff) > 0 ? '+' : '';
+              mejoraEl.style.color = color;
+              mejoraEl.textContent = prefix + diff + ' pp';
+            } else {
+              mejoraEl.style.color = 'var(--text-muted)';
+              mejoraEl.textContent = '\u2014';
+            }
+          }
+          evalPreEl.addEventListener('input', updateMejora);
+          evalPostEl.addEventListener('input', updateMejora);
+        }
 
         // Participant linking
         renderAccionParticipants(record);
@@ -8246,6 +8394,33 @@
         record.comunicacionFinEnviada = existingAccion ? (existingAccion.comunicacionFinEnviada || false) : false;
         record.rltEstado = existingAccion ? (existingAccion.rltEstado || 'Pendiente') : 'Pendiente';
         record.rltFechaEnvio = existingAccion ? (existingAccion.rltFechaEnvio || '') : '';
+
+        // Collect evaluation (Kirkpatrick L1-L2) data from form
+        var evalL1Utilidad = val('evalL1Utilidad');
+        var evalL1CalidadFormador = val('evalL1CalidadFormador');
+        var evalL1Materiales = val('evalL1Materiales');
+        var evalL1Nps = val('evalL1Nps');
+        var evalL1Respuestas = val('evalL1Respuestas');
+        var evalL2PreTest = val('evalL2PreTest');
+        var evalL2PostTest = val('evalL2PostTest');
+        var hasEval = (evalL1Utilidad !== '' || evalL1CalidadFormador !== '' || evalL1Materiales !== '' || evalL1Nps !== '' || evalL1Respuestas !== '' || evalL2PreTest !== '' || evalL2PostTest !== '');
+        if (hasEval) {
+          record.evaluacion = {
+            l1: {
+              utilidad: evalL1Utilidad ? parseFloat(evalL1Utilidad) : null,
+              calidadFormador: evalL1CalidadFormador ? parseFloat(evalL1CalidadFormador) : null,
+              materiales: evalL1Materiales ? parseFloat(evalL1Materiales) : null,
+              nps: evalL1Nps ? parseFloat(evalL1Nps) : null,
+              respuestas: evalL1Respuestas ? parseInt(evalL1Respuestas, 10) : null
+            },
+            l2: {
+              preTest: evalL2PreTest ? parseFloat(evalL2PreTest) : null,
+              postTest: evalL2PostTest ? parseFloat(evalL2PostTest) : null
+            }
+          };
+        } else {
+          record.evaluacion = existingAccion ? (existingAccion.evaluacion || null) : null;
+        }
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
         else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
@@ -16287,6 +16462,160 @@
       }
     }
 
+    function renderEvaluacionKirkpatrick(containerId, acciones) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.textContent = '';
+
+      var card = document.getElementById('dashEvaluacionCard');
+
+      // Filter actions that have evaluation data
+      var evaluated = acciones.filter(function(a) {
+        if (!a.evaluacion) return false;
+        var l1 = a.evaluacion.l1 || {};
+        var l2 = a.evaluacion.l2 || {};
+        return (l1.utilidad != null || l1.calidadFormador != null || l1.materiales != null || l1.nps != null || l2.preTest != null || l2.postTest != null);
+      });
+
+      if (evaluated.length === 0) {
+        if (card) card.style.display = 'none';
+        return;
+      }
+
+      if (card) card.style.display = '';
+
+      // Compute averages
+      var sumUtil = 0, cntUtil = 0;
+      var sumCalidad = 0, cntCalidad = 0;
+      var sumMat = 0, cntMat = 0;
+      var sumNps = 0, cntNps = 0;
+      var sumMejora = 0, cntMejora = 0;
+      var totalRespuestas = 0;
+
+      evaluated.forEach(function(a) {
+        var l1 = a.evaluacion.l1 || {};
+        var l2 = a.evaluacion.l2 || {};
+        if (l1.utilidad != null) { sumUtil += l1.utilidad; cntUtil++; }
+        if (l1.calidadFormador != null) { sumCalidad += l1.calidadFormador; cntCalidad++; }
+        if (l1.materiales != null) { sumMat += l1.materiales; cntMat++; }
+        if (l1.nps != null) { sumNps += l1.nps; cntNps++; }
+        if (l1.respuestas != null) { totalRespuestas += l1.respuestas; }
+        if (l2.preTest != null && l2.postTest != null) {
+          sumMejora += (l2.postTest - l2.preTest);
+          cntMejora++;
+        }
+      });
+
+      var avgUtil = cntUtil > 0 ? (sumUtil / cntUtil).toFixed(1) : null;
+      var avgCalidad = cntCalidad > 0 ? (sumCalidad / cntCalidad).toFixed(1) : null;
+      var avgMat = cntMat > 0 ? (sumMat / cntMat).toFixed(1) : null;
+      var avgNps = cntNps > 0 ? (sumNps / cntNps).toFixed(1) : null;
+      var avgMejora = cntMejora > 0 ? (sumMejora / cntMejora).toFixed(1) : null;
+
+      // NPS classification
+      var npsClass = '';
+      var npsColor = 'var(--text-primary)';
+      if (avgNps !== null) {
+        var npsVal = parseFloat(avgNps);
+        if (npsVal >= 9) { npsClass = 'Excelente'; npsColor = 'var(--success)'; }
+        else if (npsVal >= 7) { npsClass = 'Bueno'; npsColor = 'var(--accent)'; }
+        else if (npsVal >= 5) { npsClass = 'Neutro'; npsColor = 'var(--warning)'; }
+        else { npsClass = 'Bajo'; npsColor = 'var(--danger)'; }
+      }
+
+      // KPI row
+      var kpiRow = document.createElement('div');
+      kpiRow.className = 'dash-mini-kpi-row';
+
+      function addMiniKpi(label, value, color) {
+        var d = document.createElement('div');
+        d.className = 'dash-mini-kpi';
+        var v = document.createElement('div');
+        v.className = 'dash-mini-kpi-value';
+        v.style.color = color || 'var(--text-primary)';
+        v.textContent = value;
+        var l = document.createElement('div');
+        l.className = 'dash-mini-kpi-label';
+        l.textContent = label;
+        d.appendChild(v);
+        d.appendChild(l);
+        kpiRow.appendChild(d);
+      }
+
+      addMiniKpi('NPS medio', avgNps !== null ? avgNps : '\u2014', npsColor);
+      addMiniKpi('Utilidad', avgUtil !== null ? avgUtil + '/5' : '\u2014', 'var(--accent)');
+      addMiniKpi('Calidad formador', avgCalidad !== null ? avgCalidad + '/5' : '\u2014', 'var(--accent)');
+      addMiniKpi('Materiales', avgMat !== null ? avgMat + '/5' : '\u2014', 'var(--accent)');
+      var mejoraColor = avgMejora !== null ? (parseFloat(avgMejora) > 0 ? 'var(--success)' : parseFloat(avgMejora) < 0 ? 'var(--danger)' : 'var(--text-muted)') : 'var(--text-muted)';
+      var mejoraPrefix = avgMejora !== null && parseFloat(avgMejora) > 0 ? '+' : '';
+      addMiniKpi('Mejora L2', avgMejora !== null ? mejoraPrefix + avgMejora + ' pp' : '\u2014', mejoraColor);
+
+      container.appendChild(kpiRow);
+
+      // Summary text
+      var summary = document.createElement('div');
+      summary.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-top:10px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;';
+      summary.innerHTML =
+        '<span>' + evaluated.length + ' de ' + acciones.length + ' acciones evaluadas</span>' +
+        '<span>' + totalRespuestas + ' respuestas totales</span>' +
+        (npsClass ? '<span style="font-weight:600; color:' + npsColor + ';">NPS: ' + esc(npsClass) + '</span>' : '');
+      container.appendChild(summary);
+
+      // Per-action table
+      if (evaluated.length > 0) {
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse; margin-top:12px;';
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        ['Acci\u00F3n','Utilidad','Formador','Materiales','NPS','Resp.','Pre','Post','Mejora'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.style.cssText = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text-muted); font-weight:500; font-size:10px;';
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        evaluated.forEach(function(a) {
+          var l1 = a.evaluacion.l1 || {};
+          var l2 = a.evaluacion.l2 || {};
+          var mejora = (l2.preTest != null && l2.postTest != null) ? (l2.postTest - l2.preTest).toFixed(1) : null;
+          var mColor = mejora !== null ? (parseFloat(mejora) > 0 ? 'var(--success)' : parseFloat(mejora) < 0 ? 'var(--danger)' : 'var(--text-muted)') : '';
+          var mPrefix = mejora !== null && parseFloat(mejora) > 0 ? '+' : '';
+
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'border-bottom:1px solid var(--border);';
+
+          var tdName = document.createElement('td');
+          tdName.style.cssText = 'padding:4px 6px; font-weight:500; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+          tdName.textContent = (a.codigo || '') + ' ' + (a.nombre || '');
+          tdName.title = (a.codigo || '') + ' ' + (a.nombre || '');
+          tr.appendChild(tdName);
+
+          function addCell(val, style) {
+            var td = document.createElement('td');
+            td.style.cssText = 'padding:4px 6px; text-align:center; font-variant-numeric:tabular-nums;' + (style || '');
+            td.textContent = val != null ? String(val) : '\u2014';
+            tr.appendChild(td);
+          }
+
+          addCell(l1.utilidad);
+          addCell(l1.calidadFormador);
+          addCell(l1.materiales);
+          addCell(l1.nps, l1.nps != null && l1.nps >= 9 ? 'color:var(--success);font-weight:600;' : (l1.nps != null && l1.nps < 5 ? 'color:var(--danger);font-weight:600;' : ''));
+          addCell(l1.respuestas);
+          addCell(l2.preTest != null ? l2.preTest + '%' : null);
+          addCell(l2.postTest != null ? l2.postTest + '%' : null);
+          addCell(mejora !== null ? mPrefix + mejora + ' pp' : null, 'color:' + mColor + ';font-weight:600;');
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+    }
+
     // --- Dashboard nav ---
     document.querySelectorAll('.dash-nav-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -17401,6 +17730,33 @@
       }
     }
 
+    // ═══════════════════════════════════
+    // DEMO DATA (F4.11)
+    // ═══════════════════════════════════
+
+    function loadDemoData() {
+      // Guard: remove any existing demo actions first to avoid duplicates
+      var catalog = getCatalog('acciones').filter(function(a) { return !(a.codigo && a.codigo.startsWith('DEMO-')); });
+      var demoActions = [
+        { nombre: 'Prevención de Riesgos Laborales', codigo: 'DEMO-PRL', modalidad: 'Presencial', horasPresenciales: 8, horasTeleformacion: 0, fechaInicio: '2026-01-15', fechaFin: '2026-01-15', estado: 'Cerrada', participantes: ['DEMO001','DEMO002','DEMO003'], bonificable: 'Sí', presupuesto: 1200, evaluacion: { l1: { utilidad: 4.2, calidadFormador: 4.5, materiales: 3.8, nps: 8.5, respuestas: 12 }, l2: { preTest: 45, postTest: 72 } } },
+        { nombre: 'Protección de Datos (LOPD/RGPD)', codigo: 'DEMO-LOPD', modalidad: 'Teleformación', horasPresenciales: 0, horasTeleformacion: 4, fechaInicio: '2026-02-10', fechaFin: '2026-02-28', estado: 'Convocada', participantes: ['DEMO001','DEMO004'], bonificable: 'Sí', presupuesto: 800, evaluacion: { l1: { utilidad: 3.9, calidadFormador: 4.0, materiales: 4.1, nps: 7.2, respuestas: 8 }, l2: { preTest: 60, postTest: 78 } } },
+        { nombre: 'Liderazgo y Gestión de Equipos', codigo: 'DEMO-LID', modalidad: 'Mixta', horasPresenciales: 12, horasTeleformacion: 8, fechaInicio: '2026-03-01', fechaFin: '2026-03-31', estado: 'En preparación', participantes: ['DEMO005'], bonificable: 'No', presupuesto: 3500 }
+      ];
+      state._demoMode = true;
+      demoActions.forEach(function(a) { catalog.push(a); });
+      saveCatalog('acciones', catalog);
+      renderDashboard();
+      showToast('Datos de ejemplo cargados', 'info');
+    }
+
+    function clearDemoData() {
+      var catalog = getCatalog('acciones').filter(function(a) { return !(a.codigo && a.codigo.startsWith('DEMO-')); });
+      saveCatalog('acciones', catalog);
+      state._demoMode = false;
+      renderDashboard();
+      showToast('Datos de ejemplo eliminados', 'info');
+    }
+
     function renderDashboard() {
       hideDashboardSkeleton();
       autoTransitionEstados();
@@ -17420,13 +17776,21 @@
       var dashContainer = document.getElementById('dashContainer');
       if (allAcciones.length === 0) {
         dashEmpty.textContent = '';
-        dashEmpty.appendChild(createEmptyState({
+        var emptyWidget = createEmptyState({
           icon: '\uD83D\uDCCA',
           title: 'Sin datos en el cuadro de mando',
           desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
           ctaText: 'Ir a Catálogos',
           ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
-        }));
+        });
+        // F4.11: Demo data button in empty state
+        var demoBtn = document.createElement('button');
+        demoBtn.className = 'btn empty-state-cta';
+        demoBtn.textContent = 'Ver datos de ejemplo';
+        demoBtn.style.cssText = 'background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);';
+        demoBtn.addEventListener('click', loadDemoData);
+        emptyWidget.appendChild(demoBtn);
+        dashEmpty.appendChild(emptyWidget);
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
@@ -17434,6 +17798,24 @@
         dashEmpty.style.display = 'none';
         dashContainer.style.display = '';
         ActivationChecklist.markDone('exploreDash');
+      }
+
+      // F4.11: Demo mode banner
+      var existingBanner = document.getElementById('demoBanner');
+      if (existingBanner) existingBanner.remove();
+      if (state._demoMode) {
+        var banner = document.createElement('div');
+        banner.id = 'demoBanner';
+        banner.style.cssText = 'background:var(--warning);color:white;padding:8px 16px;border-radius:var(--radius);margin:0 16px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center;';
+        var bannerText = document.createElement('span');
+        bannerText.textContent = 'Est\u00e1s viendo datos de ejemplo';
+        banner.appendChild(bannerText);
+        var bannerBtn = document.createElement('button');
+        bannerBtn.textContent = 'Eliminar datos de ejemplo';
+        bannerBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:white;padding:4px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;';
+        bannerBtn.addEventListener('click', clearDemoData);
+        banner.appendChild(bannerBtn);
+        dashContainer.insertBefore(banner, dashContainer.firstChild);
       }
 
       // --- Computed stats (F3.15: use cache if hash matches) ---
@@ -18076,7 +18458,7 @@
       // Wire direction report button
       var dirReportBtn = document.getElementById('btnReportDirection');
       if (dirReportBtn) {
-        dirReportBtn.onclick = function() { generateDirectionReport(); };
+        dirReportBtn.onclick = function() { showCustomReportDialog(); };
       }
 
       // Phase 2: Render analytics modules incrementally
@@ -18091,6 +18473,7 @@
           renderSurveyCoverage('dashSurveyCoverage', acciones);
           renderGestorActivity('dashGestorActivity', acciones);
           renderProviderScorecard('dashProviderScorecard', acciones);
+          renderEvaluacionKirkpatrick('dashEvaluacion', acciones);
         });
       });
 
@@ -19532,7 +19915,39 @@
     // DIRECTION REPORT (F3.9)
     // ═══════════════════════════════════
 
-    function generateDirectionReport() {
+    function showCustomReportDialog() {
+      var dialog = document.getElementById('customReportDialog');
+      // Reset checkboxes to defaults
+      var checks = dialog.querySelectorAll('input[data-section]');
+      checks.forEach(function(cb) {
+        var s = cb.getAttribute('data-section');
+        cb.checked = (s === 'kpis' || s === 'modalidad' || s === 'departamento');
+      });
+      dialog.classList.add('visible');
+
+      var cancelBtn = document.getElementById('customReportCancel');
+      var generateBtn = document.getElementById('customReportGenerate');
+
+      cancelBtn.onclick = function() { closeDialogAnimated(dialog); };
+      generateBtn.onclick = function() {
+        var sections = {};
+        dialog.querySelectorAll('input[data-section]').forEach(function(cb) {
+          sections[cb.getAttribute('data-section')] = cb.checked;
+        });
+        closeDialogAnimated(dialog);
+        generateDirectionReport(sections);
+      };
+
+      // Close on overlay click
+      dialog.onclick = function(e) {
+        if (e.target === dialog) closeDialogAnimated(dialog);
+      };
+    }
+
+    function generateDirectionReport(sections) {
+      if (!sections) {
+        sections = { kpis: true, modalidad: true, departamento: true, listado: true, compliance: true, fundae: true };
+      }
       var year = new Date().getFullYear();
       var allActions = getCatalog('acciones') || [];
       var actions = allActions.filter(function(a) {
@@ -19558,9 +19973,59 @@
       var deptRows = Object.keys(byDept).sort(function(a, b) { return byDept[b] - byDept[a]; }).slice(0, 10)
         .map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byDept[k] + '</td></tr>'; }).join('');
 
+      // Listado de acciones rows
+      var actionRows = '';
+      if (sections.listado !== false) {
+        actionRows = actions.map(function(a) {
+          var horas = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
+          var nPart = (a.participantes || []).length;
+          return '<tr><td>' + esc(a.codigo || '') + '</td><td>' + esc(a.nombre || '') + '</td><td>' + esc(a.modalidad || '-') + '</td><td style="text-align:center">' + horas + '</td><td style="text-align:center">' + nPart + '</td></tr>';
+        }).join('');
+      }
+
+      // Compliance data
+      var complianceHtml = '';
+      if (sections.compliance !== false) {
+        var completed = actions.filter(function(a) { return a.estado === 'Completada' || a.estado === 'Finalizada'; }).length;
+        var inProgress = actions.filter(function(a) { return a.estado === 'En curso' || a.estado === 'En progreso'; }).length;
+        var pending = actions.filter(function(a) { return a.estado === 'Pendiente' || a.estado === 'Planificada'; }).length;
+        var other = totalActions - completed - inProgress - pending;
+        complianceHtml = '<h2>Estado de compliance</h2>'
+          + '<table><thead><tr><th>Estado</th><th>Acciones</th><th>%</th></tr></thead><tbody>'
+          + '<tr><td>Completadas</td><td>' + completed + '</td><td>' + (totalActions > 0 ? Math.round(completed / totalActions * 100) : 0) + '%</td></tr>'
+          + '<tr><td>En curso</td><td>' + inProgress + '</td><td>' + (totalActions > 0 ? Math.round(inProgress / totalActions * 100) : 0) + '%</td></tr>'
+          + '<tr><td>Pendientes</td><td>' + pending + '</td><td>' + (totalActions > 0 ? Math.round(pending / totalActions * 100) : 0) + '%</td></tr>'
+          + (other > 0 ? '<tr><td>Otros</td><td>' + other + '</td><td>' + Math.round(other / totalActions * 100) + '%</td></tr>' : '')
+          + '</tbody></table>';
+      }
+
+      // FUNDAE credit data
+      var fundaeHtml = '';
+      if (sections.fundae !== false) {
+        var empresas = getEmpresasGrupo();
+        var bonificables = actions.filter(function(a) { return a.bonificable === 'Si' || a.bonificable === 'Sí'; });
+        var consumido = {};
+        bonificables.forEach(function(a) {
+          if (a.empresaPagadora && Number(a.presupuesto)) {
+            consumido[a.empresaPagadora] = (consumido[a.empresaPagadora] || 0) + Number(a.presupuesto);
+          }
+        });
+        var totalCredito = empresas.reduce(function(s, e) { return s + e.credito; }, 0);
+        var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
+        var fundaeRows = empresas.map(function(e) {
+          var cons = consumido[e.cif] || 0;
+          var pct = e.credito > 0 ? Math.round(cons / e.credito * 100) : 0;
+          return '<tr><td>' + esc(e.razonSocial) + '</td><td>' + e.credito.toLocaleString('es-ES') + ' &euro;</td><td>' + cons.toLocaleString('es-ES') + ' &euro;</td><td>' + pct + '%</td></tr>';
+        }).join('');
+        fundaeHtml = '<h2>Credito FUNDAE</h2>'
+          + '<table><thead><tr><th>Empresa</th><th>Credito</th><th>Consumido</th><th>% Uso</th></tr></thead><tbody>' + fundaeRows + '</tbody></table>'
+          + '<div style="font-size:11px; color:#475569; margin-top:4px;">Total credito: ' + totalCredito.toLocaleString('es-ES') + ' &euro; | Consumido: ' + totalConsumido.toLocaleString('es-ES') + ' &euro; | Disponible: ' + (totalCredito - totalConsumido).toLocaleString('es-ES') + ' &euro;</div>';
+      }
+
       var w = window.open('', '_blank');
       if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
-      w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
+
+      var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
         + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
         + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}'
         + '.ht{font-size:20px;font-weight:600} .hs{font-size:13px;color:#475569;margin-top:4px} .hb{font-size:11px;color:#94a3b8}'
@@ -19573,19 +20038,44 @@
         + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
         + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
         + '</style></head><body>'
-        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>'
-        + '<div class="kpis">'
-        + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
-        + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
-        + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
-        + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
-        + '</div>'
-        + '<h2>Distribucion por modalidad</h2>'
-        + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>'
-        + '<h2>Participacion por departamento (Top 10)</h2>'
-        + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>'
-        + '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
-        + '</body></html>');
+        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>';
+
+      if (sections.kpis !== false) {
+        html += '<div class="kpis">'
+          + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
+          + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
+          + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
+          + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
+          + '</div>';
+      }
+
+      if (sections.modalidad !== false) {
+        html += '<h2>Distribucion por modalidad</h2>'
+          + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>';
+      }
+
+      if (sections.departamento !== false) {
+        html += '<h2>Participacion por departamento (Top 10)</h2>'
+          + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>';
+      }
+
+      if (sections.listado !== false) {
+        html += '<h2>Listado de acciones formativas</h2>'
+          + '<table><thead><tr><th>Codigo</th><th>Nombre</th><th>Modalidad</th><th style="text-align:center">Horas</th><th style="text-align:center">Participantes</th></tr></thead><tbody>' + actionRows + '</tbody></table>';
+      }
+
+      if (sections.compliance !== false) {
+        html += complianceHtml;
+      }
+
+      if (sections.fundae !== false) {
+        html += fundaeHtml;
+      }
+
+      html += '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
+        + '</body></html>';
+
+      w.document.write(html);
       w.document.close();
       setTimeout(function() { w.print(); }, 300);
     }
@@ -19834,6 +20324,114 @@
       XLSX.writeFile(wb, 'Informe_Formacion_' + new Date().getFullYear() + '.xlsx');
       showToast('Informe exportado', 'success');
     }
+
+    // ═══════════════════════════════════
+    // WORKER TRAINING PROFILE (F4.8)
+    // ═══════════════════════════════════
+
+    function renderWorkerProfile(emp) {
+      var panel = document.getElementById('workerProfilePanel');
+      if (!panel) return;
+      var acciones = getCatalog('acciones');
+      var nif = emp.NIF || '';
+      var empAcciones = acciones.filter(function(a) {
+        return (a.participantes || []).indexOf(nif) !== -1;
+      });
+
+      var totalHours = 0;
+      empAcciones.forEach(function(a) {
+        totalHours += (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
+      });
+
+      var parts = [];
+      // Header
+      parts.push('<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">');
+      parts.push('<div>');
+      parts.push('<div style="font-size:15px; font-weight:700; color:var(--text-primary);">');
+      parts.push(esc(emp.Empleado || ''));
+      parts.push('</div>');
+      parts.push('<div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">');
+      parts.push('NIF: ' + esc(nif));
+      if (emp.Empresa) parts.push(' &middot; ' + esc(emp.Empresa));
+      if (emp.Departamento) parts.push(' &middot; ' + esc(emp.Departamento));
+      if (emp.Puesto) parts.push(' &middot; ' + esc(emp.Puesto));
+      parts.push('</div></div>');
+      // Close button
+      var closeBtn = document.createElement('button');
+      closeBtn.textContent = '\u00D7';
+      closeBtn.title = 'Cerrar';
+      closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;';
+      closeBtn.onclick = function() {
+        document.getElementById('workerProfilePanel').style.display = 'none';
+        document.getElementById('workerSearchInput').value = '';
+      };
+
+      parts.push('</div>');
+
+      // Summary KPIs
+      parts.push('<div style="display:flex; gap:16px; margin-bottom:12px;">');
+      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
+      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(empAcciones.length)) + '</div>');
+      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Formaciones</div>');
+      parts.push('</div>');
+      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
+      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(totalHours)) + '</div>');
+      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Horas totales</div>');
+      parts.push('</div></div>');
+
+      if (empAcciones.length === 0) {
+        parts.push('<div style="font-size:13px; color:var(--text-muted); padding:12px 0; text-align:center;">Sin participaciones registradas.</div>');
+      } else {
+        parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Historial de participaciones</div>');
+        parts.push('<div style="max-height:260px; overflow-y:auto;">');
+        empAcciones.forEach(function(a) {
+          var hP = Number(a.horasPresenciales) || 0;
+          var hT = Number(a.horasTeleformacion) || 0;
+          var horas = hP + hT;
+          var fechas = '';
+          if (a.fechaInicio) {
+            fechas = esc(a.fechaInicio);
+            if (a.fechaFin) fechas += ' \u2013 ' + esc(a.fechaFin);
+          }
+          parts.push('<div style="padding:8px 10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">');
+          parts.push('<div style="flex:1; min-width:0;">');
+          parts.push('<div style="font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(a.nombre || a.codigo || '') + '</div>');
+          if (fechas) parts.push('<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + fechas + '</div>');
+          parts.push('</div>');
+          parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-left:12px; white-space:nowrap; font-variant-numeric:tabular-nums;">' + esc(String(horas)) + ' h</div>');
+          parts.push('</div>');
+        });
+        parts.push('</div>');
+      }
+
+      panel.textContent = '';
+      // Build a wrapper for the HTML content
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = parts.join('');
+      // Insert close button into the header flex container
+      var headerFlex = wrapper.querySelector('div');
+      if (headerFlex) headerFlex.appendChild(closeBtn);
+      panel.appendChild(wrapper);
+      panel.style.display = '';
+    }
+
+    (function() {
+      var input = document.getElementById('workerSearchInput');
+      if (!input) return;
+      input.addEventListener('input', function() {
+        var self = this;
+        clearTimeout(self._timer);
+        self._timer = setTimeout(function() {
+          var q = self.value.trim().toLowerCase();
+          if (q.length < 2) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+          var match = (state.employees || []).find(function(emp) {
+            return (emp.Empleado || '').toLowerCase().indexOf(q) !== -1 || (emp.NIF || '').toLowerCase().indexOf(q) !== -1;
+          });
+          if (!match) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
+          renderWorkerProfile(match);
+        }, 300);
+      });
+    })();
 
     // ═══════════════════════════════════
     // EMPLOYEE TRAINING REPORT
