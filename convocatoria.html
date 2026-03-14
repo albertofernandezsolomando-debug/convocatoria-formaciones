@@ -2027,6 +2027,16 @@
       font-size: 11px;
     }
 
+    /* --- Tracking formacion obligatoria --- */
+    .compliance-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    .compliance-table th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+    .compliance-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+    .compliance-expired { color: var(--danger); font-weight: 600; }
+    .compliance-summary { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+    .compliance-type-card { padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .compliance-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+    .compliance-type-meta { font-size: 11px; color: var(--text-muted); }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -3806,6 +3816,7 @@
         <button class="catalog-tab" data-catalog="centros">Centros</button>
         <button class="catalog-tab" data-catalog="tutores">Tutores</button>
         <button class="catalog-tab" data-catalog="acciones">Acciones</button>
+        <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
       </div>
       <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
         <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
@@ -3839,6 +3850,7 @@
         <div class="catalog-list-table-wrapper" id="catalogListTableWrapper"></div>
         <div class="catalog-list-new-row" id="catalogListNewRow"></div>
       </div>
+      <div id="complianceViewContainer" style="display:none; flex:1; min-height:0; overflow-y:auto; padding:0;"></div>
     </div>
   </div>
 
@@ -5539,6 +5551,210 @@
       });
     }
 
+    // ═══════════════════════════════════
+    // COMPLIANCE VIEW (Formación obligatoria)
+    // ═══════════════════════════════════
+
+    function renderComplianceView() {
+      var container = document.getElementById('complianceViewContainer');
+      if (!container) return;
+
+      var now = new Date();
+      var types = state.complianceTypes;
+      var records = state.complianceRecords;
+      var employees = state.employees || [];
+      var limitedEmployees = employees.slice(0, 100);
+
+      // Count expired
+      var expiredItems = [];
+      limitedEmployees.forEach(function(emp) {
+        var nif = emp['NIF'] || '';
+        if (!nif) return;
+        types.forEach(function(ct) {
+          var key = nif + '|' + ct.id;
+          var rec = records[key];
+          if (rec && rec.date) {
+            var completionDate = new Date(rec.date);
+            var expiryDate = new Date(completionDate);
+            expiryDate.setMonth(expiryDate.getMonth() + (ct.periodMonths || 12));
+            if (expiryDate < now) {
+              expiredItems.push({ emp: emp, type: ct, expiry: expiryDate });
+            }
+          } else if (!rec || !rec.date) {
+            expiredItems.push({ emp: emp, type: ct, expiry: null });
+          }
+        });
+      });
+
+      var parts = [];
+
+      parts.push('<div style="display:flex; height:100%; min-height:0;">');
+
+      // Left panel: compliance types
+      parts.push('<div style="width:320px; min-width:320px; border-right:1px solid var(--border); padding:16px; overflow-y:auto;">');
+      parts.push('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">');
+      parts.push('<span style="font-size:14px; font-weight:600; color:var(--text-primary);">Tipos de formación</span>');
+      parts.push('<button class="btn btn-primary" id="btnAddComplianceType" style="font-size:11px; padding:4px 10px;">+ Añadir</button>');
+      parts.push('</div>');
+
+      if (types.length === 0) {
+        parts.push('<div style="color:var(--text-muted); font-size:12px; padding:20px 0; text-align:center;">No hay tipos definidos.<br>Añade un tipo de formación obligatoria.</div>');
+      } else {
+        types.forEach(function(ct) {
+          parts.push('<div class="compliance-type-card" data-compliance-id="' + esc(ct.id) + '">');
+          parts.push('<div>');
+          parts.push('<div class="compliance-type-name">' + esc(ct.name) + '</div>');
+          parts.push('<div class="compliance-type-meta">Caduca cada ' + ct.periodMonths + ' meses</div>');
+          parts.push('</div>');
+          parts.push('<button class="link-btn compliance-delete-type" data-compliance-id="' + esc(ct.id) + '" style="color:var(--danger); font-size:11px;">Eliminar</button>');
+          parts.push('</div>');
+        });
+      }
+      parts.push('</div>');
+
+      // Right panel: matrix table
+      parts.push('<div style="flex:1; min-width:0; overflow:auto; padding:16px;">');
+
+      if (types.length === 0 || employees.length === 0) {
+        parts.push('<div style="color:var(--text-muted); font-size:13px; padding:40px; text-align:center;">');
+        if (employees.length === 0) {
+          parts.push('Carga un archivo de personas trabajadoras para ver la matriz de cumplimiento.');
+        } else {
+          parts.push('Añade tipos de formación obligatoria en el panel izquierdo.');
+        }
+        parts.push('</div>');
+      } else {
+        // Summary
+        parts.push('<div class="compliance-summary">');
+        parts.push('<strong>' + expiredItems.length + '</strong> registro' + (expiredItems.length !== 1 ? 's' : '') + ' caducado' + (expiredItems.length !== 1 ? 's' : '') + ' o sin completar');
+        if (employees.length > 100) {
+          parts.push(' <span style="color:var(--warning);">(mostrando primeras 100 personas trabajadoras)</span>');
+        }
+        parts.push('</div>');
+
+        // Create convocatoria button
+        if (expiredItems.length > 0) {
+          parts.push('<div style="padding:8px 0 12px;">');
+          parts.push('<button class="btn btn-primary" id="btnComplianceConvocatoria" style="font-size:12px;">Crear convocatoria con personas afectadas</button>');
+          parts.push('</div>');
+        }
+
+        // Matrix table
+        parts.push('<table class="compliance-table"><thead><tr>');
+        parts.push('<th>Persona trabajadora</th><th>NIF</th>');
+        types.forEach(function(ct) {
+          parts.push('<th>' + esc(ct.name) + '</th>');
+        });
+        parts.push('</tr></thead><tbody>');
+
+        limitedEmployees.forEach(function(emp) {
+          var nif = emp['NIF'] || '';
+          var empName = emp['Empleado'] || '';
+          parts.push('<tr>');
+          parts.push('<td>' + esc(empName) + '</td>');
+          parts.push('<td>' + esc(nif) + '</td>');
+          types.forEach(function(ct) {
+            var key = nif + '|' + ct.id;
+            var rec = records[key];
+            if (rec && rec.date) {
+              var completionDate = new Date(rec.date);
+              var expiryDate = new Date(completionDate);
+              expiryDate.setMonth(expiryDate.getMonth() + (ct.periodMonths || 12));
+              var isExpired = expiryDate < now;
+              var dateStr = completionDate.toLocaleDateString('es-ES');
+              var expiryStr = expiryDate.toLocaleDateString('es-ES');
+              if (isExpired) {
+                parts.push('<td class="compliance-expired" title="Caducó el ' + esc(expiryStr) + '">' + esc(dateStr) + ' (caducado)</td>');
+              } else {
+                parts.push('<td title="Caduca el ' + esc(expiryStr) + '">' + esc(dateStr) + '</td>');
+              }
+            } else {
+              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:11px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;"></td>');
+            }
+          });
+          parts.push('</tr>');
+        });
+        parts.push('</tbody></table>');
+      }
+
+      parts.push('</div>');
+      parts.push('</div>');
+
+      container.textContent = '';
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = parts.join('');
+      while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
+
+      // Bind: add type
+      var btnAdd = document.getElementById('btnAddComplianceType');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function() {
+          var name = prompt('Nombre de la formación obligatoria:');
+          if (!name || !name.trim()) return;
+          var months = prompt('Periodo de caducidad (meses):', '12');
+          var periodMonths = parseInt(months, 10);
+          if (isNaN(periodMonths) || periodMonths <= 0) {
+            showToast('El periodo debe ser un número positivo', 'error');
+            return;
+          }
+          state.complianceTypes.push({
+            id: 'ct_' + Date.now(),
+            name: name.trim(),
+            periodMonths: periodMonths
+          });
+          saveCompliance();
+          renderComplianceView();
+          showToast('Tipo de formación añadido', 'success');
+        });
+      }
+
+      // Bind: delete type
+      container.querySelectorAll('.compliance-delete-type').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = btn.dataset.complianceId;
+          if (!confirm('¿Eliminar este tipo de formación obligatoria?')) return;
+          state.complianceTypes = state.complianceTypes.filter(function(ct) { return ct.id !== id; });
+          // Clean related records
+          Object.keys(state.complianceRecords).forEach(function(key) {
+            if (key.endsWith('|' + id)) delete state.complianceRecords[key];
+          });
+          saveCompliance();
+          renderComplianceView();
+          showToast('Tipo eliminado', 'success');
+        });
+      });
+
+      // Bind: date inputs
+      container.querySelectorAll('.compliance-date-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+          var nif = input.dataset.nif;
+          var typeId = input.dataset.typeId;
+          var key = nif + '|' + typeId;
+          if (input.value) {
+            state.complianceRecords[key] = { date: input.value };
+          } else {
+            delete state.complianceRecords[key];
+          }
+          saveCompliance();
+          renderComplianceView();
+        });
+      });
+
+      // Bind: create convocatoria with affected people
+      var btnConv = document.getElementById('btnComplianceConvocatoria');
+      if (btnConv) {
+        btnConv.addEventListener('click', function() {
+          // Collect unique NIFs of people with expired/missing compliance
+          var affectedNIFs = new Set();
+          expiredItems.forEach(function(item) {
+            var nif = item.emp['NIF'];
+            if (nif) affectedNIFs.add(nif);
+          });
+          showToast(affectedNIFs.size + ' persona' + (affectedNIFs.size !== 1 ? 's' : '') + ' trabajadora' + (affectedNIFs.size !== 1 ? 's' : '') + ' afectada' + (affectedNIFs.size !== 1 ? 's' : ''), 'info');
+        });
+      }
+    }
+
     // Sub-tab switching
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5554,13 +5770,33 @@
           listViewState.filters = {};
           listViewState.selectedPKs = new Set();
           listViewState.lastClickedPK = null;
-          // Restore saved view mode for this catalog
-          var savedModes = getCatalogViewModes();
-          var savedMode = savedModes[btn.dataset.catalog] || 'ficha';
-          toggleCatalogViewMode(btn.dataset.catalog, savedMode);
-          if (savedMode === 'ficha') {
-            renderCatalogList();
-            renderCatalogForm();
+
+          // Handle compliance tab specially
+          var complianceContainer = document.getElementById('complianceViewContainer');
+          var listPanel = document.getElementById('catalogListPanel');
+          var formPanel = document.getElementById('catalogFormPanel');
+          var listViewContainer = document.getElementById('catalogListViewContainer');
+          var viewToggle = document.getElementById('catalogViewToggle');
+
+          if (btn.dataset.catalog === 'compliance') {
+            listPanel.style.display = 'none';
+            formPanel.style.display = 'none';
+            listViewContainer.style.display = 'none';
+            complianceContainer.style.display = '';
+            if (viewToggle) viewToggle.style.display = 'none';
+            loadCompliance();
+            renderComplianceView();
+          } else {
+            complianceContainer.style.display = 'none';
+            if (viewToggle) viewToggle.style.display = '';
+            // Restore saved view mode for this catalog
+            var savedModes = getCatalogViewModes();
+            var savedMode = savedModes[btn.dataset.catalog] || 'ficha';
+            toggleCatalogViewMode(btn.dataset.catalog, savedMode);
+            if (savedMode === 'ficha') {
+              renderCatalogList();
+              renderCatalogForm();
+            }
           }
         });
       });
@@ -7435,6 +7671,8 @@
       sortColumn: 'Empleado',
       sortDirection: 'asc',
       queue: [],
+      complianceTypes: [],
+      complianceRecords: {},
     };
 
     // ═══════════════════════════════════
@@ -7446,6 +7684,26 @@
     }
     function loadQueue() {
       try { state.queue = JSON.parse(localStorage.getItem('convocatoria_queue') || '[]'); } catch(e) { state.queue = []; }
+    }
+
+    // ═══════════════════════════════════
+    // COMPLIANCE PERSISTENCE
+    // ═══════════════════════════════════
+
+    function saveCompliance() {
+      try {
+        localStorage.setItem('convocatoria_compliance_types', JSON.stringify(state.complianceTypes));
+        localStorage.setItem('convocatoria_compliance_records', JSON.stringify(state.complianceRecords));
+      } catch(e) {}
+    }
+    function loadCompliance() {
+      try {
+        state.complianceTypes = JSON.parse(localStorage.getItem('convocatoria_compliance_types') || '[]');
+        state.complianceRecords = JSON.parse(localStorage.getItem('convocatoria_compliance_records') || '{}');
+      } catch(e) {
+        state.complianceTypes = [];
+        state.complianceRecords = {};
+      }
     }
 
     // ═══════════════════════════════════
@@ -11615,6 +11873,7 @@
     // ═══════════════════════════════════
 
     loadQueue();
+    loadCompliance();
     renderQueue();
 
     // ── Session recovery banner ──
