@@ -2941,6 +2941,17 @@
     .dash-alert-type-warning { color: var(--warning); }
     .dash-alert-action { font-weight: 600; }
 
+    /* Actionable dashboard elements (F3.5) */
+    .dash-kpi[data-action], .dash-alert[data-action] {
+      cursor: pointer;
+    }
+    .dash-kpi[data-action]:hover {
+      border-left-width: 4px;
+    }
+    .dash-alert[data-action]:hover {
+      background: var(--accent-subtle);
+    }
+
     /* ── Credit simulator (F1.9) ── */
     .credit-simulator {
       margin-top: 16px;
@@ -15425,7 +15436,8 @@
               id: 'alert_inicio_' + (a.codigo || a.nombre),
               type: 'danger',
               action: actionLabel,
-              msg: 'empieza en ' + daysToStart + ' d\u00EDa' + (daysToStart !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE'
+              msg: 'empieza en ' + daysToStart + ' d\u00EDa' + (daysToStart !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE',
+              navTab: 'tabXml'
             });
           }
         }
@@ -15442,7 +15454,8 @@
                 id: 'alert_prep_' + (a.codigo || a.nombre),
                 type: 'warning',
                 action: actionLabel,
-                msg: 'sigue en preparaci\u00F3n — inicia en ' + daysToStart2 + ' d\u00EDa' + (daysToStart2 !== 1 ? 's' : '')
+                msg: 'sigue en preparaci\u00F3n — inicia en ' + daysToStart2 + ' d\u00EDa' + (daysToStart2 !== 1 ? 's' : ''),
+                navTab: 'tabCatalogos'
               });
             }
           }
@@ -15473,7 +15486,8 @@
               id: 'alert_fin_' + (a.codigo || a.nombre),
               type: 'danger',
               action: actionLabel,
-              msg: 'finaliz\u00F3 hace ' + daysPast + ' d\u00EDa' + (daysPast !== 1 ? 's' : '') + ' sin comunicar fin a FUNDAE'
+              msg: 'finaliz\u00F3 hace ' + daysPast + ' d\u00EDa' + (daysPast !== 1 ? 's' : '') + ' sin comunicar fin a FUNDAE',
+              navTab: 'tabXml'
             });
           }
         }
@@ -15490,14 +15504,16 @@
             id: 'alert_credito_critico',
             type: 'danger',
             action: null,
-            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% — riesgo de sobreconsumo'
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% — riesgo de sobreconsumo',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         } else if (pct >= 80) {
           alerts.push({
             id: 'alert_credito_alto',
             type: 'warning',
             action: null,
-            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% consumido'
+            msg: 'Cr\u00E9dito FUNDAE al ' + pct + '% consumido',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         }
 
@@ -15508,7 +15524,8 @@
             id: 'alert_credito_infrauso',
             type: 'warning',
             action: null,
-            msg: 'Solo el ' + pct + '% del cr\u00E9dito FUNDAE consumido — posible infrautilizaci\u00F3n en el \u00FAltimo trimestre'
+            msg: 'Solo el ' + pct + '% del cr\u00E9dito FUNDAE consumido — posible infrautilizaci\u00F3n en el \u00FAltimo trimestre',
+            navTab: 'tabDashboard', navScrollTo: 'dashCreditChart'
           });
         }
       }
@@ -15601,6 +15618,15 @@
         var div = document.createElement('div');
         div.className = 'dash-alert';
         div.dataset.alertId = alert.id;
+
+        // F3.5: make alert clickable if it has a navigation target
+        if (alert.navTab) {
+          div.setAttribute('data-action', 'navigate');
+          div.title = 'Clic para ir a la pestaña correspondiente';
+          div.addEventListener('click', function() {
+            dashNavigateTo(alert.navTab, alert.navScrollTo ? { scrollTo: alert.navScrollTo } : null);
+          });
+        }
 
         var typeSpan = document.createElement('span');
         typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
@@ -15748,6 +15774,18 @@
       try { localStorage.setItem('convocatoria_dashCollapsed', JSON.stringify(collapsed)); } catch(e) {}
     }
 
+    // ── Dashboard click-through navigation (F3.5) ───────────────────────────
+    function dashNavigateTo(tab, context) {
+      var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (btn) btn.click();
+      if (context && context.scrollTo) {
+        setTimeout(function() {
+          var el = document.getElementById(context.scrollTo) || document.querySelector(context.scrollTo);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      }
+    }
+
     function renderDashboard() {
       hideDashboardSkeleton();
       autoTransitionEstados();
@@ -15887,13 +15925,22 @@
       var kpiColorHex = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5];
       var kpiIdx = 0;
 
-      function addKpi(label, value, sub, sparkData, thresholdStatus) {
+      function addKpi(label, value, sub, sparkData, thresholdStatus, navOpts) {
         var card = document.createElement('div');
         card.className = 'dash-kpi';
         if (thresholdStatus === 'success') card.classList.add('dash-kpi--success');
         else if (thresholdStatus === 'warning') card.classList.add('dash-kpi--warning');
         else if (thresholdStatus === 'danger') card.classList.add('dash-kpi--danger');
         card.setAttribute('data-color', kpiColors[kpiIdx % kpiColors.length]);
+
+        // F3.5: make KPI clickable if it has a navigation target
+        if (navOpts && navOpts.tab) {
+          card.setAttribute('data-action', 'navigate');
+          card.title = 'Clic para ver detalle';
+          card.addEventListener('click', function() {
+            dashNavigateTo(navOpts.tab, navOpts.scrollTo ? { scrollTo: navOpts.scrollTo } : null);
+          });
+        }
 
         var lblWrap = document.createElement('div');
         lblWrap.className = 'dash-kpi-label';
@@ -15943,17 +15990,17 @@
         kpiIdx++;
       }
 
-      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones);
-      addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación', sparkHoras);
+      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones, null, { tab: 'tabCatalogos' });
+      addKpi('Total horas', totalHoras, totalHorasP + 'h presencial, ' + totalHorasT + 'h teleformación', sparkHoras, null, { tab: 'tabCatalogos' });
       // Conditional status for participants KPI
       var partStatus = totalParticipantes === 0 ? 'danger' : (accionesConParticipantes < acciones.length * 0.5 ? 'warning' : null);
-      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes, partStatus);
-      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto);
+      addKpi('Participantes vinculados', totalParticipantes, accionesConParticipantes + ' acciones con participantes', sparkParticipantes, partStatus, { tab: 'tabCatalogos' });
+      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), bonificables.length + ' acciones bonificables', sparkPresupuesto, null, { tab: 'tabCatalogos' });
       var creditoDisponible = totalCredito - totalConsumido;
       var creditoPct = totalCredito > 0 ? Math.round((totalConsumido / totalCredito) * 100) : 0;
       // Conditional status for FUNDAE credit KPI
       var creditStatus = creditoPct > 95 ? 'danger' : (creditoPct > 80 ? 'warning' : (totalCredito > 0 ? 'success' : null));
-      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total', null, creditStatus);
+      addKpi('Crédito FUNDAE', creditoPct + '%', formatCurrency(totalConsumido) + ' consumido / ' + formatCurrency(totalCredito) + ' total', null, creditStatus, { tab: 'tabDashboard', scrollTo: 'dashCreditChart' });
 
       // --- Alerts (collapsible, dismissible) ---
       var alertsWidget = document.getElementById('dashAlertsWidget');
@@ -16006,14 +16053,14 @@
             var type = diffDays > 30 ? 'danger' : 'warning';
             var alertId = 'vencida_' + (a.codigo || a.nombre);
             var actionLabel = (a.codigo || '') + ' \u2014 ' + (a.nombre || '');
-            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: diffDays + ' días vencida' });
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: diffDays + ' días vencida', navTab: 'tabCatalogos' });
           }
         }
       });
 
       var sinEmpresa = bonificables.filter(function(a) { return !a.empresaPagadora; });
       if (sinEmpresa.length > 0) {
-        pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora' });
+        pendingAlerts.push({ id: 'sin_empresa', type: 'warning', action: null, msg: sinEmpresa.length + ' acción(es) bonificable(s) sin empresa pagadora', navTab: 'tabCatalogos' });
       }
 
       // --- FUNDAE deadline alerts ---
@@ -16034,7 +16081,7 @@
             var type = diasHastaInicio <= 3 ? 'danger' : 'warning';
             var alertId = 'fundae_inicio_' + (a.codigo || a.nombre);
             var msg = 'empieza en ' + diasHastaInicio + ' día' + (diasHastaInicio !== 1 ? 's' : '') + ' — comunica inicio a FUNDAE';
-            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: type, action: actionLabel, msg: msg, navTab: 'tabXml' });
           }
         }
 
@@ -16046,11 +16093,11 @@
             var diasPasados = Math.abs(diasHastaFin);
             var alertId = 'fundae_fin_pasado_' + (a.codigo || a.nombre);
             var msg = 'finalizó hace ' + diasPasados + ' día' + (diasPasados !== 1 ? 's' : '') + ' — genera XML de finalización';
-            pendingAlerts.push({ id: alertId, type: 'danger', action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: 'danger', action: actionLabel, msg: msg, navTab: 'tabXml' });
           } else if (diasHastaFin <= diasAvisoFin) {
             var alertId = 'fundae_fin_proximo_' + (a.codigo || a.nombre);
             var msg = 'finaliza en ' + diasHastaFin + ' día' + (diasHastaFin !== 1 ? 's' : '');
-            pendingAlerts.push({ id: alertId, type: 'warning', action: actionLabel, msg: msg });
+            pendingAlerts.push({ id: alertId, type: 'warning', action: actionLabel, msg: msg, navTab: 'tabXml' });
           }
         }
       });
@@ -16065,6 +16112,15 @@
         if (dismissed[alert.id]) return;
         var div = document.createElement('div');
         div.className = 'dash-alert';
+
+        // F3.5: make alert clickable if it has a navigation target
+        if (alert.navTab) {
+          div.setAttribute('data-action', 'navigate');
+          div.title = 'Clic para ir a la pestaña correspondiente';
+          div.addEventListener('click', function() {
+            dashNavigateTo(alert.navTab, alert.navScrollTo ? { scrollTo: alert.navScrollTo } : null);
+          });
+        }
 
         var typeSpan = document.createElement('span');
         typeSpan.className = 'dash-alert-type dash-alert-type-' + alert.type;
