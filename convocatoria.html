@@ -9600,6 +9600,8 @@
       }
 
       const payload = buildSurveyPayload(event, emails, settings.formsUrl, settings.formsQuestionId);
+      payload.formsUrl = settings.formsUrl;
+      payload.eventTitle = event.title || '';
       const endTime = event.endTime || '??:??';
 
       fetch(settings.webhookUrl, {
@@ -9610,6 +9612,7 @@
         if (r.ok || r.status === 202) {
           showToast('Encuesta programada para las ' + endTime, 'success');
           markSurveyScheduled(event.title, event.date);
+          scheduleSurveyReminder(payload, settings.webhookUrl);
         } else {
           showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
         }
@@ -9621,9 +9624,32 @@
         }).then(function() {
           showToast('Encuesta enviada a Power Automate (sin confirmación)', 'success');
           markSurveyScheduled(event.title, event.date);
+          scheduleSurveyReminder(payload, settings.webhookUrl);
         }).catch(function() {
           showToast('No se pudo conectar con Power Automate. Verifica la URL del webhook', 'error', 6000);
         });
+      });
+    }
+
+    function scheduleSurveyReminder(surveyPayload, webhookUrl) {
+      var reminderDate = new Date(surveyPayload.scheduledTime || Date.now());
+      reminderDate.setDate(reminderDate.getDate() + 7);
+
+      var reminderPayload = {
+        type: 'survey_reminder',
+        to: surveyPayload.to,
+        subject: 'Recordatorio: Tu opinión nos importa',
+        formsUrl: surveyPayload.formsUrl,
+        eventTitle: surveyPayload.eventTitle || '',
+        scheduledTime: reminderDate.toISOString()
+      };
+
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reminderPayload)
+      }).catch(function(err) {
+        console.warn('Error al programar reenvío de encuesta:', err);
       });
     }
 
