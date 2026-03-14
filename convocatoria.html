@@ -3944,6 +3944,10 @@
     tr.row-excluded:hover td {
       opacity: 0.6;
     }
+    tr.row-waitlisted td {
+      opacity: 0.65;
+      font-style: italic;
+    }
 
     /* ── KPI sparklines ── */
     .dash-kpi-trend {
@@ -4208,6 +4212,10 @@
             <option value="2" selected>2 días antes</option>
             <option value="3">3 días antes</option>
           </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="inputCapacity" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">Aforo máximo</label>
+          <input type="number" id="inputCapacity" class="input-field" min="1" placeholder="Sin límite" style="font-size:12px;width:80px;">
         </div>
       </div>
 
@@ -9081,6 +9089,7 @@
       dataQualityIssues: [],
       complianceTypes: [],
       complianceRecords: {},
+      _waitlist: [],
     };
 
     // Dashboard precomputation cache (F3.15)
@@ -10020,6 +10029,7 @@
       document.getElementById('tableSearch').style.display = '';
 
       renderFilters();
+      checkWaitlist(true);
       renderTable();
       checkOrphanParticipants();
 
@@ -10173,6 +10183,7 @@
               isSeries: document.getElementById('seriesCheck').checked,
               sendSurvey: document.getElementById('surveyCheck').checked,
               formador: document.getElementById('eventFormador').value,
+              capacity: document.getElementById('inputCapacity').value,
             },
             timestamp: Date.now()
           };
@@ -10569,6 +10580,43 @@
     });
 
     // ═══════════════════════════════════
+    // WAITLIST / CAPACITY
+    // ═══════════════════════════════════
+
+    function checkWaitlist(skipRender) {
+      var cap = parseInt(document.getElementById('inputCapacity').value, 10);
+      var prevLen = state._waitlist ? state._waitlist.length : 0;
+
+      if (!cap || isNaN(cap)) {
+        // No limit set — clear waitlist
+        state._waitlist = [];
+        if (!skipRender) renderTable();
+        return;
+      }
+
+      var allEmployees = [].concat(state.employees, state.externalEmployees);
+      var filtered = filterEmployees(allEmployees, state.activeFilters);
+      var result = splitByEmail(filtered);
+      var valid = result.valid;
+      var selected = valid.filter(function(emp) { return !state.excludedNIFs.has(emp._id); });
+
+      if (selected.length <= cap) {
+        state._waitlist = [];
+        if (!skipRender) renderTable();
+        return;
+      }
+
+      // First `cap` are confirmed, rest go to waitlist
+      var waitlisted = selected.slice(cap);
+      state._waitlist = waitlisted.map(function(e) { return e._id; });
+
+      if (waitlisted.length !== prevLen) {
+        showToast(waitlisted.length + ' persona' + (waitlisted.length > 1 ? 's' : '') + ' en lista de espera (aforo: ' + cap + ')', 'warning');
+      }
+      if (!skipRender) renderTable();
+    }
+
+    // ═══════════════════════════════════
     // ATTENDEE TABLE
     // ═══════════════════════════════════
 
@@ -10633,8 +10681,10 @@
         const hasEmail = isValidEmail(emp['Email trabajo']);
         const isExcluded = state.excludedNIFs.has(emp._id);
         const isExternal = emp._source === 'external';
-        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
+        const isWaitlisted = state._waitlist && state._waitlist.indexOf(emp._id) !== -1;
+        const rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '') + (isWaitlisted ? ' row-waitlisted' : '');
         const sourceBadge = isExternal ? ' <span class="chip" style="background:var(--accent-light);">ext</span>' : '';
+        const waitlistBadge = isWaitlisted ? ' <span class="chip" style="background:#fff3cd;color:#856404;font-size:10px;">Lista de espera</span>' : '';
 
         return '<tr class="' + rowClass + '">' +
           '<td>' +
@@ -10643,7 +10693,7 @@
             (hasEmail && !isExcluded ? ' checked' : '') +
             (!hasEmail ? ' disabled' : '') + '>' +
           '</td>' +
-          '<td>' + esc(emp.Empleado) + sourceBadge + '</td>' +
+          '<td>' + esc(emp.Empleado) + sourceBadge + waitlistBadge + '</td>' +
           '<td style="color: var(--text-secondary);">' + esc(emp.Puesto) + '</td>' +
           '<td style="color: var(--text-secondary);">' + esc(emp['Ubicación']) + '</td>' +
           '<td style="color: ' + (hasEmail ? 'var(--accent)' : 'var(--danger)') + ';">' +
@@ -10654,15 +10704,13 @@
 
       tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.addEventListener('change', () => {
-          var row = cb.closest('tr');
           if (cb.checked) {
             state.excludedNIFs.delete(cb.dataset.id);
-            if (row) row.classList.remove('row-excluded');
           } else {
             state.excludedNIFs.add(cb.dataset.id);
-            if (row) row.classList.add('row-excluded');
           }
-          updateCounts();
+          // checkWaitlist recalculates waitlist and re-renders table (which calls updateCounts)
+          checkWaitlist();
         });
       });
 
@@ -10716,7 +10764,12 @@
       const allEmployees = [...state.employees, ...state.externalEmployees];
       const filtered = filterEmployees(allEmployees, state.activeFilters);
       const { valid } = splitByEmail(filtered);
-      return valid.filter(emp => !state.excludedNIFs.has(emp._id));
+      var selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
+      // Exclude waitlisted employees — only confirmed attendees
+      if (state._waitlist && state._waitlist.length > 0) {
+        selected = selected.filter(emp => state._waitlist.indexOf(emp._id) === -1);
+      }
+      return selected;
     }
 
     function updateCounts() {
@@ -10726,8 +10779,11 @@
       const selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
 
       const totalActive = allEmployees.length;
-      document.getElementById('attendeeCount').textContent = selected.length;
-      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' personas trabajadoras';
+      var waitlistCount = state._waitlist ? state._waitlist.length : 0;
+      var confirmedCount = selected.length - waitlistCount;
+      document.getElementById('attendeeCount').textContent = confirmedCount > 0 ? confirmedCount : selected.length;
+      var waitlistSuffix = waitlistCount > 0 ? ' (+ ' + waitlistCount + ' en espera)' : '';
+      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' personas trabajadoras' + waitlistSuffix;
 
       const warningEl = document.getElementById('noEmailWarning');
       if (noEmail.length > 0) {
@@ -10807,7 +10863,14 @@
         }
       });
 
-      renderTable();
+      // checkWaitlist recalculates and re-renders the table
+      checkWaitlist();
+    });
+
+    // ── Capacity input wiring ──
+    document.getElementById('inputCapacity').addEventListener('input', function() {
+      checkWaitlist();
+      saveState();
     });
 
     // ═══════════════════════════════════
@@ -12477,6 +12540,10 @@
                 }
                 // Restore formador
                 document.getElementById('eventFormador').value = ec.formador || '';
+                // Restore capacity
+                if (ec.capacity) {
+                  document.getElementById('inputCapacity').value = ec.capacity;
+                }
                 // Restore survey checkbox (default true if field missing — migration)
                 const surveyCheck = document.getElementById('surveyCheck');
                 if (surveyCheck) {
@@ -12500,6 +12567,7 @@
             document.getElementById('tableSearch').style.display = '';
 
             renderFilters();
+            checkWaitlist(true);
             renderTable();
             checkOrphanParticipants();
             showToast('Sesión anterior restaurada', 'success');
