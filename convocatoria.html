@@ -1478,6 +1478,269 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(40px); }
     }
+
+    /* ── Toast container ── */
+    #toastContainer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── Queue bar ── */
+    .queue-bar {
+      display: none;
+      padding: 12px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--accent-subtle);
+    }
+    .queue-bar.visible {
+      display: block;
+    }
+    .queue-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .queue-bar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+    }
+    .queue-bar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ── Queue list ── */
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* ── Queue item ── */
+    .queue-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .queue-item-meta {
+      color: var(--text-muted);
+    }
+    .queue-item-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ── Dialog helpers ── */
+    .dialog-box-scrollable {
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .dialog-box-wide-scrollable {
+      max-width: 700px;
+      width: 95%;
+      max-height: 85vh;
+      overflow-y: auto;
+      text-align: left;
+      padding: 24px;
+    }
+    .dialog-box-narrow-scrollable {
+      max-width: 500px;
+      width: 95%;
+      max-height: 70vh;
+      overflow-y: auto;
+      text-align: left;
+      padding: 24px;
+    }
+    .dialog-box-compact {
+      max-width: 480px;
+      text-align: left;
+    }
+    .dialog-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .dialog-header-title {
+      margin: 0;
+    }
+    .dialog-section {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .dialog-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .dialog-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .dialog-body-text {
+      text-align: left;
+      margin-bottom: 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .dialog-footer-links {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .dialog-panel-footer {
+      display: flex;
+      gap: 8px;
+    }
+    .dialog-panel-footer .btn {
+      flex: 1;
+    }
+    .dialog-empresa-table-wrap {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .dialog-empresa-table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+    .dialog-empresa-th {
+      text-align: left;
+      padding: 4px 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .dialog-flex-row {
+      display: flex;
+      gap: 16px;
+    }
+    .dialog-flex-col {
+      flex: 1;
+    }
+    .dialog-sync-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .dialog-onboarding-footer {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .instructions-h4 {
+      margin: 16px 0 8px 0;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    .instructions-h4:first-child {
+      margin-top: 0;
+    }
+    .dialog-history-search {
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .dialog-history-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 20px;
+      font-size: 13px;
+    }
+    .dialog-employee-select-title {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .dialog-buttons-mt {
+      margin-top: 16px;
+    }
+    .dialog-buttons-mt-lg {
+      margin-top: 20px;
+    }
+    .dialog-label-optional {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .label-mt {
+      margin-top: 10px;
+    }
+
+    /* ── Upload zone icon ── */
+    .upload-icon-wrap {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 10px;
+      background: var(--accent-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-icon-svg {
+      color: var(--accent);
+    }
+    .upload-success-icon-wrap {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 10px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-success-icon-svg {
+      color: var(--success);
+    }
+    .upload-prompt-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .upload-ext-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .upload-file-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .upload-file-stats {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .upload-change-btn {
+      margin-top: 6px;
+      font-size: 11px;
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -2743,6 +3006,11 @@
     .queue-panel-footer {
       padding: 16px 20px;
       border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .queue-panel-footer .btn-primary {
+      flex: 1;
     }
     .queue-panel-overlay {
       position: fixed;
@@ -2979,25 +3247,25 @@
         <div class="section-label">1. Carga de datos</div>
         <div class="upload-zone" id="uploadZone">
           <div id="uploadPrompt" style="position: relative;">
-            <div style="width: 40px; height: 40px; margin: 0 auto 10px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+            <div class="upload-icon-wrap">
+              <svg class="upload-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
             </div>
-            <div style="font-size: 13px; color: var(--text-secondary);">
+            <div class="upload-prompt-text">
               Arrastra tu Excel aquí o <strong style="color: var(--accent); cursor: pointer;">selecciona un archivo</strong>
             </div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">.xlsx, .xls</div>
+            <div class="upload-ext-hint">.xlsx, .xls</div>
           </div>
           <div id="uploadInfo" style="display:none; position: relative;">
-            <div style="width: 40px; height: 40px; margin: 0 auto 10px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--success);">
+            <div class="upload-success-icon-wrap">
+              <svg class="upload-success-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </div>
-            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);" id="fileName"></div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="fileStats"></div>
-            <button class="link-btn link-add" id="btnChangeFile" style="margin-top:6px; font-size:11px;">Cambiar archivo</button>
+            <div class="upload-file-name" id="fileName"></div>
+            <div class="upload-file-stats" id="fileStats"></div>
+            <button class="link-btn link-add upload-change-btn" id="btnChangeFile">Cambiar archivo</button>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
         </div>
@@ -3109,18 +3377,18 @@
       </div>
 
       <!-- Queue bar -->
-      <div id="queueBar" style="display:none; padding:12px 28px; border-bottom:1px solid var(--border); background:var(--accent-subtle);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:13px; font-weight:600; color:var(--accent); cursor:pointer;" onclick="toggleQueuePanel()">
+      <div id="queueBar" class="queue-bar">
+        <div class="queue-bar-header">
+          <span class="queue-bar-title" onclick="toggleQueuePanel()">
             Cola de convocatorias (<span id="queueCount">0</span>) &#9654;
           </span>
-          <div style="display:flex; gap:8px;">
+          <div class="queue-bar-actions">
             <button class="link-btn link-add" onclick="toggleQueuePanel()" style="font-size:11px;">Ver detalle</button>
             <button class="link-btn link-clear" id="btnClearQueue">Vaciar cola</button>
             <button class="btn btn-primary" id="btnLaunchQueue" style="font-size:12px; padding:6px 14px;">Lanzar cola</button>
           </div>
         </div>
-        <div id="queueList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div id="queueList" class="queue-list"></div>
       </div>
 
       <!-- Session tabs (series mode only) -->
@@ -3687,13 +3955,13 @@
       <button class="link-btn link-clear" onclick="toggleQueuePanel()">Cerrar</button>
     </div>
     <div class="queue-panel-body" id="queuePanelBody"></div>
-    <div class="queue-panel-footer" style="display:flex; gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" id="btnLaunchQueuePanel" onclick="document.getElementById('btnLaunchQueue').click(); toggleQueuePanel();">Enviar cola</button>
+    <div class="queue-panel-footer">
+      <button class="btn btn-primary" id="btnLaunchQueuePanel" onclick="document.getElementById('btnLaunchQueue').click(); toggleQueuePanel();">Enviar cola</button>
       <button class="btn btn-secondary" onclick="document.getElementById('btnClearQueue').click(); renderQueuePanel();">Vaciar</button>
     </div>
   </div>
 
-  <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
+  <div id="toastContainer"></div>
   <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
@@ -3716,40 +3984,40 @@
       <input type="url" class="input-field" id="settingsWebhookUrl" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/...">
       <label for="settingsFormsUrl">URL formulario Microsoft Forms</label>
       <input type="url" class="input-field" id="settingsFormsUrl" placeholder="https://forms.office.com/Pages/ResponsePage.aspx?id=...">
-      <label for="settingsFormsQuestionId" style="margin-top:10px;">ID pregunta «Nombre de la formación» <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label>
+      <label class="label-mt" for="settingsFormsQuestionId">ID pregunta «Nombre de la formación» <span class="dialog-label-optional">(opcional)</span></label>
       <input type="text" class="input-field" id="settingsFormsQuestionId" placeholder="r0123456789abcdef (ver instrucciones)">
-      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
-      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Alertas FUNDAE</div>
-        <div style="display:flex; gap:16px;">
-          <div style="flex:1;">
+      <div class="dialog-hint">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
+      <div class="dialog-section">
+        <div class="dialog-section-title">Alertas FUNDAE</div>
+        <div class="dialog-flex-row">
+          <div class="dialog-flex-col">
             <label for="settingsDiasAvisoInicio">Días aviso previo para inicio</label>
             <input type="number" class="input-field" id="settingsDiasAvisoInicio" min="1" max="90" value="10" placeholder="10">
           </div>
-          <div style="flex:1;">
+          <div class="dialog-flex-col">
             <label for="settingsDiasAvisoFin">Días aviso para finalización</label>
             <input type="number" class="input-field" id="settingsDiasAvisoFin" min="1" max="90" value="5" placeholder="5">
           </div>
         </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
+        <div class="dialog-hint">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
       </div>
-      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Sincronización</div>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-primary); cursor:pointer;">
+      <div class="dialog-section">
+        <div class="dialog-section-title">Sincronización</div>
+        <label class="dialog-sync-label">
           <input type="checkbox" id="settingsSyncConvocatoria" checked style="accent-color:var(--accent);">
           Sincronizar convocatoria con acción formativa
         </label>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
+        <div class="dialog-hint">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
       </div>
-      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Empresas del grupo</div>
-        <div id="empresasGrupoSettings" style="max-height:250px; overflow-y:auto;">
-          <table style="width:100%; font-size:12px; border-collapse:collapse;">
+      <div class="dialog-section">
+        <div class="dialog-section-title">Empresas del grupo</div>
+        <div id="empresasGrupoSettings" class="dialog-empresa-table-wrap">
+          <table class="dialog-empresa-table">
             <thead>
               <tr>
-                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">Razón social</th>
-                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">CIF</th>
-                <th style="text-align:left; padding:4px 6px; font-size:11px; color:var(--text-muted);">Crédito</th>
+                <th class="dialog-empresa-th">Razón social</th>
+                <th class="dialog-empresa-th">CIF</th>
+                <th class="dialog-empresa-th">Crédito</th>
                 <th style="width:60px;"></th>
               </tr>
             </thead>
@@ -3758,15 +4026,15 @@
         </div>
         <button class="link-btn link-add" onclick="addEmpresaGrupo()" style="font-size:11px; margin-top:6px;">+ Añadir empresa</button>
       </div>
-      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Plantillas guardadas</div>
+      <div class="dialog-section">
+        <div class="dialog-section-title">Plantillas guardadas</div>
         <div id="settingsTemplatesList"></div>
       </div>
-      <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
+      <div class="dialog-footer-links">
         <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
         <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
       </div>
-      <div class="dialog-buttons" style="margin-top:20px;">
+      <div class="dialog-buttons dialog-buttons-mt-lg">
         <button class="btn btn-secondary" id="settingsCancel">Cancelar</button>
         <button class="btn btn-primary" id="settingsSave">Guardar</button>
       </div>
@@ -3778,7 +4046,7 @@
     <div class="dialog-box dialog-box-wide">
       <h3>Configurar encuestas de satisfacción</h3>
       <div class="instructions-content">
-        <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--text-primary);">Opción A: Importar flujo (recomendado)</h4>
+        <h4 class="instructions-h4">Opción A: Importar flujo (recomendado)</h4>
         <ol>
           <li>Pulsa <strong>«Descargar flujo Power Automate»</strong> en la pantalla de Ajustes.</li>
           <li>Ve a <strong>Power Automate</strong> (make.powerautomate.com) → Mis flujos → <strong>Importar</strong> → <strong>Importar paquete (heredado)</strong>.</li>
@@ -3786,7 +4054,7 @@
           <li>Completa la importación. Abre el flujo importado y copia la <strong>URL del trigger HTTP</strong> del paso 1.</li>
           <li>Pega la URL en el campo «URL webhook» de esta pantalla.</li>
         </ol>
-        <h4 style="margin:16px 0 8px 0; font-size:13px; color:var(--text-primary);">Opción B: Crear flujo manualmente</h4>
+        <h4 class="instructions-h4">Opción B: Crear flujo manualmente</h4>
         <ol>
           <li>Abre <strong>Power Automate</strong> → Flujo de nube automatizado → En blanco.</li>
           <li>Trigger: <strong>«Cuando se recibe una solicitud HTTP»</strong>. Pega este esquema:
@@ -3804,7 +4072,7 @@
           <li>Acción: <strong>«Enviar un correo electrónico (V2)»</strong> → Para: <code>join(triggerBody()?['to'],';')</code>, Asunto: <code>subject</code>, Cuerpo: <code>body</code> (vista HTML).</li>
           <li>Guarda y copia la URL del trigger HTTP.</li>
         </ol>
-        <h4 style="margin:16px 0 8px 0; font-size:13px; color:var(--text-primary);">Vincular encuesta a formación (opcional)</h4>
+        <h4 class="instructions-h4">Vincular encuesta a formación (opcional)</h4>
         <ol>
           <li>En tu formulario de Microsoft Forms, añade una pregunta de <strong>texto</strong>: «¿Qué formación has recibido?».</li>
           <li>Abre el formulario en modo edición. Haz clic en la pregunta creada.</li>
@@ -3823,7 +4091,7 @@
   <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
     <div class="dialog-box">
       <h3>Confirmar convocatoria</h3>
-      <div id="confirmBody" style="text-align:left; margin-bottom:20px; color:var(--text-secondary); font-size:14px; line-height:1.6;"></div>
+      <div id="confirmBody" class="dialog-body-text"></div>
       <div class="dialog-buttons">
         <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
         <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
@@ -3833,22 +4101,22 @@
 
   <!-- History panel -->
   <div class="dialog-overlay" id="historyPanel" role="dialog" aria-modal="true">
-    <div class="dialog-box" style="max-width:600px; max-height:80vh; overflow-y:auto; text-align:left;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;">Historial de convocatorias</h3>
+    <div class="dialog-box dialog-box-scrollable">
+      <div class="dialog-header-row">
+        <h3 class="dialog-header-title">Historial de convocatorias</h3>
         <button class="link-btn link-clear" id="historyClose" aria-label="Cerrar">&times;</button>
       </div>
-      <input class="input-field" type="text" id="historySearch" placeholder="Buscar por título..." style="margin-bottom:12px; font-size:12px;">
+      <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título...">
       <div id="historyList"></div>
-      <div id="historyEmpty" style="text-align:center; color:var(--text-muted); padding:20px; font-size:13px;">No hay convocatorias en el historial</div>
+      <div id="historyEmpty" class="dialog-history-empty">No hay convocatorias en el historial</div>
     </div>
   </div>
 
   <!-- Employee report dialog -->
   <div class="dialog-overlay" id="employeeReportDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box" style="max-width:700px; width:95%; max-height:85vh; overflow-y:auto; text-align:left; padding:24px;">
+    <div class="dialog-box dialog-box-wide-scrollable">
       <div id="employeeReportContent"></div>
-      <div class="dialog-buttons" style="margin-top:16px;">
+      <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary" id="employeeReportExport" style="font-size:12px;">Exportar ficha</button>
         <button class="btn btn-secondary" id="employeeReportClose" style="font-size:12px;">Cerrar</button>
       </div>
@@ -3857,10 +4125,10 @@
 
   <!-- Employee selection dialog (multiple matches) -->
   <div class="dialog-overlay" id="employeeSelectDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box" style="max-width:500px; width:95%; max-height:70vh; overflow-y:auto; text-align:left; padding:24px;">
-      <h3 style="margin:0 0 12px 0; font-size:15px; font-weight:600; color:var(--text-primary);">Selecciona un empleado</h3>
+    <div class="dialog-box dialog-box-narrow-scrollable">
+      <h3 class="dialog-employee-select-title">Selecciona un empleado</h3>
       <div id="employeeSelectList"></div>
-      <div class="dialog-buttons" style="margin-top:16px;">
+      <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary" id="employeeSelectCancel" style="font-size:12px;">Cancelar</button>
       </div>
     </div>
@@ -3868,7 +4136,7 @@
 
   <!-- Onboarding overlay -->
   <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
-    <div class="dialog-box" style="max-width:480px; text-align:left;">
+    <div class="dialog-box dialog-box-compact">
       <h3 style="margin-bottom:4px;">Bienvenido a Convocatoria de Formaciones</h3>
       <p style="margin-bottom:16px; font-size:13px;">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
       <div class="onboarding-step">
@@ -3887,10 +4155,10 @@
         <div class="onboarding-step-num">4</div>
         <div class="onboarding-step-text"><strong>Envia desde Outlook</strong> con un clic. La convocatoria se abre lista para enviar.</div>
       </div>
-      <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--text-muted);">
+      <div class="dialog-onboarding-footer">
         Para configurar encuestas de satisfaccion automaticas, abre <a href="#" class="link-btn link-add" style="font-size:12px;" onclick="document.getElementById('onboardingOverlay').classList.remove('visible'); document.getElementById('btnSettings').click(); return false;">Ajustes</a>.
       </div>
-      <div class="dialog-buttons" style="margin-top:16px;">
+      <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-primary" id="onboardingStart">Empezar</button>
       </div>
     </div>
@@ -8233,22 +8501,22 @@
       }
 
       if (state.queue.length === 0) {
-        bar.style.display = 'none';
+        bar.classList.remove('visible');
         return;
       }
 
-      bar.style.display = '';
+      bar.classList.add('visible');
       count.textContent = state.queue.length;
 
       list.innerHTML = state.queue.map((item, i) => {
         const type = item.event.isTeams ? 'Teams' : 'Presencial';
         const series = item.seriesDates ? ' · ' + item.seriesDates.length + ' sesiones' : '';
-        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg-panel); border-radius:var(--radius-sm); border:1px solid var(--border); font-size:12px;">' +
+        return '<div class="queue-item">' +
           '<div>' +
             '<strong>' + esc(item.event.title) + '</strong>' +
-            '<span style="color:var(--text-muted);"> · ' + item.event.date + ' · ' + item.attendeeCount + ' asist. · ' + type + series + '</span>' +
+            '<span class="queue-item-meta"> · ' + item.event.date + ' · ' + item.attendeeCount + ' asist. · ' + type + series + '</span>' +
           '</div>' +
-          '<div style="display:flex; gap:6px;">' +
+          '<div class="queue-item-actions">' +
             '<button class="link-btn link-add" data-edit-queue="' + i + '" style="font-size:11px;">Editar</button>' +
             '<button class="link-btn link-clear" data-remove-queue="' + i + '" style="font-size:11px;">&times;</button>' +
           '</div>' +
