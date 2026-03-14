@@ -45,6 +45,7 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `--shadow-sm: 0 1px 2px rgba(15,23,42,0.05)` — bordes sutiles, paneles
 - `--shadow-lg: 0 8px 24px rgba(15,23,42,0.12)` — dropdowns, dialogs, toasts
 - NO crear sombras intermedias
+- `--shadow-accent` y `--shadow-accent-hover` NO son niveles de elevación adicionales — son variantes cromáticas de `--shadow-sm` aplicadas a botones primarios. El modelo sigue siendo 2 niveles de elevación (sm/lg) + 1 variante de color.
 - Focus ring: `0 0 0 3px rgba(79,70,229,0.15)` (inline, no variable)
 
 ### Border-radius: 3 valores
