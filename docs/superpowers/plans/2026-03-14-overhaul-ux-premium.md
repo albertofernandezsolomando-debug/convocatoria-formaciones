@@ -882,6 +882,15 @@ function evaluateAlerts() {
       });
     }
 
+    // Auto-transicion RLT: "Enviada" → "Sin objeciones (plazo vencido)" tras 15 dias habiles
+    if (action.rlt && action.rlt.status === 'Enviada' && action.rlt.sentDate) {
+      var rltDeadline = calculateBusinessDays(new Date(action.rlt.sentDate), 15);
+      if (now >= rltDeadline) {
+        action.rlt.status = 'Sin objeciones (plazo vencido)';
+        upsertCatalogRecord('acciones', 'codigo', action);
+      }
+    }
+
     // Alerta: formacion finalizada sin comunicar fin
     if (action.fechaFin) {
       var fechaFin = new Date(action.fechaFin + 'T00:00:00');
@@ -1080,6 +1089,8 @@ Reemplazar las lineas 1457-1480 (todo el bloque de toast CSS) por:
 @keyframes toastOut {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(40px); }
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
 }
 ```
 
@@ -1238,6 +1249,9 @@ Despues de `.upload-zone.loading::after` (~linea 940), anadir:
 @keyframes uploadCheckDraw {
   to { stroke-dashoffset: 0; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .upload-check-circle, .upload-check-mark { animation: none; stroke-dashoffset: 0; }
+}
 ```
 
 - [ ] **Paso 2: Anadir SVG al HTML del upload zone**
@@ -1318,6 +1332,9 @@ Junto a los estilos de `.input-field` (buscar `.input-field` en CSS, ~linea 1100
 @keyframes fieldHintIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .field-hint { animation: none; }
 }
 ```
 
@@ -1646,19 +1663,24 @@ Donde se renderizan los campos del formulario XML (buscar donde se crean los inp
 
 ```javascript
 // Pre-fill from saved defaults
-var empresaCif = /* obtener CIF de la empresa seleccionada */;
+// NOTA: los IDs de los inputs se obtienen del HTML existente en la zona XML (~lineas 9741-10571).
+// Los inputs del grupo se generan dinamicamente en renderXmlGroupFields().
+// Buscar los IDs reales en el HTML antes de implementar (patron: xml_grupo_*, xml_responsable_*, etc.).
+var empresaCif = document.getElementById('xmlEmpresaCif') ? document.getElementById('xmlEmpresaCif').value : '';
 var defaults = loadXmlGroupDefaults(empresaCif);
 if (defaults) {
   // Pre-rellenar los inputs con los valores guardados
-  var idGrupoInput = document.getElementById(/* ID del input de grupo */);
-  var responsableInput = document.getElementById(/* ID del input de responsable */);
-  var telefonoInput = document.getElementById(/* ID del input de telefono */);
-  var emailInput = document.getElementById(/* ID del input de email */);
-
-  if (idGrupoInput && !idGrupoInput.value) idGrupoInput.value = defaults.idGrupo;
-  if (responsableInput && !responsableInput.value) responsableInput.value = defaults.responsable;
-  if (telefonoInput && !telefonoInput.value) telefonoInput.value = defaults.telefono;
-  if (emailInput && !emailInput.value) emailInput.value = defaults.emailResponsable;
+  // Los IDs exactos dependen de renderXmlGroupFields() — localizar en ~linea 10000+
+  var fields = [
+    { id: 'xmlGrupoId', key: 'idGrupo' },
+    { id: 'xmlResponsable', key: 'responsable' },
+    { id: 'xmlTelefono', key: 'telefono' },
+    { id: 'xmlEmailResponsable', key: 'emailResponsable' }
+  ];
+  fields.forEach(function(f) {
+    var el = document.getElementById(f.id);
+    if (el && !el.value && defaults[f.key]) el.value = defaults[f.key];
+  });
 
   showToast('Datos del grupo pre-rellenados desde la ultima generacion', 'info', 3000);
 }
@@ -1669,11 +1691,12 @@ if (defaults) {
 Al final de cada funcion de generacion de XML (tras el `downloadXML()` exitoso), guardar:
 
 ```javascript
+// Guardar defaults: usar los mismos IDs que en el pre-fill (paso 3)
 saveXmlGroupDefaults(empresaCif, {
-  idGrupo: /* valor actual del input */,
-  responsable: /* valor actual */,
-  telefono: /* valor actual */,
-  emailResponsable: /* valor actual */
+  idGrupo: (document.getElementById('xmlGrupoId') || {}).value || '',
+  responsable: (document.getElementById('xmlResponsable') || {}).value || '',
+  telefono: (document.getElementById('xmlTelefono') || {}).value || '',
+  emailResponsable: (document.getElementById('xmlEmailResponsable') || {}).value || ''
 });
 ```
 
@@ -2453,6 +2476,9 @@ Insertar antes de `/* --- Cuadro de Mando --- */`:
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .confirm-dialog-enter { animation: none; }
+}
 ```
 
 - [ ] **Paso 2: Reestructurar HTML del dialogo**
@@ -2635,6 +2661,9 @@ Barra proporcional, texto de estado, items atenuados al procesarse."
   animation: postSendDraw 0.5s ease-out 0.2s forwards;
 }
 @keyframes postSendDraw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .post-send-check { animation: none; stroke-dashoffset: 0; }
+}
 .post-send-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .post-send-details { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; padding-left: 52px; }
 .post-send-detail-item { display: flex; align-items: center; gap: 6px; }
@@ -2938,6 +2967,9 @@ Insertar antes de `/* --- Cuadro de Mando --- */`:
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
+@media (prefers-reduced-motion: reduce) {
+  .table-skeleton-cell { animation: none; }
+}
 ```
 
 - [ ] **Paso 2: Insertar skeleton HTML**
@@ -3199,10 +3231,35 @@ function renderComplianceView() {
   tableHtml += '</tbody></table>';
 
   var summaryHtml = '<div class="compliance-summary">' + state.employees.length + ' personas trabajadoras';
-  if (totalExpired > 0) summaryHtml += ' · <span style="color:var(--danger);font-weight:600;">' + totalExpired + ' caducadas</span>';
+  if (totalExpired > 0) {
+    summaryHtml += ' · <span style="color:var(--danger);font-weight:600;">' + totalExpired + ' caducadas</span>';
+    summaryHtml += ' <button class="btn btn-primary" id="btnConvocatoriaAfectadas" style="font-size:11px;margin-left:8px;">Crear convocatoria con personas afectadas</button>';
+  }
   summaryHtml += '</div>';
 
   panel.innerHTML = summaryHtml + '<div style="padding:12px 16px;overflow-y:auto;max-height:calc(100vh - 200px);">' + tableHtml + '</div>';
+
+  // Boton "Crear convocatoria con personas afectadas": pre-selecciona empleados con formacion caducada
+  var btnAfectadas = document.getElementById('btnConvocatoriaAfectadas');
+  if (btnAfectadas) {
+    btnAfectadas.addEventListener('click', function() {
+      var expiredNifs = [];
+      state.employees.forEach(function(emp) {
+        state.complianceTypes.forEach(function(ct) {
+          var record = (state.complianceRecords[emp.NIF] || {})[ct.id];
+          if (record && record.lastDate) {
+            var expiry = new Date(record.lastDate);
+            expiry.setMonth(expiry.getMonth() + ct.periodMonths);
+            if (expiry < today) expiredNifs.push(emp._id);
+          }
+        });
+      });
+      // Navegar a Convocatoria con pre-seleccion
+      state.preSelectedIds = [...new Set(expiredNifs)];
+      document.querySelector('[data-tab="convocatoria"]').click();
+      showToast(expiredNifs.length + ' personas con formacion caducada pre-seleccionadas', 'info', 4000);
+    });
+  }
 }
 ```
 
@@ -3574,6 +3631,10 @@ Anadir despues de `.dialog-overlay.closing .dialog-box` (linea ~1421):
   text-align: center;
   color: var(--text-muted);
   font-size: 13px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cmdk-overlay.visible, .cmdk-overlay.closing,
+  .cmdk-box, .cmdk-overlay.closing .cmdk-box { animation: none; }
 }
 ```
 
@@ -4732,7 +4793,7 @@ tr:not(.row-excluded) td {
 - [ ] **Paso 2: Aplicar en renderTable()**
 
 ```javascript
-var isExcluded = state.excludedNIFs && state.excludedNIFs.indexOf(emp._id) >= 0;
+var isExcluded = state.excludedNIFs && state.excludedNIFs.has(emp._id);
 tr.className = isExcluded ? 'row-excluded' : '';
 ```
 
@@ -5468,9 +5529,11 @@ document.getElementById('btnApplyNifList').addEventListener('click', function() 
   }
 
   // Deseleccionar todos, luego seleccionar solo los matched
-  state.excludedNIFs = (state.employees || [])
-    .filter(function(emp) { return !matched.some(function(m) { return m._id === emp._id; }); })
-    .map(function(emp) { return emp._id; });
+  state.excludedNIFs = new Set(
+    (state.employees || [])
+      .filter(function(emp) { return !matched.some(function(m) { return m._id === emp._id; }); })
+      .map(function(emp) { return emp._id; })
+  );
 
   renderTable();
   saveState();
@@ -5487,7 +5550,7 @@ document.getElementById('btnApplyNifList').addEventListener('click', function() 
 document.getElementById('btnClearNifList').addEventListener('click', function() {
   document.getElementById('nifListInput').value = '';
   document.getElementById('nifListFeedback').textContent = '';
-  state.excludedNIFs = [];
+  state.excludedNIFs = new Set();
   renderTable();
   saveState();
 });
