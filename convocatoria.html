@@ -2027,6 +2027,35 @@
       font-size: 11px;
     }
 
+    /* --- Dialogo preview + confirmacion --- */
+    .confirm-preview { padding: 16px; border-bottom: 1px solid var(--border); }
+    .confirm-preview-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .confirm-preview-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .confirm-preview-meta span { display: inline-block; margin-right: 12px; }
+    .confirm-preview-count {
+      display: inline-block; padding: 2px 10px;
+      background: var(--accent-light); color: var(--accent);
+      border-radius: var(--radius-lg); font-weight: 600; font-size: 13px;
+    }
+    .confirm-attendee-list { margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+    .confirm-attendee-more { color: var(--text-muted); font-style: italic; }
+    .confirm-alerts { padding: 12px 16px; }
+    .confirm-alert-card {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); margin-bottom: 6px;
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .confirm-alert-icon { flex-shrink: 0; font-size: 14px; }
+    .confirm-dialog-enter { animation: confirmEnter 0.25s ease-out; }
+    @keyframes confirmEnter {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confirm-dialog-enter { animation: none; }
+    }
+
     /* --- Cuadro de Mando --- */
     .dash-container {
       padding: 24px 28px;
@@ -4454,10 +4483,10 @@
 
   <!-- Confirmation dialog -->
   <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box">
-      <h3>Confirmar convocatoria</h3>
-      <div id="confirmBody" class="dialog-body-text"></div>
-      <div class="dialog-buttons">
+    <div class="dialog-box confirm-dialog-enter" style="max-width:520px; padding:0; border-top:3px solid var(--accent);">
+      <div class="confirm-preview" id="confirmPreview"></div>
+      <div class="confirm-alerts" id="confirmAlerts"></div>
+      <div class="dialog-buttons" style="padding:12px 16px; border-top:1px solid var(--border);">
         <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
         <button class="btn btn-primary" id="confirmProceed">Abrir en Outlook</button>
       </div>
@@ -9538,35 +9567,74 @@
       const emails = selected.map(e => e['Email trabajo']);
       const isSeries = state.seriesDates.length > 1;
 
-      // Build confirmation summary using esc() for all user-supplied strings
+      // Build preview section using esc() for all user-supplied strings
       const dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
       });
       const typeLabel = event.isTeams ? 'Teams' : 'Presencial';
-      let summary = '<strong>' + esc(event.title) + '</strong><br>';
-      summary += dateStr + ', ' + event.startTime + ' – ' + event.endTime + '<br>';
-      summary += typeLabel;
-      if (event.location && !event.isTeams) summary += ' · ' + esc(event.location);
-      summary += '<br><strong>' + selected.length + '</strong> personas destinatarias';
-      if (isSeries) summary += '<br>' + state.seriesDates.length + ' sesiones (serie)';
+
+      var previewHtml = '<div class="confirm-preview-title">' + esc(event.title) + '</div>';
+      previewHtml += '<div class="confirm-preview-meta">';
+      previewHtml += '<span>' + dateStr + ', ' + event.startTime + ' \u2013 ' + event.endTime + '</span>';
+      previewHtml += '<span>' + typeLabel;
+      if (event.location && !event.isTeams) previewHtml += ' \u00b7 ' + esc(event.location);
+      previewHtml += '</span>';
+      if (isSeries) previewHtml += '<span>' + state.seriesDates.length + ' sesiones (serie)</span>';
+      previewHtml += '</div>';
+
+      // Attendee count chip
+      previewHtml += '<div style="margin-top:10px;">';
+      previewHtml += '<span class="confirm-preview-count">' + selected.length + ' personas destinatarias</span>';
+      previewHtml += '</div>';
+
+      // Truncated attendee list (max 5 + "y N m\u00e1s")
+      var maxShow = 5;
+      var attendeeNames = selected.map(function(e) { return e.Empleado || ''; });
+      var attendeeListHtml = '<div class="confirm-attendee-list">';
+      var showNames = attendeeNames.slice(0, maxShow);
+      attendeeListHtml += showNames.map(function(n) { return esc(n); }).join(', ');
+      if (attendeeNames.length > maxShow) {
+        attendeeListHtml += ' <span class="confirm-attendee-more">y ' + (attendeeNames.length - maxShow) + ' m\u00e1s</span>';
+      }
+      attendeeListHtml += '</div>';
+      previewHtml += attendeeListHtml;
+
+      // Build alerts section
+      var alertsHtml = '';
+
+      // Alert: >50 recipients
       if (selected.length > 50) {
-        summary += '<br><span style="color:var(--warning);">⚠ Se copiarán los emails al portapapeles (>50 personas destinatarias)</span>';
+        alertsHtml += '<div class="confirm-alert-card">';
+        alertsHtml += '<span class="confirm-alert-icon">\ud83d\udccb</span>';
+        alertsHtml += '<span>Se copiar\u00e1n los emails al portapapeles (' + selected.length + ' personas destinatarias, >50)</span>';
+        alertsHtml += '</div>';
       }
 
-      // Schedule conflict detection — non-blocking warnings
-      const conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
+      // Alert: schedule conflicts
+      var conflicts = detectConflicts(emails, event.date, event.startTime, event.endTime);
       if (conflicts.length > 0) {
-        summary += buildConflictWarningHtml(conflicts);
+        for (var ci = 0; ci < conflicts.length; ci++) {
+          var c = conflicts[ci];
+          alertsHtml += '<div class="confirm-alert-card">';
+          alertsHtml += '<span class="confirm-alert-icon">\u26a0\ufe0f</span>';
+          alertsHtml += '<span>' + esc(String(c.emails.length)) + ' personas ya convocadas a \u00ab' + esc(c.title) + '\u00bb el mismo d\u00eda/hora</span>';
+          alertsHtml += '</div>';
+        }
       }
 
-      // FUNDAE readiness check — non-blocking warnings
-      const fundaeCheck = checkFundaeReadiness(event.title);
+      // Alert: FUNDAE warnings
+      var fundaeCheck = checkFundaeReadiness(event.title);
       if (fundaeCheck.found && fundaeCheck.warnings.length > 0) {
-        summary += buildFundaeWarningHtml(fundaeCheck.warnings);
+        var fundaeItems = fundaeCheck.warnings.map(function(w) { return esc(w); }).join('; ');
+        alertsHtml += '<div class="confirm-alert-card">';
+        alertsHtml += '<span class="confirm-alert-icon">\ud83d\udcd1</span>';
+        alertsHtml += '<span>FUNDAE: ' + fundaeItems + '</span>';
+        alertsHtml += '</div>';
       }
 
-      // Note: innerHTML is used with esc() for all user-supplied values — safe from XSS
-      document.getElementById('confirmBody').innerHTML = summary;
+      // All user-supplied values sanitized with esc() — safe for innerHTML
+      document.getElementById('confirmPreview').innerHTML = previewHtml;
+      document.getElementById('confirmAlerts').innerHTML = alertsHtml;
       document.getElementById('confirmDialog').classList.add('visible');
 
       document.getElementById('confirmProceed').onclick = () => {
