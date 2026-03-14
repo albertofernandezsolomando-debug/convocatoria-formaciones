@@ -3981,6 +3981,10 @@
     tr.row-excluded:hover td {
       opacity: 0.6;
     }
+    tr.row-waitlisted td {
+      opacity: 0.65;
+      font-style: italic;
+    }
 
     /* ── KPI sparklines ── */
     .dash-kpi-trend {
@@ -4151,6 +4155,17 @@
         </div>
         <div id="filterTemplateChips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
         <div id="filterContainer"></div>
+        <details class="form-section" id="nifListSection" style="margin-top:10px;">
+          <summary style="font-size:13px;font-weight:600;cursor:pointer;">Selección por lista</summary>
+          <textarea class="input-field" id="nifListInput" rows="4"
+            placeholder="Pega NIFs o emails separados por comas, puntos y coma, o saltos de línea..."
+            style="font-size:12px;resize:vertical;margin-top:8px;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" id="btnApplyNifList" style="font-size:12px;flex:1;">Aplicar</button>
+            <button class="link-btn link-clear" id="btnClearNifList" style="font-size:12px;">Limpiar</button>
+          </div>
+          <div id="nifListFeedback" style="font-size:11px;color:var(--text-muted);margin-top:8px;"></div>
+        </details>
         <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
           <button class="link-btn link-add" id="btnAddExternal">+ Añadir lista externa</button>
           <span style="color: var(--border-strong); font-size: 11px;">|</span>
@@ -4225,6 +4240,19 @@
             <input type="checkbox" id="surveyCheck" checked style="accent-color:var(--accent);">
             Enviar encuesta de satisfacción al finalizar
           </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="checkbox" id="chkReminder" style="margin:0;">
+          <label for="chkReminder" style="font-size:12px;color:var(--text-secondary);">Enviar recordatorio</label>
+          <select id="selReminderDays" class="filter-select" style="font-size:12px;width:auto;padding:4px 8px;" disabled>
+            <option value="1">1 día antes</option>
+            <option value="2" selected>2 días antes</option>
+            <option value="3">3 días antes</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="inputCapacity" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">Aforo máximo</label>
+          <input type="number" id="inputCapacity" class="input-field" min="1" placeholder="Sin límite" style="font-size:12px;width:80px;">
         </div>
       </div>
 
@@ -4322,6 +4350,7 @@
               <div class="filter-option" style="padding:8px 12px;cursor:pointer;font-size:12px;transition:background 0.15s;" onmouseover="this.style.background='var(--accent-subtle)'" onmouseout="this.style.background=''" onclick="generateCertificates('aprovechamiento')">Cert. Aprovechamiento</div>
             </div>
           </div>
+          <button class="btn btn-secondary" id="btnBatchSend" title="Enviar por lotes">Por lotes</button>
           <button class="btn btn-secondary" id="btnAddToQueue">Añadir a cola</button>
           <button class="btn btn-secondary" id="btnExportPDF" title="Exportar convocatoria como PDF">Exportar PDF</button>
           <button class="btn btn-primary" id="btnOpenOutlook" disabled>Abrir en Outlook</button>
@@ -5070,6 +5099,25 @@
       <div id="excelErrorDialogContent"></div>
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary dialog-btn-sm" id="excelErrorDialogClose">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch send dialog -->
+  <div class="dialog-overlay" id="batchDialog" role="dialog" aria-modal="true">
+    <div class="dialog-box dialog-box-narrow-scrollable" style="text-align:left;">
+      <h3 style="margin:0 0 12px 0;">Enviar por lotes</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:0 0 12px 0;">Agrupa las personas destinatarias por un campo y añade una convocatoria por grupo a la cola.</p>
+      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; display:block;">Agrupar por</label>
+      <select class="input-field" id="batchGroupField" style="margin-bottom:12px;">
+        <option value="Ubicación">Ubicación</option>
+        <option value="Departamento">Departamento</option>
+        <option value="Empresa">Empresa</option>
+      </select>
+      <div id="batchPreview" style="max-height:280px; overflow-y:auto; margin-bottom:16px;"></div>
+      <div class="dialog-buttons dialog-buttons-mt">
+        <button class="btn btn-secondary dialog-btn-sm" id="batchCancel">Cancelar</button>
+        <button class="btn btn-primary dialog-btn-sm" id="batchAddToQueue" disabled>Añadir a cola</button>
       </div>
     </div>
   </div>
@@ -9087,6 +9135,7 @@
       dataQualityIssues: [],
       complianceTypes: [],
       complianceRecords: {},
+      _waitlist: [],
     };
 
     // Dashboard precomputation cache (F3.15)
@@ -9623,6 +9672,8 @@
       }
 
       const payload = buildSurveyPayload(event, emails, settings.formsUrl, settings.formsQuestionId);
+      payload.formsUrl = settings.formsUrl;
+      payload.eventTitle = event.title || '';
       const endTime = event.endTime || '??:??';
 
       fetch(settings.webhookUrl, {
@@ -9633,6 +9684,7 @@
         if (r.ok || r.status === 202) {
           showToast('Encuesta programada para las ' + endTime, 'success');
           markSurveyScheduled(event.title, event.date);
+          scheduleSurveyReminder(payload, settings.webhookUrl);
         } else {
           showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
         }
@@ -9644,8 +9696,91 @@
         }).then(function() {
           showToast('Encuesta enviada a Power Automate (sin confirmación)', 'success');
           markSurveyScheduled(event.title, event.date);
+          scheduleSurveyReminder(payload, settings.webhookUrl);
         }).catch(function() {
           showToast('No se pudo conectar con Power Automate. Verifica la URL del webhook', 'error', 6000);
+        });
+      });
+    }
+
+    function scheduleSurveyReminder(surveyPayload, webhookUrl) {
+      var reminderDate = new Date(surveyPayload.scheduledTime || Date.now());
+      reminderDate.setDate(reminderDate.getDate() + 7);
+
+      var reminderPayload = {
+        type: 'survey_reminder',
+        to: surveyPayload.to,
+        subject: 'Recordatorio: Tu opinión nos importa',
+        formsUrl: surveyPayload.formsUrl,
+        eventTitle: surveyPayload.eventTitle || '',
+        scheduledTime: reminderDate.toISOString()
+      };
+
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reminderPayload)
+      }).catch(function(err) {
+        console.warn('Error al programar reenvío de encuesta:', err);
+      });
+    }
+
+    function sendReminderEmail(event, emails) {
+      if (!event.date) {
+        showToast('Completa la fecha del evento para programar el recordatorio', 'warning', 6000);
+        return;
+      }
+
+      var settings = loadSettings();
+      if (!settings.webhookUrl) {
+        showToast('Configura el webhook en Ajustes para enviar recordatorios', 'warning', 6000);
+        return;
+      }
+
+      var daysBefore = parseInt(document.getElementById('selReminderDays').value, 10) || 2;
+      var eventDateObj = new Date(event.date + 'T09:00:00');
+      eventDateObj.setDate(eventDateObj.getDate() - daysBefore);
+      var scheduledTime = eventDateObj.toISOString();
+
+      var dateStr = new Date(event.date + 'T00:00:00').toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+      var subject = 'Recordatorio: ' + (event.title || 'Formación') + ' \u2013 ' + dateStr;
+      var body = '<p>Te recordamos que tienes programada la formación <strong>' + esc(event.title) + '</strong> el ' + dateStr + ' de ' + event.startTime + ' a ' + event.endTime + '.</p>';
+      if (event.location && !event.isTeams) {
+        body += '<p>Lugar: ' + esc(event.location) + '</p>';
+      }
+      if (event.isTeams) {
+        body += '<p>Modalidad: Teams</p>';
+      }
+
+      var payload = {
+        type: 'reminder',
+        to: emails,
+        subject: subject,
+        body: body,
+        scheduledTime: scheduledTime
+      };
+
+      fetch(settings.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(r) {
+        if (r.ok || r.status === 202) {
+          showToast('Recordatorio programado ' + daysBefore + ' día(s) antes', 'success');
+        } else {
+          showToast('Error al programar recordatorio (HTTP ' + r.status + ')', 'error', 6000);
+        }
+      }).catch(function() {
+        fetch(settings.webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload)
+        }).then(function() {
+          showToast('Recordatorio enviado a Power Automate (sin confirmación)', 'success');
+        }).catch(function() {
+          showToast('No se pudo conectar con Power Automate para el recordatorio', 'error', 6000);
         });
       });
     }
@@ -9998,6 +10133,7 @@
       document.getElementById('tableSearch').style.display = '';
 
       renderFilters();
+      checkWaitlist(true);
       renderTable();
       checkOrphanParticipants();
 
@@ -10151,6 +10287,7 @@
               isSeries: document.getElementById('seriesCheck').checked,
               sendSurvey: document.getElementById('surveyCheck').checked,
               formador: document.getElementById('eventFormador').value,
+              capacity: document.getElementById('inputCapacity').value,
             },
             timestamp: Date.now()
           };
@@ -10411,6 +10548,56 @@
       renderTable();
     });
 
+    // --- NIF/Email list selection (F4.2) ---
+    document.getElementById('btnApplyNifList').addEventListener('click', function() {
+      var raw = document.getElementById('nifListInput').value.trim();
+      if (!raw) {
+        showToast('Pega al menos un NIF o email', 'warning');
+        return;
+      }
+      // Split by comma, semicolon, tab, or newline; trim and lowercase
+      var tokens = raw.split(/[,;\t\n]+/).map(function(t) { return t.trim().toLowerCase(); }).filter(function(t) { return t.length > 0; });
+      if (tokens.length === 0) {
+        showToast('No se encontraron valores válidos', 'warning');
+        return;
+      }
+      var tokenSet = new Set(tokens);
+      var matched = [];
+      var matchedTokens = new Set();
+      (state.employees || []).forEach(function(emp) {
+        var nif = (emp.NIF || '').trim().toLowerCase();
+        var email = (emp['Email trabajo'] || '').trim().toLowerCase();
+        if ((nif && tokenSet.has(nif)) || (email && tokenSet.has(email))) {
+          matched.push(emp);
+          if (nif && tokenSet.has(nif)) matchedTokens.add(nif);
+          if (email && tokenSet.has(email)) matchedTokens.add(email);
+        }
+      });
+      // Exclude everyone NOT matched
+      var matchedIds = new Set(matched.map(function(e) { return e._id; }));
+      state.excludedNIFs = new Set(
+        (state.employees || []).filter(function(e) { return !matchedIds.has(e._id); }).map(function(e) { return e._id; })
+      );
+      // Build feedback
+      var unmatched = tokens.filter(function(t) { return !matchedTokens.has(t); });
+      var feedbackEl = document.getElementById('nifListFeedback');
+      var parts = [];
+      parts.push(esc(matched.length + ' de ' + tokens.length + ' coincidencias encontradas.'));
+      if (unmatched.length > 0) {
+        parts.push('<br><span style="color:var(--warning);">Sin coincidencia: ' + unmatched.map(function(u) { return esc(u); }).join(', ') + '</span>');
+      }
+      feedbackEl.innerHTML = parts.join('');
+      renderTable();
+      showToast(matched.length + ' personas seleccionadas por lista', 'success');
+    });
+
+    document.getElementById('btnClearNifList').addEventListener('click', function() {
+      document.getElementById('nifListInput').value = '';
+      document.getElementById('nifListFeedback').innerHTML = '';
+      state.excludedNIFs = new Set();
+      renderTable();
+    });
+
     document.getElementById('btnLoadFromAccion').addEventListener('click', function() {
       const acciones = getCatalog('acciones');
       if (acciones.length === 0) {
@@ -10588,6 +10775,41 @@
     };
 
     // ═══════════════════════════════════
+    // WAITLIST / CAPACITY
+    // ═══════════════════════════════════
+
+    function checkWaitlist(skipRender) {
+      var cap = parseInt(document.getElementById('inputCapacity').value, 10);
+      var prevLen = state._waitlist ? state._waitlist.length : 0;
+
+      if (!cap || isNaN(cap)) {
+        state._waitlist = [];
+        if (!skipRender) renderTable();
+        return;
+      }
+
+      var allEmployees = [].concat(state.employees, state.externalEmployees);
+      var filtered = filterEmployees(allEmployees, state.activeFilters);
+      var result = splitByEmail(filtered);
+      var valid = result.valid;
+      var selected = valid.filter(function(emp) { return !state.excludedNIFs.has(emp._id); });
+
+      if (selected.length <= cap) {
+        state._waitlist = [];
+        if (!skipRender) renderTable();
+        return;
+      }
+
+      var waitlisted = selected.slice(cap);
+      state._waitlist = waitlisted.map(function(e) { return e._id; });
+
+      if (waitlisted.length !== prevLen) {
+        showToast(waitlisted.length + ' persona' + (waitlisted.length > 1 ? 's' : '') + ' en lista de espera (aforo: ' + cap + ')', 'warning');
+      }
+      if (!skipRender) renderTable();
+    }
+
+    // ═══════════════════════════════════
     // ATTENDEE TABLE
     // ═══════════════════════════════════
 
@@ -10595,7 +10817,8 @@
       var hasEmail = isValidEmail(emp['Email trabajo']);
       var isExcluded = state.excludedNIFs.has(emp._id);
       var isExternal = emp._source === 'external';
-      var rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '');
+      var isWaitlisted = state._waitlist && state._waitlist.indexOf(emp._id) !== -1;
+      var rowClass = 'attendee-row' + (!hasEmail ? ' row-no-email' : '') + (isExcluded ? ' row-excluded' : '') + (isWaitlisted ? ' row-waitlisted' : '');
 
       var tr = document.createElement('tr');
       tr.className = rowClass;
@@ -10621,6 +10844,14 @@
         badge.textContent = 'ext';
         tdName.appendChild(document.createTextNode(' '));
         tdName.appendChild(badge);
+      }
+      if (isWaitlisted) {
+        var wlBadge = document.createElement('span');
+        wlBadge.className = 'chip';
+        wlBadge.style.cssText = 'background:#fff3cd;color:#856404;font-size:10px;';
+        wlBadge.textContent = 'Lista de espera';
+        tdName.appendChild(document.createTextNode(' '));
+        tdName.appendChild(wlBadge);
       }
       tr.appendChild(tdName);
 
@@ -10651,7 +10882,11 @@
           state.excludedNIFs.add(cb.dataset.id);
           tr.classList.add('row-excluded');
         }
-        updateCounts();
+        if (typeof checkWaitlist === 'function') {
+          checkWaitlist();
+        } else {
+          updateCounts();
+        }
       });
 
       // Row click toggles checkbox
@@ -10765,7 +11000,12 @@
       const allEmployees = [...state.employees, ...state.externalEmployees];
       const filtered = filterEmployees(allEmployees, state.activeFilters);
       const { valid } = splitByEmail(filtered);
-      return valid.filter(emp => !state.excludedNIFs.has(emp._id));
+      var selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
+      // Exclude waitlisted employees — only confirmed attendees
+      if (state._waitlist && state._waitlist.length > 0) {
+        selected = selected.filter(emp => state._waitlist.indexOf(emp._id) === -1);
+      }
+      return selected;
     }
 
     function updateCounts() {
@@ -10775,8 +11015,11 @@
       const selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
 
       const totalActive = allEmployees.length;
-      document.getElementById('attendeeCount').textContent = selected.length;
-      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' personas trabajadoras';
+      var waitlistCount = state._waitlist ? state._waitlist.length : 0;
+      var confirmedCount = selected.length - waitlistCount;
+      document.getElementById('attendeeCount').textContent = confirmedCount > 0 ? confirmedCount : selected.length;
+      var waitlistSuffix = waitlistCount > 0 ? ' (+ ' + waitlistCount + ' en espera)' : '';
+      document.getElementById('attendeeTotal').textContent = ' de ' + totalActive + ' personas trabajadoras' + waitlistSuffix;
 
       const warningEl = document.getElementById('noEmailWarning');
       if (noEmail.length > 0) {
@@ -10856,7 +11099,14 @@
         }
       });
 
-      renderTable();
+      // checkWaitlist recalculates and re-renders the table
+      checkWaitlist();
+    });
+
+    // ── Capacity input wiring ──
+    document.getElementById('inputCapacity').addEventListener('input', function() {
+      checkWaitlist();
+      saveState();
     });
 
     // ═══════════════════════════════════
@@ -10919,6 +11169,9 @@
     document.getElementById('eventBody').addEventListener('input', saveState);
     document.getElementById('eventFormador').addEventListener('input', saveState);
     document.getElementById('surveyCheck').addEventListener('change', saveState);
+    document.getElementById('chkReminder').addEventListener('change', function() {
+      document.getElementById('selReminderDays').disabled = !this.checked;
+    });
 
     // ── On-blur validation for required event fields ──
     (function() {
@@ -11430,6 +11683,11 @@
       if (document.getElementById('surveyCheck').checked) {
         html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Encuesta</span><span>Programada</span></div>';
       }
+      // Check reminder
+      if (document.getElementById('chkReminder').checked) {
+        var reminderDays = document.getElementById('selReminderDays').value;
+        html += '<div class="post-send-detail-item"><span class="post-send-detail-label">Recordatorio</span><span>' + reminderDays + ' día(s) antes</span></div>';
+      }
 
       html += '</div>';
 
@@ -11860,6 +12118,9 @@
           if (document.getElementById('surveyCheck').checked) {
             sendSurveyEmail(event, emails);
           }
+          if (document.getElementById('chkReminder').checked) {
+            sendReminderEmail(event, emails);
+          }
           // Sync with matching acción formativa
           syncConvocatoriaWithAccion(event, emails);
           // Show post-send summary
@@ -11964,6 +12225,153 @@
       }
     });
 
+    // ═══════════════════════════════════
+    // BATCH SEND (POR LOTES)
+    // ═══════════════════════════════════
+    function showBatchDialog() {
+      if (!validateEvent()) return;
+
+      const selected = getSelectedAttendees();
+      if (selected.length === 0) {
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
+        return;
+      }
+
+      const dialog = document.getElementById('batchDialog');
+      const fieldSelect = document.getElementById('batchGroupField');
+      const ev = getCurrentEvent();
+
+      // Render initial preview
+      renderBatchPreview(fieldSelect.value, selected, ev);
+
+      // Update preview when grouping field changes
+      fieldSelect.onchange = function() {
+        renderBatchPreview(this.value, selected, ev);
+      };
+
+      dialog.classList.add('visible');
+    }
+
+    function renderBatchPreview(field, employees, ev) {
+      const preview = document.getElementById('batchPreview');
+      const addBtn = document.getElementById('batchAddToQueue');
+
+      // Group employees by the selected field
+      const groups = {};
+      employees.forEach(function(emp) {
+        var key = emp[field] || '(sin valor)';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(emp);
+      });
+
+      var sortedKeys = Object.keys(groups).sort(function(a, b) {
+        if (a === '(sin valor)') return 1;
+        if (b === '(sin valor)') return -1;
+        return a.localeCompare(b);
+      });
+
+      if (sortedKeys.length === 0) {
+        preview.textContent = 'No hay grupos para mostrar.';
+        addBtn.disabled = true;
+        return;
+      }
+
+      // Build preview using DOM methods for safety
+      preview.textContent = '';
+
+      var summary = document.createElement('div');
+      summary.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:8px;';
+      summary.textContent = sortedKeys.length + ' grupo' + (sortedKeys.length !== 1 ? 's' : '') +
+        ' \u00b7 ' + employees.length + ' persona' + (employees.length !== 1 ? 's' : '') + ' en total';
+      preview.appendChild(summary);
+
+      var container = document.createElement('div');
+      container.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+
+      sortedKeys.forEach(function(key) {
+        var group = groups[key];
+        var row = document.createElement('div');
+        row.style.cssText = 'background:var(--bg-main); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; justify-content:space-between; align-items:center;';
+
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:13px; font-weight:500; color:var(--text-primary);';
+        nameSpan.textContent = key;
+
+        var chipSpan = document.createElement('span');
+        chipSpan.className = 'chip';
+        chipSpan.textContent = group.length + ' persona' + (group.length !== 1 ? 's' : '');
+
+        row.appendChild(nameSpan);
+        row.appendChild(chipSpan);
+        container.appendChild(row);
+      });
+
+      preview.appendChild(container);
+      addBtn.disabled = false;
+    }
+
+    function addBatchToQueue(field, employees, ev) {
+      // Group employees by the selected field
+      const groups = {};
+      employees.forEach(function(emp) {
+        var key = emp[field] || '(sin valor)';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(emp);
+      });
+
+      var sortedKeys = Object.keys(groups).sort(function(a, b) {
+        if (a === '(sin valor)') return 1;
+        if (b === '(sin valor)') return -1;
+        return a.localeCompare(b);
+      });
+
+      var added = 0;
+      sortedKeys.forEach(function(key) {
+        var group = groups[key];
+        var emails = group.map(function(e) { return e['Email trabajo']; }).filter(Boolean);
+        if (emails.length === 0) return;
+
+        state.queue.push({
+          id: Date.now() + added,
+          event: Object.assign({}, ev, {
+            title: ev.title + ' [' + key + ']'
+          }),
+          attendeeCount: emails.length,
+          emails: emails,
+          filters: JSON.parse(JSON.stringify(state.activeFilters)),
+          seriesDates: state.seriesDates.length > 1 ? [...state.seriesDates] : null
+        });
+        added++;
+      });
+
+      saveQueue();
+      renderQueue();
+      return added;
+    }
+
+    document.getElementById('batchCancel').addEventListener('click', function() {
+      closeDialogAnimated(document.getElementById('batchDialog'));
+    });
+
+    document.getElementById('batchAddToQueue').addEventListener('click', function() {
+      var selected = getSelectedAttendees();
+      if (selected.length === 0) {
+        showToast('No hay personas destinatarias seleccionadas', 'warning');
+        return;
+      }
+      var ev = getCurrentEvent();
+      var field = document.getElementById('batchGroupField').value;
+      var added = addBatchToQueue(field, selected, ev);
+      closeDialogAnimated(document.getElementById('batchDialog'));
+      if (added > 0) {
+        showToast(added + ' convocatoria' + (added !== 1 ? 's' : '') + ' añadida' + (added !== 1 ? 's' : '') + ' a la cola (' + state.queue.length + ' en cola)', 'success');
+      } else {
+        showToast('No se añadió ninguna convocatoria (sin emails válidos)', 'warning');
+      }
+    });
+
+    document.getElementById('btnBatchSend').addEventListener('click', showBatchDialog);
+
     document.getElementById('btnClearQueue').addEventListener('click', () => {
       if (state.queue.length === 0) return;
       if (!confirm('Se eliminarán ' + state.queue.length + ' convocatoria' + (state.queue.length > 1 ? 's' : '') + ' de la cola. ¿Continuar?')) return;
@@ -12028,6 +12436,10 @@
         // Send survey if enabled
         if (document.getElementById('surveyCheck').checked) {
           sendSurveyEmail(event, emails);
+        }
+        // Send reminder if enabled
+        if (document.getElementById('chkReminder').checked) {
+          sendReminderEmail(event, emails);
         }
 
         // Mark processed queue item as done
@@ -12364,6 +12776,10 @@
                 }
                 // Restore formador
                 document.getElementById('eventFormador').value = ec.formador || '';
+                // Restore capacity
+                if (ec.capacity) {
+                  document.getElementById('inputCapacity').value = ec.capacity;
+                }
                 // Restore survey checkbox (default true if field missing — migration)
                 const surveyCheck = document.getElementById('surveyCheck');
                 if (surveyCheck) {
@@ -12387,6 +12803,7 @@
             document.getElementById('tableSearch').style.display = '';
 
             renderFilters();
+            checkWaitlist(true);
             renderTable();
             checkOrphanParticipants();
             showToast('Sesión anterior restaurada', 'success');
