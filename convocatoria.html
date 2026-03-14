@@ -1652,6 +1652,23 @@
       font-size: 12px;
       color: var(--text-muted);
     }
+    .dialog-onboarding-footer a {
+      font-size: 12px;
+    }
+    .dialog-onboarding-title {
+      margin-bottom: 4px;
+    }
+    .dialog-onboarding-intro {
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .dialog-btn-sm {
+      font-size: 12px;
+    }
+    .dialog-btn-xs {
+      font-size: 11px;
+      margin-top: 6px;
+    }
     .instructions-h4 {
       margin: 16px 0 8px 0;
       font-size: 13px;
@@ -4024,7 +4041,7 @@
             <tbody></tbody>
           </table>
         </div>
-        <button class="link-btn link-add" onclick="addEmpresaGrupo()" style="font-size:11px; margin-top:6px;">+ Añadir empresa</button>
+        <button class="link-btn link-add dialog-btn-xs" onclick="addEmpresaGrupo()">+ Añadir empresa</button>
       </div>
       <div class="dialog-section">
         <div class="dialog-section-title">Plantillas guardadas</div>
@@ -4117,8 +4134,8 @@
     <div class="dialog-box dialog-box-wide-scrollable">
       <div id="employeeReportContent"></div>
       <div class="dialog-buttons dialog-buttons-mt">
-        <button class="btn btn-secondary" id="employeeReportExport" style="font-size:12px;">Exportar ficha</button>
-        <button class="btn btn-secondary" id="employeeReportClose" style="font-size:12px;">Cerrar</button>
+        <button class="btn btn-secondary dialog-btn-sm" id="employeeReportExport">Exportar ficha</button>
+        <button class="btn btn-secondary dialog-btn-sm" id="employeeReportClose">Cerrar</button>
       </div>
     </div>
   </div>
@@ -4129,7 +4146,7 @@
       <h3 class="dialog-employee-select-title">Selecciona un empleado</h3>
       <div id="employeeSelectList"></div>
       <div class="dialog-buttons dialog-buttons-mt">
-        <button class="btn btn-secondary" id="employeeSelectCancel" style="font-size:12px;">Cancelar</button>
+        <button class="btn btn-secondary dialog-btn-sm" id="employeeSelectCancel">Cancelar</button>
       </div>
     </div>
   </div>
@@ -4137,8 +4154,8 @@
   <!-- Onboarding overlay -->
   <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
     <div class="dialog-box dialog-box-compact">
-      <h3 style="margin-bottom:4px;">Bienvenido a Convocatoria de Formaciones</h3>
-      <p style="margin-bottom:16px; font-size:13px;">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
+      <h3 class="dialog-onboarding-title">Bienvenido a Convocatoria de Formaciones</h3>
+      <p class="dialog-onboarding-intro">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
       <div class="onboarding-step">
         <div class="onboarding-step-num">1</div>
         <div class="onboarding-step-text"><strong>Carga tu organigrama Excel</strong> con los datos de empleados (nombre, NIF, email, departamento).</div>
@@ -4156,7 +4173,7 @@
         <div class="onboarding-step-text"><strong>Envia desde Outlook</strong> con un clic. La convocatoria se abre lista para enviar.</div>
       </div>
       <div class="dialog-onboarding-footer">
-        Para configurar encuestas de satisfaccion automaticas, abre <a href="#" class="link-btn link-add" style="font-size:12px;" onclick="document.getElementById('onboardingOverlay').classList.remove('visible'); document.getElementById('btnSettings').click(); return false;">Ajustes</a>.
+        Para configurar encuestas de satisfaccion automaticas, abre <a href="#" class="link-btn link-add" onclick="document.getElementById('onboardingOverlay').classList.remove('visible'); document.getElementById('btnSettings').click(); return false;">Ajustes</a>.
       </div>
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-primary" id="onboardingStart">Empezar</button>
