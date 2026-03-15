@@ -6886,7 +6886,7 @@
         columns: [
           { key: 'codigo',          label: 'Código',       editable: false, type: 'text',   width: '80px' },
           { key: 'nombre',          label: 'Nombre',       editable: true,  type: 'text',   width: '2fr' },
-          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Planificada','Pendiente','Buscando','En preparación','En marcha','Terminada','Anulada','Retrasada']; } },
+          { key: 'estado',          label: 'Estado',        editable: true,  type: 'select', width: '120px', options: function() { return ['Planificada','Pendiente','Buscando','En preparación','Convocada','En marcha','Terminada','Anulada','Retrasada']; } },
           { key: 'departamento',    label: 'Departamento',  editable: true,  type: 'text',   width: '150px' },
           { key: 'empresaPagadora', label: 'Empresa',       editable: true,  type: 'select', width: '180px', options: function() { return getEmpresasGrupo().map(function(e) { return e.razonSocial; }); } },
           { key: 'fechaInicio',     label: 'F. inicio',     editable: true,  type: 'date',   width: '120px' },
@@ -7808,15 +7808,20 @@
       container.querySelectorAll('.compliance-delete-type').forEach(function(btn) {
         btn.addEventListener('click', function() {
           var id = btn.dataset.complianceId;
-          if (!confirm('¿Eliminar este tipo de formación obligatoria?')) return;
-          state.complianceTypes = state.complianceTypes.filter(function(ct) { return ct.id !== id; });
-          // Clean related records
-          Object.keys(state.complianceRecords).forEach(function(key) {
-            if (key.endsWith('|' + id)) delete state.complianceRecords[key];
-          });
-          saveCompliance();
-          renderComplianceView();
-          showToast('Tipo eliminado', 'success');
+          showCatalogConfirm(
+            'Eliminar tipo de formación',
+            '¿Eliminar este tipo de formación obligatoria?',
+            function() {
+              state.complianceTypes = state.complianceTypes.filter(function(ct) { return ct.id !== id; });
+              // Clean related records
+              Object.keys(state.complianceRecords).forEach(function(key) {
+                if (key.endsWith('|' + id)) delete state.complianceRecords[key];
+              });
+              saveCompliance();
+              renderComplianceView();
+              showToast('Tipo eliminado', 'success');
+            }
+          );
         });
       });
 
@@ -8778,8 +8783,10 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var dirtyHeadingId = 'dlg-heading-dirty-' + Date.now();
+      overlay.setAttribute('aria-labelledby', dirtyHeadingId);
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
-        '<h3 class="u-dialog-heading">Cambios sin guardar</h3>' +
+        '<h3 class="u-dialog-heading" id="' + dirtyHeadingId + '">Cambios sin guardar</h3>' +
         '<p class="u-text-13 u-text-secondary">Hay cambios sin guardar. ¿Descartar?</p>' +
         '<div class="dialog-buttons u-mt-16">' +
           '<button class="btn btn-secondary" id="dirtyCancel">Cancelar</button>' +
@@ -9586,9 +9593,11 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var cpHeadingId = 'dlg-heading-copypart-' + Date.now();
+      overlay.setAttribute('aria-labelledby', cpHeadingId);
 
       var html = '<div class="dialog-box u-max-w-480 u-flex-col" style="max-height:70vh;">' +
-        '<h3 class="u-dialog-title u-mb-12">Copiar participantes de otra acci\u00F3n</h3>';
+        '<h3 class="u-dialog-title u-mb-12" id="' + cpHeadingId + '">Copiar participantes de otra acci\u00F3n</h3>';
 
       if (candidates.length === 0) {
         html += '<p class="u-text-13 u-text-muted" style="margin:12px 0;">No hay otras acciones con participantes asignados.</p>';
@@ -9671,9 +9680,11 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var ppHeadingId = 'dlg-heading-picker-' + Date.now();
+      overlay.setAttribute('aria-labelledby', ppHeadingId);
       overlay.innerHTML =
         '<div class="dialog-box u-max-w-600 u-flex-col u-text-left u-p-24" style="width:95%; max-height:80vh;">' +
-          '<h3 class="u-dialog-heading" style="margin-bottom:12px;">Asignar participantes</h3>' +
+          '<h3 class="u-dialog-heading" id="' + ppHeadingId + '" style="margin-bottom:12px;">Asignar participantes</h3>' +
           '<input class="input-field u-text-12 u-mb-8" type="text" id="ppSearch" placeholder="Buscar por nombre o NIF...">' +
           '<div class="u-flex u-gap-6 u-mb-10">' +
             buildFilterSelect('ppEmpresa', 'Empresa', empresas) +
@@ -10003,9 +10014,11 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var ccHeadingId = 'dlg-heading-catconfirm-' + Date.now();
+      overlay.setAttribute('aria-labelledby', ccHeadingId);
       overlay.innerHTML =
         '<div class="dialog-box">' +
-          '<h3>' + esc(title) + '</h3>' +
+          '<h3 id="' + ccHeadingId + '">' + esc(title) + '</h3>' +
           '<p class="u-text-left">' + esc(message) + '</p>' +
           '<div class="dialog-buttons">' +
             '<button class="btn btn-secondary" id="catalogConfirmCancel">Cancelar</button>' +
@@ -10134,12 +10147,8 @@
     }
 
     function navigateToAction(code) {
-      // Switch to catalog tab
-      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-      var catalogBtn = document.querySelector('.tab-btn[data-tab="tabCatalogos"]');
-      if (catalogBtn) catalogBtn.classList.add('active');
-      document.getElementById('tabCatalogos').classList.add('active');
+      // Switch to catalog tab using applyTabChange to maintain ARIA state
+      applyTabChange('tabCatalogos');
 
       // Switch to acciones sub-tab
       document.querySelectorAll('.catalog-tab').forEach(function(b) { b.classList.remove('active'); });
@@ -11089,8 +11098,10 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var tnaFormHeadingId = 'dlg-heading-tnaform-' + Date.now();
+      overlay.setAttribute('aria-labelledby', tnaFormHeadingId);
       overlay.innerHTML = '<div class="dialog-box u-max-w-480 u-text-left">' +
-        '<h3 class="u-dialog-heading" style="margin-bottom:16px;">Nueva solicitud de formación</h3>' +
+        '<h3 class="u-dialog-heading" id="' + tnaFormHeadingId + '" style="margin-bottom:16px;">Nueva solicitud de formación</h3>' +
         '<div class="u-flex-col u-gap-12">' +
           '<div>' +
             '<label class="u-text-12 u-font-500 u-text-secondary u-block u-mb-4">Área / Departamento</label>' +
@@ -11191,8 +11202,10 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var tnaDelHeadingId = 'dlg-heading-tnadel-' + Date.now();
+      overlay.setAttribute('aria-labelledby', tnaDelHeadingId);
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
-        '<h3 class="u-dialog-heading">Eliminar solicitud</h3>' +
+        '<h3 class="u-dialog-heading" id="' + tnaDelHeadingId + '">Eliminar solicitud</h3>' +
         '<p class="u-text-13 u-text-secondary">¿Eliminar la solicitud "' + esc(request.tema || '') + '"?</p>' +
         '<div class="dialog-buttons u-mt-16 u-flex u-gap-8 u-justify-center">' +
           '<button class="btn btn-secondary" id="tnaDeleteCancel">Cancelar</button>' +
@@ -11541,12 +11554,15 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var utHeadingId = 'dlg-heading-template-' + Date.now();
+      overlay.setAttribute('aria-labelledby', utHeadingId);
 
       var dialogBox = document.createElement('div');
       dialogBox.className = 'dialog-box';
       dialogBox.style.maxWidth = '420px';
 
       var title = document.createElement('h3');
+      title.id = utHeadingId;
       title.style.cssText = 'margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);';
       title.textContent = 'Guardar plantilla';
       dialogBox.appendChild(title);
@@ -11999,9 +12015,11 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var opHeadingId = 'dlg-heading-orphan-' + Date.now();
+      overlay.setAttribute('aria-labelledby', opHeadingId);
 
       var html = '<div class="dialog-box u-max-w-560 u-flex-col u-text-left" style="max-height:75vh;">' +
-        '<h3 class="u-dialog-heading" style="margin-bottom:16px;">Participantes no encontrados en organigrama</h3>' +
+        '<h3 class="u-dialog-heading" id="' + opHeadingId + '" style="margin-bottom:16px;">Participantes no encontrados en organigrama</h3>' +
         '<div id="orphanDialogContent" class="u-overflow-y-auto u-flex-1 u-mb-16">';
 
       orphanData.forEach(function(d) {
@@ -12584,8 +12602,10 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var laHeadingId = 'dlg-heading-loadaccion-' + Date.now();
+      overlay.setAttribute('aria-labelledby', laHeadingId);
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
-        '<h3>Cargar desde Acción Formativa</h3>' +
+        '<h3 id="' + laHeadingId + '">Cargar desde Acción Formativa</h3>' +
         '<p class="u-text-13 u-text-secondary u-mb-12">Selecciona una acción para pre-seleccionar sus participantes vinculados.</p>' +
         '<select class="input-field u-text-13 u-mb-16" id="loadAccionSelect">' +
         '<option value="">-- Seleccionar acción --</option>' +
@@ -12679,6 +12699,7 @@
         }
         this._scrollHandler = null;
         this._allRows = null;
+        this._allRowsFull = null;
       },
 
       setup: function(container, tbody, allRows) {
@@ -13582,7 +13603,7 @@
       }
 
       // Update status
-      if (accion.estado === 'En preparacion' || !accion.estado) {
+      if (accion.estado === 'En preparación' || !accion.estado) {
         var today = new Date().toISOString().slice(0, 10);
         accion.estado = (accion.fechaInicio && accion.fechaInicio <= today) ? 'En marcha' : 'Convocada';
       }
@@ -14090,8 +14111,10 @@
           dupOverlay.className = 'dialog-overlay visible';
           dupOverlay.setAttribute('role', 'dialog');
           dupOverlay.setAttribute('aria-modal', 'true');
+          var dupHeadingId = 'dlg-heading-dup-' + Date.now();
+          dupOverlay.setAttribute('aria-labelledby', dupHeadingId);
           dupOverlay.innerHTML = '<div class="dialog-box u-max-w-440">' + // innerHTML OK: sanitized via esc()
-            '<h3 class="u-dialog-heading" style="color:var(--warning);">Posible duplicado</h3>' +
+            '<h3 class="u-dialog-heading" id="' + dupHeadingId + '" style="color:var(--warning);">Posible duplicado</h3>' +
             '<p class="u-text-13 u-text-secondary u-leading-relaxed">Ya enviaste <strong>' + esc(event.title) + '</strong> para el ' + esc(event.date) + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + ').</p>' +
             '<p class="u-text-13 u-text-secondary">¿Continuar de todos modos?</p>' +
             '<div class="dialog-buttons u-mt-16">' +
@@ -14329,11 +14352,30 @@
 
     document.getElementById('btnClearQueue').addEventListener('click', () => {
       if (state.queue.length === 0) return;
-      if (!confirm('Se eliminarán ' + state.queue.length + ' convocatoria' + (state.queue.length > 1 ? 's' : '') + ' de la cola. ¿Continuar?')) return;
-      state.queue = [];
-      saveQueue();
-      renderQueue();
-      showToast('Cola vaciada', 'info');
+      var msg = 'Se eliminarán ' + state.queue.length + ' convocatoria' + (state.queue.length > 1 ? 's' : '') + ' de la cola. ¿Continuar?';
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      var cqHeadingId = 'dlg-heading-clearqueue-' + Date.now();
+      overlay.setAttribute('aria-labelledby', cqHeadingId);
+      overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
+        '<h3 id="' + cqHeadingId + '">Vaciar cola</h3>' +
+        '<p class="u-text-13 u-text-secondary">' + esc(msg) + '</p>' +
+        '<div class="dialog-buttons u-mt-16">' +
+          '<button class="btn btn-secondary" id="clearQueueCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="clearQueueConfirm" style="background:var(--danger);">Confirmar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+      document.getElementById('clearQueueCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); } });
+      document.getElementById('clearQueueConfirm').addEventListener('click', function() {
+        releaseFocus(overlay); overlay.remove();
+        state.queue = [];
+        saveQueue();
+        renderQueue();
+        showToast('Cola vaciada', 'info');
+      });
     });
 
     document.getElementById('btnLaunchQueue').addEventListener('click', () => {
@@ -14812,13 +14854,26 @@
 
     document.getElementById('tableSearchInput').addEventListener('input', () => {
       const query = document.getElementById('tableSearchInput').value.toLowerCase();
-      // When virtual scroll is active, filter across all rows (including off-DOM ones)
-      var rows = VirtualScroll._allRows || [];
-      if (rows.length > 0) {
-        rows.forEach(row => {
-          const text = row.textContent.toLowerCase();
-          row.style.display = text.includes(query) ? '' : 'none';
-        });
+      // Use the preserved full row list when virtual scroll is active
+      var savedFull = VirtualScroll._allRowsFull || VirtualScroll._allRows;
+      if (savedFull && savedFull.length > 0) {
+        // Virtual scroll active: filter rows and rebuild virtual scroll with matches
+        var container = document.getElementById('tableWrap');
+        var tbody = document.getElementById('attendeeBody');
+        // cleanup resets _allRowsFull, so save reference first
+        VirtualScroll.cleanup(container);
+        while (tbody.firstChild) { tbody.removeChild(tbody.firstChild); }
+        if (query) {
+          var filtered = savedFull.filter(function(row) {
+            return row.textContent.toLowerCase().includes(query);
+          });
+          VirtualScroll.setup(container, tbody, filtered);
+        } else {
+          // Search cleared: restore all rows
+          VirtualScroll.setup(container, tbody, savedFull);
+        }
+        // Preserve the full row list for subsequent searches
+        VirtualScroll._allRowsFull = savedFull;
       } else {
         document.querySelectorAll('#attendeeBody tr').forEach(row => {
           const text = row.textContent.toLowerCase();
@@ -15776,6 +15831,8 @@
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
+      var valHeadingId = 'dlg-heading-xmlval-' + Date.now();
+      overlay.setAttribute('aria-labelledby', valHeadingId);
 
       var hasErrors = errors.length > 0;
       var hasWarnings = warnings.length > 0;
@@ -15816,7 +15873,7 @@
       }
 
       overlay.innerHTML = '<div class="dialog-box u-max-w-560 u-dialog-scroll u-text-left u-p-24" style="width:95%;">' +
-        '<h3 class="u-mb-8">' + esc(title) + '</h3>' +
+        '<h3 class="u-mb-8" id="' + valHeadingId + '">' + esc(title) + '</h3>' +
         '<p class="u-text-13 u-text-secondary u-mb-12">' + esc(subtitle) + '</p>' +
         '<div class="u-overflow-y-auto u-flex-1 u-mb-16">' + bodyHtml + '</div>' +
         '<div class="dialog-buttons">' + buttonsHtml + '</div>' +
@@ -18600,7 +18657,7 @@
           if (a.empresaPagadora !== emp.cif || a.bonificable !== 'Si') return;
           var p = parseFloat(a.presupuesto) || 0;
           if (a.estado === 'Terminada' || a.estado === 'En marcha') consumido += p;
-          else if (a.estado === 'Pendiente' || a.estado === 'En preparacion') planificado += p;
+          else if (a.estado === 'Pendiente' || a.estado === 'En preparación') planificado += p;
         });
         // Proyeccion lineal
         var ritmoMensual = consumido / (diasTranscurridos / 30);
@@ -18658,7 +18715,7 @@
         r.acciones++;
         var presupuesto = parseFloat(a.presupuesto) || 0;
         r.costeDirecto += presupuesto;
-        if (a.bonificable === 'Si') r.bonificacion += presupuesto;
+        if (a.bonificable === 'Sí') r.bonificacion += presupuesto;
 
         var horas = parseFloat(a.horasPresenciales || 0) + parseFloat(a.horasTeleformacion || 0);
         (a.participantes || []).forEach(function(nif) {
@@ -20215,13 +20272,8 @@
         plazosList.querySelectorAll('.btnPlazoXml').forEach(function(btn) {
           btn.addEventListener('click', function() {
             var codigo = btn.getAttribute('data-codigo');
-            // Switch to XML tab with this action preselected
-            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-            var xmlBtn = document.querySelector('.tab-btn[data-tab="tabXml"]');
-            if (xmlBtn) xmlBtn.classList.add('active');
-            document.getElementById('tabXml').classList.add('active');
-            refreshXmlSelects();
+            // Switch to XML tab with this action preselected (applyTabChange handles ARIA + rendering)
+            applyTabChange('tabXml');
             document.getElementById('xmlAccionSelect').value = codigo;
             document.getElementById('xmlAccionSelect').dispatchEvent(new Event('change'));
           });
@@ -20342,6 +20394,7 @@
       var estadoColorMap = {
         'Planificada': DS.textMuted,
         'En marcha': DS.accent,
+        'Convocada': DS.success,
         'Terminada': DS.chart3,
         'Anulada': DS.chart5,
         'Retrasada': DS.chart5,
@@ -20552,7 +20605,7 @@
         var container = document.getElementById('dashRiskScoring');
         if (!container) return;
         var bonificables = acciones.filter(function(a) {
-          return a.bonificable === 'Si' && a.estado !== 'Anulada';
+          return a.bonificable === 'Sí' && a.estado !== 'Anulada';
         });
         if (!bonificables.length) {
           container.textContent = '';
@@ -21231,6 +21284,7 @@
       'Planificada': DS.textMuted,
       'Pendiente': DS.textMuted,
       'En preparación': DS.chart2,
+      'Convocada': DS.success,
       'En marcha': DS.accent,
       'Buscando': DS.chart4,
       'Terminada': DS.chart3,
@@ -21863,6 +21917,12 @@
       });
     }
 
+    function icsNextDay(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
     function getVisibleCalendarActions() {
       var acciones = getCatalog('acciones');
       return acciones.filter(function(a) { return a.fechaInicio && a.fechaFin; });
@@ -21885,7 +21945,7 @@
             lines.push('BEGIN:VEVENT');
             lines.push('UID:' + uid);
             lines.push('DTSTART;VALUE=DATE:' + cleanDate);
-            lines.push('DTEND;VALUE=DATE:' + cleanDate);
+            lines.push('DTEND;VALUE=DATE:' + icsNextDay(dateStr));
             lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
             var desc = [];
             if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
@@ -21898,13 +21958,12 @@
         } else {
           // Single VEVENT spanning fechaInicio to fechaFin
           var startDate = action.fechaInicio.replace(/-/g, '');
-          var endDate = action.fechaFin.replace(/-/g, '');
           var uid = 'agora-' + (action.codigo || Math.random().toString(36).substr(2)) + '-' + startDate + '@formacionagora';
 
           lines.push('BEGIN:VEVENT');
           lines.push('UID:' + uid);
           lines.push('DTSTART;VALUE=DATE:' + startDate);
-          lines.push('DTEND;VALUE=DATE:' + endDate);
+          lines.push('DTEND;VALUE=DATE:' + icsNextDay(action.fechaFin));
           lines.push('SUMMARY:' + icsEscape(action.nombre || 'Formacion'));
           var desc = [];
           if (action.modalidad) desc.push('Modalidad: ' + action.modalidad);
