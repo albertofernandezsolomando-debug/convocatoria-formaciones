@@ -12225,6 +12225,112 @@
       return { added: added, removed: removed, changed: changed };
     }
 
+    function cascadeOrganigramaChanges(diff) {
+      var cascadeLog = { removedFromAcciones: 0, accionesAffected: 0, complianceDeactivated: 0, complianceEnrolled: 0 };
+
+      // B.1: Remove bajas from future/active acciones
+      if (diff.removed.length > 0) {
+        var removedNifs = new Set(diff.removed.map(function(e) { return e.NIF; }));
+        var acciones = getCatalog('acciones');
+        var modified = false;
+
+        acciones.forEach(function(a) {
+          if (a.estado === 'Terminada' || a.estado === 'Anulada') return;
+          var participantes = a.participantes || [];
+          var toRemove = participantes.filter(function(nif) { return removedNifs.has(nif); });
+          if (toRemove.length === 0) return;
+
+          // Remove NIFs from participantes
+          a.participantes = participantes.filter(function(nif) { return !removedNifs.has(nif); });
+
+          // Clean up confirmaciones and asistencia
+          toRemove.forEach(function(nif) {
+            if (a.confirmaciones) delete a.confirmaciones[nif];
+            if (a.asistencia && a.asistencia.registro) delete a.asistencia.registro[nif];
+
+            // Audit note
+            var empName = (diff.removed.find(function(e) { return e.NIF === nif; }) || {}).Empleado || nif;
+            if (!a.notas) a.notas = [];
+            a.notas.push({
+              id: Date.now() + Math.random(),
+              date: new Date().toISOString(),
+              tag: 'sistema',
+              text: 'Baja automática: ' + empName + ' — no presente en organigrama'
+            });
+          });
+
+          cascadeLog.removedFromAcciones += toRemove.length;
+          cascadeLog.accionesAffected++;
+          modified = true;
+        });
+
+        if (modified) saveCatalog('acciones', acciones);
+      }
+
+      // B.2: Deactivate compliance records for bajas
+      if (diff.removed.length > 0) {
+        var removedNifs2 = diff.removed.map(function(e) { return e.NIF; });
+        var records = state.complianceRecords;
+        var today = new Date().toISOString().slice(0, 10);
+
+        removedNifs2.forEach(function(nif) {
+          Object.keys(records).forEach(function(key) {
+            if (key.startsWith(nif + '|') && !records[key].inactivo) {
+              records[key].inactivo = true;
+              records[key].motivoBaja = 'No presente en organigrama (' + today + ')';
+              cascadeLog.complianceDeactivated++;
+            }
+          });
+        });
+
+        if (cascadeLog.complianceDeactivated > 0) saveCompliance();
+      }
+
+      // B.3: Auto-enroll altas in mandatory compliance
+      if (diff.added.length > 0 && state.complianceTypes.length > 0) {
+        var records3 = state.complianceRecords;
+        diff.added.forEach(function(emp) {
+          var nif = emp.NIF;
+          if (!nif) return;
+          state.complianceTypes.forEach(function(ct) {
+            var key = nif + '|' + ct.id;
+            if (!records3[key]) {
+              records3[key] = { date: '' }; // empty date = pending
+              cascadeLog.complianceEnrolled++;
+            }
+          });
+        });
+
+        if (cascadeLog.complianceEnrolled > 0) saveCompliance();
+      }
+
+      // Summary toasts
+      if (cascadeLog.removedFromAcciones > 0) {
+        showToast(cascadeLog.removedFromAcciones + ' persona' + (cascadeLog.removedFromAcciones !== 1 ? 's' : '') + ' dada' + (cascadeLog.removedFromAcciones !== 1 ? 's' : '') + ' de baja en ' + cascadeLog.accionesAffected + ' acci' + (cascadeLog.accionesAffected !== 1 ? 'ones' : 'ón') + ' activa' + (cascadeLog.accionesAffected !== 1 ? 's' : ''), 'info', 6000);
+      }
+      if (cascadeLog.complianceDeactivated > 0) {
+        showToast(cascadeLog.complianceDeactivated + ' registro' + (cascadeLog.complianceDeactivated !== 1 ? 's' : '') + ' de compliance desactivado' + (cascadeLog.complianceDeactivated !== 1 ? 's' : ''), 'info', 5000);
+      }
+      if (cascadeLog.complianceEnrolled > 0) {
+        showToast(cascadeLog.complianceEnrolled + ' inscripci' + (cascadeLog.complianceEnrolled !== 1 ? 'ones' : 'ón') + ' de formación obligatoria creada' + (cascadeLog.complianceEnrolled !== 1 ? 's' : ''), 'success', 5000);
+      }
+
+      // E: Warn about stale queue emails
+      if (diff.removed.length > 0 && state.queue && state.queue.length > 0) {
+        var removedEmails = new Set();
+        diff.removed.forEach(function(e) { if (e['Email trabajo']) removedEmails.add(e['Email trabajo'].toLowerCase()); });
+        var staleCount = 0;
+        state.queue.forEach(function(qi) {
+          (qi.emails || []).forEach(function(email) {
+            if (removedEmails.has(email.toLowerCase())) staleCount++;
+          });
+        });
+        if (staleCount > 0) {
+          showToast(staleCount + ' email' + (staleCount !== 1 ? 's' : '') + ' en cola pertenece' + (staleCount !== 1 ? 'n' : '') + ' a personas no presentes en organigrama', 'warning', 8000);
+        }
+      }
+    }
+
     function processParseResult(result, file) {
       if (result.errors.length > 0) {
         var blocked = showExcelErrorDialog(result.errors);
@@ -12254,6 +12360,8 @@
             showToast(atRisk.length + ' persona' + (atRisk.length !== 1 ? 's' : '') + ' eliminada' + (atRisk.length !== 1 ? 's' : '') + ' tiene' + (atRisk.length !== 1 ? 'n' : '') + ' formaciones activas', 'warning', 8000);
           }
         }
+        // Cascade changes to acciones and compliance
+        cascadeOrganigramaChanges(diff);
       }
 
       state.employees = result.employees;
