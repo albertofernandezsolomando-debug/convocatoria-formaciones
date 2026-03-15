@@ -917,7 +917,8 @@
     }
 
     .catalog-list-table {
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
       border-collapse: separate;
       border-spacing: 0;
       font-family: var(--font-body);
@@ -7068,7 +7069,8 @@
           if (sort.dir === 'asc') { ariaSort = 'ascending'; indicator = Icons.sortAsc(10); }
           else { ariaSort = 'descending'; indicator = Icons.sortDesc(10); }
         }
-        h += '<th data-col-key="' + esc(col.key) + '" aria-sort="' + ariaSort + '">';
+        var widthStyle = col.width && !col.width.includes('fr') ? ' style="min-width:' + col.width + '"' : '';
+        h += '<th data-col-key="' + esc(col.key) + '" aria-sort="' + ariaSort + '"' + widthStyle + '>';
         h += esc(col.label);
         h += ' <span class="sort-indicator">' + indicator + '</span>';
         h += '</th>';
@@ -7132,7 +7134,7 @@
         return '<td class="cell-data" data-col-key="' + esc(col.key) + '"' + readonlyAttr + '><span class="' + chipCls + '" data-pk="' + esc(pk) + '">' + cnt + '</span></td>';
       }
       var value = col.displayFn ? (col.displayFn(record) || '') : (record[col.key] != null ? String(record[col.key]) : '');
-      return '<td class="cell-data' + editableClass + '" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '"' + readonlyAttr + '>' + esc(value) + '</td>';
+      return '<td class="cell-data' + editableClass + '" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '"' + readonlyAttr + '>' + esc(formatCellValue(col, value)) + '</td>';
     }
 
     // ═══════════════════════════════════
@@ -7415,15 +7417,27 @@
       }
       upsertCatalogRecord(catalogKey, config.pkField, fullRecord);
       showToast('Campo actualizado', 'success', 2000);
-      // Use textContent (not innerHTML) to safely display the value
-      td.textContent = newValue;
+      // Display formatted value
+      td.textContent = formatCellValue(col, newValue);
     }
 
     function cancelInlineEdit(td, col, record) {
       td.classList.remove('cell-editing');
       td.classList.remove('cell-error');
       td.removeAttribute('contenteditable');
-      td.textContent = td.dataset.originalValue || '';
+      td.textContent = formatCellValue(col, td.dataset.originalValue || '');
+    }
+
+    function formatCellValue(col, value) {
+      if (col.type === 'date' && value) {
+        var d = new Date(value + (value.length === 10 ? 'T00:00:00' : ''));
+        if (!isNaN(d.getTime())) return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+      if (col.type === 'number' && value !== '') {
+        var n = parseFloat(value);
+        if (!isNaN(n)) return n.toLocaleString('es-ES', { maximumFractionDigits: 2 });
+      }
+      return value;
     }
 
     function moveToNextEditableCell(currentTd, reverse) {
