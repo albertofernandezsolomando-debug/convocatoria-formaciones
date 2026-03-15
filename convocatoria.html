@@ -17,7 +17,7 @@
       --bg-warm: #f8fafc;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #94a3b8;
+      --text-muted: #64748b;
       --accent: #4F46E5;
       --accent-hover: #4338CA;
       --accent-light: #E0E7FF;
@@ -84,7 +84,7 @@
       --accent-subtle: #1E1B4B;
       --text-primary: #f1f5f9;
       --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-muted: #94a3b8;
       --bg-primary: #0f172a;
       --bg-panel: #1e293b;
       --bg-input: #334155;
@@ -122,7 +122,7 @@
         --accent-subtle: #1E1B4B;
         --text-primary: #f1f5f9;
         --text-secondary: #94a3b8;
-        --text-muted: #64748b;
+        --text-muted: #94a3b8;
         --bg-primary: #0f172a;
         --bg-panel: #1e293b;
         --bg-input: #334155;
@@ -2609,7 +2609,7 @@
     }
     .dq-editor .dq-save {
       background: var(--accent);
-      color: #fff;
+      color: white;
     }
     .dq-editor .dq-save:hover {
       background: var(--accent-hover);
@@ -5131,7 +5131,7 @@
         <details class="form-section u-mt-10" id="nifListSection">
           <summary class="u-text-13 u-font-600 u-cursor-pointer">Selección por lista</summary>
           <textarea class="input-field u-text-12 u-resize-vertical u-mt-8" id="nifListInput" rows="4"
-            placeholder="Pega NIFs o emails separados por comas, puntos y coma, o saltos de línea..."></textarea>
+            placeholder="Pega NIFs o emails separados por comas, puntos y coma, o saltos de línea..." aria-label="Lista de NIFs"></textarea>
           <div class="u-flex u-gap-8 u-mt-8">
             <button class="btn btn-primary u-text-12 u-flex-1" id="btnApplyNifList">Aplicar</button>
             <button class="link-btn link-clear u-text-12" id="btnClearNifList">Limpiar</button>
@@ -5151,20 +5151,20 @@
       <div class="section" id="eventoSection" style="display:none;">
         <div class="section-label">3. Datos del evento</div>
         <div class="u-flex u-items-center u-gap-8 u-mb-8">
-          <select class="input-field u-flex-1 u-text-12" id="unifiedTemplateSelect">
+          <select class="input-field u-flex-1 u-text-12" id="unifiedTemplateSelect" aria-label="Seleccionar plantilla">
             <option value="">Cargar plantilla...</option>
           </select>
         </div>
         <div class="u-flex-col u-gap-8">
           <div>
-            <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación" data-required="true">
+            <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación" data-required="true" aria-label="Título de la formación" aria-required="true">
             <span class="field-hint" id="eventTitleHint"></span>
           </div>
           <div>
             <div class="event-row">
-              <input class="input-field u-flex-1" type="date" id="eventDate" data-required="true">
-              <input class="input-field u-w-80" type="time" id="eventStart" value="10:00">
-              <input class="input-field u-w-80" type="time" id="eventEnd" value="12:00">
+              <input class="input-field u-flex-1" type="date" id="eventDate" data-required="true" aria-label="Fecha del evento" aria-required="true">
+              <input class="input-field u-w-80" type="time" id="eventStart" value="10:00" aria-label="Hora de inicio">
+              <input class="input-field u-w-80" type="time" id="eventEnd" value="12:00" aria-label="Hora de fin">
             </div>
             <span class="field-hint" id="eventDateHint"></span>
           </div>
@@ -5172,8 +5172,8 @@
             <label><input type="radio" name="eventType" value="presencial" checked> Presencial</label>
             <label><input type="radio" name="eventType" value="teams"> Teams</label>
           </div>
-          <input class="input-field" type="text" id="eventLocation" placeholder="Ubicación (sala, dirección...)">
-          <textarea class="input-field u-resize-vertical" id="eventBody" rows="3" placeholder="Instrucciones adicionales (opcional)"></textarea>
+          <input class="input-field" type="text" id="eventLocation" placeholder="Ubicación (sala, dirección...)" aria-label="Lugar">
+          <textarea class="input-field u-resize-vertical" id="eventBody" rows="3" placeholder="Instrucciones adicionales (opcional)" aria-label="Cuerpo del mensaje"></textarea>
           <label class="u-text-12 u-text-secondary u-flex u-items-center u-gap-6">
             <input type="checkbox" id="seriesCheck"> Serie de sesiones
           </label>
@@ -5187,7 +5187,7 @@
                 <span class="u-text-12 u-text-secondary">Cada</span>
                 <span class="u-text-12 u-text-secondary">semana</span>
                 <span class="u-text-12 u-text-secondary">×</span>
-                <input class="input-field u-w-60" type="number" id="seriesCount" value="2" min="2" max="12">
+                <input class="input-field u-w-60" type="number" id="seriesCount" value="2" min="2" max="12" aria-label="Número de sesiones">
               </div>
             </div>
             <div id="seriesManualConfig" style="display:none;">
@@ -5232,7 +5232,7 @@
       <div id="summaryBar" class="u-hidden u-border-bottom u-bg-panel">
         <!-- Row 1: Status -->
         <div class="u-flex-between u-gap-16 u-px-28" style="padding-top:12px; padding-bottom:12px;">
-          <div class="u-flex u-items-baseline u-gap-6">
+          <div class="u-flex u-items-baseline u-gap-6" aria-live="polite" aria-atomic="true">
             <span class="attendee-count" id="attendeeCount">0</span>
             <span class="u-text-13 u-text-muted u-font-500" id="attendeeTotal">de 0 personas trabajadoras</span>
           </div>
@@ -5240,7 +5240,7 @@
         </div>
         <!-- Row 2: Search + actions -->
         <div id="tableSearch" class="u-hidden u-flex u-gap-8 u-items-center" style="padding:0 28px 10px;">
-          <input class="input-field u-text-12 u-flex-1" type="text" id="tableSearchInput" placeholder="Buscar persona trabajadora, puesto o email...">
+          <input class="input-field u-text-12 u-flex-1" type="text" id="tableSearchInput" placeholder="Buscar persona trabajadora, puesto o email..." aria-label="Buscar persona trabajadora">
         </div>
       </div>
 
@@ -5256,7 +5256,7 @@
       <!-- Queue bar -->
       <div id="queueBar" class="queue-bar">
         <div class="queue-bar-header">
-          <span class="queue-bar-title" onclick="toggleQueuePanel()">
+          <span class="queue-bar-title" role="button" tabindex="0" onclick="toggleQueuePanel()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQueuePanel();}">
             Cola de convocatorias (<span id="queueCount">0</span>) <span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
           </span>
           <div class="queue-bar-actions">
@@ -5309,10 +5309,10 @@
           <div class="u-relative u-inline-block">
             <button class="btn btn-secondary" onclick="toggleMoreActions()" id="btnMoreActions" aria-expanded="false" aria-haspopup="true">Más acciones <span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
             <div class="filter-dropdown" id="moreActionsDropdown" role="menu" style="display:none;min-width:220px;right:0;left:auto;bottom:calc(100% + 4px);top:auto;">
-              <div class="filter-option u-filter-action" id="btnExport">Exportar selección</div>
-              <div class="filter-option u-filter-action" style="display:none;" id="btnCopyEmails">Copiar emails</div>
-              <div class="filter-option u-filter-action" onclick="generateCertificates('asistencia')">Cert. Asistencia</div>
-              <div class="filter-option u-filter-action" onclick="generateCertificates('aprovechamiento')">Cert. Aprovechamiento</div>
+              <div class="filter-option u-filter-action" id="btnExport" role="menuitem" tabindex="-1">Exportar selección</div>
+              <div class="filter-option u-filter-action" style="display:none;" id="btnCopyEmails" role="menuitem" tabindex="-1">Copiar emails</div>
+              <div class="filter-option u-filter-action" onclick="generateCertificates('asistencia')" role="menuitem" tabindex="-1">Cert. Asistencia</div>
+              <div class="filter-option u-filter-action" onclick="generateCertificates('aprovechamiento')" role="menuitem" tabindex="-1">Cert. Aprovechamiento</div>
             </div>
           </div>
           <button class="btn btn-secondary" id="btnBatchSend" title="Enviar por lotes">Por lotes</button>
@@ -5331,7 +5331,7 @@
     <div class="personas-container u-flex-col u-flex-1 u-min-h-0 u-overflow-hidden">
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
-        <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento...">
+        <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento..." aria-label="Buscar persona">
         <span id="personasCount" class="u-text-11 u-text-muted"></span>
       </div>
       <div class="u-flex u-flex-1 u-min-h-0">
@@ -5364,7 +5364,7 @@
     <div class="app u-flex-1 u-min-h-0">
       <div class="left-panel u-overflow-y-auto" id="catalogListPanel">
         <div class="u-px-16" style="padding-top:8px; padding-bottom:8px;">
-          <input class="input-field u-text-12" type="text" id="catalogSearch" placeholder="Buscar...">
+          <input class="input-field u-text-12" type="text" id="catalogSearch" placeholder="Buscar..." aria-label="Buscar en catálogo">
         </div>
         <div class="catalog-list" id="catalogList"></div>
         <div class="catalog-bottom-bar">
@@ -5419,7 +5419,7 @@
             <div class="form-section-body">
               <div class="form-group" style="position:relative;">
                 <label class="form-label">ID Grupo</label>
-                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true" aria-required="true">
                 <span class="field-tooltip">Identificador numérico del grupo formativo dentro de la acción (normalmente 1)</span>
               </div>
               <div class="form-group" style="position:relative;">
@@ -5429,12 +5429,12 @@
               </div>
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Responsable</label>
-                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true" aria-required="true">
                 <span class="field-tooltip">Persona responsable de la gestión de la formación bonificada ante FUNDAE</span>
               </div>
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Teléfono contacto</label>
-                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true" aria-required="true">
                 <span class="field-tooltip">Teléfono de contacto del responsable (9 dígitos, sin espacios ni prefijo)</span>
               </div>
               <div class="form-group">
@@ -5474,12 +5474,12 @@
               <div class="form-row">
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha inicio</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio" data-required="true">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio" data-required="true" aria-required="true">
                   <span class="field-tooltip">Primer día del grupo formativo (formato AAAA-MM-DD)</span>
                 </div>
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha fin</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaFin" data-required="true">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaFin" data-required="true" aria-required="true">
                   <span class="field-tooltip">Último día del grupo formativo (debe ser posterior o igual a la fecha de inicio)</span>
                 </div>
               </div>
@@ -5716,7 +5716,7 @@
 
       <!-- Plazos FUNDAE -->
       <div class="dash-card u-mb-16" id="dashPlazosFundae" data-card-id="plazos" data-module="dash-plazos" style="display:none;">
-        <div class="dash-card-title">Plazos FUNDAE</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Plazos FUNDAE</div>
         <div class="dash-card-body"><div id="dashPlazosList"></div></div>
       </div>
 
@@ -5727,20 +5727,20 @@
       <!-- Charts row 1: Credit + Estado donut -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="credito" data-module="dash-credito">
-          <div class="dash-card-title">Crédito FUNDAE por empresa</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Crédito FUNDAE por empresa</div>
           <div class="dash-card-body"><div id="dashCreditChart"></div>
           <div id="dashCreditProjection" class="u-mt-12"></div>
           <div id="dashCreditSimulator"></div></div>
         </div>
         <div class="dash-card" data-card-id="estado" data-module="dash-estado">
-          <div class="dash-card-title">Acciones por estado</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Acciones por estado</div>
           <div class="dash-card-body"><div id="dashEstadoChart"></div></div>
         </div>
       </div>
 
       <!-- Completeness (now inside Vision general) -->
       <div class="dash-card u-mb-16" data-card-id="completitud" data-module="dash-completitud">
-        <div class="dash-card-title">Completitud del catálogo</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Completitud del catálogo</div>
         <div class="dash-card-body"><div id="dashCompletenessChart"></div></div>
       </div>
       </div>
@@ -5752,11 +5752,11 @@
       <!-- Charts row 2: Gasto por proveedor + Modalidad -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="proveedor" data-module="dash-proveedor">
-          <div class="dash-card-title">Gasto por proveedor</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Gasto por proveedor</div>
           <div class="dash-card-body"><div id="dashProveedorChart"></div></div>
         </div>
         <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad">
-          <div class="dash-card-title">Horas por modalidad</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Horas por modalidad</div>
           <div class="dash-card-body"><div id="dashModalidadChart"></div></div>
         </div>
       </div>
@@ -5764,11 +5764,11 @@
       <!-- Charts row 3: Area + Department -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="area" data-module="dash-area">
-          <div class="dash-card-title">Acciones por área profesional</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Acciones por área profesional</div>
           <div class="dash-card-body"><div id="dashAreaChart"></div></div>
         </div>
         <div class="dash-card" data-card-id="departamento" data-module="dash-departamento">
-          <div class="dash-card-title">Acciones por departamento</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Acciones por departamento</div>
           <div class="dash-card-body"><div id="dashDeptChart"></div></div>
         </div>
       </div>
@@ -5782,11 +5782,11 @@
       <!-- Charts row 4: Attendance + Confirmations -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia">
-          <div class="dash-card-title">Monitor de asistencia y abandono</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Monitor de asistencia y abandono</div>
           <div class="dash-card-body"><div id="dashAttendance"></div></div>
         </div>
         <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones">
-          <div class="dash-card-title">Efectividad de confirmaciones</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Efectividad de confirmaciones</div>
           <div class="dash-card-body"><div id="dashConfirmations"></div></div>
         </div>
       </div>
@@ -5794,11 +5794,11 @@
       <!-- Charts row 5: Seasonality + Recurrence -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad">
-          <div class="dash-card-title">Estacionalidad formativa</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Estacionalidad formativa</div>
           <div class="dash-card-body"><div id="dashSeasonality"></div></div>
         </div>
         <div class="dash-card" data-card-id="recurrencia" data-module="dash-recurrencia">
-          <div class="dash-card-title">Recurrencia de participantes</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Recurrencia de participantes</div>
           <div class="dash-card-body"><div id="dashRecurrence"></div></div>
         </div>
       </div>
@@ -5811,18 +5811,18 @@
       <!-- Charts row 6: Survey Coverage + Scorecard -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="encuestas" data-module="dash-encuestas">
-          <div class="dash-card-title">Cobertura de encuestas</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Cobertura de encuestas</div>
           <div class="dash-card-body"><div id="dashSurveyCoverage"></div></div>
         </div>
         <div class="dash-card" data-card-id="scorecard" data-module="dash-scorecard">
-          <div class="dash-card-title">Scorecard de proveedores</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Scorecard de proveedores</div>
           <div class="dash-card-body"><div id="dashProviderScorecard"></div></div>
         </div>
       </div>
 
       <!-- Evaluation Kirkpatrick L1-L2 summary -->
       <div class="dash-card u-mb-16" data-card-id="evaluacion-kirkpatrick" data-module="dash-evaluacion" style="display:none;" id="dashEvaluacionCard">
-        <div class="dash-card-title">Evaluaci&oacute;n Kirkpatrick L1-L2</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Evaluaci&oacute;n Kirkpatrick L1-L2</div>
         <div class="dash-card-body"><div id="dashEvaluacion"></div></div>
       </div>
 
@@ -5834,32 +5834,32 @@
 
       <div class="dash-analytics-grid">
       <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk">
-        <div class="dash-card-title">Riesgo de Bonificación FUNDAE</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Riesgo de Bonificación FUNDAE</div>
         <div class="dash-card-body"><div id="dashRiskScoring"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi">
-        <div class="dash-card-title">ROI de Formación por Empresa</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">ROI de Formación por Empresa</div>
         <div class="dash-card-body"><div id="dashROI"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura">
-        <div class="dash-card-title">Cobertura Formativa</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Cobertura Formativa</div>
         <div class="dash-card-body"><div id="dashCoverage"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="equidad" data-module="dash-equity">
-        <div class="dash-card-title">Equidad en Acceso a Formación</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Equidad en Acceso a Formación</div>
         <div class="dash-card-body"><div id="dashEquity"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager">
-        <div class="dash-card-title">Inversión Formativa por Responsable</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Inversión Formativa por Responsable</div>
         <div class="dash-card-body"><div id="dashByManager"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany">
-        <div class="dash-card-title">Formación Interempresarial</div>
+        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Formación Interempresarial</div>
         <div class="dash-card-body"><div id="dashCrossCompany"></div></div>
       </div>
       </div>
@@ -5873,7 +5873,7 @@
       <!-- Gestor Activity -->
       <div class="dash-chart-row" style="grid-template-columns:1fr;">
         <div class="dash-card" data-card-id="gestor" data-module="dash-crosstrain">
-          <div class="dash-card-title">Productividad del gestor</div>
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Productividad del gestor</div>
           <div id="dashGestorActivity"></div>
         </div>
       </div>
@@ -5900,12 +5900,12 @@
 
   <div class="cmdk-overlay" id="cmdkOverlay" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
     <div class="cmdk-box">
-      <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Buscar comando, pestana o accion..." autocomplete="off">
+      <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Buscar comando, pestana o accion..." autocomplete="off" aria-label="Buscar comando">
       <div class="cmdk-results" id="cmdkResults"></div>
     </div>
   </div>
 
-  <div id="toastContainer" aria-relevant="additions" aria-atomic="false"></div>
+  <div id="toastContainer" aria-live="polite" aria-relevant="additions" aria-atomic="false"></div>
   <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
@@ -6137,7 +6137,7 @@
         <h3 id="historyDialogTitle" class="dialog-header-title">Historial de convocatorias</h3>
         <button class="link-btn link-clear" id="historyClose" aria-label="Cerrar"><span class="icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
       </div>
-      <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título...">
+      <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título..." aria-label="Buscar en historial">
       <div id="historyList"></div>
       <div id="historyEmpty" class="dialog-history-empty"></div>
     </div>
@@ -8776,6 +8776,8 @@
       }
       var overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
         '<h3 class="u-dialog-heading">Cambios sin guardar</h3>' +
         '<p class="u-text-13 u-text-secondary">Hay cambios sin guardar. ¿Descartar?</p>' +
@@ -8784,9 +8786,9 @@
           '<button class="btn btn-primary" id="dirtyDiscard" style="background:var(--warning);">Descartar</button>' +
         '</div></div>';
       document.body.appendChild(overlay);
-      document.getElementById('dirtyCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('dirtyCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
       document.getElementById('dirtyDiscard').addEventListener('click', function() {
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         clearCatalogDirty();
         callback();
       });
@@ -9582,6 +9584,8 @@
       var overlay = document.createElement('div');
       overlay.id = 'copyParticipantsOverlay';
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
 
       var html = '<div class="dialog-box u-max-w-480 u-flex-col" style="max-height:70vh;">' +
         '<h3 class="u-dialog-title u-mb-12">Copiar participantes de otra acci\u00F3n</h3>';
@@ -9605,8 +9609,8 @@
       document.body.appendChild(overlay);
 
       // Cancel
-      document.getElementById('copyParticipantsCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      document.getElementById('copyParticipantsCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); } });
 
       // Source selection
       overlay.querySelectorAll('.copyParticipantSource').forEach(function(btn) {
@@ -9630,7 +9634,7 @@
           var cfg = CATALOG_CONFIG['acciones'];
           upsertCatalogRecord('acciones', cfg.pk, record);
           renderAccionParticipants(record);
-          overlay.remove();
+          releaseFocus(overlay); overlay.remove();
           showToast(imported + ' participantes importados desde ' + source.codigo, 'success');
         });
       });
@@ -9665,6 +9669,8 @@
       var overlay = document.createElement('div');
       overlay.id = 'participantPickerOverlay';
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML =
         '<div class="dialog-box u-max-w-600 u-flex-col u-text-left u-p-24" style="width:95%; max-height:80vh;">' +
           '<h3 class="u-dialog-heading" style="margin-bottom:12px;">Asignar participantes</h3>' +
@@ -9773,13 +9779,13 @@
       });
 
       // Cancel
-      document.getElementById('ppCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      document.getElementById('ppCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); } });
 
       // Save
       document.getElementById('ppSave').addEventListener('click', function() {
         var result = Object.keys(selectedSet).filter(function(k) { return selectedSet[k]; });
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         onSave(result);
       });
     }
@@ -9995,6 +10001,8 @@
       const overlay = document.createElement('div');
       overlay.id = 'catalogConfirmOverlay';
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML =
         '<div class="dialog-box">' +
           '<h3>' + esc(title) + '</h3>' +
@@ -10006,13 +10014,13 @@
         '</div>';
       document.body.appendChild(overlay);
 
-      document.getElementById('catalogConfirmCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('catalogConfirmCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
       document.getElementById('catalogConfirmOk').addEventListener('click', function() {
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         onConfirm();
       });
       overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) overlay.remove();
+        if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); }
       });
     }
 
@@ -10635,15 +10643,19 @@
       input.setAttribute('aria-invalid', String(!isValid));
       var errorEl = input.parentElement.querySelector('.field-error-msg');
       if (!isValid) {
+        var errorId = (input.id || 'field') + '_error';
         if (!errorEl) {
           errorEl = document.createElement('span');
           errorEl.className = 'field-error-msg';
           errorEl.setAttribute('role', 'alert');
           input.parentElement.appendChild(errorEl);
         }
+        errorEl.id = errorId;
         errorEl.textContent = message;
-      } else if (errorEl) {
-        errorEl.remove();
+        input.setAttribute('aria-describedby', errorId);
+      } else {
+        if (errorEl) errorEl.remove();
+        input.removeAttribute('aria-describedby');
       }
       return isValid;
     }
@@ -11075,6 +11087,8 @@
     function showTNAForm() {
       var overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML = '<div class="dialog-box u-max-w-480 u-text-left">' +
         '<h3 class="u-dialog-heading" style="margin-bottom:16px;">Nueva solicitud de formación</h3>' +
         '<div class="u-flex-col u-gap-12">' +
@@ -11106,7 +11120,7 @@
       '</div>';
       document.body.appendChild(overlay);
 
-      document.getElementById('tnaCancelBtn').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('tnaCancelBtn').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
       document.getElementById('tnaSaveBtn').addEventListener('click', function() {
         var area = document.getElementById('tnaArea').value.trim();
         var tema = document.getElementById('tnaTema').value.trim();
@@ -11129,7 +11143,7 @@
           createdAt: new Date().toISOString()
         });
         saveTNARequests(requests);
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         showToast('Solicitud de formación registrada', 'success');
         renderTNAView();
       });
@@ -11175,6 +11189,8 @@
 
       var overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
         '<h3 class="u-dialog-heading">Eliminar solicitud</h3>' +
         '<p class="u-text-13 u-text-secondary">¿Eliminar la solicitud "' + esc(request.tema || '') + '"?</p>' +
@@ -11184,12 +11200,12 @@
         '</div></div>';
       document.body.appendChild(overlay);
 
-      document.getElementById('tnaDeleteCancel').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('tnaDeleteCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
       document.getElementById('tnaDeleteConfirm').addEventListener('click', function() {
         var reqs = getTNARequests();
         reqs = reqs.filter(function(r) { return r.id !== requestId; });
         saveTNARequests(reqs);
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         showToast('Solicitud eliminada', 'success');
         renderTNAView();
       });
@@ -11216,6 +11232,11 @@
     // ═══════════════════════════════════
     // THEME
     // ═══════════════════════════════════
+
+    function hexToRgba(hex, alpha) {
+      var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return 'rgba('+r+','+g+','+b+','+alpha+')';
+    }
 
     function updateDSColors() {
       var cs = getComputedStyle(document.documentElement);
@@ -11518,6 +11539,8 @@
       var overlay = document.createElement('div');
       overlay.id = 'unifiedTemplateSaveOverlay';
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
 
       var dialogBox = document.createElement('div');
       dialogBox.className = 'dialog-box';
@@ -11617,14 +11640,14 @@
         }
 
         saveUnifiedTemplate(name, type, data);
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         showToast('Plantilla «' + esc(name) + '» guardada', 'success');
       }
 
       btnConfirm.addEventListener('click', doSave);
       nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSave(); });
-      btnCancel.addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      btnCancel.addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); } });
     }
 
     function renderSettingsUnifiedTemplates() {
@@ -11974,6 +11997,8 @@
       var overlay = document.createElement('div');
       overlay.id = 'orphanParticipantsOverlay';
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
 
       var html = '<div class="dialog-box u-max-w-560 u-flex-col u-text-left" style="max-height:75vh;">' +
         '<h3 class="u-dialog-heading" style="margin-bottom:16px;">Participantes no encontrados en organigrama</h3>' +
@@ -12002,8 +12027,8 @@
       document.body.appendChild(overlay);
 
       // Close handlers
-      document.getElementById('orphanClose').addEventListener('click', function() { overlay.remove(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      document.getElementById('orphanClose').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); } });
 
       // Single remove handlers
       overlay.querySelectorAll('.orphan-remove-single').forEach(function(btn) {
@@ -12019,7 +12044,7 @@
             upsertCatalogRecord('acciones', cfg.pk, accion);
           }
           // Re-render dialog
-          overlay.remove();
+          releaseFocus(overlay); overlay.remove();
           showOrphanDialog();
         });
       });
@@ -12042,7 +12067,7 @@
           }
         });
 
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
         showToast(removedCount + ' participante' + (removedCount > 1 ? 's' : '') + ' huérfano' + (removedCount > 1 ? 's' : '') + ' eliminado' + (removedCount > 1 ? 's' : ''), 'success');
       });
     }
@@ -12557,6 +12582,8 @@
       // Build a dialog-overlay + dialog-box modal (NEVER prompt/confirm)
       const overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
         '<h3>Cargar desde Acción Formativa</h3>' +
         '<p class="u-text-13 u-text-secondary u-mb-12">Selecciona una acción para pre-seleccionar sus participantes vinculados.</p>' +
@@ -12570,7 +12597,7 @@
         '</div></div>';
       document.body.appendChild(overlay);
 
-      document.getElementById('loadAccionCancel').addEventListener('click', () => overlay.remove());
+      document.getElementById('loadAccionCancel').addEventListener('click', () => { releaseFocus(overlay); overlay.remove(); });
       document.getElementById('loadAccionConfirm').addEventListener('click', () => {
         const codigo = document.getElementById('loadAccionSelect').value;
         if (!codigo) {
@@ -12582,7 +12609,7 @@
         const nifs = accion.participantes || [];
         if (nifs.length === 0) {
           showToast('La acción no tiene participantes vinculados', 'warning');
-          overlay.remove();
+          releaseFocus(overlay); overlay.remove();
           return;
         }
 
@@ -12596,7 +12623,7 @@
 
         renderFilters();
         renderTable();
-        overlay.remove();
+        releaseFocus(overlay); overlay.remove();
 
         // ── Auto-fill event fields from acción formativa ──
         if (accion.nombre) {
@@ -14061,6 +14088,8 @@
           const dupDate = new Date(duplicate.timestamp).toLocaleDateString('es-ES');
           var dupOverlay = document.createElement('div');
           dupOverlay.className = 'dialog-overlay visible';
+          dupOverlay.setAttribute('role', 'dialog');
+          dupOverlay.setAttribute('aria-modal', 'true');
           dupOverlay.innerHTML = '<div class="dialog-box u-max-w-440">' + // innerHTML OK: sanitized via esc()
             '<h3 class="u-dialog-heading" style="color:var(--warning);">Posible duplicado</h3>' +
             '<p class="u-text-13 u-text-secondary u-leading-relaxed">Ya enviaste <strong>' + esc(event.title) + '</strong> para el ' + esc(event.date) + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + ').</p>' +
@@ -14071,8 +14100,8 @@
             '</div>' +
           '</div>';
           document.body.appendChild(dupOverlay);
-          document.getElementById('dupCancel').addEventListener('click', function() { dupOverlay.remove(); });
-          document.getElementById('dupProceed').addEventListener('click', function() { dupOverlay.remove(); doSend(); });
+          document.getElementById('dupCancel').addEventListener('click', function() { releaseFocus(dupOverlay); dupOverlay.remove(); });
+          document.getElementById('dupProceed').addEventListener('click', function() { releaseFocus(dupOverlay); dupOverlay.remove(); doSend(); });
         } else {
           doSend();
         }
@@ -14436,7 +14465,33 @@
       var isOpen = dd.style.display === 'none';
       dd.style.display = isOpen ? 'block' : 'none';
       btn.setAttribute('aria-expanded', String(isOpen));
+      if (isOpen) {
+        var items = dd.querySelectorAll('[role="menuitem"]:not([style*="display:none"])');
+        if (items.length > 0) items[0].focus();
+      }
     }
+    document.addEventListener('keydown', function(e) {
+      var dd = document.getElementById('moreActionsDropdown');
+      if (!dd || dd.style.display === 'none') return;
+      var items = Array.from(dd.querySelectorAll('[role="menuitem"]:not([style*="display:none"])'));
+      if (items.length === 0) return;
+      var idx = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        items[(idx + 1) % items.length].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        items[(idx - 1 + items.length) % items.length].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        dd.style.display = 'none';
+        document.getElementById('btnMoreActions').setAttribute('aria-expanded', 'false');
+        document.getElementById('btnMoreActions').focus();
+      } else if (e.key === 'Enter' && idx >= 0) {
+        e.preventDefault();
+        items[idx].click();
+      }
+    });
     document.addEventListener('click', function(e) {
       var dd = document.getElementById('moreActionsDropdown');
       var btn = document.getElementById('btnMoreActions');
@@ -15719,6 +15774,8 @@
     function showValidationDialog(errors, warnings, onContinue) {
       var overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
 
       var hasErrors = errors.length > 0;
       var hasWarnings = warnings.length > 0;
@@ -15768,11 +15825,11 @@
       document.body.appendChild(overlay);
 
       if (hasErrors) {
-        document.getElementById('xmlValClose').addEventListener('click', function() { overlay.remove(); });
+        document.getElementById('xmlValClose').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
       } else {
-        document.getElementById('xmlValCancel').addEventListener('click', function() { overlay.remove(); });
+        document.getElementById('xmlValCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
         document.getElementById('xmlValContinue').addEventListener('click', function() {
-          overlay.remove();
+          releaseFocus(overlay); overlay.remove();
           if (typeof onContinue === 'function') onContinue();
         });
       }
@@ -20698,7 +20755,7 @@
               td.style.cssText = 'padding:4px;text-align:center;';
               if (cell && cell.total > 0) {
                 var pct = Math.round((cell.formados / cell.total) * 100);
-                var bg = pct >= 80 ? 'rgba(22,163,74,0.2)' : pct >= 50 ? 'rgba(217,119,6,0.2)' : pct > 0 ? 'rgba(220,38,38,0.2)' : 'rgba(220,38,38,0.1)';
+                var bg = pct >= 80 ? hexToRgba(DS.success, 0.2) : pct >= 50 ? hexToRgba(DS.warning, 0.2) : pct > 0 ? hexToRgba(DS.danger, 0.2) : hexToRgba(DS.danger, 0.1);
                 td.style.background = bg;
                 td.style.borderRadius = '2px';
                 td.textContent = pct + '%';
@@ -20943,7 +21000,7 @@
             var count = (cross.flujos[p] || {})[r] || 0;
             if (count > 0) {
               var isDiagonal = p.toLowerCase().indexOf(r.toLowerCase().substring(0, 5)) >= 0;
-              td.style.background = isDiagonal ? 'rgba(79,70,229,0.1)' : 'rgba(220,38,38,0.15)';
+              td.style.background = isDiagonal ? hexToRgba(DS.accent, 0.1) : hexToRgba(DS.danger, 0.15);
               td.style.borderRadius = '2px';
               td.style.fontWeight = isDiagonal ? '400' : '600';
               td.textContent = count;
@@ -21125,9 +21182,13 @@
         }
 
         var title = card.querySelector('.dash-card-title');
+        if (title) {
+          // Set initial aria-expanded based on collapsed state
+          title.setAttribute('aria-expanded', String(!card.classList.contains('collapsed')));
+        }
         if (title && !title._boundHandler) {
           title._boundHandler = true;
-          title.addEventListener('click', function() {
+          function handleCardToggle() {
             var cardBody = card.querySelector('.dash-card-body');
             var collapsed = getDashCollapsedState();
             var mod = card.dataset.module;
@@ -21151,7 +21212,12 @@
               }
               card.classList.add('collapsed');
             }
+            title.setAttribute('aria-expanded', String(!card.classList.contains('collapsed')));
             saveDashCollapsedState(collapsed);
+          }
+          title.addEventListener('click', handleCardToggle);
+          title.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardToggle(); }
           });
         }
       });
