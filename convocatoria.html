@@ -11315,10 +11315,13 @@
       if (searchInput) {
         searchInput.addEventListener('input', function() {
           tnaExploradorState.search = this.value;
+          var cursorPos = this.selectionStart;
           var contentEl = document.getElementById('tnaSubViewContent');
           if (contentEl) {
             contentEl.innerHTML = renderTNAExplorador(puestos); // innerHTML OK: sanitized via esc()
             bindTNAExploradorEvents(puestos);
+            var newInput = document.getElementById('tnaExpSearch');
+            if (newInput) { newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
           }
         });
       }
@@ -11518,10 +11521,13 @@
       if (searchInput) {
         searchInput.addEventListener('input', function() {
           tnaNecesidadesState.search = this.value;
+          var cursorPos = this.selectionStart;
           var contentEl = document.getElementById('tnaSubViewContent');
           if (contentEl) {
             contentEl.innerHTML = renderTNANecesidades(getTNARequests()); // innerHTML OK: sanitized
             bindTNANecesidadesEvents(getTNARequests());
+            var newInput = document.getElementById('tnaNecSearch');
+            if (newInput) { newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
           }
         });
       }
