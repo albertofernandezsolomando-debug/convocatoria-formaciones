@@ -12217,8 +12217,8 @@
       var added = [], removed = [], changed = [];
       Object.keys(newByNif).forEach(function(nif) {
         if (!oldByNif[nif]) added.push(newByNif[nif]);
-        else if ((oldByNif[nif].DEPARTAMENTO || '') !== (newByNif[nif].DEPARTAMENTO || '')) {
-          changed.push({ nif: nif, oldDept: oldByNif[nif].DEPARTAMENTO, newDept: newByNif[nif].DEPARTAMENTO });
+        else if ((oldByNif[nif].Departamento || '') !== (newByNif[nif].Departamento || '')) {
+          changed.push({ nif: nif, oldDept: oldByNif[nif].Departamento, newDept: newByNif[nif].Departamento });
         }
       });
       Object.keys(oldByNif).forEach(function(nif) { if (!newByNif[nif]) removed.push(oldByNif[nif]); });
@@ -12244,7 +12244,7 @@
         }
         // Check if removed employees have active training actions
         if (diff.removed.length > 0) {
-          var activeActions = getCatalog('acciones').filter(function(a) { return a.estado !== 'Cerrada'; });
+          var activeActions = getCatalog('acciones').filter(function(a) { return a.estado !== 'Terminada' && a.estado !== 'Anulada'; });
           var atRisk = diff.removed.filter(function(emp) {
             return activeActions.some(function(a) {
               return (a.participantes || []).indexOf(emp.NIF) >= 0;
