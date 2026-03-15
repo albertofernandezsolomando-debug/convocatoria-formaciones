@@ -492,6 +492,13 @@
       gap: 6px;
     }
 
+    #mainContent {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
     /* --- Tab navigation --- */
     .tab-bar {
       display: flex;
@@ -2796,7 +2803,8 @@
     .dash-container {
       padding: 24px 28px;
       overflow-y: auto;
-      max-height: calc(100vh - 50px);
+      flex: 1;
+      min-height: 0;
       background: var(--bg-input);
     }
     [data-theme="dark"] .dash-container {
@@ -3087,6 +3095,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
       background: var(--bg-panel);
       position: relative;
@@ -4982,7 +4991,7 @@
     .u-text-left { text-align: left; }
     .u-text-right { text-align: right; }
     .u-text-italic { font-style: italic; }
-    .u-flex-col-full { display: flex; flex-direction: column; height: 100%; }
+    .u-flex-col-full { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .u-mt-6 { margin-top: 6px; }
     .u-mt-10 { margin-top: 10px; }
     .u-mt-14 { margin-top: 14px; }
@@ -5319,7 +5328,7 @@
 
   <!-- Tab: Personas -->
   <div class="tab-content" id="tabPersonas" role="tabpanel" aria-labelledby="tab-tabPersonas">
-    <div class="personas-container u-flex-col u-h-full u-overflow-hidden">
+    <div class="personas-container u-flex-col u-flex-1 u-min-h-0 u-overflow-hidden">
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
         <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento...">
@@ -5393,7 +5402,7 @@
           <span class="app-header-title">Generar XML FUNDAE</span>
         </div>
 
-        <div class="u-p-16 u-overflow-y-auto u-flex-1">
+        <div class="u-p-16 u-flex-1">
           <!-- Acción formativa -->
           <div class="form-group-lg">
             <label class="form-label">Acción formativa</label>
@@ -5534,7 +5543,7 @@
         </div>
       </div>
       <div class="right-panel" id="xmlParticipantPanel">
-        <div class="u-flex-col u-h-full">
+        <div class="u-flex-col u-flex-1 u-min-h-0">
           <!-- Summary bar -->
           <div class="u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom" style="padding:12px 16px;">
             <span class="u-text-13 u-font-600 u-text-primary">Participantes</span>
@@ -6387,7 +6396,7 @@
           { group: 'Navegacion', label: 'Ir a Catalogos', icon: Icons.list(14), shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
           { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: Icons.fileText(14), shortcut: 'Alt+6', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
           { group: 'Herramientas', label: 'Abrir ajustes', icon: Icons.settings(14), action: () => { closeAllDialogs(); document.getElementById('btnSettings').click(); } },
-          { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => document.getElementById('historyPanel')?.classList.add('visible') },
+          { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => { renderHistory(); document.getElementById('historyPanel')?.classList.add('visible'); } },
           { group: 'Convocatoria', label: 'Limpiar filtros', icon: Icons.x(14), action: () => { state.activeFilters = {}; renderFilters(); renderTable(); } },
           { group: 'Convocatoria', label: 'Enviar convocatoria', icon: Icons.mail(14), shortcut: KBD.mod + '+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
         ];
@@ -6711,6 +6720,7 @@
             return;
           }
           Object.keys(payload.data).forEach(function(key) {
+            if (BACKUP_KEYS.indexOf(key) === -1) return;
             var val = payload.data[key];
             localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
           });
@@ -8665,24 +8675,7 @@
             sectionEnd;
         })() +
 
-        // 6. Seguimiento (default: expanded)
-        sectionHeader('seguimiento', 'Seguimiento', (record.notas || []).length, 0, true) +
-          renderNotasTimelineHtml(record) +
-          renderAsistenciaHtml(record) +
-          renderConfirmacionesHtml(record) +
-          sectionEnd +
-
-        // 7. Participantes (default: collapsed)
-        sectionHeader('participantes', 'Participantes', (record.participantes || []).length, 0, false) +
-          '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
-            '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
-          '</div>' +
-          '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
-          '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
-          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
-          sectionEnd +
-
-        // 8. Evaluación Kirkpatrick L1-L2 (default: collapsed)
+        // 6. Evaluación Kirkpatrick L1-L2 (default: collapsed)
         (function() {
           var ev = record.evaluacion || {};
           var l1 = ev.l1 || {};
@@ -10681,6 +10674,8 @@
 
     // Helper to escape HTML entities (prevents XSS from crafted Excel values)
     function esc(s) {
+      if (s == null) return '';
+      s = String(s);
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
@@ -11057,9 +11052,9 @@
           // Actions
           html += '<div class="u-flex-col u-gap-6 u-flex-shrink-0">';
           if (r.estado !== 'convertida') {
-            html += '<button class="btn btn-primary" style="font-size:11px; padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + r.id + ')">Crear acción</button>';
+            html += '<button class="btn btn-primary" style="font-size:11px; padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + parseInt(r.id, 10) + ')">Crear acción</button>';
           }
-          html += '<button class="btn btn-secondary" style="font-size:11px; padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + r.id + ')">Eliminar</button>';
+          html += '<button class="btn btn-secondary" style="font-size:11px; padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + parseInt(r.id, 10) + ')">Eliminar</button>';
           html += '</div>';
 
           html += '</div>';
@@ -12583,6 +12578,7 @@
           return;
         }
         const accion = acciones.find(a => a.codigo === codigo);
+        if (!accion) { showToast('Acción formativa no encontrada', 'error'); return; }
         const nifs = accion.participantes || [];
         if (nifs.length === 0) {
           showToast('La acción no tiene participantes vinculados', 'warning');
@@ -12938,6 +12934,8 @@
 
       // Attach click handlers to sortable headers
       document.querySelectorAll('.sortable').forEach(th => {
+        if (th._boundHandler) return;
+        th._boundHandler = true;
         th.addEventListener('click', () => {
           const col = th.dataset.sort;
           if (state.sortColumn === col) {
@@ -13429,6 +13427,7 @@
         return;
       }
       const win = window.open('', '_blank');
+      if (!win) { showToast('Permite las ventanas emergentes para generar certificados', 'warning'); return; }
       const doc = win.document;
       doc.open();
       const pages = selected.map(function(emp) {
@@ -14689,39 +14688,43 @@
 
             // Restore state if available
             if (savedState) {
-              const snapshot = JSON.parse(savedState);
-              state.activeFilters = snapshot.activeFilters || {};
-              state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
+              try {
+                const snapshot = JSON.parse(savedState);
+                state.activeFilters = snapshot.activeFilters || {};
+                state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
 
-              // Restore event config
-              if (snapshot.eventConfig) {
-                const ec = snapshot.eventConfig;
-                document.getElementById('eventTitle').value = ec.title || '';
-                document.getElementById('eventDate').value = ec.date || '';
-                document.getElementById('eventStart').value = ec.startTime || '10:00';
-                document.getElementById('eventEnd').value = ec.endTime || '12:00';
-                document.getElementById('eventLocation').value = ec.location || '';
-                document.getElementById('eventBody').value = ec.body || '';
-                if (ec.isTeams) {
-                  document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+                // Restore event config
+                if (snapshot.eventConfig) {
+                  const ec = snapshot.eventConfig;
+                  document.getElementById('eventTitle').value = ec.title || '';
+                  document.getElementById('eventDate').value = ec.date || '';
+                  document.getElementById('eventStart').value = ec.startTime || '10:00';
+                  document.getElementById('eventEnd').value = ec.endTime || '12:00';
+                  document.getElementById('eventLocation').value = ec.location || '';
+                  document.getElementById('eventBody').value = ec.body || '';
+                  if (ec.isTeams) {
+                    document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+                  }
+                  if (ec.isSeries) {
+                    document.getElementById('seriesCheck').checked = true;
+                    document.getElementById('seriesConfig').classList.add('visible');
+                  }
+                  // Restore formador
+                  document.getElementById('eventFormador').value = ec.formador || '';
+                  // Restore capacity
+                  if (ec.capacity) {
+                    document.getElementById('inputCapacity').value = ec.capacity;
+                  }
+                  // Restore survey checkbox (default true if field missing — migration)
+                  const surveyCheck = document.getElementById('surveyCheck');
+                  if (surveyCheck) {
+                    surveyCheck.checked = ec.sendSurvey !== undefined ? ec.sendSurvey : true;
+                  }
                 }
-                if (ec.isSeries) {
-                  document.getElementById('seriesCheck').checked = true;
-                  document.getElementById('seriesConfig').classList.add('visible');
-                }
-                // Restore formador
-                document.getElementById('eventFormador').value = ec.formador || '';
-                // Restore capacity
-                if (ec.capacity) {
-                  document.getElementById('inputCapacity').value = ec.capacity;
-                }
-                // Restore survey checkbox (default true if field missing — migration)
-                const surveyCheck = document.getElementById('surveyCheck');
-                if (surveyCheck) {
-                  surveyCheck.checked = ec.sendSurvey !== undefined ? ec.sendSurvey : true;
-                }
+              } catch(e) {
+                showToast('Error al restaurar sesión', 'error');
+                return;
               }
-
             }
 
             // Update UI
@@ -15133,7 +15136,7 @@
             '<div>' +
               '<div class="u-font-600 u-text-13">' + esc(h.title) + '</div>' +
               '<div class="u-text-12 u-text-secondary u-mt-2">' +
-                eventDate + ' · ' + (h.startTime||'') + '\u2013' + (h.endTime||'') + ' · ' + type +
+                esc(eventDate) + ' · ' + esc(h.startTime||'') + '\u2013' + esc(h.endTime||'') + ' · ' + type +
               '</div>' +
               '<div class="u-text-11 u-text-muted u-mt-2">' +
                 h.attendeeCount + ' personas destinatarias · ' + esc(filterSummary) +
@@ -18948,13 +18951,18 @@
             renderDashboard();
           });
         });
-        // Close on outside click
-        document.addEventListener('click', function(e) {
-          if (!empresaBtn.contains(e.target) && !empresaDropdown.contains(e.target)) {
-            empresaDropdown.classList.remove('open');
-            empresaBtn.setAttribute('aria-expanded', 'false');
-          }
-        });
+        // Close on outside click (use named function to avoid duplicate listeners)
+        if (!window._dashDropdownCloseHandler) {
+          window._dashDropdownCloseHandler = function(e) {
+            var btn = document.getElementById('dashEmpresaBtn');
+            var dd = document.getElementById('dashEmpresaDropdown');
+            if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) {
+              dd.classList.remove('open');
+              btn.setAttribute('aria-expanded', 'false');
+            }
+          };
+          document.addEventListener('click', window._dashDropdownCloseHandler);
+        }
       }
 
       // Periodo select (hidden, used for filter state)
@@ -20411,6 +20419,8 @@
           heading.classList.add('collapsed');
         }
 
+        if (heading._boundHandler) return;
+        heading._boundHandler = true;
         heading.addEventListener('click', function() {
           var isCollapsed = group.classList.contains('dash-group-collapsed');
           if (isCollapsed) {
@@ -20442,19 +20452,22 @@
           } else {
             btn.classList.remove('active');
           }
-          btn.addEventListener('click', function() {
-            periodBtns.forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            // Trigger filter update via the hidden select (backward compatible)
-            var hiddenSelect = document.getElementById('dashFilterPeriodo');
-            if (hiddenSelect) {
-              hiddenSelect.value = btn.getAttribute('data-period');
-              hiddenSelect.dispatchEvent(new Event('change'));
-            } else {
-              // If the select was removed, directly call render
-              renderDashboard();
-            }
-          });
+          if (!btn._boundHandler) {
+            btn._boundHandler = true;
+            btn.addEventListener('click', function() {
+              periodBtns.forEach(function(b) { b.classList.remove('active'); });
+              btn.classList.add('active');
+              // Trigger filter update via the hidden select (backward compatible)
+              var hiddenSelect = document.getElementById('dashFilterPeriodo');
+              if (hiddenSelect) {
+                hiddenSelect.value = btn.getAttribute('data-period');
+                hiddenSelect.dispatchEvent(new Event('change'));
+              } else {
+                // If the select was removed, directly call render
+                renderDashboard();
+              }
+            });
+          }
         });
       }
 
@@ -20984,6 +20997,7 @@
 
         // IntersectionObserver for active state + progress bar
         var activeIndex = -1;
+        if (window._dashNavObserver) window._dashNavObserver.disconnect();
         var navObserver = new IntersectionObserver(function(entries) {
           entries.forEach(function(entry) {
             var btn = dashNavEl.querySelector('[data-target="' + entry.target.id + '"]');
@@ -21006,6 +21020,7 @@
             }
           });
         }, { root: document.getElementById('dashContainer'), threshold: 0.1 });
+        window._dashNavObserver = navObserver;
 
         navSections.forEach(function(sec) {
           var el = document.getElementById(sec.id);
@@ -21015,6 +21030,7 @@
 
       // --- Lazy rendering for below-the-fold sections ---
       var lazyRendered = {};
+      if (window._dashLazyObserver) window._dashLazyObserver.disconnect();
       var lazyObserver = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting && !lazyRendered[entry.target.id]) {
@@ -21023,6 +21039,7 @@
           }
         });
       }, { root: document.getElementById('dashContainer'), rootMargin: '100px' });
+      window._dashLazyObserver = lazyObserver;
       // Observe all section groups for potential lazy rendering
       ['dash-group-personas', 'dash-group-calidad', 'dash-group-analytics', 'dash-group-gestor'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -21069,6 +21086,8 @@
       }
 
       modeToggle.querySelectorAll('.dash-mode-btn').forEach(function(btn) {
+        if (btn._boundHandler) return;
+        btn._boundHandler = true;
         btn.addEventListener('click', function() {
           applyDashMode(btn.getAttribute('data-mode'));
         });
@@ -21106,7 +21125,8 @@
         }
 
         var title = card.querySelector('.dash-card-title');
-        if (title) {
+        if (title && !title._boundHandler) {
+          title._boundHandler = true;
           title.addEventListener('click', function() {
             var cardBody = card.querySelector('.dash-card-body');
             var collapsed = getDashCollapsedState();
@@ -22436,7 +22456,7 @@
       var listEl = document.getElementById('employeeSelectList');
       var html = '';
       matches.forEach(function(emp) {
-        html += '<div data-nif="' + esc(emp.NIF) + '" style="padding:8px 10px;" ' +
+        html += '<div class="empSelectItem" data-nif="' + esc(emp.NIF) + '" style="padding:8px 10px;" ' +
           'onmouseover="this.style.background=\'var(--accent-subtle)\'" onmouseout="this.style.background=\'\'">' +
           '<span class="u-text-primary u-font-600">' + esc(emp.Empleado || '') + '</span>' +
           '<span class="u-text-secondary">' + esc(emp.NIF || '') + ' · ' + esc(emp.Empresa || '') + '</span>' +
@@ -22678,6 +22698,7 @@
     // ═══════════════════════════════════
     function closeDialogAnimated(overlay) {
       if (!overlay || overlay.classList.contains('closing')) return;
+      releaseFocus(overlay);
       overlay.classList.add('closing');
       setTimeout(function() {
         overlay.classList.remove('visible');
