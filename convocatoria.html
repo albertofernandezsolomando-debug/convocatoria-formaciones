@@ -11079,8 +11079,24 @@
     // ═══════════════════════════════════
 
     function getTNARequests() {
-      try { return JSON.parse(localStorage.getItem('convocatoria_tnaRequests') || '[]'); }
-      catch(e) { return []; }
+      try {
+        var requests = JSON.parse(localStorage.getItem('convocatoria_tnaRequests') || '[]');
+        var migrated = false;
+        for (var i = 0; i < requests.length; i++) {
+          var r = requests[i];
+          if (!r.hasOwnProperty('puestos')) {
+            r.puestos = [];
+            r.skill = r.skill || '';
+            r.origen = r.area || '';
+            r.numEmpleados = 0;
+            r.areas = r.area ? [r.area] : [];
+            r.nivelCarrera = '';
+            migrated = true;
+          }
+        }
+        if (migrated) saveTNARequests(requests);
+        return requests;
+      } catch(e) { return []; }
     }
 
     function saveTNARequests(requests) {
