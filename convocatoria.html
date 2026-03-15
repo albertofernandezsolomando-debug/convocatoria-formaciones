@@ -65,10 +65,27 @@
       --bg-primary: #0f172a;
       --bg-panel: #1e293b;
       --bg-input: #334155;
+      --bg-warm: #1e293b;
       --border: #334155;
       --border-strong: #475569;
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
       --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+      --shadow-accent: 0 1px 3px rgba(129,140,248,0.2);
+      --shadow-accent-hover: 0 4px 12px rgba(129,140,248,0.25);
+      --danger: #ef4444;
+      --danger-light: #450a0a;
+      --warning: #f59e0b;
+      --warning-light: #451a03;
+      --success: #22c55e;
+      --success-light: #052e16;
+      --chart-1: #818CF8;
+      --chart-2: #38BDF8;
+      --chart-3: #34D399;
+      --chart-4: #FBBF24;
+      --chart-5: #FB7185;
+      --chart-6: #A78BFA;
+      --chart-7: #F472B6;
+      --chart-8: #818CF8;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -83,13 +100,32 @@
         --bg-primary: #0f172a;
         --bg-panel: #1e293b;
         --bg-input: #334155;
+        --bg-warm: #1e293b;
         --border: #334155;
         --border-strong: #475569;
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
         --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        --shadow-accent: 0 1px 3px rgba(129,140,248,0.2);
+        --shadow-accent-hover: 0 4px 12px rgba(129,140,248,0.25);
+        --danger: #ef4444;
+        --danger-light: #450a0a;
+        --warning: #f59e0b;
+        --warning-light: #451a03;
+        --success: #22c55e;
+        --success-light: #052e16;
+        --chart-1: #818CF8;
+        --chart-2: #38BDF8;
+        --chart-3: #34D399;
+        --chart-4: #FBBF24;
+        --chart-5: #FB7185;
+        --chart-6: #A78BFA;
+        --chart-7: #F472B6;
+        --chart-8: #818CF8;
       }
     }
 
+    [data-theme="dark"] { color-scheme: dark; }
+    @media (prefers-color-scheme: dark) { [data-theme="system"] { color-scheme: dark; } }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     .tabnum,
     .dash-container td,
@@ -125,6 +161,7 @@
       display: flex;
       flex: 1;
       min-height: 0;
+      background: var(--bg-primary);
     }
 
     /* --- Left panel --- */
@@ -178,6 +215,146 @@
     .dialog-box-wide {
       max-width: 540px;
     }
+
+    /* --- Full-screen settings --- */
+    .settings-fullscreen {
+      display: flex;
+      width: 92vw;
+      max-width: 1000px;
+      height: 85vh;
+      max-height: 700px;
+      background: var(--bg-panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: dialogIn 0.25s ease-out;
+    }
+    .settings-sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--bg-primary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .settings-sidebar-header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-sidebar-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+    }
+    .settings-sidebar-close:hover {
+      color: var(--text-primary);
+      background: var(--accent-subtle);
+    }
+    .settings-nav {
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      gap: 2px;
+    }
+    .settings-nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .settings-nav-item:hover {
+      background: var(--accent-subtle);
+      color: var(--text-primary);
+    }
+    .settings-nav-item.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .settings-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    .settings-section {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      flex: 1;
+    }
+    .settings-section.active {
+      display: flex;
+    }
+    .settings-section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      letter-spacing: -0.3px;
+    }
+    .settings-group {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-group:last-of-type {
+      border-bottom: none;
+    }
+    .settings-group-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .settings-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .settings-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .settings-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    @media (max-width: 768px) {
+      .settings-fullscreen { flex-direction: column; height: 95vh; }
+      .settings-sidebar { width: 100%; min-width: unset; flex-direction: row; border-right: none; border-bottom: 1px solid var(--border); }
+      .settings-sidebar-header { border-bottom: none; padding: 12px 16px; }
+      .settings-nav { flex-direction: row; overflow-x: auto; padding: 0 8px 8px; }
+      .settings-nav-item { white-space: nowrap; padding: 6px 12px; }
+    }
+
     .dialog-box-wide .input-field {
       width: 100%;
       margin-top: 4px;
@@ -348,14 +525,14 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--warning);
-      background: rgba(217,119,6,0.12);
+      background: var(--warning-light);
       border-radius: var(--radius-lg);
       padding: 2px 8px;
       white-space: nowrap;
     }
     .alert-banner-count.has-danger {
       color: var(--danger);
-      background: rgba(220,38,38,0.1);
+      background: var(--danger-light);
     }
     .alert-banner-close {
       background: none;
@@ -382,6 +559,7 @@
       flex: 1;
       min-height: 0;
       overflow: hidden;
+      background: var(--bg-primary);
     }
 
     .tab-content.active {
@@ -454,6 +632,57 @@
       font-size: 11px;
       color: var(--text-muted);
       margin-top: 2px;
+    }
+
+    /* --- Personas tab items --- */
+    .persona-list-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background var(--transition);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .persona-list-item:hover {
+      background: var(--accent-subtle);
+    }
+    .persona-list-item.active {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+    }
+    .persona-list-item .persona-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-subtle);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .persona-list-item .persona-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .persona-list-item .persona-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .persona-list-item .persona-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .catalog-bottom-bar {
@@ -531,7 +760,7 @@
     .annual-plan-quarter {
       margin-bottom: 24px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius);
       overflow: hidden;
     }
     .annual-plan-quarter-header {
@@ -1165,57 +1394,6 @@
       animation: spin 0.6s linear infinite;
     }
 
-    /* ── Upload animated check SVG ── */
-    .upload-check {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 52px;
-      height: 52px;
-      pointer-events: none;
-      z-index: 2;
-    }
-    .upload-zone.loaded .upload-check {
-      display: block;
-    }
-    .upload-check-circle {
-      fill: none;
-      stroke: var(--success);
-      stroke-width: 2.5;
-      stroke-dasharray: 166;
-      stroke-dashoffset: 166;
-      stroke-linecap: round;
-    }
-    .upload-zone.loaded .upload-check-circle {
-      animation: uploadCheckCircle 0.5s ease-out forwards;
-    }
-    .upload-check-mark {
-      fill: none;
-      stroke: var(--success);
-      stroke-width: 2.5;
-      stroke-dasharray: 48;
-      stroke-dashoffset: 48;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .upload-zone.loaded .upload-check-mark {
-      animation: uploadCheckMark 0.35s ease-out 0.4s forwards;
-    }
-    @keyframes uploadCheckCircle {
-      to { stroke-dashoffset: 0; }
-    }
-    @keyframes uploadCheckMark {
-      to { stroke-dashoffset: 0; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .upload-zone.loaded .upload-check-circle,
-      .upload-zone.loaded .upload-check-mark {
-        animation: none;
-        stroke-dashoffset: 0;
-      }
-    }
 
     .onboarding-step {
       display: flex;
@@ -1244,40 +1422,6 @@
     }
     .onboarding-step-text strong {
       color: var(--text-primary);
-    }
-
-    .workflow-stepper {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .workflow-step {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    .workflow-step.pending {
-      background: var(--bg-input);
-      color: var(--text-muted);
-    }
-    .workflow-step.done {
-      background: var(--success);
-      color: white;
-    }
-    .workflow-step.active {
-      background: var(--accent);
-      color: white;
-    }
-    .workflow-step-line {
-      width: 12px;
-      height: 2px;
-      background: var(--border);
     }
 
     .filter-row {
@@ -2810,37 +2954,41 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 24px 12px;
+      padding: 16px 24px 14px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      background: var(--bg-panel);
     }
     .cal-nav {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     .cal-nav-btn {
-      padding: 6px 12px;
+      padding: 6px 14px;
       font-size: 14px;
       min-width: 36px;
+      border-radius: var(--radius-sm);
     }
     .cal-period {
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 17px;
+      font-weight: 700;
       color: var(--text-primary);
-      margin-left: 12px;
-      min-width: 160px;
+      margin-left: 14px;
+      min-width: 180px;
+      letter-spacing: -0.3px;
     }
     .cal-zoom {
       display: flex;
       background: var(--bg-input);
       border-radius: var(--radius-lg);
-      padding: 2px;
+      padding: 3px;
+      gap: 2px;
     }
     .cal-zoom-btn {
       background: none;
       border: none;
-      padding: 6px 16px;
+      padding: 7px 18px;
       font-family: var(--font-body);
       font-size: 12px;
       font-weight: 500;
@@ -2972,17 +3120,21 @@
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 8px 0;
+      padding: 10px 0;
       border-right: 1px solid var(--border);
       box-sizing: border-box;
     }
     .cal-time-col:last-child { border-right: none; }
+    .cal-time-col.cal-today-col {
+      background: var(--accent-subtle);
+      color: var(--accent);
+    }
     .cal-rows {
       position: relative;
-      padding: 8px 0;
+      padding: 10px 0;
     }
     .cal-group-label {
-      padding: 8px 24px 4px;
+      padding: 10px 24px 6px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
@@ -2994,13 +3146,13 @@
     }
     .cal-bar {
       position: absolute;
-      height: 26px;
-      border-radius: var(--radius-sm);
+      height: 28px;
+      border-radius: var(--radius);
       font-size: 11px;
       color: white;
       font-weight: 500;
-      padding: 0 8px;
-      line-height: 26px;
+      padding: 0 10px;
+      line-height: 28px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3010,9 +3162,10 @@
       box-shadow: var(--shadow-sm);
     }
     .cal-bar:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
       box-shadow: var(--shadow-lg);
       z-index: 5;
+      filter: brightness(1.08);
     }
     .cal-bar.selected {
       outline: 2px solid var(--accent);
@@ -3024,9 +3177,19 @@
       top: 0;
       bottom: 0;
       width: 2px;
-      background: var(--danger);
+      background: var(--accent);
       z-index: 8;
       pointer-events: none;
+    }
+    .cal-today-line::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
     }
     .cal-today-label {
       position: absolute;
@@ -3035,7 +3198,7 @@
       transform: translateX(-50%);
       font-size: 9px;
       font-weight: 700;
-      color: var(--danger);
+      color: var(--accent);
       letter-spacing: 0.5px;
       white-space: nowrap;
     }
@@ -3047,6 +3210,7 @@
       background: var(--border);
       pointer-events: none;
       z-index: 1;
+      opacity: 0.5;
     }
     .cal-detail {
       border-top: 2px solid var(--accent);
@@ -3108,22 +3272,23 @@
     .cal-legend {
       display: flex;
       gap: 16px;
-      padding: 10px 24px;
+      padding: 12px 24px;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
       flex-wrap: wrap;
+      background: var(--bg-panel);
     }
     .cal-legend-item {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
     }
     .cal-legend-dot {
       width: 10px;
       height: 10px;
-      border-radius: 2px;
+      border-radius: 3px;
       flex-shrink: 0;
     }
     .cal-split-bottom table {
@@ -3348,11 +3513,13 @@
     .dash-gauge-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 10px;
       font-size: 12px;
       cursor: pointer;
       transition: opacity var(--transition);
+      padding: 4px 0;
+      border-radius: var(--radius-sm);
     }
     .dash-gauge-label {
       width: 180px;
@@ -3363,27 +3530,29 @@
       overflow: hidden;
       text-overflow: ellipsis;
       flex-shrink: 0;
+      font-size: 12px;
     }
     .dash-gauge-bar-bg {
       flex: 1;
-      height: 14px;
+      height: 20px;
       background: var(--bg-input);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius);
       overflow: hidden;
       position: relative;
     }
     .dash-gauge-bar-fill {
       height: 100%;
-      border-radius: var(--radius-sm);
-      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: var(--radius);
+      transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      opacity: 0.9;
     }
     .dash-gauge-bar-secondary {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      border-radius: var(--radius-sm);
-      opacity: 0.3;
+      border-radius: var(--radius);
+      opacity: 0.2;
     }
     .dash-gauge-value {
       min-width: 140px;
@@ -3396,10 +3565,11 @@
       flex-shrink: 0;
     }
     .dash-gauge-row:hover .dash-gauge-bar-fill {
-      filter: brightness(1.1);
+      opacity: 1;
+      filter: brightness(1.05);
     }
     .dash-card:has(.dash-gauge-row:hover) .dash-gauge-row:not(:hover) {
-      opacity: 0.5;
+      opacity: 0.4;
       transition: opacity var(--transition);
     }
     .dash-gauge-footnote {
@@ -3437,9 +3607,9 @@
       color: var(--text-secondary);
     }
     .dash-donut-legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: var(--radius-sm);
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
       flex-shrink: 0;
     }
     .dash-donut-legend-val {
@@ -4205,7 +4375,7 @@
     .excel-error-col-list {
       margin-top: 8px;
       padding: 8px 12px;
-      background: var(--bg-main);
+      background: var(--bg-input);
       border-radius: var(--radius-sm);
       font-size: 11px;
       color: var(--text-secondary);
@@ -4219,6 +4389,7 @@
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabDashboard">Cuadro de Mando<span class="tab-badge" id="tabBadgeDashboard" style="display:none;">0</span></button>
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCalendario">Calendario</button>
     <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tabConvocatoria">Convocatoria<span class="tab-badge" id="tabBadgeConvocatoria" style="display:none;">0</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabPersonas">Personas</button>
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCatalogos">Catálogos FUNDAE</button>
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabXml">Generar XML FUNDAE</button>
   </div>
@@ -4235,13 +4406,6 @@
 
       <div class="app-header">
         <span class="app-header-title">Formación_AGORA</span>
-        <div class="workflow-stepper" id="workflowStepper">
-          <div class="workflow-step pending" id="wfStep1" title="Carga de datos">1</div>
-          <div class="workflow-step-line"></div>
-          <div class="workflow-step pending" id="wfStep2" title="Seleccionar personas destinatarias">2</div>
-          <div class="workflow-step-line"></div>
-          <div class="workflow-step pending" id="wfStep3" title="Datos del evento">3</div>
-        </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <button class="settings-btn" id="btnSettings" title="Ajustes" aria-label="Abrir ajustes">&#9881;</button>
           <button class="link-btn link-add" id="btnHistory" aria-label="Ver historial" style="font-size:13px; padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
@@ -4274,10 +4438,6 @@
             <button class="link-btn link-add upload-change-btn" id="btnChangeFile">Cambiar archivo</button>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
-          <svg class="upload-check" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
-            <circle class="upload-check-circle" cx="26" cy="26" r="24"/>
-            <path class="upload-check-mark" d="M14 27l8 8 16-16"/>
-          </svg>
         </div>
         <a href="#" class="link-btn link-add" id="btnDemoData" onclick="loadDemoData(); return false;" style="margin-top:8px; display:block; text-align:center; font-size:12px;">Probar con datos de ejemplo</a>
         <div class="dq-panel" id="dqPanel" style="display:none;"></div>
@@ -4491,6 +4651,23 @@
   </div>
   </div>
 
+  <!-- Tab: Personas -->
+  <div class="tab-content" id="tabPersonas" role="tabpanel">
+    <div class="personas-container" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
+      <div class="personas-header" style="display:flex; align-items:center; gap:12px; padding:16px 24px; border-bottom:1px solid var(--border); background:var(--bg-panel); flex-shrink:0;">
+        <span style="font-size:15px; font-weight:600; color:var(--text-primary);">Personas</span>
+        <input class="input-field" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento..." style="flex:1; max-width:400px; font-size:13px;">
+        <span id="personasCount" style="font-size:11px; color:var(--text-muted);"></span>
+      </div>
+      <div style="display:flex; flex:1; min-height:0;">
+        <div class="personas-list" id="personasList" style="width:380px; min-width:380px; border-right:1px solid var(--border); overflow-y:auto; background:var(--bg-panel);"></div>
+        <div class="personas-profile" id="personasProfile" style="flex:1; overflow-y:auto; padding:24px; background:var(--bg-primary);">
+          <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px;">Selecciona una persona para ver su ficha formativa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab 2: Catálogos FUNDAE -->
   <div class="tab-content" id="tabCatalogos" role="tabpanel">
     <div class="catalog-header-bar" style="display:flex; align-items:center; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--bg-panel); gap:8px; flex-shrink:0; flex-wrap:wrap;">
@@ -4503,7 +4680,7 @@
         <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
         <button class="catalog-tab" data-catalog="necesidades">Necesidades</button>
       </div>
-      <button class="catalog-view-toggle-btn" id="btnAnnualPlan" style="display:none; margin-left:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:11px; font-weight:500; padding:5px 14px; background:var(--bg-input); color:var(--text-secondary); cursor:pointer;" title="Plan anual de formación">&#128197; Plan anual</button>
+      <button class="catalog-view-toggle-btn" id="btnAnnualPlan" style="display:none; margin-left:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:11px; font-weight:500; padding:5px 14px; background:var(--bg-input); color:var(--text-secondary); cursor:pointer;" title="Plan anual de formación">Plan anual</button>
       <div class="catalog-view-toggle" id="catalogViewToggle" style="margin-left:auto;">
         <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
         <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista">&#9783; Lista</button>
@@ -4801,7 +4978,10 @@
       <div class="dash-filters" id="dashFilters">
         <div class="dash-filter-group">
           <span class="dash-filter-label">Empresa</span>
-          <select class="dash-filter-select" id="dashFilterEmpresa" multiple></select>
+          <div class="dash-empresa-filter" id="dashEmpresaFilter" style="position:relative; min-width:180px;">
+            <button class="filter-select-btn" id="dashEmpresaBtn" type="button" style="font-size:12px; padding:4px 10px;">Todas</button>
+            <div class="filter-dropdown" id="dashEmpresaDropdown" style="min-width:220px;"></div>
+          </div>
         </div>
         <div class="dash-filter-group">
           <span class="dash-filter-label">Periodo</span>
@@ -4824,16 +5004,9 @@
         <input class="input-field" type="text" id="dashEmployeeSearch" placeholder="Buscar persona trabajadora (nombre o NIF)" style="width:300px; font-size:13px;">
         <button class="btn btn-secondary" id="btnDashEmployeeSearch" style="font-size:13px;">Buscar</button>
         <div style="flex:1;"></div>
-        <button class="btn btn-secondary" id="btnReportDirection" style="font-size:12px;">Informe para Direccion</button>
         <button class="btn btn-secondary" id="btnExportAnnualReport" style="font-size:13px;">Exportar informe</button>
       </div>
 
-      <!-- Worker profile search (F4.8) -->
-      <div style="margin:12px 0;">
-        <input class="input-field" id="workerSearchInput" type="text"
-          placeholder="Buscar persona trabajadora por nombre o NIF..." style="font-size:13px;">
-      </div>
-      <div id="workerProfilePanel" style="display:none; margin:0 0 16px; padding:16px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);"></div>
 
       <!-- KPI Cards -->
       <div class="dash-kpi-row" id="dashKpis"></div>
@@ -5051,85 +5224,147 @@
     </div>
   </div>
 
-  <!-- Settings dialog -->
+  <!-- Settings dialog (full-screen with sidebar) -->
   <div class="dialog-overlay" id="settingsDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box dialog-box-wide">
-      <h3>Ajustes</h3>
-      <label for="settingsWebhookUrl">URL webhook Power Automate</label>
-      <input type="url" class="input-field" id="settingsWebhookUrl" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/...">
-      <label for="settingsFormsUrl">URL formulario Microsoft Forms</label>
-      <input type="url" class="input-field" id="settingsFormsUrl" placeholder="https://forms.office.com/Pages/ResponsePage.aspx?id=...">
-      <label class="label-mt" for="settingsFormsQuestionId">ID pregunta «Nombre de la formación» <span class="dialog-label-optional">(opcional)</span></label>
-      <input type="text" class="input-field" id="settingsFormsQuestionId" placeholder="r0123456789abcdef (ver instrucciones)">
-      <div class="dialog-hint">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Alertas FUNDAE</div>
-        <div class="dialog-flex-row">
-          <div class="dialog-flex-col">
-            <label for="settingsDiasAvisoInicio">Días aviso previo para inicio</label>
-            <input type="number" class="input-field" id="settingsDiasAvisoInicio" min="1" max="90" value="10" placeholder="10">
+    <div class="settings-fullscreen">
+      <div class="settings-sidebar">
+        <div class="settings-sidebar-header">
+          <span style="font-size:15px; font-weight:700; color:var(--text-primary);">Ajustes</span>
+          <button class="settings-sidebar-close" id="settingsCloseX" title="Cerrar">&times;</button>
+        </div>
+        <nav class="settings-nav">
+          <button class="settings-nav-item active" data-settings-section="general">General</button>
+          <button class="settings-nav-item" data-settings-section="notifications">Notificaciones</button>
+          <button class="settings-nav-item" data-settings-section="templates">Plantillas</button>
+          <button class="settings-nav-item" data-settings-section="integrations">Integraciones</button>
+          <button class="settings-nav-item" data-settings-section="data">Datos</button>
+        </nav>
+      </div>
+      <div class="settings-content">
+        <!-- General section -->
+        <div class="settings-section active" id="settingsSection-general">
+          <div class="settings-section-title">General</div>
+          <div class="settings-group">
+            <div class="settings-group-title">Apariencia</div>
+            <label class="settings-label" for="themeSelect">Tema</label>
+            <div class="settings-desc">Elige entre el modo claro, oscuro o que siga las preferencias del sistema.</div>
+            <select id="themeSelect" class="input-field" style="font-size:13px; max-width:200px;">
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+              <option value="system">Sistema</option>
+            </select>
           </div>
-          <div class="dialog-flex-col">
-            <label for="settingsDiasAvisoFin">Días aviso para finalización</label>
-            <input type="number" class="input-field" id="settingsDiasAvisoFin" min="1" max="90" value="5" placeholder="5">
+          <div class="settings-group">
+            <div class="settings-group-title">Sincronización</div>
+            <label class="dialog-sync-label">
+              <input type="checkbox" id="settingsSyncConvocatoria" checked style="accent-color:var(--accent);">
+              Sincronizar convocatoria con acción formativa
+            </label>
+            <div class="settings-desc">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Empresas del grupo</div>
+            <div class="settings-desc" style="margin-bottom:8px;">Configura las empresas del grupo mercantil con su CIF y crédito FUNDAE.</div>
+            <div id="empresasGrupoSettings" class="dialog-empresa-table-wrap">
+              <table class="dialog-empresa-table">
+                <thead>
+                  <tr>
+                    <th class="dialog-empresa-th">Razón social</th>
+                    <th class="dialog-empresa-th">CIF</th>
+                    <th class="dialog-empresa-th">Crédito</th>
+                    <th style="width:60px;"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <button class="link-btn link-add dialog-btn-xs" onclick="addEmpresaGrupo()">+ Añadir empresa</button>
           </div>
         </div>
-        <div class="dialog-hint">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
-      </div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Sincronización</div>
-        <label class="dialog-sync-label">
-          <input type="checkbox" id="settingsSyncConvocatoria" checked style="accent-color:var(--accent);">
-          Sincronizar convocatoria con acción formativa
-        </label>
-        <div class="dialog-hint">Al enviar una convocatoria, añade automáticamente los participantes a la acción formativa vinculada por nombre.</div>
-      </div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Empresas del grupo</div>
-        <div id="empresasGrupoSettings" class="dialog-empresa-table-wrap">
-          <table class="dialog-empresa-table">
-            <thead>
-              <tr>
-                <th class="dialog-empresa-th">Razón social</th>
-                <th class="dialog-empresa-th">CIF</th>
-                <th class="dialog-empresa-th">Crédito</th>
-                <th style="width:60px;"></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+
+        <!-- Notifications section -->
+        <div class="settings-section" id="settingsSection-notifications">
+          <div class="settings-section-title">Notificaciones</div>
+          <div class="settings-group">
+            <div class="settings-group-title">Alertas FUNDAE</div>
+            <div class="dialog-flex-row">
+              <div class="dialog-flex-col">
+                <label class="settings-label" for="settingsDiasAvisoInicio">Días aviso previo para inicio</label>
+                <input type="number" class="input-field" id="settingsDiasAvisoInicio" min="1" max="90" value="10" placeholder="10">
+              </div>
+              <div class="dialog-flex-col">
+                <label class="settings-label" for="settingsDiasAvisoFin">Días aviso para finalización</label>
+                <input type="number" class="input-field" id="settingsDiasAvisoFin" min="1" max="90" value="5" placeholder="5">
+              </div>
+            </div>
+            <div class="settings-desc">Genera avisos en el dashboard cuando una acción bonificable se acerca a su fecha de inicio o fin.</div>
+          </div>
+          <div class="settings-group">
+            <label class="dialog-sync-label">
+              <input type="checkbox" id="settingsProactiveAlerts" style="accent-color:var(--accent);">
+              Mostrar avisos proactivos
+            </label>
+            <div class="settings-desc">Si está activado, los avisos se muestran automáticamente en la barra superior. Si no, solo aparecen en el Cuadro de Mando.</div>
+          </div>
         </div>
-        <button class="link-btn link-add dialog-btn-xs" onclick="addEmpresaGrupo()">+ Añadir empresa</button>
-      </div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Plantillas guardadas</div>
-        <div id="settingsUnifiedTemplatesList"></div>
-      </div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Copia de seguridad</div>
-        <div class="dialog-hint" style="margin-bottom:8px;">Exporta todos los datos de la aplicación a un archivo JSON para guardarlos o transferirlos a otro navegador.</div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-secondary" id="btnExportBackup">Exportar datos</button>
-          <button class="btn btn-secondary" id="btnImportBackup">Importar datos</button>
+
+        <!-- Templates section -->
+        <div class="settings-section" id="settingsSection-templates">
+          <div class="settings-section-title">Plantillas</div>
+          <div class="settings-group">
+            <div class="settings-group-title">Plantillas guardadas</div>
+            <div class="settings-desc" style="margin-bottom:8px;">Gestiona las plantillas de correo, asunto, firma y cuerpo guardadas.</div>
+            <div id="settingsUnifiedTemplatesList"></div>
+          </div>
         </div>
-        <input type="file" id="backupFileInput" accept=".json" style="display:none;">
-      </div>
-      <div class="dialog-section">
-        <div class="dialog-section-title">Apariencia</div>
-        <label style="font-size:13px;color:var(--text-secondary);margin-top:12px;display:block;">Tema</label>
-        <select id="themeSelect" class="input-field" style="font-size:13px;">
-          <option value="light">Claro</option>
-          <option value="dark">Oscuro</option>
-          <option value="system">Sistema</option>
-        </select>
-      </div>
-      <div class="dialog-footer-links">
-        <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
-        <button class="link-btn link-add" id="btnDownloadFlow">Descargar flujo Power Automate (.zip)</button>
-      </div>
-      <div class="dialog-buttons dialog-buttons-mt-lg">
-        <button class="btn btn-secondary" id="settingsCancel">Cancelar</button>
-        <button class="btn btn-primary" id="settingsSave">Guardar</button>
+
+        <!-- Integrations section -->
+        <div class="settings-section" id="settingsSection-integrations">
+          <div class="settings-section-title">Integraciones</div>
+          <div class="settings-group">
+            <div class="settings-group-title">Power Automate</div>
+            <label class="settings-label" for="settingsWebhookUrl">URL webhook Power Automate</label>
+            <div class="settings-desc">URL del trigger HTTP del flujo de Power Automate para enviar encuestas de satisfacción.</div>
+            <input type="url" class="input-field" id="settingsWebhookUrl" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/..." style="max-width:100%;">
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Microsoft Forms</div>
+            <label class="settings-label" for="settingsFormsUrl">URL formulario Microsoft Forms</label>
+            <div class="settings-desc">URL pública del formulario de satisfacción.</div>
+            <input type="url" class="input-field" id="settingsFormsUrl" placeholder="https://forms.office.com/Pages/ResponsePage.aspx?id=..." style="max-width:100%;">
+            <label class="settings-label" for="settingsFormsQuestionId" style="margin-top:12px;">ID pregunta «Nombre de la formación» <span class="dialog-label-optional" style="font-weight:400; color:var(--text-muted);">(opcional)</span></label>
+            <div class="settings-desc">Si lo configuras, cada encuesta se vincula automáticamente a su formación.</div>
+            <input type="text" class="input-field" id="settingsFormsQuestionId" placeholder="r0123456789abcdef (ver instrucciones)">
+          </div>
+          <div class="settings-group">
+            <button class="link-btn link-add" id="btnShowInstructions">Ver instrucciones de configuración</button>
+            <button class="link-btn link-add" id="btnDownloadFlow" style="margin-left:12px;">Descargar flujo Power Automate (.zip)</button>
+          </div>
+        </div>
+
+        <!-- Data section -->
+        <div class="settings-section" id="settingsSection-data">
+          <div class="settings-section-title">Datos</div>
+          <div class="settings-group">
+            <div class="settings-group-title">Copia de seguridad</div>
+            <div class="settings-desc" style="margin-bottom:12px;">Exporta todos los datos de la aplicación a un archivo JSON para guardarlos o transferirlos a otro navegador.</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" id="btnExportBackup">Exportar datos</button>
+              <button class="btn btn-secondary" id="btnImportBackup">Importar datos</button>
+            </div>
+            <input type="file" id="backupFileInput" accept=".json" style="display:none;">
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Datos de demostración</div>
+            <div class="settings-desc">Carga datos de ejemplo para explorar la aplicación sin necesidad de un organigrama real.</div>
+          </div>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="settings-footer">
+          <button class="btn btn-secondary" id="settingsCancel">Cancelar</button>
+          <button class="btn btn-primary" id="settingsSave">Guardar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5279,37 +5514,6 @@
     </div>
   </div>
 
-  <!-- Custom report section selector dialog -->
-  <div class="dialog-overlay" id="customReportDialog" role="dialog" aria-modal="true">
-    <div class="dialog-box" style="max-width:460px; text-align:left;">
-      <h3 style="text-align:center; margin-bottom:16px;">Secciones del informe</h3>
-      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">Selecciona las secciones que deseas incluir en el informe para Direccion.</p>
-      <div id="customReportSections" style="display:flex; flex-direction:column; gap:10px;">
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="kpis" checked> KPIs resumen
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="modalidad" checked> Distribucion por modalidad
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="departamento" checked> Participacion por departamento
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="listado"> Listado de acciones
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="compliance"> Estado de compliance
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" data-section="fundae"> Credito FUNDAE
-        </label>
-      </div>
-      <div class="dialog-buttons dialog-buttons-mt-lg">
-        <button class="btn btn-secondary" id="customReportCancel">Cancelar</button>
-        <button class="btn btn-primary" id="customReportGenerate">Generar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Onboarding overlay -->
   <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
@@ -5394,6 +5598,10 @@
         });
       }
       if (tabId === 'tabCalendario') renderCalendarTab();
+      if (tabId === 'tabPersonas') {
+        var personasInput = document.getElementById('personasSearchInput');
+        renderPersonasList(personasInput ? personasInput.value : '');
+      }
       if (tabId === 'tabCatalogos') {
         var savedModes = getCatalogViewModes ? getCatalogViewModes() : {};
         var savedMode = savedModes[catalogState.activeCatalog] || 'ficha';
@@ -5458,12 +5666,13 @@
 
         this.commands = [
           { group: 'Navegacion', label: 'Ir a Dashboard', icon: '\u2261', shortcut: 'Alt+1', action: () => document.querySelector('.tab-btn[data-tab="tabDashboard"]').click() },
-          { group: 'Navegacion', label: 'Ir a Calendario', icon: '\uD83D\uDCC5', shortcut: 'Alt+2', action: () => document.querySelector('.tab-btn[data-tab="tabCalendario"]').click() },
+          { group: 'Navegacion', label: 'Ir a Calendario', icon: '\u25A1', shortcut: 'Alt+2', action: () => document.querySelector('.tab-btn[data-tab="tabCalendario"]').click() },
           { group: 'Navegacion', label: 'Ir a Convocatoria', icon: '\u2709', shortcut: 'Alt+3', action: () => document.querySelector('.tab-btn[data-tab="tabConvocatoria"]').click() },
-          { group: 'Navegacion', label: 'Ir a Catalogos', icon: '\uD83D\uDCCB', shortcut: 'Alt+4', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
-          { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: '\uD83D\uDCC4', shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
-          { group: 'Herramientas', label: 'Abrir ajustes', icon: '\u2699', action: () => document.getElementById('settingsDialog').classList.add('visible') },
-          { group: 'Herramientas', label: 'Ver historial', icon: '\uD83D\uDD52', action: () => document.getElementById('historyDialog')?.classList.add('visible') },
+          { group: 'Navegacion', label: 'Ir a Personas', icon: '\u263A', shortcut: 'Alt+4', action: () => document.querySelector('.tab-btn[data-tab="tabPersonas"]').click() },
+          { group: 'Navegacion', label: 'Ir a Catalogos', icon: '\u2630', shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
+          { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: '\u25A2', shortcut: 'Alt+6', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
+          { group: 'Herramientas', label: 'Abrir ajustes', icon: '\u2699', action: () => { closeAllDialogs(); document.getElementById('btnSettings').click(); } },
+          { group: 'Herramientas', label: 'Ver historial', icon: '\u25F7', action: () => document.getElementById('historyDialog')?.classList.add('visible') },
           { group: 'Convocatoria', label: 'Limpiar filtros', icon: '\u2715', action: () => { document.querySelectorAll('.filter-select').forEach(s => { s.value = ''; }); renderFilters(); renderTable(); } },
           { group: 'Convocatoria', label: 'Enviar convocatoria', icon: '\u2709', shortcut: KBD.mod + '+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
         ];
@@ -5474,6 +5683,7 @@
       },
 
       open() {
+        closeAllDialogs();
         this.overlay.classList.remove('closing');
         this.overlay.classList.add('visible');
         this.input.value = '';
@@ -5566,12 +5776,7 @@
         e.preventDefault(); CmdK.open(); return;
       }
 
-      // Escape — close overlays
-      if (e.key === 'Escape') {
-        if (CmdK.overlay.classList.contains('visible')) { CmdK.close(); return; }
-        var visibleDialog = document.querySelector('.dialog-overlay.visible');
-        if (visibleDialog) { visibleDialog.classList.remove('visible'); return; }
-      }
+      // Escape handling is in the unified handler at the end of the file
 
       // Alt+1..5 — navigate tabs
       if (e.altKey && e.key >= '1' && e.key <= '5') {
@@ -5623,7 +5828,10 @@
     // ═══════════════════════════════════
 
     function getCatalog(key) {
-      try { return JSON.parse(localStorage.getItem('fundae_' + key) || '[]'); }
+      try {
+        var result = JSON.parse(localStorage.getItem('fundae_' + key) || '[]');
+        return Array.isArray(result) ? result : [];
+      }
       catch(e) { return []; }
     }
 
@@ -5800,6 +6008,10 @@
     }
 
     function checkBackupReminder() {
+      // Respect proactiveAlerts setting — only show if user opted in
+      var settings = loadSettings();
+      if (!settings.proactiveAlerts) return;
+
       var last = localStorage.getItem('convocatoria_lastBackup');
       if (!last) {
         // No backup ever taken — only remind if the user has data
@@ -6070,7 +6282,7 @@
     function renderCatalogListView(catalogKey) {
       var config = LIST_VIEW_CONFIG[catalogKey];
       if (!config) return;
-      var data = getCatalog(catalogKey);
+      var data = getCatalog(catalogKey) || [];
       if (!listViewState.sort) {
         listViewState.sort = config.defaultSort ? { key: config.defaultSort.key, dir: config.defaultSort.dir } : null;
       }
@@ -6642,6 +6854,13 @@
     // ═══════════════════════════════════
 
     function renderCatalogList() {
+      var key = catalogState.activeCatalog;
+      var cfg = CATALOG_CONFIG[key];
+      if (!cfg) return;
+      var data = getCatalog(key) || [];
+      var container = document.getElementById('catalogList');
+      if (!container) return;
+      var search = (document.getElementById('catalogSearch').value || '').trim().toLowerCase();
 
       const filtered = data.filter(r => {
         const title = cfg.title(r) || '';
@@ -6738,12 +6957,25 @@
         });
       }
 
-      // RLT Balance section
+      // RLT Balance section (multi-company support)
       parts.push('<div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">');
       parts.push('<span style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">Informes RLT</span>');
-      parts.push('<div style="display:flex; gap:6px; align-items:center;">');
+      parts.push('<div style="display:flex; flex-direction:column; gap:8px;">');
+      // Company selector
+      var rltEmpresas = getEmpresasGrupo();
+      parts.push('<div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">');
+      parts.push('<select id="rltEmpresaSelect" class="input-field" style="font-size:12px; padding:4px 8px; width:auto; min-width:180px;">');
+      parts.push('<option value="">Todas las empresas (consolidado)</option>');
+      rltEmpresas.forEach(function(e) {
+        parts.push('<option value="' + esc(e.cif) + '">' + esc(e.razonSocial) + '</option>');
+      });
+      parts.push('</select>');
       parts.push('<input type="number" id="rltBalanceYear" value="' + new Date().getFullYear() + '" min="2000" max="2099" style="width:80px; font-size:12px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:var(--font-body);">');
       parts.push('<button class="btn btn-secondary" id="btnRLTBalance" style="font-size:11px; padding:5px 10px;">Balance anual RLT</button>');
+      parts.push('</div>');
+      if (rltEmpresas.length > 1) {
+        parts.push('<div style="font-size:11px; color:var(--text-muted);">Grupo mercantil con ' + rltEmpresas.length + ' empresas. Genera un informe por empresa o consolidado.</div>');
+      }
       parts.push('</div>');
       parts.push('</div>');
 
@@ -6901,7 +7133,9 @@
             showToast('Introduce un año válido', 'warning');
             return;
           }
-          generateRLTBalance(year);
+          var empresaSelect = document.getElementById('rltEmpresaSelect');
+          var empresaCif = empresaSelect ? empresaSelect.value : '';
+          generateRLTBalance(year, empresaCif);
         });
       }
     }
@@ -9940,7 +10174,7 @@
 
       if (requests.length === 0) {
         html += '<div style="text-align:center; padding:48px 20px; color:var(--text-muted); font-size:13px;">';
-        html += '<div style="font-size:32px; margin-bottom:12px;">&#128203;</div>';
+        html += '<div style="font-size:24px; margin-bottom:12px; color:var(--text-muted);">\u2630</div>';
         html += 'No hay solicitudes de formación registradas.<br>Pulsa "Nueva solicitud" para crear la primera.';
         html += '</div>';
       } else {
@@ -10147,6 +10381,30 @@
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       try { var s = loadSettings(); s.theme = theme; saveSettings(s); } catch(e) {}
+      // Re-read CSS variables for charts so dark mode colors apply
+      requestAnimationFrame(function() {
+        var cs = getComputedStyle(document.documentElement);
+        DS.accent = cs.getPropertyValue('--accent').trim();
+        DS.accentHover = cs.getPropertyValue('--accent-hover').trim();
+        DS.accentLight = cs.getPropertyValue('--accent-light').trim();
+        DS.danger = cs.getPropertyValue('--danger').trim();
+        DS.warning = cs.getPropertyValue('--warning').trim();
+        DS.success = cs.getPropertyValue('--success').trim();
+        DS.textPrimary = cs.getPropertyValue('--text-primary').trim();
+        DS.textSecondary = cs.getPropertyValue('--text-secondary').trim();
+        DS.textMuted = cs.getPropertyValue('--text-muted').trim();
+        DS.border = cs.getPropertyValue('--border').trim();
+        DS.bgInput = cs.getPropertyValue('--bg-input').trim();
+        DS.chart1 = cs.getPropertyValue('--chart-1').trim();
+        DS.chart2 = cs.getPropertyValue('--chart-2').trim();
+        DS.chart3 = cs.getPropertyValue('--chart-3').trim();
+        DS.chart4 = cs.getPropertyValue('--chart-4').trim();
+        DS.chart5 = cs.getPropertyValue('--chart-5').trim();
+        DS.chart6 = cs.getPropertyValue('--chart-6').trim();
+        DS.chart7 = cs.getPropertyValue('--chart-7').trim();
+        DS.chart8 = cs.getPropertyValue('--chart-8').trim();
+        CHART_PALETTE = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5, DS.chart6, DS.chart7, DS.chart8];
+      });
     }
 
     function initTheme() {
@@ -11085,9 +11343,6 @@
       extBtn.textContent = '+ Añadir lista externa';
       extBtn.style.color = '';
 
-      // Re-trigger SVG check animation on each successful load
-      uploadZone.classList.remove('loaded');
-      void uploadZone.offsetWidth; // force reflow
       uploadZone.classList.add('loaded');
       uploadPrompt.style.display = 'none';
       uploadInfo.style.display = 'block';
@@ -11739,7 +11994,7 @@
       if (isWaitlisted) {
         var wlBadge = document.createElement('span');
         wlBadge.className = 'chip';
-        wlBadge.style.cssText = 'background:#fff3cd;color:#856404;font-size:10px;';
+        wlBadge.style.cssText = 'background:var(--warning-light);color:var(--warning);font-size:10px;';
         wlBadge.textContent = 'Lista de espera';
         tdName.appendChild(document.createTextNode(' '));
         tdName.appendChild(wlBadge);
@@ -11830,7 +12085,7 @@
           }));
         } else {
           emptyState.appendChild(createEmptyState({
-            icon: '\uD83D\uDD0D',
+            icon: '\u2715',
             title: 'Sin resultados',
             desc: 'Ningún registro coincide con los filtros actuales.',
             ctaText: 'Limpiar filtros',
@@ -11914,7 +12169,7 @@
 
       const warningEl = document.getElementById('noEmailWarning');
       if (noEmail.length > 0) {
-        warningEl.textContent = '⚠️ ' + (noEmail.length > 1 ? noEmail.length + ' personas trabajadoras' : noEmail.length + ' persona trabajadora') + ' sin Email trabajo — excluidas';
+        warningEl.textContent = '\u26A0 ' + (noEmail.length > 1 ? noEmail.length + ' personas trabajadoras' : noEmail.length + ' persona trabajadora') + ' sin Email trabajo \u2014 excluidas';
       } else {
         warningEl.textContent = '';
       }
@@ -11938,42 +12193,7 @@
     }
 
     function updateWorkflowStepper() {
-      var step1 = document.getElementById('wfStep1');
-      var step2 = document.getElementById('wfStep2');
-      var step3 = document.getElementById('wfStep3');
-
-      var hasEmployees = state.employees.length > 0;
-      var allEmployees = hasEmployees ? [...state.employees, ...state.externalEmployees] : [];
-      var hasSelected = false;
-      if (hasEmployees) {
-        var filtered = filterEmployees(allEmployees, state.activeFilters);
-        var split = splitByEmail(filtered);
-        hasSelected = split.valid.filter(function(emp) { return !state.excludedNIFs.has(emp._id); }).length > 0;
-      }
-      var title = document.getElementById('eventTitle').value.trim();
-      var date = document.getElementById('eventDate').value;
-      var hasEvent = title && date;
-
-      // Determine first incomplete step
-      var activeStep = !hasEmployees ? 1 : !hasSelected ? 2 : !hasEvent ? 3 : 0;
-
-      function setStep(el, num) {
-        if (num < activeStep || (activeStep === 0)) {
-          // done if we're past it, or all done
-          if ((activeStep === 0 && num <= 3) || num < activeStep) {
-            var isDone = (activeStep === 0) || num < activeStep;
-            el.className = 'workflow-step ' + (isDone && ((activeStep === 0 && hasEmployees && (num === 1)) || (activeStep === 0 && hasSelected && num === 2) || (activeStep === 0 && hasEvent && num === 3) || num < activeStep) ? 'done' : 'pending');
-          }
-        } else if (num === activeStep) {
-          el.className = 'workflow-step active';
-        } else {
-          el.className = 'workflow-step pending';
-        }
-      }
-
-      step1.className = 'workflow-step ' + (hasEmployees ? 'done' : (activeStep === 1 ? 'active' : 'pending'));
-      step2.className = 'workflow-step ' + (hasSelected && hasEmployees ? 'done' : (activeStep === 2 ? 'active' : 'pending'));
-      step3.className = 'workflow-step ' + (hasEvent && hasSelected && hasEmployees ? 'done' : (activeStep === 3 ? 'active' : 'pending'));
+      // Stepper removed — no-op retained for call-site compatibility
     }
 
     document.getElementById('selectAll').addEventListener('change', e => {
@@ -12286,7 +12506,7 @@
       if (!queue.length) {
         body.replaceChildren();
         body.appendChild(createEmptyState({
-          icon: '\uD83D\uDCE5',
+          icon: '\u2261',
           title: 'Cola vacía',
           desc: 'Añade convocatorias a la cola para enviarlas en lote.'
         }));
@@ -13123,6 +13343,8 @@
         return;
       }
 
+      closeAllDialogs();
+
       const dialog = document.getElementById('batchDialog');
       const fieldSelect = document.getElementById('batchGroupField');
       const ev = getCurrentEvent();
@@ -13177,7 +13399,7 @@
       sortedKeys.forEach(function(key) {
         var group = groups[key];
         var row = document.createElement('div');
-        row.style.cssText = 'background:var(--bg-main); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; justify-content:space-between; align-items:center;';
+        row.style.cssText = 'background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; justify-content:space-between; align-items:center;';
 
         var nameSpan = document.createElement('span');
         nameSpan.style.cssText = 'font-size:13px; font-weight:500; color:var(--text-primary);';
@@ -13725,6 +13947,7 @@
     // ═══════════════════════════════════
 
     document.getElementById('btnSettings').addEventListener('click', () => {
+      closeAllDialogs();
       const settings = loadSettings();
       document.getElementById('settingsWebhookUrl').value = settings.webhookUrl || '';
       document.getElementById('settingsFormsUrl').value = settings.formsUrl || '';
@@ -13732,6 +13955,7 @@
       document.getElementById('settingsDiasAvisoInicio').value = settings.diasAvisoInicio != null ? settings.diasAvisoInicio : 10;
       document.getElementById('settingsDiasAvisoFin').value = settings.diasAvisoFin != null ? settings.diasAvisoFin : 5;
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
+      document.getElementById('settingsProactiveAlerts').checked = settings.proactiveAlerts === true;
       document.getElementById('themeSelect').value = settings.theme || 'light';
       renderSettingsUnifiedTemplates();
       renderEmpresasGrupoSettings();
@@ -13766,9 +13990,10 @@
       }
 
       const syncConvocatoriaAccion = document.getElementById('settingsSyncConvocatoria').checked;
+      const proactiveAlerts = document.getElementById('settingsProactiveAlerts').checked;
       const theme = document.getElementById('themeSelect').value;
       var prev = loadSettings();
-      saveSettings(Object.assign(prev, { webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion, theme }));
+      saveSettings(Object.assign(prev, { webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion, proactiveAlerts, theme }));
       applyTheme(theme);
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
@@ -13778,7 +14003,28 @@
       applyTheme(this.value);
     });
 
+    // Settings sidebar navigation
+    document.querySelectorAll('.settings-nav-item').forEach(function(navItem) {
+      navItem.addEventListener('click', function() {
+        document.querySelectorAll('.settings-nav-item').forEach(function(n) { n.classList.remove('active'); });
+        document.querySelectorAll('.settings-section').forEach(function(s) { s.classList.remove('active'); });
+        navItem.classList.add('active');
+        var sectionId = 'settingsSection-' + navItem.dataset.settingsSection;
+        var section = document.getElementById(sectionId);
+        if (section) section.classList.add('active');
+      });
+    });
+
+    // Settings close X button
+    var settingsCloseX = document.getElementById('settingsCloseX');
+    if (settingsCloseX) {
+      settingsCloseX.addEventListener('click', function() {
+        document.getElementById('settingsDialog').classList.remove('visible');
+      });
+    }
+
     document.getElementById('btnShowInstructions').addEventListener('click', () => {
+      closeAllDialogs();
       document.getElementById('instructionsDialog').classList.add('visible');
     });
 
@@ -13990,6 +14236,7 @@
     // ═══════════════════════════════════
 
     document.getElementById('btnHistory').addEventListener('click', () => {
+      closeAllDialogs();
       renderHistory();
       document.getElementById('historyPanel').classList.add('visible');
     });
@@ -14013,7 +14260,7 @@
         list.innerHTML = '';
         empty.textContent = '';
         empty.appendChild(createEmptyState({
-          icon: '\uD83D\uDD52',
+          icon: '\u25F7',
           title: 'Sin historial',
           desc: 'Las convocatorias enviadas se registrarán aquí automáticamente.'
         }));
@@ -15256,7 +15503,7 @@
     // ACTIVATION CHECKLIST (TAB HELPER)
     // ═══════════════════════════════════
 
-    function applyTabChange(tabId) {
+    function navigateToTab(tabId) {
       var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
       if (btn) btn.click();
     }
@@ -15265,12 +15512,12 @@
       STORAGE_KEY: 'convocatoria_activationChecklist',
       steps: [
         { id: 'loadOrg', label: 'Cargar organigrama', action: function() { document.getElementById('fileInput').click(); } },
-        { id: 'sendFirst', label: 'Enviar primera convocatoria', action: function() { applyTabChange('tabConvocatoria'); } },
-        { id: 'createAction', label: 'Crear acción formativa', action: function() { applyTabChange('tabCatalogos'); } },
-        { id: 'generateXml', label: 'Generar primer XML', action: function() { applyTabChange('tabXml'); } },
-        { id: 'setupCompliance', label: 'Definir formaciones obligatorias', action: function() { applyTabChange('tabCatalogos'); } },
-        { id: 'generateReport', label: 'Generar primer informe', action: function() { applyTabChange('tabDashboard'); } },
-        { id: 'exploreDash', label: 'Explorar el dashboard', action: function() { applyTabChange('tabDashboard'); } },
+        { id: 'sendFirst', label: 'Enviar primera convocatoria', action: function() { navigateToTab('tabConvocatoria'); } },
+        { id: 'createAction', label: 'Crear acción formativa', action: function() { navigateToTab('tabCatalogos'); } },
+        { id: 'generateXml', label: 'Generar primer XML', action: function() { navigateToTab('tabXml'); } },
+        { id: 'setupCompliance', label: 'Definir formaciones obligatorias', action: function() { navigateToTab('tabCatalogos'); } },
+        { id: 'generateReport', label: 'Generar primer informe', action: function() { navigateToTab('tabDashboard'); } },
+        { id: 'exploreDash', label: 'Explorar el dashboard', action: function() { navigateToTab('tabDashboard'); } },
       ],
 
       getState: function() {
@@ -15535,7 +15782,7 @@
     function renderEmptyState(container, hint) {
       container.textContent = '';
       container.appendChild(createEmptyState({
-        icon: '\uD83D\uDCCA',
+        icon: '\u2261',
         title: 'Sin datos disponibles',
         desc: hint || ''
       }));
@@ -17792,9 +18039,10 @@
     function initDashFilters(acciones) {
       var filters = getDashFilters();
 
-      // Empresa select
-      var empresaSelect = document.getElementById('dashFilterEmpresa');
-      if (empresaSelect) {
+      // Empresa custom dropdown
+      var empresaBtn = document.getElementById('dashEmpresaBtn');
+      var empresaDropdown = document.getElementById('dashEmpresaDropdown');
+      if (empresaBtn && empresaDropdown) {
         var empresas = {};
         acciones.forEach(function(a) {
           if (a.empresaPagadora) {
@@ -17804,21 +18052,54 @@
             });
           }
         });
-        empresaSelect.innerHTML = '<option value="">Todas</option>';
+        var selectedEmpresas = filters.empresas || [];
+        // Build dropdown content
+        var ddHtml = '';
         Object.keys(empresas).forEach(function(cif) {
-          var opt = document.createElement('option');
-          opt.value = cif;
-          opt.textContent = empresas[cif];
-          if (filters.empresas && filters.empresas.indexOf(cif) > -1) opt.selected = true;
-          empresaSelect.appendChild(opt);
+          var checked = selectedEmpresas.indexOf(cif) > -1 ? ' checked' : '';
+          ddHtml += '<label><input type="checkbox" value="' + esc(cif) + '"' + checked + '>' + esc(empresas[cif]) + '</label>';
         });
-        empresaSelect.onchange = function() {
-          var f = getDashFilters();
-          var sel = Array.from(empresaSelect.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
-          f.empresas = sel.length > 0 ? sel : null;
-          saveDashFilters(f);
-          renderDashboard();
+        empresaDropdown.innerHTML = ddHtml;
+        // Update button text
+        function updateEmpresaBtnText() {
+          if (selectedEmpresas.length === 0) {
+            empresaBtn.textContent = 'Todas';
+            empresaBtn.classList.remove('active');
+          } else if (selectedEmpresas.length === 1) {
+            empresaBtn.textContent = empresas[selectedEmpresas[0]] || selectedEmpresas[0];
+            empresaBtn.classList.add('active');
+          } else {
+            empresaBtn.textContent = selectedEmpresas.length + ' empresas';
+            empresaBtn.classList.add('active');
+          }
+        }
+        updateEmpresaBtnText();
+        // Toggle dropdown
+        empresaBtn.onclick = function(e) {
+          e.stopPropagation();
+          var isOpen = empresaDropdown.classList.contains('open');
+          // Close other dropdowns
+          document.querySelectorAll('.filter-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+          if (!isOpen) empresaDropdown.classList.add('open');
         };
+        // Checkbox change handler
+        empresaDropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            var f = getDashFilters();
+            var sel = Array.from(empresaDropdown.querySelectorAll('input:checked')).map(function(i) { return i.value; });
+            f.empresas = sel.length > 0 ? sel : null;
+            selectedEmpresas = sel;
+            updateEmpresaBtnText();
+            saveDashFilters(f);
+            renderDashboard();
+          });
+        });
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+          if (!empresaBtn.contains(e.target) && !empresaDropdown.contains(e.target)) {
+            empresaDropdown.classList.remove('open');
+          }
+        });
       }
 
       // Periodo select
@@ -18061,6 +18342,13 @@
       var bannerCount = document.getElementById('alertBannerCount');
       var bannerText = document.getElementById('alertBannerText');
       if (!banner || !bannerCount || !bannerText) return;
+
+      // Only show banner if proactive alerts are enabled in settings
+      var settings = loadSettings();
+      if (!settings.proactiveAlerts) {
+        banner.classList.remove('visible');
+        return;
+      }
 
       // Don't show if user dismissed this evaluation round
       if (banner.dataset.dismissed === 'true') return;
@@ -18489,7 +18777,7 @@
       if (allAcciones.length === 0) {
         dashEmpty.textContent = '';
         var emptyWidget = createEmptyState({
-          icon: '\uD83D\uDCCA',
+          icon: '\u2261',
           title: 'Sin datos en el cuadro de mando',
           desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
           ctaText: 'Ir a Catálogos',
@@ -18499,7 +18787,7 @@
         var demoBtn = document.createElement('button');
         demoBtn.className = 'btn empty-state-cta';
         demoBtn.textContent = 'Ver datos de ejemplo';
-        demoBtn.style.cssText = 'background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);';
+        demoBtn.style.cssText = 'background:var(--bg-input);color:var(--text-secondary);border:1px solid var(--border);';
         demoBtn.addEventListener('click', loadDemoData);
         emptyWidget.appendChild(demoBtn);
         dashEmpty.appendChild(emptyWidget);
@@ -19166,12 +19454,6 @@
       var exportBtn = document.getElementById('btnExportAnnualReport');
       if (exportBtn) {
         exportBtn.onclick = function() { exportAnnualReport(); };
-      }
-
-      // Wire direction report button
-      var dirReportBtn = document.getElementById('btnReportDirection');
-      if (dirReportBtn) {
-        dirReportBtn.onclick = function() { showCustomReportDialog(); };
       }
 
       // Phase 2: Render analytics modules incrementally
@@ -20093,7 +20375,7 @@
       if (allWithDates.length === 0) {
         calEmpty.textContent = '';
         calEmpty.appendChild(createEmptyState({
-          icon: '\uD83D\uDCC5',
+          icon: '\u25A1',
           title: 'Calendario vacío',
           desc: 'Las acciones formativas aparecerán aquí automáticamente cuando les asignes fechas.',
           ctaText: 'Ir a Catálogos',
@@ -20626,187 +20908,31 @@
     }
 
     // ═══════════════════════════════════
-    // DIRECTION REPORT (F3.9)
-    // ═══════════════════════════════════
-
-    function showCustomReportDialog() {
-      var dialog = document.getElementById('customReportDialog');
-      // Reset checkboxes to defaults
-      var checks = dialog.querySelectorAll('input[data-section]');
-      checks.forEach(function(cb) {
-        var s = cb.getAttribute('data-section');
-        cb.checked = (s === 'kpis' || s === 'modalidad' || s === 'departamento');
-      });
-      dialog.classList.add('visible');
-
-      var cancelBtn = document.getElementById('customReportCancel');
-      var generateBtn = document.getElementById('customReportGenerate');
-
-      cancelBtn.onclick = function() { closeDialogAnimated(dialog); };
-      generateBtn.onclick = function() {
-        var sections = {};
-        dialog.querySelectorAll('input[data-section]').forEach(function(cb) {
-          sections[cb.getAttribute('data-section')] = cb.checked;
-        });
-        closeDialogAnimated(dialog);
-        generateDirectionReport(sections);
-      };
-
-      // Close on overlay click
-      dialog.onclick = function(e) {
-        if (e.target === dialog) closeDialogAnimated(dialog);
-      };
-    }
-
-    function generateDirectionReport(sections) {
-      if (!sections) {
-        sections = { kpis: true, modalidad: true, departamento: true, listado: true, compliance: true, fundae: true };
-      }
-      var year = new Date().getFullYear();
-      var allActions = getCatalog('acciones') || [];
-      var actions = allActions.filter(function(a) {
-        return a.fechaInicio && a.fechaInicio.startsWith(String(year));
-      });
-      var totalActions = actions.length;
-      var totalHours = actions.reduce(function(s, a) { return s + (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0); }, 0);
-      var uniqueNifs = new Set();
-      var totalParts = 0;
-      var byMod = {}, byDept = {};
-      actions.forEach(function(a) {
-        var m = a.modalidad || 'Sin definir'; byMod[m] = (byMod[m] || 0) + 1;
-        (a.participantes || []).forEach(function(nif) {
-          totalParts++;
-          uniqueNifs.add(nif);
-          var emp = (state.employees || []).find(function(e) { return e.NIF === nif || e._id === nif; });
-          var d = emp ? (emp.Departamento || 'Sin asignar') : 'Sin asignar';
-          byDept[d] = (byDept[d] || 0) + 1;
-        });
-      });
-
-      var modRows = Object.keys(byMod).map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byMod[k] + '</td></tr>'; }).join('');
-      var deptRows = Object.keys(byDept).sort(function(a, b) { return byDept[b] - byDept[a]; }).slice(0, 10)
-        .map(function(k) { return '<tr><td>' + esc(k) + '</td><td>' + byDept[k] + '</td></tr>'; }).join('');
-
-      // Listado de acciones rows
-      var actionRows = '';
-      if (sections.listado !== false) {
-        actionRows = actions.map(function(a) {
-          var horas = (parseFloat(a.horasPresenciales) || 0) + (parseFloat(a.horasTeleformacion) || 0);
-          var nPart = (a.participantes || []).length;
-          return '<tr><td>' + esc(a.codigo || '') + '</td><td>' + esc(a.nombre || '') + '</td><td>' + esc(a.modalidad || '-') + '</td><td style="text-align:center">' + horas + '</td><td style="text-align:center">' + nPart + '</td></tr>';
-        }).join('');
-      }
-
-      // Compliance data
-      var complianceHtml = '';
-      if (sections.compliance !== false) {
-        var completed = actions.filter(function(a) { return a.estado === 'Completada' || a.estado === 'Finalizada'; }).length;
-        var inProgress = actions.filter(function(a) { return a.estado === 'En curso' || a.estado === 'En progreso'; }).length;
-        var pending = actions.filter(function(a) { return a.estado === 'Pendiente' || a.estado === 'Planificada'; }).length;
-        var other = totalActions - completed - inProgress - pending;
-        complianceHtml = '<h2>Estado de compliance</h2>'
-          + '<table><thead><tr><th>Estado</th><th>Acciones</th><th>%</th></tr></thead><tbody>'
-          + '<tr><td>Completadas</td><td>' + completed + '</td><td>' + (totalActions > 0 ? Math.round(completed / totalActions * 100) : 0) + '%</td></tr>'
-          + '<tr><td>En curso</td><td>' + inProgress + '</td><td>' + (totalActions > 0 ? Math.round(inProgress / totalActions * 100) : 0) + '%</td></tr>'
-          + '<tr><td>Pendientes</td><td>' + pending + '</td><td>' + (totalActions > 0 ? Math.round(pending / totalActions * 100) : 0) + '%</td></tr>'
-          + (other > 0 ? '<tr><td>Otros</td><td>' + other + '</td><td>' + Math.round(other / totalActions * 100) + '%</td></tr>' : '')
-          + '</tbody></table>';
-      }
-
-      // FUNDAE credit data
-      var fundaeHtml = '';
-      if (sections.fundae !== false) {
-        var empresas = getEmpresasGrupo();
-        var bonificables = actions.filter(function(a) { return a.bonificable === 'Si' || a.bonificable === 'Sí'; });
-        var consumido = {};
-        bonificables.forEach(function(a) {
-          if (a.empresaPagadora && Number(a.presupuesto)) {
-            consumido[a.empresaPagadora] = (consumido[a.empresaPagadora] || 0) + Number(a.presupuesto);
-          }
-        });
-        var totalCredito = empresas.reduce(function(s, e) { return s + e.credito; }, 0);
-        var totalConsumido = Object.keys(consumido).reduce(function(s, k) { return s + consumido[k]; }, 0);
-        var fundaeRows = empresas.map(function(e) {
-          var cons = consumido[e.cif] || 0;
-          var pct = e.credito > 0 ? Math.round(cons / e.credito * 100) : 0;
-          return '<tr><td>' + esc(e.razonSocial) + '</td><td>' + e.credito.toLocaleString('es-ES') + ' &euro;</td><td>' + cons.toLocaleString('es-ES') + ' &euro;</td><td>' + pct + '%</td></tr>';
-        }).join('');
-        fundaeHtml = '<h2>Credito FUNDAE</h2>'
-          + '<table><thead><tr><th>Empresa</th><th>Credito</th><th>Consumido</th><th>% Uso</th></tr></thead><tbody>' + fundaeRows + '</tbody></table>'
-          + '<div style="font-size:11px; color:#475569; margin-top:4px;">Total credito: ' + totalCredito.toLocaleString('es-ES') + ' &euro; | Consumido: ' + totalConsumido.toLocaleString('es-ES') + ' &euro; | Disponible: ' + (totalCredito - totalConsumido).toLocaleString('es-ES') + ' &euro;</div>';
-      }
-
-      var w = window.open('', '_blank');
-      if (!w) { showToast('Permite ventanas emergentes', 'warning'); return; }
-
-      var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe Direccion ' + year + '</title>'
-        + '<style>@page{size:A4;margin:20mm} body{font-family:Inter,-apple-system,sans-serif;color:#0f172a;font-size:12px;line-height:1.6}'
-        + '.header{border-bottom:3px solid #4F46E5;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}'
-        + '.ht{font-size:20px;font-weight:600} .hs{font-size:13px;color:#475569;margin-top:4px} .hb{font-size:11px;color:#94a3b8}'
-        + '.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}'
-        + '.kpi{background:#f8fafc;border-radius:8px;padding:16px;text-align:center;border-left:3px solid #4F46E5}'
-        + '.kv{font-size:28px;font-weight:700;color:#4F46E5} .kl{font-size:11px;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}'
-        + 'h2{font-size:14px;font-weight:600;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}'
-        + 'table{width:100%;border-collapse:collapse;margin:8px 0 16px}'
-        + 'th{background:#f1f5f9;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0}'
-        + 'td{padding:6px 10px;border-bottom:1px solid #e2e8f0}'
-        + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
-        + '</style></head><body>'
-        + '<div class="header"><div><div class="ht">INFORME DE EJECUCION DEL PLAN DE FORMACION</div><div class="hs">Ejercicio ' + year + '</div></div><div class="hb">Formacion_AGORA</div></div>';
-
-      if (sections.kpis !== false) {
-        html += '<div class="kpis">'
-          + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones</div></div>'
-          + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas</div></div>'
-          + '<div class="kpi"><div class="kv">' + totalParts + '</div><div class="kl">Participaciones</div></div>'
-          + '<div class="kpi"><div class="kv">' + uniqueNifs.size + '</div><div class="kl">Personas</div></div>'
-          + '</div>';
-      }
-
-      if (sections.modalidad !== false) {
-        html += '<h2>Distribucion por modalidad</h2>'
-          + '<table><thead><tr><th>Modalidad</th><th>Acciones</th></tr></thead><tbody>' + modRows + '</tbody></table>';
-      }
-
-      if (sections.departamento !== false) {
-        html += '<h2>Participacion por departamento (Top 10)</h2>'
-          + '<table><thead><tr><th>Departamento</th><th>Participaciones</th></tr></thead><tbody>' + deptRows + '</tbody></table>';
-      }
-
-      if (sections.listado !== false) {
-        html += '<h2>Listado de acciones formativas</h2>'
-          + '<table><thead><tr><th>Codigo</th><th>Nombre</th><th>Modalidad</th><th style="text-align:center">Horas</th><th style="text-align:center">Participantes</th></tr></thead><tbody>' + actionRows + '</tbody></table>';
-      }
-
-      if (sections.compliance !== false) {
-        html += complianceHtml;
-      }
-
-      if (sections.fundae !== false) {
-        html += fundaeHtml;
-      }
-
-      html += '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-ES') + ' con Formacion_AGORA</div>'
-        + '</body></html>';
-
-      w.document.write(html);
-      w.document.close();
-      setTimeout(function() { w.print(); }, 300);
-    }
-
-    // ═══════════════════════════════════
     // RLT ANNUAL TRAINING BALANCE
     // ═══════════════════════════════════
 
-    function generateRLTBalance(year) {
+    function generateRLTBalance(year, empresaCif) {
       year = year || new Date().getFullYear();
       var allActions = getCatalog('acciones') || [];
       var actions = allActions.filter(function(a) {
         return a.fechaInicio && a.fechaInicio.startsWith(String(year));
       });
 
+      // Filter by company if specified
+      if (empresaCif) {
+        actions = actions.filter(function(a) {
+          return a.empresaPagadora === empresaCif;
+        });
+      }
+
+      var empresaNombre = '';
+      if (empresaCif) {
+        var emp = getEmpresasGrupo().find(function(e) { return e.cif === empresaCif; });
+        empresaNombre = emp ? emp.razonSocial : empresaCif;
+      }
+
       if (actions.length === 0) {
-        showToast('No hay acciones formativas para el ejercicio ' + year, 'warning');
+        showToast('No hay acciones formativas para el ejercicio ' + year + (empresaNombre ? ' en ' + empresaNombre : ''), 'warning');
         return;
       }
 
@@ -20882,7 +21008,7 @@
         + '.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:right}'
         + '@media print{body{padding:0;margin:20mm}}'
         + '</style></head><body>'
-        + '<div class="header"><div><div class="ht">Balance de Acciones Formativas</div><div class="hs">Ejercicio ' + esc(String(year)) + '</div></div><div class="hb">Formacion_AGORA</div></div>'
+        + '<div class="header"><div><div class="ht">Balance de Acciones Formativas' + (empresaNombre ? ' — ' + esc(empresaNombre) : '') + '</div><div class="hs">Ejercicio ' + esc(String(year)) + (empresaNombre ? ' · ' + esc(empresaNombre) : ' · Todas las empresas (consolidado)') + '</div></div><div class="hb">Formacion_AGORA</div></div>'
         + '<div class="kpis">'
         + '<div class="kpi"><div class="kv">' + totalActions + '</div><div class="kl">Acciones formativas</div></div>'
         + '<div class="kpi"><div class="kv">' + totalHours + '</div><div class="kl">Horas totales</div></div>'
@@ -21040,11 +21166,79 @@
     }
 
     // ═══════════════════════════════════
-    // WORKER TRAINING PROFILE (F4.8)
+    // PERSONAS TAB (Worker Training Profile)
     // ═══════════════════════════════════
 
-    function renderWorkerProfile(emp) {
-      var panel = document.getElementById('workerProfilePanel');
+    var personasState = { selectedNIF: null };
+
+    function renderPersonasList(query) {
+      var container = document.getElementById('personasList');
+      var countEl = document.getElementById('personasCount');
+      if (!container) return;
+      var employees = state.employees || [];
+      var q = (query || '').trim().toLowerCase();
+
+      var filtered = employees;
+      if (q.length >= 2) {
+        filtered = employees.filter(function(emp) {
+          return (emp.Empleado || '').toLowerCase().indexOf(q) !== -1 ||
+            (emp.NIF || '').toLowerCase().indexOf(q) !== -1 ||
+            (emp.Departamento || '').toLowerCase().indexOf(q) !== -1 ||
+            (emp.Empresa || '').toLowerCase().indexOf(q) !== -1 ||
+            (emp.Puesto || '').toLowerCase().indexOf(q) !== -1;
+        });
+      }
+
+      if (countEl) countEl.textContent = filtered.length + ' de ' + employees.length + ' personas';
+
+      if (employees.length === 0) {
+        container.innerHTML = '<div style="padding:32px 20px; text-align:center; color:var(--text-muted); font-size:13px;">' +
+          '<div style="font-size:14px; font-weight:500; color:var(--text-secondary); margin-bottom:4px;">Sin datos</div>' +
+          'Carga un organigrama Excel en la pestaña Convocatoria para ver las personas.</div>';
+        return;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin resultados para "' + esc(q) + '"</div>';
+        return;
+      }
+
+      // Limit to 200 for performance
+      var limited = filtered.slice(0, 200);
+      var html = '';
+      limited.forEach(function(emp) {
+        var name = emp.Empleado || 'Sin nombre';
+        var initials = name.split(' ').slice(0, 2).map(function(w) { return w.charAt(0); }).join('').toUpperCase();
+        var isActive = (emp.NIF || emp._id) === personasState.selectedNIF;
+        var meta = [emp.Departamento, emp.Puesto, emp.Empresa].filter(Boolean).join(' · ');
+        html += '<div class="persona-list-item' + (isActive ? ' active' : '') + '" data-nif="' + esc(emp.NIF || emp._id || '') + '">' +
+          '<div class="persona-avatar">' + esc(initials) + '</div>' +
+          '<div class="persona-info">' +
+          '<div class="persona-name">' + esc(name) + '</div>' +
+          '<div class="persona-meta">' + esc(meta || emp.NIF || '') + '</div>' +
+          '</div></div>';
+      });
+      if (filtered.length > 200) {
+        html += '<div style="padding:12px 16px; text-align:center; color:var(--text-muted); font-size:11px;">Mostrando 200 de ' + filtered.length + '. Usa el buscador para filtrar.</div>';
+      }
+      container.innerHTML = html;
+
+      // Bind click
+      container.querySelectorAll('.persona-list-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var nif = item.dataset.nif;
+          personasState.selectedNIF = nif;
+          // Update active state
+          container.querySelectorAll('.persona-list-item').forEach(function(i) { i.classList.remove('active'); });
+          item.classList.add('active');
+          var emp = (state.employees || []).find(function(e) { return (e.NIF || e._id) === nif; });
+          if (emp) renderPersonaProfile(emp);
+        });
+      });
+    }
+
+    function renderPersonaProfile(emp) {
+      var panel = document.getElementById('personasProfile');
       if (!panel) return;
       var acciones = getCatalog('acciones');
       var nif = emp.NIF || '';
@@ -21057,93 +21251,149 @@
         totalHours += (Number(a.horasPresenciales) || 0) + (Number(a.horasTeleformacion) || 0);
       });
 
-      var parts = [];
+      var wrapper = document.createElement('div');
+
       // Header
-      parts.push('<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">');
-      parts.push('<div>');
-      parts.push('<div style="font-size:15px; font-weight:700; color:var(--text-primary);">');
-      parts.push(esc(emp.Empleado || ''));
-      parts.push('</div>');
-      parts.push('<div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">');
-      parts.push('NIF: ' + esc(nif));
-      if (emp.Empresa) parts.push(' &middot; ' + esc(emp.Empresa));
-      if (emp.Departamento) parts.push(' &middot; ' + esc(emp.Departamento));
-      if (emp.Puesto) parts.push(' &middot; ' + esc(emp.Puesto));
-      parts.push('</div></div>');
-      // Close button
-      var closeBtn = document.createElement('button');
-      closeBtn.textContent = '\u00D7';
-      closeBtn.title = 'Cerrar';
-      closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;';
-      closeBtn.onclick = function() {
-        document.getElementById('workerProfilePanel').style.display = 'none';
-        document.getElementById('workerSearchInput').value = '';
-      };
+      var header = document.createElement('div');
+      header.style.cssText = 'margin-bottom:20px;';
+      var name = document.createElement('div');
+      name.style.cssText = 'font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:4px;';
+      name.textContent = emp.Empleado || '';
+      header.appendChild(name);
+      var meta = document.createElement('div');
+      meta.style.cssText = 'font-size:12px; color:var(--text-secondary); line-height:1.6;';
+      var metaParts = ['NIF: ' + (nif || '-')];
+      if (emp.Empresa) metaParts.push(emp.Empresa);
+      if (emp.Departamento) metaParts.push(emp.Departamento);
+      if (emp.Puesto) metaParts.push(emp.Puesto);
+      if (emp.Centro) metaParts.push(emp.Centro);
+      meta.textContent = metaParts.join(' · ');
+      header.appendChild(meta);
+      wrapper.appendChild(header);
 
-      parts.push('</div>');
+      // KPI row
+      var kpiRow = document.createElement('div');
+      kpiRow.style.cssText = 'display:flex; gap:16px; margin-bottom:24px;';
+      var kpis = [
+        { label: 'Formaciones', value: empAcciones.length, color: 'var(--accent)' },
+        { label: 'Horas totales', value: totalHours, color: 'var(--accent)' },
+      ];
+      // Calculate avg attendance
+      var asistPcts = [];
+      empAcciones.forEach(function(a) {
+        var asist = a.asistencia || { sesiones: [], registro: {} };
+        var ses = asist.sesiones || [];
+        var reg = asist.registro || {};
+        if (ses.length > 0 && reg[nif]) {
+          var att = 0;
+          var nifReg = reg[nif] || [];
+          for (var i = 0; i < ses.length; i++) { if (nifReg[i] === true) att++; }
+          asistPcts.push(Math.round((att / ses.length) * 100));
+        }
+      });
+      if (asistPcts.length > 0) {
+        var avgAsist = Math.round(asistPcts.reduce(function(s, v) { return s + v; }, 0) / asistPcts.length);
+        kpis.push({ label: 'Asistencia media', value: avgAsist + '%', color: avgAsist < 75 ? 'var(--danger)' : 'var(--success)' });
+      }
+      kpis.forEach(function(k) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:var(--accent-subtle); padding:12px 20px; border-radius:var(--radius); text-align:center; min-width:100px;';
+        var val = document.createElement('div');
+        val.style.cssText = 'font-size:22px; font-weight:700; color:' + k.color + '; font-variant-numeric:tabular-nums;';
+        val.textContent = k.value;
+        var lbl = document.createElement('div');
+        lbl.style.cssText = 'font-size:11px; color:var(--text-secondary); margin-top:2px;';
+        lbl.textContent = k.label;
+        card.appendChild(val);
+        card.appendChild(lbl);
+        kpiRow.appendChild(card);
+      });
+      wrapper.appendChild(kpiRow);
 
-      // Summary KPIs
-      parts.push('<div style="display:flex; gap:16px; margin-bottom:12px;">');
-      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
-      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(empAcciones.length)) + '</div>');
-      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Formaciones</div>');
-      parts.push('</div>');
-      parts.push('<div style="background:var(--accent-subtle); padding:8px 14px; border-radius:var(--radius); text-align:center;">');
-      parts.push('<div style="font-size:18px; font-weight:700; color:var(--accent);">' + esc(String(totalHours)) + '</div>');
-      parts.push('<div style="font-size:11px; color:var(--text-secondary);">Horas totales</div>');
-      parts.push('</div></div>');
-
+      // Training history
       if (empAcciones.length === 0) {
-        parts.push('<div style="font-size:13px; color:var(--text-muted); padding:12px 0; text-align:center;">Sin participaciones registradas.</div>');
+        var empty = document.createElement('div');
+        empty.style.cssText = 'font-size:13px; color:var(--text-muted); padding:20px 0; text-align:center;';
+        empty.textContent = 'Sin participaciones registradas.';
+        wrapper.appendChild(empty);
       } else {
-        parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Historial de participaciones</div>');
-        parts.push('<div style="max-height:260px; overflow-y:auto;">');
+        var sectionTitle = document.createElement('div');
+        sectionTitle.style.cssText = 'font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;';
+        sectionTitle.textContent = 'Historial de participaciones';
+        wrapper.appendChild(sectionTitle);
+
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%; border-collapse:collapse; font-size:12px;';
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        ['Acción formativa', 'Estado', 'Modalidad', 'Horas', 'Fechas', 'Asistencia'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.style.cssText = 'text-align:left; padding:8px 10px; background:var(--bg-input); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; border-bottom:2px solid var(--border); color:var(--text-secondary);';
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
         empAcciones.forEach(function(a) {
           var hP = Number(a.horasPresenciales) || 0;
           var hT = Number(a.horasTeleformacion) || 0;
           var horas = hP + hT;
-          var fechas = '';
-          if (a.fechaInicio) {
-            fechas = esc(a.fechaInicio);
-            if (a.fechaFin) fechas += ' \u2013 ' + esc(a.fechaFin);
+          var fechas = a.fechaInicio || '';
+          if (a.fechaFin && a.fechaFin !== a.fechaInicio) fechas += ' \u2013 ' + a.fechaFin;
+
+          var asistPct = '';
+          var asist = a.asistencia || { sesiones: [], registro: {} };
+          var ses = asist.sesiones || [];
+          var reg = asist.registro || {};
+          if (ses.length > 0 && reg[nif]) {
+            var att = 0;
+            var nifReg = reg[nif] || [];
+            for (var i = 0; i < ses.length; i++) { if (nifReg[i] === true) att++; }
+            asistPct = Math.round((att / ses.length) * 100) + '%';
           }
-          parts.push('<div style="padding:8px 10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">');
-          parts.push('<div style="flex:1; min-width:0;">');
-          parts.push('<div style="font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(a.nombre || a.codigo || '') + '</div>');
-          if (fechas) parts.push('<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + fechas + '</div>');
-          parts.push('</div>');
-          parts.push('<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-left:12px; white-space:nowrap; font-variant-numeric:tabular-nums;">' + esc(String(horas)) + ' h</div>');
-          parts.push('</div>');
+
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'transition:background var(--transition);';
+          tr.onmouseenter = function() { tr.style.background = 'var(--accent-subtle)'; };
+          tr.onmouseleave = function() { tr.style.background = ''; };
+
+          var cells = [
+            { text: a.nombre || a.codigo || '', style: 'font-weight:500; color:var(--text-primary);' },
+            { text: a.estado || '', style: '' },
+            { text: a.modalidad || '', style: '' },
+            { text: horas > 0 ? horas + ' h' : '', style: 'text-align:right; font-variant-numeric:tabular-nums;' },
+            { text: fechas, style: 'white-space:nowrap;' },
+            { text: asistPct, style: 'text-align:right; font-weight:600;' + (asistPct && parseInt(asistPct, 10) < 75 ? ' color:var(--danger);' : '') }
+          ];
+
+          cells.forEach(function(c) {
+            var td = document.createElement('td');
+            td.style.cssText = 'padding:8px 10px; border-bottom:1px solid var(--border); color:var(--text-primary);' + (c.style || '');
+            td.textContent = c.text;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
         });
-        parts.push('</div>');
+        table.appendChild(tbody);
+        wrapper.appendChild(table);
       }
 
       panel.textContent = '';
-      // Build a wrapper for the HTML content
-      var wrapper = document.createElement('div');
-      wrapper.innerHTML = parts.join('');
-      // Insert close button into the header flex container
-      var headerFlex = wrapper.querySelector('div');
-      if (headerFlex) headerFlex.appendChild(closeBtn);
       panel.appendChild(wrapper);
-      panel.style.display = '';
     }
 
+    // Personas tab initialization
     (function() {
-      var input = document.getElementById('workerSearchInput');
+      var input = document.getElementById('personasSearchInput');
       if (!input) return;
       input.addEventListener('input', function() {
         var self = this;
         clearTimeout(self._timer);
         self._timer = setTimeout(function() {
-          var q = self.value.trim().toLowerCase();
-          if (q.length < 2) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
-          var match = (state.employees || []).find(function(emp) {
-            return (emp.Empleado || '').toLowerCase().indexOf(q) !== -1 || (emp.NIF || '').toLowerCase().indexOf(q) !== -1;
-          });
-          if (!match) { document.getElementById('workerProfilePanel').style.display = 'none'; return; }
-          renderWorkerProfile(match);
-        }, 300);
+          renderPersonasList(self.value);
+        }, 200);
       });
     })();
 
@@ -21191,6 +21441,7 @@
       });
       listEl.innerHTML = html;
 
+      closeAllDialogs();
       var overlay = document.getElementById('employeeSelectDialog');
       overlay.classList.add('visible');
 
@@ -21305,6 +21556,7 @@
       contentEl.innerHTML = html;
 
       // Show dialog
+      closeAllDialogs();
       var overlay = document.getElementById('employeeReportDialog');
       overlay.classList.add('visible');
 
@@ -21387,15 +21639,32 @@
     // ONBOARDING TOUR
     // ═══════════════════════════════════
     function showOnboarding() {
+      closeAllDialogs();
       document.getElementById('onboardingOverlay').classList.add('visible');
     }
 
-    document.getElementById('onboardingStart').addEventListener('click', function() {
-      document.getElementById('onboardingOverlay').classList.remove('visible');
+    function dismissOnboarding() {
+      var overlay = document.getElementById('onboardingOverlay');
+      if (overlay) {
+        overlay.classList.remove('visible');
+        overlay.classList.remove('closing');
+      }
       try { localStorage.setItem('convocatoria_onboarding_done', 'true'); } catch(e) {}
-    });
+    }
 
-    // Show onboarding on first visit
+    document.getElementById('onboardingStart').addEventListener('click', dismissOnboarding);
+
+    // Also close onboarding when clicking the overlay background
+    (function() {
+      var onbOverlay = document.getElementById('onboardingOverlay');
+      if (onbOverlay) {
+        onbOverlay.addEventListener('click', function(e) {
+          if (e.target === onbOverlay) dismissOnboarding();
+        });
+      }
+    })();
+
+    // Show onboarding on first visit only
     try {
       if (!localStorage.getItem('convocatoria_onboarding_done')) {
         showOnboarding();
@@ -21413,16 +21682,65 @@
       }, 150);
     }
 
+    // ═══════════════════════════════════
+    // CLOSE ALL DIALOGS (MUTUAL EXCLUSION)
+    // ═══════════════════════════════════
+    function closeAllDialogs() {
+      var ids = [
+        'settingsDialog', 'historyPanel', 'batchDialog',
+        'instructionsDialog', 'onboardingOverlay', 'seriesDialog',
+        'confirmDialog', 'postSendDialog', 'employeeReportDialog',
+        'employeeSelectDialog', 'sheetSelectorDialog', 'excelErrorDialog'
+      ];
+      ids.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('visible');
+          el.classList.remove('closing');
+        }
+      });
+      // Also close cmdkOverlay
+      var cmdk = document.getElementById('cmdkOverlay');
+      if (cmdk) {
+        cmdk.classList.remove('visible');
+        cmdk.classList.remove('closing');
+      }
+      // Close any dynamically created overlays
+      document.querySelectorAll('.dialog-overlay.visible').forEach(function(el) {
+        el.classList.remove('visible');
+        el.classList.remove('closing');
+      });
+    }
+
+    // ═══════════════════════════════════
+    // CLICK OUTSIDE CLOSES DIALOG OVERLAYS
+    // ═══════════════════════════════════
+    // Use event delegation on document to catch both static and dynamic overlays
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('dialog-overlay') && e.target.classList.contains('visible')) {
+        e.target.classList.remove('visible');
+        e.target.classList.remove('closing');
+      }
+    });
+
 
     // ═══════════════════════════════════
     // ESCAPE KEY CLOSES DIALOGS
     // ═══════════════════════════════════
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
+        // Close cmdk first if open
+        var cmdk = document.getElementById('cmdkOverlay');
+        if (cmdk && cmdk.classList.contains('visible')) {
+          CmdK.close();
+          e.preventDefault();
+          return;
+        }
         var dialogs = document.querySelectorAll('.dialog-overlay.visible');
         if (dialogs.length > 0) {
           var last = dialogs[dialogs.length - 1];
-          closeDialogAnimated(last);
+          last.classList.remove('visible');
+          last.classList.remove('closing');
           e.preventDefault();
         }
       }

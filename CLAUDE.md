@@ -1,12 +1,24 @@
-# Convocatoria de Formaciones
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Arquitectura
 
-Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. Dependencias externas vía CDN:
+Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~21,000 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
 
 Persistencia: `localStorage` para estado, presets, historial, cola. No hay backend.
+
+### Pestañas principales
+
+La app tiene múltiples pestañas (tabs) que comparten el mismo archivo:
+- **Convocatoria** — flujo principal: carga Excel → filtra → configura evento → envía
+- **Catálogo** — gestión de formaciones con vista lista/tarjeta
+- **Dashboard** — KPIs, gráficos, informes (precomputado con `requestIdleCallback`)
+- **Cola** — gestión de envíos programados
+
+El tab switching usa `data-tab` attributes y muestra/oculta paneles.
 
 ## Design System — Reglas estrictas
 
@@ -79,13 +91,28 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `saveState()` — autoguardado con debounce 500ms
 - IDs sintéticos (`emp._id`) — NUNCA usar NIF como clave primaria de selección
 - `state.excludedNIFs` — contiene `_id` (no NIFs reales, pese al nombre legacy)
+- `createRowElement(emp)` — crea filas de tabla con DOM (NO innerHTML) para rendimiento y seguridad
+- `VirtualScroll` — objeto para renderizar datasets grandes (>500 filas) con `requestAnimationFrame` throttling
+- `loadSettings()` / `saveSettings(obj)` — lee/escribe settings en `convocatoria_settings`
+- `applyTheme(theme)` / `initTheme()` — dark mode (light/dark/system) via `[data-theme]` en `<html>`
+- `getUnifiedTemplates()` / `saveUnifiedTemplatesStore()` / `migrateTemplates()` — sistema unificado de plantillas (reemplaza los 4 stores legacy separados)
+- `precomputeDashboard()` — precalcula datos del dashboard con `requestIdleCallback` y cache basado en hash
+- `checkWaitlist()` — gestiona lista de espera cuando se supera capacidad máxima
 
 ## Convenciones de código
 
 - Español para texto visible al usuario, inglés para código/variables
 - `FILTER_KEYS` y `RELEVANT_COLUMNS` definen las columnas del Excel esperadas
 - Los filtros normalizan espacios (`trim` + collapse) al parsear
-- `localStorage` keys: `convocatoria_state`, `convocatoria_employees`, `convocatoria_fileName`, `convocatoria_presets`, `convocatoria_history`, `convocatoria_queue`, `convocatoria_settings`
+- `localStorage` keys: `convocatoria_state`, `convocatoria_employees`, `convocatoria_fileName`, `convocatoria_presets`, `convocatoria_history`, `convocatoria_queue`, `convocatoria_settings`, `convocatoria_unifiedTemplates`, `convocatoria_catalog_viewMode`, `convocatoria_corrections`, `convocatoria_compliance_types`, `convocatoria_compliance_records`, `convocatoria_tnaRequests`, `convocatoria_dashCollapsed`, `convocatoria_dash_mode`, `convocatoria_onboarding_done`, `convocatoria_lastBackup`, `convocatoria_kbdInteractions`
+
+## Dark mode
+
+- Tres modos: `light`, `dark`, `system` — almacenado en settings como `theme`
+- CSS: variables re-declaradas en `[data-theme="dark"]` y media query para `[data-theme="system"]`
+- JS: `applyTheme(theme)` pone el atributo en `<html>`, `initTheme()` lo restaura al cargar
+- Selector en settings dialog (`#themeSelect`)
+- NUNCA hardcodear colores fuera de las variables — dark mode los invierte automáticamente
 
 ## Layout
 
@@ -94,6 +121,41 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - Secciones del panel izquierdo numeradas: "1. Carga de datos", "2. Selecciona asistentes", "3. Datos del evento"
 - Action bar fijada al fondo del panel derecho
 - Queue bar encima de la tabla cuando hay items en cola
+
+## Subsistemas añadidos en el overhaul
+
+- **Command palette** — `Cmd+K` / `Ctrl+K`, búsqueda fuzzy, navegación por teclado
+- **Keyboard shortcuts** — atajos globales con detección de OS, tooltips progresivos
+- **Virtual scrolling** — `VirtualScroll` object para tablas >500 filas
+- **Unified templates** — `migrateTemplates()` fusiona 4 stores legacy en `convocatoria_unifiedTemplates`
+- **Compliance tracking** — formación obligatoria con caducidades
+- **TNA requests** — mini sistema de detección de necesidades formativas
+- **Annual training plan** — plan anual con vista trimestral
+- **Provider management** — gestión de proveedores con scorecard
+- **Kirkpatrick L1-L2** — evaluación post-formación (utilidad, calidad formador, materiales, NPS, pre/post test)
+- **Worker profile** — perfil formativo por persona trabajadora
+- **Organigram diff** — detección de cambios entre cargas de Excel
+- **PDF/ICS exports** — dossier inspección, asistencia, certificados, eventos calendario
+- **Branded reports** — informe dirección, balance RLT, report customizable
+- **JSON backup** — export/import completo del estado de la app
+- **Onboarding checklist** — activación progresiva en 7 pasos
+
+## Modelo de datos del catálogo
+
+Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fechaFin`, `modalidad`, `horasPresenciales`, `horasTeleformacion`, `codigo`, `proveedor`, `coste`, `plazas`.
+
+## Trabajo en paralelo (worktrees)
+
+- Los agentes en worktrees (`/private/tmp/worktree-*`) NO pueden hacer git commit — el coordinador commitea manualmente
+- Los merges de lanes paralelas producen conflictos en zonas de inserción comunes (final del `<script>`, bloques de diálogos HTML). Resolución: mantener ambos lados secuencialmente
+- Siempre verificar `grep '<<<<<<' convocatoria.html` tras un merge antes de commitear
+
+## Principios UX
+
+- Feedback visual mínimo: UN indicador de éxito es suficiente (no borde + icono + SVG animado)
+- No añadir decoración sin función (steppers, wizards, iconos puramente estéticos)
+- Avisos proactivos deben ser opt-in (configurables en settings, desactivados por defecto)
+- Preferir subtlety: badges discretos, puntos de notificación, no banners invasivos
 
 ## Encuestas de satisfacción (Power Automate)
 
@@ -113,3 +175,5 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - NO usar NIF como clave de selección — usar `_id`
 - NO hardcodear colores rgba — usar variables CSS
 - NO crear ficheros adicionales (todo va en convocatoria.html)
+- NO usar innerHTML para filas de tabla — usar `createRowElement()` (DOM API)
+- NO añadir alertas/avisos que salten automáticamente sin control del usuario
