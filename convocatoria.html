@@ -11104,160 +11104,835 @@
       catch(e) { showToast('Error al guardar solicitudes TNA', 'error'); }
     }
 
-    function renderTNAView() {
-      var container = document.getElementById('tnaViewContainer');
-      var requests = getTNARequests();
+    // --- TNA State objects ---
+    var tnaState = { activeTab: 'necesidades' };
+    var tnaExploradorState = { search: '', expandedId: null };
+    var tnaNecesidadesState = { search: '', estado: '', urgencia: '', expandedId: null };
 
-      var urgenciaColors = {
+    // --- Badge style helpers ---
+    function tnaUrgenciaBadge(urgencia) {
+      var styles = {
         alta: 'background:var(--danger-light); color:var(--danger); border:1px solid var(--danger);',
         media: 'background:var(--warning-light); color:var(--warning); border:1px solid var(--warning);',
         baja: 'background:var(--bg-input); color:var(--text-muted); border:1px solid var(--border);'
       };
-      var estadoColors = {
+      return styles[urgencia] || styles.media;
+    }
+
+    function tnaEstadoBadge(estado) {
+      var styles = {
         pendiente: 'background:var(--warning-light); color:var(--warning); border:1px solid var(--warning);',
         aprobada: 'background:var(--success-light); color:var(--success); border:1px solid var(--success);',
         rechazada: 'background:var(--danger-light); color:var(--danger); border:1px solid var(--danger);',
         convertida: 'background:var(--accent-light); color:var(--accent); border:1px solid var(--accent);'
       };
+      return styles[estado] || styles.pendiente;
+    }
 
-      var html = '<div class="u-p-24 u-max-w-900 u-m-auto">';
-      html += '<div class="u-flex-between u-mb-20">';
-      html += '<div><h2 class="u-text-18 u-font-700 u-text-primary u-m-0">Necesidades formativas (TNA)</h2>';
-      html += '<p class="u-text-12 u-text-muted u-mt-4">Solicitudes de formación por área / departamento</p></div>';
-      html += '<button class="btn btn-primary u-text-12" id="btnNewTNA"><span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nueva solicitud</button>';
+    // --- Main TNA view ---
+    function renderTNAView() {
+      var container = document.getElementById('tnaViewContainer');
+      var requests = getTNARequests();
+      var puestos = getPuestosCatalog();
+
+      var html = '<div style="padding:24px; max-width:960px; margin:0 auto;">';
+
+      // Header
+      html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">';
+      html += '<div>';
+      html += '<h2 style="font-size:var(--font-size-lg); font-weight:700; color:var(--text-primary); margin:0;">Necesidades formativas</h2>';
+      html += '<p style="font-size:var(--font-size-sm); color:var(--text-muted); margin:4px 0 0 0;">Detección de necesidades vinculada a puestos del organigrama</p>';
+      html += '</div>';
+      html += '<button class="btn btn-primary" style="font-size:var(--font-size-sm);" id="btnNewTNA">';
+      html += '<span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nueva solicitud</button>';
       html += '</div>';
 
-      if (requests.length === 0) {
-        html += '<div class="u-text-center u-text-muted u-text-13" style="padding:48px 20px;">';
-        html += '<div class="u-text-24 u-mb-12 u-text-muted"><span class="icon" aria-hidden="true">' + Icons.menu(32) + '</span></div>';
-        html += 'No hay solicitudes de formación registradas.<br>Pulsa "Nueva solicitud" para crear la primera.';
-        html += '</div>';
+      // Sub-tabs
+      html += '<div style="display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0;">';
+      var tabExClass = tnaState.activeTab === 'explorador' ? 'font-weight:600; color:var(--accent); border-bottom:2px solid var(--accent);' : 'font-weight:500; color:var(--text-secondary); border-bottom:2px solid transparent;';
+      var tabNecClass = tnaState.activeTab === 'necesidades' ? 'font-weight:600; color:var(--accent); border-bottom:2px solid var(--accent);' : 'font-weight:500; color:var(--text-secondary); border-bottom:2px solid transparent;';
+      html += '<button class="link-btn" style="font-size:var(--font-size-sm); padding:8px 16px; ' + tabExClass + '" id="tnaTabExplorador">';
+      html += '<span class="icon" aria-hidden="true">' + Icons.search(14) + '</span> Explorar puestos (' + puestos.length + ')</button>';
+      html += '<button class="link-btn" style="font-size:var(--font-size-sm); padding:8px 16px; ' + tabNecClass + '" id="tnaTabNecesidades">';
+      html += '<span class="icon" aria-hidden="true">' + Icons.menu(14) + '</span> Necesidades (' + requests.length + ')</button>';
+      html += '</div>';
+
+      // Sub-view content
+      html += '<div id="tnaSubViewContent">';
+      if (tnaState.activeTab === 'explorador') {
+        html += renderTNAExplorador(puestos);
       } else {
-        // Sort: pendiente first, then by date desc
-        var sortOrder = { pendiente: 0, aprobada: 1, rechazada: 2, convertida: 3 };
-        requests.sort(function(a, b) {
-          var sa = sortOrder[a.estado] !== undefined ? sortOrder[a.estado] : 9;
-          var sb = sortOrder[b.estado] !== undefined ? sortOrder[b.estado] : 9;
-          if (sa !== sb) return sa - sb;
-          return (b.createdAt || '').localeCompare(a.createdAt || '');
-        });
-
-        html += '<div class="u-flex-col u-gap-10">';
-        for (var i = 0; i < requests.length; i++) {
-          var r = requests[i];
-          var urgStyle = urgenciaColors[r.urgencia] || urgenciaColors.media;
-          var estStyle = estadoColors[r.estado] || estadoColors.pendiente;
-          var dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-ES') : '-';
-
-          html += '<div class="u-flex-items-start u-gap-14 u-bg-panel" style="border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px;">';
-
-          // Content
-          html += '<div class="u-flex-1" style="min-width:0;">';
-          html += '<div class="u-flex u-items-center u-gap-8 u-flex-wrap u-mb-6">';
-          html += '<span class="u-text-14 u-font-600 u-text-primary">' + esc(r.tema || 'Sin tema') + '</span>';
-          html += '<span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + urgStyle + '">' + esc(r.urgencia || 'media') + '</span>';
-          html += '<span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + estStyle + '">' + esc(r.estado || 'pendiente') + '</span>';
-          html += '</div>';
-          html += '<div class="u-text-12 u-text-secondary u-mb-4"><strong>Área:</strong> ' + esc(r.area || '-') + '</div>';
-          if (r.justificacion) {
-            html += '<div class="u-text-12 u-text-muted u-leading-normal">' + esc(r.justificacion) + '</div>';
-          }
-          html += '<div class="u-text-11 u-text-muted u-mt-6">' + esc(dateStr) + '</div>';
-          html += '</div>';
-
-          // Actions
-          html += '<div class="u-flex-col u-gap-6 u-flex-shrink-0">';
-          if (r.estado !== 'convertida') {
-            html += '<button class="btn btn-primary" style="font-size:var(--font-size-xs); padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + parseInt(r.id, 10) + ')">Crear acción</button>';
-          }
-          html += '<button class="btn btn-secondary" style="font-size:var(--font-size-xs); padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + parseInt(r.id, 10) + ')">Eliminar</button>';
-          html += '</div>';
-
-          html += '</div>';
-        }
-        html += '</div>';
+        html += renderTNANecesidades(requests);
       }
+      html += '</div>';
 
       html += '</div>';
-      container.innerHTML = html; // innerHTML OK: sanitized via esc()
+      container.innerHTML = html; // innerHTML OK: all user values sanitized via esc()
 
-      // Bind new request button
+      // Bind header events
       var btnNew = document.getElementById('btnNewTNA');
-      if (btnNew) {
-        btnNew.addEventListener('click', showTNAForm);
+      if (btnNew) btnNew.addEventListener('click', function() { showTNAForm([], null); });
+
+      document.getElementById('tnaTabExplorador').addEventListener('click', function() {
+        tnaState.activeTab = 'explorador';
+        renderTNAView();
+      });
+      document.getElementById('tnaTabNecesidades').addEventListener('click', function() {
+        tnaState.activeTab = 'necesidades';
+        renderTNAView();
+      });
+
+      // Bind sub-view events
+      if (tnaState.activeTab === 'explorador') {
+        bindTNAExploradorEvents(puestos);
+      } else {
+        bindTNANecesidadesEvents(requests);
       }
     }
 
-    function showTNAForm() {
+    // --- Explorador de Puestos ---
+    function renderTNAExplorador(puestos) {
+      if (!puestos || puestos.length === 0) {
+        return '<div style="text-align:center; padding:48px 20px; color:var(--text-muted);">' +
+          '<div style="margin-bottom:12px;"><span class="icon" aria-hidden="true">' + Icons.search(32) + '</span></div>' +
+          '<div style="font-size:var(--font-size-base); font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Sin catálogo de puestos</div>' +
+          '<div style="font-size:var(--font-size-sm);">Importa el catálogo de puestos desde Ajustes para explorar competencias.</div>' +
+        '</div>';
+      }
+
+      var searchVal = tnaExploradorState.search.toLowerCase().replace(/\s+/g, ' ').trim();
+      var filtered = puestos;
+      if (searchVal) {
+        filtered = puestos.filter(function(p) {
+          var haystack = ((p.nombreOrganigrama || '') + ' ' + (p.nombre || '') + ' ' + (p.area || '') + ' ' + (p.skills || []).join(' ')).toLowerCase();
+          return haystack.indexOf(searchVal) !== -1;
+        });
+      }
+
+      var html = '';
+      // Search bar
+      html += '<div style="margin-bottom:12px;">';
+      html += '<input class="input-field u-w-full" type="text" id="tnaExpSearch" placeholder="Buscar puesto, área o competencia..." style="font-size:var(--font-size-sm);" value="' + esc(tnaExploradorState.search) + '" aria-label="Buscar puestos">';
+      html += '</div>';
+
+      if (filtered.length === 0) {
+        html += '<div style="text-align:center; padding:32px 20px; color:var(--text-muted); font-size:var(--font-size-sm);">Sin resultados para esta búsqueda.</div>';
+        return html;
+      }
+
+      // Table
+      html += '<table class="cat-table" style="width:100%; border-collapse:collapse;">';
+      html += '<thead><tr>';
+      html += '<th style="text-align:left; padding:8px 12px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Puesto</th>';
+      html += '<th style="text-align:left; padding:8px 12px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Área</th>';
+      html += '<th style="text-align:left; padding:8px 12px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Nivel</th>';
+      html += '<th style="text-align:right; padding:8px 12px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Empleados</th>';
+      html += '</tr></thead><tbody>';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var p = filtered[i];
+        var empCount = getEmployeeCountByPuesto(p.nombreOrganigrama || p.nombre);
+        var empDisplay = empCount === -1 ? '\u2014' : String(empCount);
+        var isExpanded = tnaExploradorState.expandedId === p.id;
+        var rowBg = isExpanded ? 'background:var(--accent-subtle);' : '';
+
+        html += '<tr class="tna-exp-row" data-puesto-id="' + esc(p.id) + '" style="cursor:pointer; ' + rowBg + '">';
+        html += '<td style="padding:8px 12px; font-size:var(--font-size-sm); color:var(--text-primary); border-bottom:1px solid var(--border);">';
+        html += '<span style="font-weight:500;">' + esc(p.nombreOrganigrama || p.nombre) + '</span>';
+        if (p.nombreOrganigrama && p.nombre && p.nombreOrganigrama !== p.nombre) {
+          html += '<br><span style="font-size:var(--font-size-xs); color:var(--text-muted);">' + esc(p.nombre) + '</span>';
+        }
+        html += '</td>';
+        html += '<td style="padding:8px 12px; font-size:var(--font-size-sm); color:var(--text-secondary); border-bottom:1px solid var(--border);">' + esc(p.area || '-') + '</td>';
+        html += '<td style="padding:8px 12px; font-size:var(--font-size-sm); color:var(--text-secondary); border-bottom:1px solid var(--border);">' + esc(p.nivelCarrera || '-') + '</td>';
+        html += '<td style="padding:8px 12px; font-size:var(--font-size-sm); color:var(--text-secondary); border-bottom:1px solid var(--border); text-align:right;">' + esc(empDisplay) + '</td>';
+        html += '</tr>';
+
+        // Expanded detail
+        if (isExpanded) {
+          html += '<tr><td colspan="4" style="padding:12px 16px 16px; background:var(--accent-subtle); border-bottom:1px solid var(--border);">';
+
+          // Purpose
+          if (p.purpose) {
+            html += '<div style="margin-bottom:10px;">';
+            html += '<div style="font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Misión</div>';
+            html += '<div style="font-size:var(--font-size-sm); color:var(--text-secondary); line-height:1.5;">' + esc(p.purpose) + '</div>';
+            html += '</div>';
+          }
+
+          // Skills as chips
+          if (p.skills && p.skills.length > 0) {
+            html += '<div style="margin-bottom:10px;">';
+            html += '<div style="font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Competencias</div>';
+            html += '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
+            for (var si = 0; si < p.skills.length; si++) {
+              html += '<span class="chip" style="font-size:var(--font-size-xs);">' + esc(p.skills[si]) + '</span>';
+            }
+            html += '</div></div>';
+          }
+
+          // Responsibilities with percentages
+          if (p.responsibilities && p.responsibilities.length > 0) {
+            html += '<div style="margin-bottom:10px;">';
+            html += '<div style="font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Responsabilidades</div>';
+            for (var ri = 0; ri < p.responsibilities.length; ri++) {
+              var resp = p.responsibilities[ri];
+              html += '<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">';
+              if (resp.percentage) {
+                html += '<span style="font-size:var(--font-size-xs); font-weight:600; color:var(--accent); min-width:32px; text-align:right;">' + esc(String(resp.percentage)) + '%</span>';
+              }
+              html += '<span style="font-size:var(--font-size-sm); color:var(--text-secondary); line-height:1.4;">' + esc(resp.description) + '</span>';
+              html += '</div>';
+            }
+            html += '</div>';
+          }
+
+          // PC range
+          if (p.pcRange && p.pcRange.length === 2) {
+            html += '<div style="font-size:var(--font-size-xs); color:var(--text-muted);">';
+            html += 'Position Class: ' + esc(String(p.pcRange[0])) + ' \u2013 ' + esc(String(p.pcRange[1]));
+            if (p.puntosTotales) html += ' | Puntos: ' + esc(String(p.puntosTotales));
+            html += '</div>';
+          }
+
+          // Action button
+          html += '<div style="margin-top:12px;">';
+          html += '<button class="btn btn-primary tna-create-from-puesto" data-puesto-nombre="' + esc(p.nombre) + '" style="font-size:var(--font-size-xs); padding:5px 12px;">';
+          html += '<span class="icon" aria-hidden="true">' + Icons.plus(12) + '</span> Crear necesidad para este puesto</button>';
+          html += '</div>';
+
+          html += '</td></tr>';
+        }
+      }
+
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function bindTNAExploradorEvents(puestos) {
+      // Search
+      var searchInput = document.getElementById('tnaExpSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          tnaExploradorState.search = this.value;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNAExplorador(puestos); // innerHTML OK: sanitized via esc()
+            bindTNAExploradorEvents(puestos);
+          }
+        });
+      }
+
+      // Row clicks for expand/collapse
+      var rows = document.querySelectorAll('.tna-exp-row');
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].addEventListener('click', function() {
+          var pid = this.getAttribute('data-puesto-id');
+          tnaExploradorState.expandedId = tnaExploradorState.expandedId === pid ? null : pid;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNAExplorador(puestos); // innerHTML OK: sanitized via esc()
+            bindTNAExploradorEvents(puestos);
+          }
+        });
+      }
+
+      // Create need from puesto button
+      var createBtns = document.querySelectorAll('.tna-create-from-puesto');
+      for (var j = 0; j < createBtns.length; j++) {
+        createBtns[j].addEventListener('click', function(e) {
+          e.stopPropagation();
+          var puestoNombre = this.getAttribute('data-puesto-nombre');
+          showTNAForm([puestoNombre], null);
+        });
+      }
+    }
+
+    // --- Necesidades list ---
+    function renderTNANecesidades(requests) {
+      if (!requests || requests.length === 0) {
+        if (tnaNecesidadesState.search || tnaNecesidadesState.estado || tnaNecesidadesState.urgencia) {
+          // Has filters but no results
+          return renderTNANecesidadesFilters() +
+            '<div style="text-align:center; padding:32px 20px; color:var(--text-muted); font-size:var(--font-size-sm);">Sin resultados para estos filtros.</div>';
+        }
+        return '<div style="text-align:center; padding:48px 20px; color:var(--text-muted);">' +
+          '<div style="margin-bottom:12px;"><span class="icon" aria-hidden="true">' + Icons.menu(32) + '</span></div>' +
+          '<div style="font-size:var(--font-size-base); font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Sin solicitudes</div>' +
+          '<div style="font-size:var(--font-size-sm);">Pulsa "Nueva solicitud" para crear la primera necesidad formativa.</div>' +
+        '</div>';
+      }
+
+      // Apply filters
+      var searchVal = tnaNecesidadesState.search.toLowerCase().replace(/\s+/g, ' ').trim();
+      var filtered = requests.filter(function(r) {
+        if (tnaNecesidadesState.estado && r.estado !== tnaNecesidadesState.estado) return false;
+        if (tnaNecesidadesState.urgencia && r.urgencia !== tnaNecesidadesState.urgencia) return false;
+        if (searchVal) {
+          var haystack = ((r.tema || '') + ' ' + (r.skill || '') + ' ' + (r.origen || '') + ' ' + (r.puestos || []).join(' ') + ' ' + (r.justificacion || '')).toLowerCase();
+          if (haystack.indexOf(searchVal) === -1) return false;
+        }
+        return true;
+      });
+
+      // Sort: pendiente first, then by date desc
+      var sortOrder = { pendiente: 0, aprobada: 1, rechazada: 2, convertida: 3 };
+      filtered.sort(function(a, b) {
+        var sa = sortOrder[a.estado] !== undefined ? sortOrder[a.estado] : 9;
+        var sb = sortOrder[b.estado] !== undefined ? sortOrder[b.estado] : 9;
+        if (sa !== sb) return sa - sb;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+
+      var html = renderTNANecesidadesFilters();
+
+      if (filtered.length === 0) {
+        html += '<div style="text-align:center; padding:32px 20px; color:var(--text-muted); font-size:var(--font-size-sm);">Sin resultados para estos filtros.</div>';
+        return html;
+      }
+
+      // Table
+      html += '<table class="cat-table" style="width:100%; border-collapse:collapse;">';
+      html += '<thead><tr>';
+      html += '<th style="text-align:left; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Tema</th>';
+      html += '<th style="text-align:left; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Puesto(s)</th>';
+      html += '<th style="text-align:left; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Competencia</th>';
+      html += '<th style="text-align:center; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Urgencia</th>';
+      html += '<th style="text-align:center; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Estado</th>';
+      html += '<th style="text-align:right; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Personas</th>';
+      html += '<th style="text-align:right; padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border);">Fecha</th>';
+      html += '</tr></thead><tbody>';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var r = filtered[i];
+        var dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-ES') : '-';
+        var puestosStr = (r.puestos && r.puestos.length > 0) ? r.puestos.join(', ') : (r.origen || '-');
+        if (puestosStr.length > 40) puestosStr = puestosStr.substring(0, 37) + '...';
+        var isExpanded = tnaNecesidadesState.expandedId === r.id;
+        var rowBg = isExpanded ? 'background:var(--accent-subtle);' : '';
+        var empStr = r.numEmpleados ? String(r.numEmpleados) : '-';
+
+        html += '<tr class="tna-nec-row" data-request-id="' + parseInt(r.id, 10) + '" style="cursor:pointer; ' + rowBg + '">';
+        html += '<td style="padding:8px 10px; font-size:var(--font-size-sm); color:var(--text-primary); font-weight:500; border-bottom:1px solid var(--border);">' + esc(r.tema || 'Sin tema') + '</td>';
+        html += '<td style="padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-secondary); border-bottom:1px solid var(--border);">' + esc(puestosStr) + '</td>';
+        html += '<td style="padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-secondary); border-bottom:1px solid var(--border);">' + esc(r.skill || '-') + '</td>';
+        html += '<td style="padding:8px 10px; text-align:center; border-bottom:1px solid var(--border);"><span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); display:inline-block; ' + tnaUrgenciaBadge(r.urgencia) + '">' + esc(r.urgencia || 'media') + '</span></td>';
+        html += '<td style="padding:8px 10px; text-align:center; border-bottom:1px solid var(--border);"><span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); display:inline-block; ' + tnaEstadoBadge(r.estado) + '">' + esc(r.estado || 'pendiente') + '</span></td>';
+        html += '<td style="padding:8px 10px; font-size:var(--font-size-sm); color:var(--text-secondary); text-align:right; border-bottom:1px solid var(--border);">' + esc(empStr) + '</td>';
+        html += '<td style="padding:8px 10px; font-size:var(--font-size-xs); color:var(--text-muted); text-align:right; border-bottom:1px solid var(--border);">' + esc(dateStr) + '</td>';
+        html += '</tr>';
+
+        // Expanded detail
+        if (isExpanded) {
+          html += '<tr><td colspan="7" style="padding:12px 16px 16px; background:var(--accent-subtle); border-bottom:1px solid var(--border);">';
+
+          // Justification
+          if (r.justificacion) {
+            html += '<div style="margin-bottom:10px;">';
+            html += '<div style="font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Justificación</div>';
+            html += '<div style="font-size:var(--font-size-sm); color:var(--text-secondary); line-height:1.5;">' + esc(r.justificacion) + '</div>';
+            html += '</div>';
+          }
+
+          // Linked puestos detail
+          if (r.puestos && r.puestos.length > 0) {
+            html += '<div style="margin-bottom:10px;">';
+            html += '<div style="font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Puestos vinculados</div>';
+            html += '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
+            for (var pi = 0; pi < r.puestos.length; pi++) {
+              var pData = getPuestoByNombre(r.puestos[pi]);
+              var pLabel = pData ? (pData.nombreOrganigrama || pData.nombre) : r.puestos[pi];
+              var pExtra = '';
+              if (pData) {
+                var pEmpCount = getEmployeeCountByPuesto(pData.nombreOrganigrama || pData.nombre);
+                pExtra = (pData.nivelCarrera ? ' ' + pData.nivelCarrera : '') + (pEmpCount >= 0 ? ' (' + pEmpCount + ' emp.)' : '');
+              }
+              html += '<span class="chip" style="font-size:var(--font-size-xs);">' + esc(pLabel + pExtra) + '</span>';
+            }
+            html += '</div></div>';
+          } else {
+            html += '<div style="margin-bottom:10px; font-size:var(--font-size-xs); color:var(--text-muted); font-style:italic;">Sin puesto vinculado</div>';
+          }
+
+          // Context info
+          if (r.origen || (r.areas && r.areas.length > 0) || r.nivelCarrera) {
+            html += '<div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px; font-size:var(--font-size-xs); color:var(--text-muted);">';
+            if (r.origen) html += '<span>Origen: ' + esc(r.origen) + '</span>';
+            if (r.areas && r.areas.length > 0) html += '<span>Áreas: ' + esc(r.areas.join(', ')) + '</span>';
+            if (r.nivelCarrera) html += '<span>Nivel: ' + esc(r.nivelCarrera) + '</span>';
+            html += '</div>';
+          }
+
+          // Action buttons
+          html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">';
+          html += '<button class="btn btn-secondary tna-edit-btn" data-request-id="' + parseInt(r.id, 10) + '" style="font-size:var(--font-size-xs); padding:5px 12px;">';
+          html += '<span class="icon" aria-hidden="true">' + Icons.edit(12) + '</span> Editar</button>';
+
+          if (r.estado === 'pendiente') {
+            html += '<button class="btn btn-secondary tna-approve-btn" data-request-id="' + parseInt(r.id, 10) + '" style="font-size:var(--font-size-xs); padding:5px 12px; color:var(--success);">';
+            html += '<span class="icon" aria-hidden="true">' + Icons.check(12) + '</span> Aprobar</button>';
+            html += '<button class="btn btn-secondary tna-reject-btn" data-request-id="' + parseInt(r.id, 10) + '" style="font-size:var(--font-size-xs); padding:5px 12px; color:var(--danger);">';
+            html += '<span class="icon" aria-hidden="true">' + Icons.x(12) + '</span> Rechazar</button>';
+          }
+
+          if (r.estado !== 'convertida') {
+            html += '<button class="btn btn-primary tna-convert-btn" data-request-id="' + parseInt(r.id, 10) + '" style="font-size:var(--font-size-xs); padding:5px 12px;">';
+            html += '<span class="icon" aria-hidden="true">' + Icons.plus(12) + '</span> Crear acción</button>';
+          }
+
+          html += '<button class="btn btn-secondary tna-delete-btn" data-request-id="' + parseInt(r.id, 10) + '" style="font-size:var(--font-size-xs); padding:5px 12px; color:var(--danger);">';
+          html += '<span class="icon" aria-hidden="true">' + Icons.trash(12) + '</span> Eliminar</button>';
+          html += '</div>';
+
+          html += '</td></tr>';
+        }
+      }
+
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function renderTNANecesidadesFilters() {
+      var html = '<div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">';
+      html += '<input class="input-field" type="text" id="tnaNecSearch" placeholder="Buscar tema, puesto, competencia..." style="font-size:var(--font-size-sm); flex:1; min-width:200px;" value="' + esc(tnaNecesidadesState.search) + '" aria-label="Buscar necesidades">';
+      html += '<select class="input-field" id="tnaNecEstado" style="font-size:var(--font-size-sm); width:auto;" aria-label="Filtrar por estado">';
+      html += '<option value="">Todo estado</option>';
+      html += '<option value="pendiente"' + (tnaNecesidadesState.estado === 'pendiente' ? ' selected' : '') + '>Pendiente</option>';
+      html += '<option value="aprobada"' + (tnaNecesidadesState.estado === 'aprobada' ? ' selected' : '') + '>Aprobada</option>';
+      html += '<option value="rechazada"' + (tnaNecesidadesState.estado === 'rechazada' ? ' selected' : '') + '>Rechazada</option>';
+      html += '<option value="convertida"' + (tnaNecesidadesState.estado === 'convertida' ? ' selected' : '') + '>Convertida</option>';
+      html += '</select>';
+      html += '<select class="input-field" id="tnaNecUrgencia" style="font-size:var(--font-size-sm); width:auto;" aria-label="Filtrar por urgencia">';
+      html += '<option value="">Toda urgencia</option>';
+      html += '<option value="alta"' + (tnaNecesidadesState.urgencia === 'alta' ? ' selected' : '') + '>Alta</option>';
+      html += '<option value="media"' + (tnaNecesidadesState.urgencia === 'media' ? ' selected' : '') + '>Media</option>';
+      html += '<option value="baja"' + (tnaNecesidadesState.urgencia === 'baja' ? ' selected' : '') + '>Baja</option>';
+      html += '</select>';
+      html += '</div>';
+      return html;
+    }
+
+    function bindTNANecesidadesEvents(requests) {
+      // Search
+      var searchInput = document.getElementById('tnaNecSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          tnaNecesidadesState.search = this.value;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNANecesidades(getTNARequests()); // innerHTML OK: sanitized
+            bindTNANecesidadesEvents(getTNARequests());
+          }
+        });
+      }
+
+      // Estado filter
+      var estadoSel = document.getElementById('tnaNecEstado');
+      if (estadoSel) {
+        estadoSel.addEventListener('change', function() {
+          tnaNecesidadesState.estado = this.value;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNANecesidades(getTNARequests()); // innerHTML OK: sanitized
+            bindTNANecesidadesEvents(getTNARequests());
+          }
+        });
+      }
+
+      // Urgencia filter
+      var urgSel = document.getElementById('tnaNecUrgencia');
+      if (urgSel) {
+        urgSel.addEventListener('change', function() {
+          tnaNecesidadesState.urgencia = this.value;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNANecesidades(getTNARequests()); // innerHTML OK: sanitized
+            bindTNANecesidadesEvents(getTNARequests());
+          }
+        });
+      }
+
+      // Row clicks for expand/collapse
+      var rows = document.querySelectorAll('.tna-nec-row');
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].addEventListener('click', function() {
+          var rid = parseInt(this.getAttribute('data-request-id'), 10);
+          tnaNecesidadesState.expandedId = tnaNecesidadesState.expandedId === rid ? null : rid;
+          var contentEl = document.getElementById('tnaSubViewContent');
+          if (contentEl) {
+            contentEl.innerHTML = renderTNANecesidades(getTNARequests()); // innerHTML OK: sanitized
+            bindTNANecesidadesEvents(getTNARequests());
+          }
+        });
+      }
+
+      // Action buttons (stop propagation to avoid row click)
+      var editBtns = document.querySelectorAll('.tna-edit-btn');
+      for (var j = 0; j < editBtns.length; j++) {
+        editBtns[j].addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rid = parseInt(this.getAttribute('data-request-id'), 10);
+          var req = getTNARequests().filter(function(r) { return r.id === rid; })[0];
+          if (req) showTNAForm(req.puestos || [], rid);
+        });
+      }
+
+      var approveBtns = document.querySelectorAll('.tna-approve-btn');
+      for (var k = 0; k < approveBtns.length; k++) {
+        approveBtns[k].addEventListener('click', function(e) {
+          e.stopPropagation();
+          changeTNAEstado(parseInt(this.getAttribute('data-request-id'), 10), 'aprobada');
+        });
+      }
+
+      var rejectBtns = document.querySelectorAll('.tna-reject-btn');
+      for (var l = 0; l < rejectBtns.length; l++) {
+        rejectBtns[l].addEventListener('click', function(e) {
+          e.stopPropagation();
+          changeTNAEstado(parseInt(this.getAttribute('data-request-id'), 10), 'rechazada');
+        });
+      }
+
+      var convertBtns = document.querySelectorAll('.tna-convert-btn');
+      for (var m = 0; m < convertBtns.length; m++) {
+        convertBtns[m].addEventListener('click', function(e) {
+          e.stopPropagation();
+          convertTNAToAction(parseInt(this.getAttribute('data-request-id'), 10));
+        });
+      }
+
+      var deleteBtns = document.querySelectorAll('.tna-delete-btn');
+      for (var n = 0; n < deleteBtns.length; n++) {
+        deleteBtns[n].addEventListener('click', function(e) {
+          e.stopPropagation();
+          deleteTNARequest(parseInt(this.getAttribute('data-request-id'), 10));
+        });
+      }
+    }
+
+    // --- Change TNA estado ---
+    function changeTNAEstado(requestId, nuevoEstado) {
+      var requests = getTNARequests();
+      for (var i = 0; i < requests.length; i++) {
+        if (requests[i].id === requestId) {
+          requests[i].estado = nuevoEstado;
+          saveTNARequests(requests);
+          showToast('Estado actualizado a "' + nuevoEstado + '"', 'success');
+          renderTNAView();
+          return;
+        }
+      }
+    }
+
+    // --- TNA Form (creation/edit) ---
+    function showTNAForm(preSelectedPuestos, editId) {
+      var puestosCatalog = getPuestosCatalog();
+      var selectedPuestos = preSelectedPuestos ? preSelectedPuestos.slice() : [];
+      var existingRequest = null;
+
+      if (editId) {
+        var allReqs = getTNARequests();
+        for (var i = 0; i < allReqs.length; i++) {
+          if (allReqs[i].id === editId) { existingRequest = allReqs[i]; break; }
+        }
+      }
+
       var overlay = document.createElement('div');
       overlay.className = 'dialog-overlay visible';
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
-      var tnaFormHeadingId = 'dlg-heading-tnaform-' + Date.now();
-      overlay.setAttribute('aria-labelledby', tnaFormHeadingId);
-      overlay.innerHTML = '<div class="dialog-box u-max-w-480 u-text-left">' +
-        '<h3 class="u-dialog-heading" id="' + tnaFormHeadingId + '" style="margin-bottom:16px;">Nueva solicitud de formación</h3>' +
-        '<div class="u-flex-col u-gap-12">' +
-          '<div>' +
-            '<label class="u-text-12 u-font-500 u-text-secondary u-block u-mb-4">Área / Departamento</label>' +
-            '<input class="input-field u-w-full u-text-13" type="text" id="tnaArea" placeholder="Ej: Recursos Humanos" aria-label="Área / Departamento">' +
-          '</div>' +
-          '<div>' +
-            '<label class="u-form-label">Tema de formación</label>' +
-            '<input class="input-field u-w-full u-text-13" type="text" id="tnaTema" placeholder="Ej: Gestión del cambio" aria-label="Tema de formación">' +
-          '</div>' +
-          '<div>' +
-            '<label class="u-form-label">Justificación</label>' +
-            '<textarea class="input-field u-w-full u-text-13 u-resize-vertical" id="tnaJustificacion" rows="3" placeholder="Motivo de la solicitud..." aria-label="Justificación"></textarea>' +
-          '</div>' +
-          '<div>' +
-            '<label class="u-form-label">Urgencia</label>' +
-            '<select class="input-field u-w-full u-text-13" id="tnaUrgencia" aria-label="Urgencia">' +
-              '<option value="baja">Baja</option>' +
-              '<option value="media" selected>Media</option>' +
-              '<option value="alta">Alta</option>' +
-            '</select>' +
-          '</div>' +
-        '</div>' +
-        '<div class="dialog-buttons u-mt-20 u-flex u-gap-8 u-justify-end">' +
-          '<button class="btn btn-secondary" id="tnaCancelBtn">Cancelar</button>' +
-          '<button class="btn btn-primary" id="tnaSaveBtn">Guardar solicitud</button>' +
-        '</div>' +
-      '</div>';
-      document.body.appendChild(overlay);
+      var headingId = 'dlg-heading-tnaform-' + Date.now();
+      overlay.setAttribute('aria-labelledby', headingId);
 
-      document.getElementById('tnaCancelBtn').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
-      document.getElementById('tnaSaveBtn').addEventListener('click', function() {
-        var area = document.getElementById('tnaArea').value.trim();
-        var tema = document.getElementById('tnaTema').value.trim();
-        var justificacion = document.getElementById('tnaJustificacion').value.trim();
-        var urgencia = document.getElementById('tnaUrgencia').value;
+      function buildDialogContent() {
+        var title = editId ? 'Editar solicitud de formación' : 'Nueva solicitud de formación';
+        var h = '<div class="dialog-box" style="max-width:540px; text-align:left;">';
+        h += '<h3 class="u-dialog-heading" id="' + headingId + '" style="margin-bottom:16px;">' + esc(title) + '</h3>';
+        h += '<div style="display:flex; flex-direction:column; gap:14px;">';
 
-        if (!tema) {
-          showToast('El tema de formación es obligatorio', 'error');
-          return;
+        // Field 1: Puestos multi-select with typeahead
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Puesto(s)</label>';
+        // Selected chips
+        if (selectedPuestos.length > 0) {
+          h += '<div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;" id="tnaSelectedPuestosChips">';
+          for (var sp = 0; sp < selectedPuestos.length; sp++) {
+            var spData = getPuestoByNombre(selectedPuestos[sp]);
+            var spLabel = spData ? (spData.nombreOrganigrama || spData.nombre) : selectedPuestos[sp];
+            var spExtra = '';
+            if (spData) {
+              var spEmpCount = getEmployeeCountByPuesto(spData.nombreOrganigrama || spData.nombre);
+              spExtra = (spData.nivelCarrera ? ' ' + spData.nivelCarrera : '') + (spEmpCount >= 0 ? ' (' + spEmpCount + ')' : '');
+            }
+            h += '<span class="chip" style="font-size:var(--font-size-xs); display:inline-flex; align-items:center; gap:4px;">' + esc(spLabel + spExtra);
+            h += '<button class="tna-remove-puesto" data-nombre="' + esc(selectedPuestos[sp]) + '" style="background:none; border:none; cursor:pointer; padding:0; color:var(--text-muted); line-height:1;" aria-label="Quitar puesto">' + Icons.x(10) + '</button>';
+            h += '</span>';
+          }
+          h += '</div>';
+        }
+        // Typeahead input
+        if (puestosCatalog.length > 0) {
+          h += '<input class="input-field u-w-full" type="text" id="tnaPuestoSearch" placeholder="Escribe para buscar puestos..." style="font-size:var(--font-size-sm);" aria-label="Buscar puesto" autocomplete="off">';
+          h += '<div id="tnaPuestoDropdown" style="display:none; position:relative;">';
+          h += '<div style="position:absolute; top:0; left:0; right:0; max-height:180px; overflow-y:auto; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); z-index:var(--z-dropdown);"></div>';
+          h += '</div>';
+        } else {
+          h += '<div style="font-size:var(--font-size-xs); color:var(--text-muted); font-style:italic;">Sin catálogo de puestos disponible.</div>';
+        }
+        h += '</div>';
+
+        // Field 2: Skill (with chips from puestos if available)
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Competencia / Skill</label>';
+        // Aggregate skills from selected puestos
+        var aggregatedSkills = [];
+        var skillSet = {};
+        for (var si = 0; si < selectedPuestos.length; si++) {
+          var sData = getPuestoByNombre(selectedPuestos[si]);
+          if (sData && sData.skills) {
+            for (var ski = 0; ski < sData.skills.length; ski++) {
+              if (!skillSet[sData.skills[ski]]) {
+                skillSet[sData.skills[ski]] = true;
+                aggregatedSkills.push(sData.skills[ski]);
+              }
+            }
+          }
+        }
+        if (aggregatedSkills.length > 0) {
+          h += '<div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">';
+          for (var ai = 0; ai < aggregatedSkills.length; ai++) {
+            h += '<button class="chip tna-skill-chip" data-skill="' + esc(aggregatedSkills[ai]) + '" style="font-size:var(--font-size-xs); cursor:pointer; border:none;">' + esc(aggregatedSkills[ai]) + '</button>';
+          }
+          h += '</div>';
+        }
+        var skillVal = existingRequest ? (existingRequest.skill || '') : '';
+        h += '<input class="input-field u-w-full" type="text" id="tnaSkill" placeholder="Competencia afectada (o selecciona arriba)" style="font-size:var(--font-size-sm);" value="' + esc(skillVal) + '" aria-label="Competencia">';
+        h += '</div>';
+
+        // Field 3: Tema (required)
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Tema de formación <span style="color:var(--danger);">*</span></label>';
+        var temaVal = existingRequest ? (existingRequest.tema || '') : '';
+        h += '<input class="input-field u-w-full" type="text" id="tnaTema" placeholder="Ej: Negociación avanzada para canal Horeca" style="font-size:var(--font-size-sm);" value="' + esc(temaVal) + '" aria-label="Tema de formación">';
+        h += '</div>';
+
+        // Field 4: Justificación
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Justificación</label>';
+        var justVal = existingRequest ? (existingRequest.justificacion || '') : '';
+        h += '<textarea class="input-field u-w-full" id="tnaJustificacion" rows="3" placeholder="Motivo de la solicitud..." style="font-size:var(--font-size-sm); resize:vertical;" aria-label="Justificación">' + esc(justVal) + '</textarea>';
+        h += '</div>';
+
+        // Field 5: Urgencia
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Urgencia</label>';
+        var urgVal = existingRequest ? (existingRequest.urgencia || 'media') : 'media';
+        h += '<select class="input-field u-w-full" id="tnaUrgencia" style="font-size:var(--font-size-sm);" aria-label="Urgencia">';
+        h += '<option value="baja"' + (urgVal === 'baja' ? ' selected' : '') + '>Baja</option>';
+        h += '<option value="media"' + (urgVal === 'media' ? ' selected' : '') + '>Media</option>';
+        h += '<option value="alta"' + (urgVal === 'alta' ? ' selected' : '') + '>Alta</option>';
+        h += '</select>';
+        h += '</div>';
+
+        // Field 6: Origen
+        h += '<div>';
+        h += '<label style="font-size:var(--font-size-sm); font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Origen</label>';
+        var origenVal = existingRequest ? (existingRequest.origen || '') : '';
+        h += '<input class="input-field u-w-full" type="text" id="tnaOrigen" placeholder="Ej: Dirección Comercial, Auditoría, Detección propia" style="font-size:var(--font-size-sm);" value="' + esc(origenVal) + '" aria-label="Origen">';
+        h += '</div>';
+
+        h += '</div>'; // end fields flex-col
+
+        // Buttons
+        h += '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:20px;">';
+        h += '<button class="btn btn-secondary" id="tnaCancelBtn">Cancelar</button>';
+        h += '<button class="btn btn-primary" id="tnaSaveBtn">' + (editId ? 'Guardar cambios' : 'Guardar solicitud') + '</button>';
+        h += '</div>';
+
+        h += '</div>'; // end dialog-box
+        return h;
+      }
+
+      function refreshDialog() {
+        overlay.innerHTML = buildDialogContent(); // innerHTML OK: all values sanitized via esc()
+        bindDialogEvents();
+      }
+
+      function bindDialogEvents() {
+        // Cancel
+        var cancelBtn = document.getElementById('tnaCancelBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+
+        // Save
+        var saveBtn = document.getElementById('tnaSaveBtn');
+        if (saveBtn) saveBtn.addEventListener('click', function() {
+          var tema = document.getElementById('tnaTema').value.trim();
+          if (!tema) {
+            showToast('El tema de formación es obligatorio', 'error');
+            return;
+          }
+
+          var skill = document.getElementById('tnaSkill').value.trim();
+          var justificacion = document.getElementById('tnaJustificacion').value.trim();
+          var urgencia = document.getElementById('tnaUrgencia').value;
+          var origen = document.getElementById('tnaOrigen').value.trim();
+
+          // Compute context from selected puestos
+          var numEmpleados = 0;
+          var areasSet = {};
+          var levelCounts = {};
+          for (var ci = 0; ci < selectedPuestos.length; ci++) {
+            var cpData = getPuestoByNombre(selectedPuestos[ci]);
+            if (cpData) {
+              var cCount = getEmployeeCountByPuesto(cpData.nombreOrganigrama || cpData.nombre);
+              if (cCount > 0) numEmpleados += cCount;
+              if (cpData.area && !areasSet[cpData.area]) { areasSet[cpData.area] = true; }
+              if (cpData.nivelCarrera) {
+                levelCounts[cpData.nivelCarrera] = (levelCounts[cpData.nivelCarrera] || 0) + 1;
+              }
+            }
+          }
+          var areasArr = Object.keys(areasSet);
+          var nivelCarrera = '';
+          var maxLevelCount = 0;
+          for (var lk in levelCounts) {
+            if (levelCounts[lk] > maxLevelCount) { maxLevelCount = levelCounts[lk]; nivelCarrera = lk; }
+          }
+
+          var requests = getTNARequests();
+
+          if (editId) {
+            // Update existing
+            for (var ui = 0; ui < requests.length; ui++) {
+              if (requests[ui].id === editId) {
+                requests[ui].puestos = selectedPuestos.slice();
+                requests[ui].skill = skill;
+                requests[ui].tema = tema;
+                requests[ui].justificacion = justificacion;
+                requests[ui].urgencia = urgencia;
+                requests[ui].origen = origen;
+                requests[ui].numEmpleados = numEmpleados;
+                requests[ui].areas = areasArr;
+                requests[ui].nivelCarrera = nivelCarrera;
+                break;
+              }
+            }
+          } else {
+            // Create new
+            requests.push({
+              id: Date.now(),
+              puestos: selectedPuestos.slice(),
+              skill: skill,
+              tema: tema,
+              justificacion: justificacion,
+              urgencia: urgencia,
+              estado: 'pendiente',
+              origen: origen,
+              createdAt: new Date().toISOString(),
+              numEmpleados: numEmpleados,
+              areas: areasArr,
+              nivelCarrera: nivelCarrera
+            });
+          }
+
+          saveTNARequests(requests);
+          releaseFocus(overlay); overlay.remove();
+          showToast(editId ? 'Solicitud actualizada' : 'Solicitud de formación registrada', 'success');
+          tnaState.activeTab = 'necesidades';
+          renderTNAView();
+        });
+
+        // Remove puesto chips
+        var removeBtns = document.querySelectorAll('.tna-remove-puesto');
+        for (var ri = 0; ri < removeBtns.length; ri++) {
+          removeBtns[ri].addEventListener('click', function(e) {
+            e.preventDefault();
+            var nombre = this.getAttribute('data-nombre');
+            selectedPuestos = selectedPuestos.filter(function(p) { return p !== nombre; });
+            refreshDialog();
+          });
         }
 
-        var requests = getTNARequests();
-        requests.push({
-          id: Date.now(),
-          area: area,
-          tema: tema,
-          justificacion: justificacion,
-          urgencia: urgencia,
-          estado: 'pendiente',
-          createdAt: new Date().toISOString()
-        });
-        saveTNARequests(requests);
-        releaseFocus(overlay); overlay.remove();
-        showToast('Solicitud de formación registrada', 'success');
-        renderTNAView();
-      });
+        // Skill chips
+        var skillChips = document.querySelectorAll('.tna-skill-chip');
+        for (var sc = 0; sc < skillChips.length; sc++) {
+          skillChips[sc].addEventListener('click', function() {
+            var skillInput = document.getElementById('tnaSkill');
+            if (skillInput) skillInput.value = this.getAttribute('data-skill');
+            // Also pre-fill tema if empty
+            var temaInput = document.getElementById('tnaTema');
+            if (temaInput && !temaInput.value.trim()) temaInput.value = this.getAttribute('data-skill');
+          });
+        }
 
-      // Focus first field
-      setTimeout(function() { document.getElementById('tnaArea').focus(); }, 100);
+        // Puesto typeahead
+        var puestoSearch = document.getElementById('tnaPuestoSearch');
+        var puestoDropdown = document.getElementById('tnaPuestoDropdown');
+        if (puestoSearch && puestoDropdown) {
+          puestoSearch.addEventListener('input', function() {
+            var q = this.value.toLowerCase().replace(/\s+/g, ' ').trim();
+            if (!q || q.length < 2) {
+              puestoDropdown.style.display = 'none';
+              return;
+            }
+            var matches = puestosCatalog.filter(function(p) {
+              if (selectedPuestos.indexOf(p.nombre) !== -1) return false;
+              var haystack = ((p.nombreOrganigrama || '') + ' ' + (p.nombre || '') + ' ' + (p.area || '')).toLowerCase();
+              return haystack.indexOf(q) !== -1;
+            }).slice(0, 15);
+
+            if (matches.length === 0) {
+              puestoDropdown.style.display = 'none';
+              return;
+            }
+
+            var ddInner = puestoDropdown.querySelector('div');
+            var ddHtml = '';
+            for (var mi = 0; mi < matches.length; mi++) {
+              var mp = matches[mi];
+              var mpLabel = mp.nombreOrganigrama || mp.nombre;
+              var mpEmpCount = getEmployeeCountByPuesto(mpLabel);
+              var mpExtra = (mp.nivelCarrera ? mp.nivelCarrera : '') + (mpEmpCount >= 0 ? ' (' + mpEmpCount + ' emp.)' : '');
+              ddHtml += '<div class="tna-puesto-option" data-nombre="' + esc(mp.nombre) + '" style="padding:6px 10px; cursor:pointer; font-size:var(--font-size-sm); color:var(--text-primary); border-bottom:1px solid var(--border);" role="option">';
+              ddHtml += '<span style="font-weight:500;">' + esc(mpLabel) + '</span>';
+              if (mp.area) ddHtml += ' <span style="color:var(--text-muted); font-size:var(--font-size-xs);">' + esc(mp.area) + '</span>';
+              if (mpExtra) ddHtml += ' <span style="color:var(--text-muted); font-size:var(--font-size-xs);">' + esc(mpExtra) + '</span>';
+              ddHtml += '</div>';
+            }
+            ddInner.innerHTML = ddHtml; // innerHTML OK: sanitized via esc()
+            puestoDropdown.style.display = 'block';
+
+            // Bind option clicks
+            var opts = ddInner.querySelectorAll('.tna-puesto-option');
+            for (var oi = 0; oi < opts.length; oi++) {
+              opts[oi].addEventListener('click', function() {
+                selectedPuestos.push(this.getAttribute('data-nombre'));
+                refreshDialog();
+              });
+              opts[oi].addEventListener('mouseenter', function() { this.style.background = 'var(--accent-subtle)'; });
+              opts[oi].addEventListener('mouseleave', function() { this.style.background = ''; });
+            }
+          });
+
+          // Close dropdown on blur
+          puestoSearch.addEventListener('blur', function() {
+            setTimeout(function() { puestoDropdown.style.display = 'none'; }, 200);
+          });
+        }
+      }
+
+      overlay.innerHTML = buildDialogContent(); // innerHTML OK: sanitized via esc()
+      document.body.appendChild(overlay);
+      bindDialogEvents();
+
+      // Focus first actionable field
+      setTimeout(function() {
+        var firstInput = document.getElementById('tnaPuestoSearch') || document.getElementById('tnaTema');
+        if (firstInput) firstInput.focus();
+      }, 100);
     }
 
+    // --- Convert TNA to Acción ---
     function convertTNAToAction(requestId) {
       var requests = getTNARequests();
       var request = null;
@@ -11266,13 +11941,31 @@
       }
       if (!request) return;
 
-      var action = {
-        nombre: request.tema,
-        departamento: request.area,
-        estado: 'Planificada',
-        notas: [{ id: Date.now(), date: new Date().toISOString(), tag: 'sistema', text: 'Origen: solicitud TNA — ' + request.justificacion }]
-      };
+      // Generate unique codigo
       var catalog = getCatalog('acciones');
+      var maxCode = 0;
+      for (var ci = 0; ci < catalog.length; ci++) {
+        var codeStr = catalog[ci].codigo || '';
+        var codeNum = parseInt(codeStr.replace(/^TNA-/, ''), 10);
+        if (!isNaN(codeNum) && codeNum > maxCode) maxCode = codeNum;
+      }
+      var newCodigo = 'TNA-' + (maxCode + 1);
+
+      // Build rich nota
+      var notaText = 'Origen: solicitud TNA';
+      if (request.skill) notaText += ' \u2014 Competencia: ' + request.skill;
+      if (request.puestos && request.puestos.length > 0) notaText += ' \u2014 Puestos: ' + request.puestos.join(', ');
+      if (request.justificacion) notaText += ' \u2014 ' + request.justificacion;
+
+      var action = {
+        codigo: newCodigo,
+        nombre: request.tema,
+        departamento: (request.areas && request.areas.length > 0) ? request.areas.join(', ') : '',
+        plazas: request.numEmpleados || '',
+        estado: 'Planificada',
+        notas: [{ id: Date.now(), date: new Date().toISOString(), tag: 'sistema', text: notaText }]
+      };
+
       catalog.push(action);
       saveCatalog('acciones', catalog);
 
@@ -11280,16 +11973,16 @@
       request.estado = 'convertida';
       saveTNARequests(requests);
 
-      showToast('Acción formativa creada desde solicitud', 'success');
+      showToast('Acción formativa "' + newCodigo + '" creada desde solicitud', 'success');
       renderTNAView();
     }
 
+    // --- Delete TNA Request ---
     function deleteTNARequest(requestId) {
       var requests = getTNARequests();
       var request = null;
-      var requestIndex = -1;
       for (var i = 0; i < requests.length; i++) {
-        if (requests[i].id === requestId) { request = requests[i]; requestIndex = i; break; }
+        if (requests[i].id === requestId) { request = requests[i]; break; }
       }
       if (!request) return;
 
@@ -11299,13 +11992,13 @@
       overlay.setAttribute('aria-modal', 'true');
       var tnaDelHeadingId = 'dlg-heading-tnadel-' + Date.now();
       overlay.setAttribute('aria-labelledby', tnaDelHeadingId);
-      overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:400px;">' +
         '<h3 class="u-dialog-heading" id="' + tnaDelHeadingId + '">Eliminar solicitud</h3>' +
-        '<p class="u-text-13 u-text-secondary">¿Eliminar la solicitud "' + esc(request.tema || '') + '"?</p>' +
-        '<div class="dialog-buttons u-mt-16 u-flex u-gap-8 u-justify-center">' +
+        '<p style="font-size:var(--font-size-base); color:var(--text-secondary);">\u00bfEliminar la solicitud "' + esc(request.tema || '') + '"?</p>' +
+        '<div style="display:flex; gap:8px; justify-content:center; margin-top:16px;">' +
           '<button class="btn btn-secondary" id="tnaDeleteCancel">Cancelar</button>' +
           '<button class="btn btn-primary" id="tnaDeleteConfirm" style="background:var(--danger);">Eliminar</button>' +
-        '</div></div>';
+        '</div></div>'; // innerHTML OK: sanitized via esc()
       document.body.appendChild(overlay);
 
       document.getElementById('tnaDeleteCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
