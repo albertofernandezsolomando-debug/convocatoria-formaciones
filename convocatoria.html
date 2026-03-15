@@ -14922,80 +14922,60 @@
       if (savedEmployees) {
         const employees = JSON.parse(savedEmployees);
         if (employees.length > 0) {
-          // Show restore option in upload zone
-          const restoreDiv = document.createElement('div');
-          restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:var(--font-size-sm); color:var(--accent); text-align:center;';
-          var restoreTitle = document.createElement('strong');
-          restoreTitle.textContent = 'Usar organigrama anterior';
-          restoreDiv.appendChild(restoreTitle);
-          restoreDiv.appendChild(document.createElement('br'));
-          var restoreInfo = document.createTextNode(employees.length + ' personas trabajadoras \u00b7 ' + (savedFileName || 'fichero anterior'));
-          restoreDiv.appendChild(restoreInfo);
-          restoreDiv.addEventListener('click', e => {
-            e.stopPropagation();
-            state.employees = employees;
+          // Auto-restore employees
+          state.employees = employees;
 
-            // Restore state if available
-            if (savedState) {
-              try {
-                const snapshot = JSON.parse(savedState);
-                state.activeFilters = snapshot.activeFilters || {};
-                state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
+          // Restore state if available
+          if (savedState) {
+            try {
+              const snapshot = JSON.parse(savedState);
+              state.activeFilters = snapshot.activeFilters || {};
+              state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
 
-                // Restore event config
-                if (snapshot.eventConfig) {
-                  const ec = snapshot.eventConfig;
-                  document.getElementById('eventTitle').value = ec.title || '';
-                  document.getElementById('eventDate').value = ec.date || '';
-                  document.getElementById('eventStart').value = ec.startTime || '10:00';
-                  document.getElementById('eventEnd').value = ec.endTime || '12:00';
-                  document.getElementById('eventLocation').value = ec.location || '';
-                  document.getElementById('eventBody').value = ec.body || '';
-                  if (ec.isTeams) {
-                    document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-                  }
-                  if (ec.isSeries) {
-                    document.getElementById('seriesCheck').checked = true;
-                    document.getElementById('seriesConfig').classList.add('visible');
-                  }
-                  // Restore formador
-                  document.getElementById('eventFormador').value = ec.formador || '';
-                  // Restore capacity
-                  if (ec.capacity) {
-                    document.getElementById('inputCapacity').value = ec.capacity;
-                  }
-                  // Restore survey checkbox (default true if field missing — migration)
-                  const surveyCheck = document.getElementById('surveyCheck');
-                  if (surveyCheck) {
-                    surveyCheck.checked = ec.sendSurvey !== undefined ? ec.sendSurvey : true;
-                  }
+              if (snapshot.eventConfig) {
+                const ec = snapshot.eventConfig;
+                document.getElementById('eventTitle').value = ec.title || '';
+                document.getElementById('eventDate').value = ec.date || '';
+                document.getElementById('eventStart').value = ec.startTime || '10:00';
+                document.getElementById('eventEnd').value = ec.endTime || '12:00';
+                document.getElementById('eventLocation').value = ec.location || '';
+                document.getElementById('eventBody').value = ec.body || '';
+                if (ec.isTeams) {
+                  document.querySelector('input[name="eventType"][value="teams"]').checked = true;
                 }
-              } catch(e) {
-                showToast('Error al restaurar sesión', 'error');
-                return;
+                if (ec.isSeries) {
+                  document.getElementById('seriesCheck').checked = true;
+                  document.getElementById('seriesConfig').classList.add('visible');
+                }
+                document.getElementById('eventFormador').value = ec.formador || '';
+                if (ec.capacity) {
+                  document.getElementById('inputCapacity').value = ec.capacity;
+                }
+                const surveyCheck = document.getElementById('surveyCheck');
+                if (surveyCheck) {
+                  surveyCheck.checked = ec.sendSurvey !== undefined ? ec.sendSurvey : true;
+                }
               }
-            }
+            } catch(e) {}
+          }
 
-            // Update UI
-            uploadZone.classList.add('loaded');
-            uploadPrompt.style.display = 'none';
-            uploadInfo.style.display = 'block';
-            fileNameEl.textContent = savedFileName || 'Organigrama (sesión anterior)';
-            fileStats.textContent = state.employees.length + ' personas trabajadoras activas · sesión restaurada';
+          // Update UI
+          uploadZone.classList.add('loaded');
+          uploadPrompt.style.display = 'none';
+          uploadInfo.style.display = 'block';
+          fileNameEl.textContent = savedFileName || 'Organigrama (sesión anterior)';
+          fileStats.textContent = employees.length + ' personas trabajadoras activas · restaurado automáticamente';
 
-            document.getElementById('filtrosSection').style.display = '';
-            document.getElementById('eventoSection').style.display = '';
-            document.getElementById('summaryBar').style.display = '';
-            document.getElementById('actionBar').style.display = '';
-            document.getElementById('tableSearch').style.display = '';
+          document.getElementById('filtrosSection').style.display = '';
+          document.getElementById('eventoSection').style.display = '';
+          document.getElementById('summaryBar').style.display = '';
+          document.getElementById('actionBar').style.display = '';
+          document.getElementById('tableSearch').style.display = '';
 
-            renderFilters();
-            checkWaitlist(true);
-            renderTable();
-            checkOrphanParticipants();
-            showToast('Sesión anterior restaurada', 'success');
-          });
-          uploadZone.appendChild(restoreDiv);
+          renderFilters();
+          checkWaitlist(true);
+          renderTable();
+          checkOrphanParticipants();
         }
       }
     } catch(e) {}
