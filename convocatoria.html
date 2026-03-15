@@ -6714,7 +6714,9 @@
       'convocatoria_templates',
       'convocatoria_filterTemplates',
       'convocatoria_trainingTemplates',
-      'convocatoria_unifiedTemplates'
+      'convocatoria_unifiedTemplates',
+      'convocatoria_puestos_catalog',
+      'convocatoria_tnaRequests'
     ];
 
     function exportBackup() {
@@ -11039,6 +11041,35 @@
         state.complianceTypes = [];
         state.complianceRecords = {};
       }
+    }
+
+    // ═══════════════════════════════════
+    // PUESTOS CATALOG
+    // ═══════════════════════════════════
+
+    function getPuestosCatalog() {
+      try { return JSON.parse(localStorage.getItem('convocatoria_puestos_catalog')) || []; }
+      catch(e) { return []; }
+    }
+
+    function savePuestosCatalog(data) {
+      localStorage.setItem('convocatoria_puestos_catalog', JSON.stringify(data));
+    }
+
+    function getEmployeeCountByPuesto(puestoNombreOrg) {
+      if (!state.employees || !state.employees.length) return -1;
+      var normalizedTarget = puestoNombreOrg.toLowerCase().replace(/\s+/g, ' ').trim();
+      return state.employees.filter(function(e) {
+        return e.Puesto && e.Puesto.toLowerCase().replace(/\s+/g, ' ').trim() === normalizedTarget;
+      }).length;
+    }
+
+    function getPuestoByNombre(nombre) {
+      var catalog = getPuestosCatalog();
+      for (var i = 0; i < catalog.length; i++) {
+        if (catalog[i].nombre === nombre) return catalog[i];
+      }
+      return null;
     }
 
     // ═══════════════════════════════════
