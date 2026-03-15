@@ -9694,6 +9694,10 @@
       var existing = document.getElementById('participantPickerOverlay');
       if (existing) existing.remove();
 
+      if (!state.employees || state.employees.length === 0) {
+        showToast('Organigrama no cargado — participantes sin validar contra plantilla', 'warning', 5000);
+      }
+
       var employees = state.employees || [];
 
       // Collect unique values for quick filters
