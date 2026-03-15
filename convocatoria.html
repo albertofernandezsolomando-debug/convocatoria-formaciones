@@ -596,11 +596,17 @@
       min-height: 0;
       overflow: hidden;
       background: var(--bg-primary);
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
 
     .tab-content.active {
       display: flex;
       flex-direction: column;
+      opacity: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tab-content { transition: none; }
     }
 
     /* --- Catalog sub-tabs and list --- */
@@ -844,7 +850,7 @@
       font-size: var(--font-size-xs);
       font-weight: 500;
       padding: 2px 8px;
-      border-radius: 10px;
+      border-radius: var(--radius);
     }
     .annual-plan-estado.completed {
       background: var(--success-light);
@@ -1061,7 +1067,7 @@
       padding: 4px 6px;
       background: var(--bg-panel);
       box-shadow: inset 0 0 0 2px var(--accent);
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
       overflow: visible;
     }
 
@@ -2491,8 +2497,8 @@
     }
 
     /* --- Barra de progreso cola --- */
-    .queue-progress { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
-    .queue-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.3s ease-out; }
+    .queue-progress { height: 4px; background: var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden; }
+    .queue-progress-fill { height: 100%; background: var(--accent); border-radius: var(--radius-sm); width: 0%; transition: width var(--transition); }
     .queue-status-text { font-size: var(--font-size-xs); color: var(--text-muted); margin-bottom: 6px; }
     .queue-item-done { opacity: 0.5; position: relative; }
     .queue-item-done::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; background: var(--text-muted); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") no-repeat center/contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") no-repeat center/contain; }
@@ -2957,13 +2963,13 @@
     .dash-kpi-progress {
       height: 6px;
       background: var(--bg-input);
-      border-radius: 3px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
       margin-top: var(--space-xs);
     }
     .dash-kpi-progress-bar {
       height: 100%;
-      border-radius: 3px;
+      border-radius: var(--radius-sm);
       background: var(--accent);
       transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -3083,7 +3089,7 @@
     }
     .dash-card-body {
       overflow: hidden;
-      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity var(--transition);
     }
     .dash-card.collapsed .dash-card-body {
       max-height: 0 !important;
@@ -3243,7 +3249,7 @@
       align-items: center;
       justify-content: center;
       user-select: none;
-      transition: background 0.15s;
+      transition: background var(--transition);
     }
     .cal-divider:hover, .cal-divider.active {
       background: var(--accent-subtle);
@@ -3438,7 +3444,7 @@
     .cal-legend-dot {
       width: 10px;
       height: 10px;
-      border-radius: 3px;
+      border-radius: var(--radius-sm);
       flex-shrink: 0;
     }
     .cal-split-bottom table {
@@ -3699,22 +3705,22 @@
       flex: 1;
       height: 12px;
       background: var(--bg-input);
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
       position: relative;
     }
     .dash-gauge-bar-fill {
       height: 100%;
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
       background: var(--accent);
-      transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* intentionally slow: progress bar animation */
     }
     .dash-gauge-bar-secondary {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
       background: var(--accent-light);
     }
     .dash-gauge-value {
@@ -3823,13 +3829,13 @@
       flex: 1;
       height: 10px;
       background: var(--bg-input);
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
     .dash-completeness-fill {
       height: 100%;
-      border-radius: 2px;
-      transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      border-radius: var(--radius-sm);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* intentionally slow: progress bar animation */
     }
     .dash-completeness-pct {
       min-width: 44px;
@@ -4186,7 +4192,7 @@
       box-shadow: var(--shadow-lg);
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.15s;
+      transition: opacity var(--transition);
       max-width: 260px;
       line-height: 1.4;
     }
@@ -4262,7 +4268,7 @@
       height: 2px;
       background: var(--bg-input);
       margin-bottom: 8px;
-      border-radius: 1px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
     .dash-nav-progress-seg {
@@ -4419,7 +4425,7 @@
       border-left: 1px solid var(--border);
       box-shadow: var(--shadow-lg);
       z-index: var(--z-modal);
-      transition: right var(--transition);
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
     }
@@ -4654,12 +4660,12 @@
     tr.row-excluded td {
       opacity: 0.4;
       text-decoration: line-through;
-      transition: opacity 0.2s ease, text-decoration 0.2s ease;
+      transition: opacity var(--transition), text-decoration var(--transition);
     }
     tr:not(.row-excluded) td {
       opacity: 1;
       text-decoration: none;
-      transition: opacity 0.2s ease;
+      transition: opacity var(--transition);
     }
     tr.row-excluded:hover td {
       opacity: 0.6;
@@ -4865,16 +4871,16 @@
     .u-text-left { text-align: left; }
 
     /* Font sizes */
-    .u-text-10 { font-size: 10px; }
-    .u-text-11 { font-size: 11px; }
-    .u-text-12 { font-size: 12px; }
-    .u-text-13 { font-size: 13px; }
-    .u-text-14 { font-size: 14px; }
-    .u-text-15 { font-size: 15px; }
-    .u-text-16 { font-size: 16px; }
-    .u-text-18 { font-size: 18px; }
-    .u-text-20 { font-size: 20px; }
-    .u-text-28 { font-size: 28px; }
+    .u-text-10 { font-size: var(--font-size-xs); }
+    .u-text-11 { font-size: var(--font-size-xs); }
+    .u-text-12 { font-size: var(--font-size-sm); }
+    .u-text-13 { font-size: var(--font-size-base); }
+    .u-text-14 { font-size: var(--font-size-base); }
+    .u-text-15 { font-size: var(--font-size-md); }
+    .u-text-16 { font-size: var(--font-size-md); }
+    .u-text-18 { font-size: var(--font-size-lg); }
+    .u-text-20 { font-size: var(--font-size-lg); }
+    .u-text-28 { font-size: var(--font-size-2xl); }
 
     /* Font weights */
     .u-font-400 { font-weight: 400; }
@@ -4918,7 +4924,7 @@
     .u-accent-color { accent-color: var(--accent); }
 
     /* Catalog form field pattern */
-    .u-form-label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+    .u-form-label { font-size: var(--font-size-xs); color: var(--text-muted); display: block; margin-bottom: 3px; }
     .u-form-group { margin-bottom: 10px; }
     .u-form-group-sm { margin-bottom: 6px; }
 
@@ -4926,44 +4932,44 @@
     .u-section-divider { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
 
     /* Collapsible toggle trigger */
-    .u-toggle-trigger { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); user-select: none; padding: 0 0 8px 0; }
+    .u-toggle-trigger { cursor: pointer; font-size: var(--font-size-sm); font-weight: 600; color: var(--accent); user-select: none; padding: 0 0 8px 0; }
 
     /* KPI display */
-    .u-kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
-    .u-kpi-label { font-size: 11px; color: var(--text-muted); }
+    .u-kpi-value { font-size: var(--font-size-lg); font-weight: 700; color: var(--text-primary); }
+    .u-kpi-label { font-size: var(--font-size-xs); color: var(--text-muted); }
     .u-kpi-box { flex: 1; text-align: center; padding: 8px; background: var(--bg-input); border-radius: var(--radius-sm); }
 
     /* Dialog heading */
-    .u-dialog-title { margin: 0 0 14px 0; font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .u-dialog-title-lg { margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .u-dialog-title { margin: 0 0 14px 0; font-size: var(--font-size-md); font-weight: 600; color: var(--text-primary); }
+    .u-dialog-title-lg { margin: 0 0 16px 0; font-size: var(--font-size-md); font-weight: 600; color: var(--text-primary); }
 
     /* Empty state */
-    .u-empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 13px; }
+    .u-empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: var(--font-size-base); }
 
     /* FUNDAE alert panel */
     .u-alert-panel { margin-top: 12px; padding: 10px; background: var(--warning-light); border-radius: var(--radius-sm); border-left: 3px solid var(--warning); }
-    .u-alert-title { font-size: 11px; font-weight: 600; color: var(--warning); margin-bottom: 4px; }
+    .u-alert-title { font-size: var(--font-size-xs); font-weight: 600; color: var(--warning); margin-bottom: 4px; }
 
     /* XML table header cell */
-    .u-xml-th { padding: 8px 6px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; }
+    .u-xml-th { padding: 8px 6px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: var(--font-size-xs); }
 
     /* Data table cell */
     .u-td { padding: 6px 8px; border: 1px solid var(--border); }
     .u-td-nowrap { padding: 6px 8px; border: 1px solid var(--border); white-space: nowrap; }
 
     /* Filter action */
-    .u-filter-action { padding: 8px 12px; cursor: pointer; font-size: 12px; transition: background var(--transition); }
+    .u-filter-action { padding: 8px 12px; cursor: pointer; font-size: var(--font-size-sm); transition: background var(--transition); }
     .u-filter-action:hover { background: var(--accent-subtle); }
 
     /* Report table cell */
     .u-report-td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
-    .u-report-td-sm { padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 11px; }
+    .u-report-td-sm { padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: var(--font-size-xs); }
 
     /* Participant row */
     .u-participant-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); }
 
     /* Small remove button */
-    .u-btn-remove-sm { font-size: 10px; padding: 2px 6px; color: var(--danger); border-color: var(--danger); flex-shrink: 0; }
+    .u-btn-remove-sm { font-size: var(--font-size-xs); padding: 2px 6px; color: var(--danger); border-color: var(--danger); flex-shrink: 0; }
 
     /* Tabular numbers */
     .u-tabular-nums { font-variant-numeric: tabular-nums; }
@@ -4986,10 +4992,7 @@
     .u-dialog-scroll-70 { max-height: 70vh; display: flex; flex-direction: column; }
     .u-dialog-scroll-75 { max-height: 75vh; display: flex; flex-direction: column; }
 
-    /* Pass 4 utilities */
-    .u-overflow-hidden { overflow: hidden; }
-    .u-text-left { text-align: left; }
-    .u-text-right { text-align: right; }
+    /* Pass 4 utilities (deduplicated — classes already declared above removed) */
     .u-text-italic { font-style: italic; }
     .u-flex-col-full { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .u-mt-6 { margin-top: 6px; }
@@ -5003,28 +5006,19 @@
     .u-mb-20 { margin-bottom: 20px; }
     .u-m-auto { margin: 0 auto; }
     .u-p-0 { padding: 0; }
-    .u-pt-8 { padding-top: 8px; }
-    .u-pt-12 { padding-top: 12px; }
-    .u-text-18 { font-size: 18px; }
-    .u-text-24 { font-size: 24px; }
-    .u-text-20 { font-size: 20px; }
+    .u-text-24 { font-size: var(--font-size-xl); }
     .u-border-bottom-2 { border-bottom: 2px solid var(--border); }
     .u-sticky-top { position: sticky; top: 0; }
-    .u-border-right { border-right: 1px solid var(--border); }
-    .u-max-w-400 { max-width: 400px; }
-    .u-max-w-480 { max-width: 480px; }
-    .u-max-w-600 { max-width: 600px; }
     .u-max-w-900 { max-width: 900px; }
     .u-uppercase { text-transform: uppercase; }
     .u-tracking-wide { letter-spacing: 0.5px; }
     .u-flex-items-start { display: flex; align-items: flex-start; }
     .u-gap-12 { gap: 12px; }
     .u-gap-14 { gap: 14px; }
-    .u-label-sm { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+    .u-label-sm { font-size: var(--font-size-xs); color: var(--text-muted); display: block; margin-bottom: 3px; }
     .u-field-group { margin-bottom: 10px; }
-    .u-form-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 4px; }
-    .u-section-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .u-dialog-heading { margin: 0 0 14px 0; font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .u-section-label { font-size: var(--font-size-xs); font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .u-dialog-heading { margin: 0 0 14px 0; font-size: var(--font-size-md); font-weight: 600; color: var(--text-primary); }
     .u-border-accent-top { border-top: 3px solid var(--accent); }
 
     /* Pass 5 utilities */
@@ -5055,8 +5049,35 @@
     .empty-state-illustration { margin-bottom: 16px; opacity: 0.7; }
 
     /* Accessibility: skip navigation link */
-    .skip-link { position: absolute; top: -40px; left: 0; background: var(--accent); color: white; padding: 8px 16px; z-index: 100000; transition: top var(--transition); border-radius: 0 0 var(--radius-sm) 0; font-size: 13px; text-decoration: none; }
+    .skip-link { position: absolute; top: -40px; left: 0; background: var(--accent); color: white; padding: 8px 16px; z-index: var(--z-overlay); transition: top var(--transition); border-radius: 0 0 var(--radius-sm) 0; font-size: var(--font-size-base); text-decoration: none; }
     .skip-link:focus { top: 0; }
+
+    /* ── Print stylesheet ── */
+    @media print {
+      .tab-bar, .left-panel, .action-bar, .queue-bar, .skip-link,
+      .settings-btn, #btnHistory, .session-banner, #toastContainer,
+      #cmdkOverlay, .activation-checklist, #alertBanner, .dialog-overlay {
+        display: none !important;
+      }
+      body {
+        height: auto;
+        overflow: visible;
+      }
+      .tab-content.active {
+        display: block !important;
+        width: 100%;
+        flex: none;
+      }
+      .right-panel {
+        width: 100%;
+        overflow: visible;
+        height: auto;
+      }
+      .dash-card-body {
+        max-height: none !important;
+        height: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -5066,8 +5087,8 @@
     <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabCalendario" id="tab-tabCalendario" tabindex="-1" data-tab="tabCalendario">Calendario</button>
     <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tabConvocatoria" id="tab-tabConvocatoria" tabindex="0" data-tab="tabConvocatoria">Convocatoria<span class="tab-badge" id="tabBadgeConvocatoria" style="display:none;">0</span></button>
     <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabPersonas" id="tab-tabPersonas" tabindex="-1" data-tab="tabPersonas">Personas</button>
-    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabCatalogos" id="tab-tabCatalogos" tabindex="-1" data-tab="tabCatalogos">Catálogos FUNDAE</button>
-    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabXml" id="tab-tabXml" tabindex="-1" data-tab="tabXml">Generar XML FUNDAE</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabCatalogos" id="tab-tabCatalogos" tabindex="-1" data-tab="tabCatalogos">Catálogos</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabXml" id="tab-tabXml" tabindex="-1" data-tab="tabXml">XML FUNDAE</button>
   </div>
   <div id="alertBanner" class="alert-banner" role="status" aria-live="polite">
     <span class="alert-banner-count" id="alertBannerCount">0 avisos</span>
@@ -5343,10 +5364,10 @@
     </div>
   </div>
 
-  <!-- Tab 2: Catálogos FUNDAE -->
+  <!-- Tab 2: Catálogos -->
   <div class="tab-content" id="tabCatalogos" role="tabpanel" aria-labelledby="tab-tabCatalogos">
     <div class="catalog-header-bar u-flex u-items-center u-gap-8 u-flex-shrink-0 u-flex-wrap u-border-bottom u-bg-panel" style="padding:10px 20px;">
-      <span class="u-text-15 u-font-600 u-text-primary u-mr-8">Catálogos FUNDAE</span>
+      <span class="u-text-15 u-font-600 u-text-primary u-mr-8">Catálogos</span>
       <div class="catalog-tabs u-items-center u-p-0 u-m-0">
         <button class="catalog-tab active" data-catalog="proveedores">Proveedores</button>
         <button class="catalog-tab" data-catalog="centros">Centros</button>
@@ -5394,12 +5415,12 @@
     </div>
   </div>
 
-  <!-- Tab 3: Generar XML FUNDAE -->
+  <!-- Tab 3: XML FUNDAE -->
   <div class="tab-content" id="tabXml" role="tabpanel" aria-labelledby="tab-tabXml">
     <div class="app">
       <div class="left-panel u-overflow-y-auto" id="xmlConfigPanel">
         <div class="app-header">
-          <span class="app-header-title">Generar XML FUNDAE</span>
+          <span class="app-header-title">XML FUNDAE</span>
         </div>
 
         <div class="u-p-16 u-flex-1">
@@ -6393,7 +6414,7 @@
           { group: 'Navegacion', label: 'Ir a Calendario', icon: Icons.calendar(14), shortcut: 'Alt+2', action: () => document.querySelector('.tab-btn[data-tab="tabCalendario"]').click() },
           { group: 'Navegacion', label: 'Ir a Convocatoria', icon: Icons.mail(14), shortcut: 'Alt+3', action: () => document.querySelector('.tab-btn[data-tab="tabConvocatoria"]').click() },
           { group: 'Navegacion', label: 'Ir a Personas', icon: Icons.users(14), shortcut: 'Alt+4', action: () => document.querySelector('.tab-btn[data-tab="tabPersonas"]').click() },
-          { group: 'Navegacion', label: 'Ir a Catalogos', icon: Icons.list(14), shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
+          { group: 'Navegacion', label: 'Ir a Catálogos', icon: Icons.list(14), shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
           { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: Icons.fileText(14), shortcut: 'Alt+6', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
           { group: 'Herramientas', label: 'Abrir ajustes', icon: Icons.settings(14), action: () => { closeAllDialogs(); document.getElementById('btnSettings').click(); } },
           { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => { renderHistory(); document.getElementById('historyPanel')?.classList.add('visible'); } },
@@ -7024,7 +7045,7 @@
       var newRowContainer = document.getElementById('catalogListNewRow');
       var footerHtml = '<button class="btn btn-secondary u-text-12" id="btnListViewNewRow"><span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nueva fila</button>' +
         '<button class="link-btn link-clear u-text-11 u-ml-12" id="btnListViewClearFilters">Limpiar filtros</button>' +
-        '<span style="margin-left:auto; font-size:11px; color:var(--text-muted);">' + sorted.length + ' de ' + data.length + ' registros</span>';
+        '<span style="margin-left:auto; font-size:var(--font-size-xs); color:var(--text-muted);">' + sorted.length + ' de ' + data.length + ' registros</span>';
       newRowContainer.innerHTML = footerHtml;
       bindListViewHeaderEvents(config, catalogKey);
       bindListViewFilterEvents(config, catalogKey);
@@ -7599,7 +7620,7 @@
         container.innerHTML = '<div class="u-text-center u-text-muted u-text-13 u-flex-col u-items-center u-gap-8" style="padding:32px 20px;">' +
           '<div class="u-text-14 u-font-500 u-text-secondary">Catalogo vacio</div>' +
           '<div class="u-text-12 u-leading-relaxed" style="max-width:260px;">Registra proveedores, centros, tutores y acciones formativas para empezar.</div>' +
-          '<button class="btn btn-primary" onclick="document.getElementById(\'btnNewCatalog\').click();" style="margin-top:6px; font-size:12px;"><span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nuevo registro</button>' +
+          '<button class="btn btn-primary" onclick="document.getElementById(\'btnNewCatalog\').click();" style="margin-top:6px; font-size:var(--font-size-sm);"><span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nuevo registro</button>' +
         '</div>';
       } else {
         container.innerHTML = filtered.map(r => { // innerHTML OK: sanitized via esc()
@@ -7765,7 +7786,7 @@
                 parts.push('<td title="Caduca el ' + esc(expiryStr) + '">' + esc(dateStr) + '</td>');
               }
             } else {
-              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:11px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;"></td>');
+              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:var(--font-size-xs); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;"></td>');
             }
           });
           parts.push('</tr>');
@@ -8295,12 +8316,12 @@
           notasListHtml += '<div class="u-flex u-items-start u-gap-8 u-border-bottom" style="padding:6px 0;">' +
             '<div class="u-flex-1 u-min-w-0">' +
               '<div class="u-flex u-items-center u-gap-6 u-mb-2">' +
-                '<span style="font-size:11px; color:var(--text-muted);">' + esc(dateStr) + '</span>' +
-                '<span style="font-size:10px; padding:1px 6px; border-radius:var(--radius-lg); color:var(--bg-panel); background:' + tagColor + ';">' + esc(nota.tag) + '</span>' +
+                '<span style="font-size:var(--font-size-xs); color:var(--text-muted);">' + esc(dateStr) + '</span>' +
+                '<span style="font-size:var(--font-size-xs); padding:1px 6px; border-radius:var(--radius-lg); color:var(--bg-panel); background:' + tagColor + ';">' + esc(nota.tag) + '</span>' +
               '</div>' +
               '<div class="u-text-12 u-text-primary" style="word-break:break-word;">' + esc(nota.text) + '</div>' +
             '</div>' +
-            '<button class="btn btn-secondary cfDeleteNota" data-nota-id="' + nota.id + '" style="font-size:10px; padding:2px 6px; color:var(--danger); border-color:var(--danger); flex-shrink:0;" aria-label="Eliminar nota"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
+            '<button class="btn btn-secondary cfDeleteNota" data-nota-id="' + nota.id + '" style="font-size:var(--font-size-xs); padding:2px 6px; color:var(--danger); border-color:var(--danger); flex-shrink:0;" aria-label="Eliminar nota"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
           '</div>';
         });
       }
@@ -8308,7 +8329,7 @@
       return '<div class="u-section-divider">' +
         '<div onclick="toggleFundaeSub(\'cfNotasInner\')" class="u-toggle-trigger">' +
           '<span class="icon" aria-hidden="true">' + Icons.chevronDown(12) + '</span> Notas de seguimiento' +
-          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + sorted.length + ')</span>' +
+          ' <span style="font-size:var(--font-size-xs); font-weight:400; color:var(--text-muted);">(' + sorted.length + ')</span>' +
         '</div>' +
         '<div id="cfNotasInner">' +
           '<div id="cfNotasList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;">' + notasListHtml + '</div>' +
@@ -8363,7 +8384,7 @@
                 '<span>' + esc(dateLabel) + '</span>' +
                 '<button class="cfDeleteSesion u-cursor-pointer u-text-danger u-text-11" data-sesion-idx="' + si + '" style="background:none; border:none; padding:0 2px; line-height:1;" title="Eliminar sesi\u00F3n" aria-label="Eliminar sesi\u00F3n"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
               '</div>' +
-              '<div style="margin-top:3px;"><label style="font-size:10px; color:var(--text-muted); cursor:pointer; user-select:none;"><input class="cfToggleAllSesion u-accent-color" type="checkbox" data-sesion-idx="' + si + '" style="vertical-align:middle;"> todos</label></div>' +
+              '<div style="margin-top:3px;"><label style="font-size:var(--font-size-xs); color:var(--text-muted); cursor:pointer; user-select:none;"><input class="cfToggleAllSesion u-accent-color" type="checkbox" data-sesion-idx="' + si + '" style="vertical-align:middle;"> todos</label></div>' +
             '</th>';
           }
 
@@ -8400,7 +8421,7 @@
       return '<div class="u-mt-16 u-border-top u-pt-12">' +
         '<div onclick="toggleFundaeSub(\'cfAsistenciaInner\')" class="u-cursor-pointer u-text-12 u-font-600 u-text-accent u-select-none" style="padding:0 0 8px 0;">' +
           '<span class="icon" aria-hidden="true">' + Icons.chevronDown(12) + '</span> Control de asistencia' +
-          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
+          ' <span style="font-size:var(--font-size-xs); font-weight:400; color:var(--text-muted);">(' + (asistencia.sesiones || []).length + ' sesiones)</span>' +
         '</div>' +
         '<div id="cfAsistenciaInner">' + innerHtml +
           (participantes.length > 0 ? '<div class="u-mt-10 u-flex u-gap-8 u-flex-wrap">' +
@@ -8663,16 +8684,16 @@
             var deadlineStr = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
             deadlineHtml = '<div class="u-field-group">' +
               '<label class="u-label-sm">Plazo vencimiento (15 d\u00EDas h\u00E1biles)</label>' +
-              '<span style="font-size:13px; font-weight:500; color:var(--text-primary);">' + esc(deadlineStr) + '</span>' +
+              '<span style="font-size:var(--font-size-base); font-weight:500; color:var(--text-primary);">' + esc(deadlineStr) + '</span>' +
               '</div>';
           }
           return sectionHeader('rlt', 'Comunicaci\u00F3n RLT', rltFilled, 2, false) +
             '<div class="u-field-group">' +
-              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Estado comunicaci\u00F3n</label>' +
-              '<span style="font-size:13px; font-weight:600; color:' + statusColor + ';">' + esc(rltEstado) + '</span>' +
+              '<label style="font-size:var(--font-size-xs); color:var(--text-muted); display:block; margin-bottom:3px;">Estado comunicaci\u00F3n</label>' +
+              '<span style="font-size:var(--font-size-base); font-weight:600; color:' + statusColor + ';">' + esc(rltEstado) + '</span>' +
             '</div>' +
             '<div class="u-field-group">' +
-              '<label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
+              '<label style="font-size:var(--font-size-xs); color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
               '<input class="input-field u-text-13" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '">' +
             '</div>' +
             deadlineHtml +
@@ -9208,7 +9229,7 @@
       return '<div class="u-mt-16 u-border-top u-pt-12">' +
         '<div onclick="toggleFundaeSub(\'cfConfirmacionesInner\')" class="u-cursor-pointer u-text-12 u-font-600 u-text-accent u-select-none" style="padding:0 0 8px 0;">' +
           '<span class="icon" aria-hidden="true">' + Icons.chevronDown(12) + '</span> Estado de confirmación' +
-          ' <span style="font-size:11px; font-weight:400; color:var(--text-muted);">(' + participantes.length + ' participantes)</span>' +
+          ' <span style="font-size:var(--font-size-xs); font-weight:400; color:var(--text-muted);">(' + participantes.length + ' participantes)</span>' +
         '</div>' +
         '<div id="cfConfirmacionesInner">' + innerHtml + '</div>' +
       '</div>';
@@ -9532,13 +9553,13 @@
           var emp = state.employees.find(function(e) { return e.NIF === nif; });
           if (emp) {
             html += '<div class="u-participant-row">' +
-              '<span style="font-size:12px; color:var(--text-primary);">' + esc(emp.Empleado) + ' <span style="color:var(--text-muted);">(' + esc(nif) + ')</span></span>' +
+              '<span style="font-size:var(--font-size-sm); color:var(--text-primary);">' + esc(emp.Empleado) + ' <span style="color:var(--text-muted);">(' + esc(nif) + ')</span></span>' +
               '<button class="btn btn-secondary cfRemoveParticipant u-btn-remove-sm" data-nif="' + esc(nif) + '" aria-label="Eliminar participante"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
             '</div>';
           } else {
             html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">' +
-              '<span style="font-size:12px; color:var(--warning);"><span class="icon" aria-hidden="true">' + Icons.alertTriangle(12) + '</span> ' + esc(nif) + ' <span style="color:var(--text-muted);">(no encontrado en organigrama)</span></span>' +
-              '<button class="btn btn-secondary cfRemoveParticipant" data-nif="' + esc(nif) + '" style="font-size:10px; padding:2px 6px; color:var(--danger); border-color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
+              '<span style="font-size:var(--font-size-sm); color:var(--warning);"><span class="icon" aria-hidden="true">' + Icons.alertTriangle(12) + '</span> ' + esc(nif) + ' <span style="color:var(--text-muted);">(no encontrado en organigrama)</span></span>' +
+              '<button class="btn btn-secondary cfRemoveParticipant" data-nif="' + esc(nif) + '" style="font-size:var(--font-size-xs); padding:2px 6px; color:var(--danger); border-color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
             '</div>';
           }
         });
@@ -11060,8 +11081,8 @@
           html += '<div class="u-flex-1" style="min-width:0;">';
           html += '<div class="u-flex u-items-center u-gap-8 u-flex-wrap u-mb-6">';
           html += '<span class="u-text-14 u-font-600 u-text-primary">' + esc(r.tema || 'Sin tema') + '</span>';
-          html += '<span style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + urgStyle + '">' + esc(r.urgencia || 'media') + '</span>';
-          html += '<span style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + estStyle + '">' + esc(r.estado || 'pendiente') + '</span>';
+          html += '<span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + urgStyle + '">' + esc(r.urgencia || 'media') + '</span>';
+          html += '<span style="font-size:var(--font-size-xs); font-weight:600; padding:2px 8px; border-radius:var(--radius-lg); ' + estStyle + '">' + esc(r.estado || 'pendiente') + '</span>';
           html += '</div>';
           html += '<div class="u-text-12 u-text-secondary u-mb-4"><strong>Área:</strong> ' + esc(r.area || '-') + '</div>';
           if (r.justificacion) {
@@ -11073,9 +11094,9 @@
           // Actions
           html += '<div class="u-flex-col u-gap-6 u-flex-shrink-0">';
           if (r.estado !== 'convertida') {
-            html += '<button class="btn btn-primary" style="font-size:11px; padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + parseInt(r.id, 10) + ')">Crear acción</button>';
+            html += '<button class="btn btn-primary" style="font-size:var(--font-size-xs); padding:5px 12px; white-space:nowrap;" onclick="convertTNAToAction(' + parseInt(r.id, 10) + ')">Crear acción</button>';
           }
-          html += '<button class="btn btn-secondary" style="font-size:11px; padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + parseInt(r.id, 10) + ')">Eliminar</button>';
+          html += '<button class="btn btn-secondary" style="font-size:var(--font-size-xs); padding:5px 12px; color:var(--danger);" onclick="deleteTNARequest(' + parseInt(r.id, 10) + ')">Eliminar</button>';
           html += '</div>';
 
           html += '</div>';
@@ -11563,17 +11584,17 @@
 
       var title = document.createElement('h3');
       title.id = utHeadingId;
-      title.style.cssText = 'margin:0 0 14px 0; font-size:15px; font-weight:600; color:var(--text-primary);';
+      title.style.cssText = 'margin:0 0 14px 0; font-size:var(--font-size-md); font-weight:600; color:var(--text-primary);';
       title.textContent = 'Guardar plantilla';
       dialogBox.appendChild(title);
 
       var desc = document.createElement('p');
-      desc.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:10px;';
+      desc.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-secondary); margin-bottom:10px;';
       desc.textContent = 'Guarda filtros y datos del evento para reutilizar.';
       dialogBox.appendChild(desc);
 
       var nameLabel = document.createElement('label');
-      nameLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      nameLabel.style.cssText = 'display:block; font-size:var(--font-size-sm); font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
       nameLabel.textContent = 'Nombre';
       dialogBox.appendChild(nameLabel);
 
@@ -11586,7 +11607,7 @@
       dialogBox.appendChild(nameInput);
 
       var typeLabel = document.createElement('label');
-      typeLabel.style.cssText = 'display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+      typeLabel.style.cssText = 'display:block; font-size:var(--font-size-sm); font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
       typeLabel.textContent = 'Tipo';
       dialogBox.appendChild(typeLabel);
 
@@ -11673,7 +11694,7 @@
       if (templates.length === 0) {
         container.textContent = '';
         var emptyMsg = document.createElement('div');
-        emptyMsg.style.cssText = 'font-size:12px; color:var(--text-muted); padding:6px 0;';
+        emptyMsg.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-muted); padding:6px 0;';
         emptyMsg.textContent = 'No hay plantillas guardadas.';
         container.appendChild(emptyMsg);
         return;
@@ -11688,12 +11709,12 @@
 
         var badge = document.createElement('span');
         var colors = getTypeColor(t.type);
-        badge.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:var(--radius-lg); background:' + colors.bg + '; color:' + colors.text + '; border:1px solid ' + colors.border + ';';
+        badge.style.cssText = 'font-size:var(--font-size-xs); padding:1px 6px; border-radius:var(--radius-lg); background:' + colors.bg + '; color:' + colors.text + '; border:1px solid ' + colors.border + ';';
         badge.textContent = getTypeLabel(t.type);
         left.appendChild(badge);
 
         var nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'font-size:12px; color:var(--text-primary);';
+        nameSpan.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-primary);';
         nameSpan.textContent = t.name;
         left.appendChild(nameSpan);
 
@@ -11701,7 +11722,7 @@
 
         var delBtn = document.createElement('button');
         delBtn.className = 'link-btn link-clear icon';
-        delBtn.style.fontSize = '11px';
+        delBtn.style.fontSize = 'var(--font-size-xs)';
         delBtn.title = 'Eliminar plantilla';
         delBtn.setAttribute('aria-label', 'Eliminar plantilla');
         delBtn.innerHTML = Icons.close(12);
@@ -12438,7 +12459,7 @@
               items.map(({ value: v, count }) =>
                 '<label role="option" aria-selected="' + (selected.includes(v) ? 'true' : 'false') + '">' +
                   '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
-                  esc(v) + ' <span style="color:var(--text-muted);font-size:11px;">(' + count + ')</span>' +
+                  esc(v) + ' <span style="color:var(--text-muted);font-size:var(--font-size-xs);">(' + count + ')</span>' +
                 '</label>'
               ).join('') +
             '</div>' +
@@ -12846,7 +12867,7 @@
       if (isWaitlisted) {
         var wlBadge = document.createElement('span');
         wlBadge.className = 'chip';
-        wlBadge.style.cssText = 'background:var(--warning-light);color:var(--warning);font-size:10px;';
+        wlBadge.style.cssText = 'background:var(--warning-light);color:var(--warning);font-size:var(--font-size-xs);';
         wlBadge.textContent = 'Lista de espera';
         tdName.appendChild(document.createTextNode(' '));
         tdName.appendChild(wlBadge);
@@ -13395,7 +13416,7 @@
         var editBtn = document.createElement('button');
         editBtn.className = 'link-btn link-add';
         editBtn.textContent = 'Editar';
-        editBtn.style.fontSize = '11px';
+        editBtn.style.fontSize = 'var(--font-size-xs)';
         editBtn.onclick = function(e) {
           e.stopPropagation();
           // Load back to form
@@ -13423,7 +13444,7 @@
         var delBtn = document.createElement('button');
         delBtn.className = 'link-btn link-clear';
         delBtn.textContent = 'Quitar';
-        delBtn.style.fontSize = '11px';
+        delBtn.style.fontSize = 'var(--font-size-xs)';
         delBtn.onclick = function(e) {
           e.stopPropagation();
           state.queue.splice(i, 1);
@@ -13897,7 +13918,7 @@
         var c = conflicts[i];
         html += '<div class="u-text-12 u-text-secondary u-mb-4">' +
           esc(String(c.emails.length)) + ' personas ya convocadas a \u00ab' + esc(c.title) + '\u00bb el mismo dia/hora: ' +
-          '<span style="font-size:11px; color:var(--text-muted);">' + c.emails.map(function(e) { return esc(e); }).join(', ') + '</span>' +
+          '<span style="font-size:var(--font-size-xs); color:var(--text-muted);">' + c.emails.map(function(e) { return esc(e); }).join(', ') + '</span>' +
           '</div>';
       }
       html += '</div>';
@@ -14258,7 +14279,7 @@
       preview.textContent = '';
 
       var summary = document.createElement('div');
-      summary.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-bottom:8px;';
+      summary.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-secondary); margin-bottom:8px;';
       summary.textContent = sortedKeys.length + ' grupo' + (sortedKeys.length !== 1 ? 's' : '') +
         ' \u00b7 ' + employees.length + ' persona' + (employees.length !== 1 ? 's' : '') + ' en total';
       preview.appendChild(summary);
@@ -14272,7 +14293,7 @@
         row.style.cssText = 'background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; display:flex; justify-content:space-between; align-items:center;';
 
         var nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'font-size:13px; font-weight:500; color:var(--text-primary);';
+        nameSpan.style.cssText = 'font-size:var(--font-size-base); font-weight:500; color:var(--text-primary);';
         nameSpan.textContent = key;
 
         var chipSpan = document.createElement('span');
@@ -14772,7 +14793,7 @@
         if (employees.length > 0) {
           // Show restore option in upload zone
           const restoreDiv = document.createElement('div');
-          restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:12px; color:var(--accent); text-align:center;';
+          restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:var(--font-size-sm); color:var(--accent); text-align:center;';
           var restoreTitle = document.createElement('strong');
           restoreTitle.textContent = 'Usar organigrama anterior';
           restoreDiv.appendChild(restoreTitle);
@@ -15613,19 +15634,19 @@
         const missingCat = !p.categoriaProfesional;
         const missingNivel = !p.nivelEstudios;
         return '<tr class="u-border-bottom">' +
-          '<td class="u-p-6"><button class="link-btn link-clear" data-remove-idx="' + idx + '" style="font-size:11px; color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button></td>' +
+          '<td class="u-p-6"><button class="link-btn link-clear" data-remove-idx="' + idx + '" style="font-size:var(--font-size-xs); color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button></td>' +
           '<td class="u-p-6 u-text-12">' + esc(p.empleado) + '</td>' +
-          '<td style="padding:6px; font-size:12px;">' + esc(p.nif) + '</td>' +
+          '<td style="padding:6px; font-size:var(--font-size-sm);">' + esc(p.nif) + '</td>' +
           '<td class="u-p-6"><select class="input-field u-text-11" data-field="tipoDocumento" data-idx="' + idx + '" style="padding:3px 6px;">' +
             '<option value="10"' + (p.tipoDocumento == 10 ? ' selected' : '') + '>NIF</option>' +
             '<option value="60"' + (p.tipoDocumento == 60 ? ' selected' : '') + '>NIE</option>' +
             '<option value="20"' + (p.tipoDocumento == 20 ? ' selected' : '') + '>Pasaporte</option>' +
           '</select></td>' +
-          '<td class="u-p-6"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:11px; padding:3px 6px; width:140px;"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:11px; padding:3px 6px; width:100px;"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingCat ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:11px; padding:3px 6px; width:40px;' + (missingNivel ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:11px; padding:3px 6px; width:40px;"></td>' +
+          '<td class="u-p-6"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:140px;"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:100px;"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingCat ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingNivel ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;"></td>' +
           '<td style="padding:6px;"><select class="input-field u-text-11" data-field="diploma" data-idx="' + idx + '" style="padding:3px 6px;">' +
             '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
             '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
@@ -15843,10 +15864,10 @@
         : 'Hay avisos pero puedes continuar';
 
       function buildEntryHtml(entry, borderColor, textColor) {
-        var html = '<div style="border-left:3px solid ' + borderColor + '; padding:6px 10px; margin-bottom:6px; font-size:12px; color:' + textColor + ';">';
+        var html = '<div style="border-left:3px solid ' + borderColor + '; padding:6px 10px; margin-bottom:6px; font-size:var(--font-size-sm); color:' + textColor + ';">';
         html += '<strong>' + esc(entry.field) + '</strong>: ' + esc(entry.message);
         if (entry.participantNif) {
-          html += ' <span style="color:var(--text-muted); font-size:11px;">(' + esc(entry.participantNif) + ')</span>';
+          html += ' <span style="color:var(--text-muted); font-size:var(--font-size-xs);">(' + esc(entry.participantNif) + ')</span>';
         }
         html += '</div>';
         return html;
@@ -16800,7 +16821,7 @@
         if (item.secondaryValue !== undefined && item.secondaryValue > 0) {
           // Stacked bar: primary (consumed) + secondary (available) side by side
           var stackWrap = document.createElement('div');
-          stackWrap.style.cssText = 'display:flex; height:100%; border-radius:2px; overflow:hidden;';
+          stackWrap.style.cssText = 'display:flex; height:100%; border-radius:var(--radius-sm); overflow:hidden;';
 
           var priFill = document.createElement('div');
           priFill.className = 'dash-gauge-bar-fill';
@@ -17442,7 +17463,7 @@
         var section = document.createElement('div');
         section.style.cssText = 'margin-top:12px;';
         var title = document.createElement('div');
-        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--warning); margin-bottom:6px;';
+        title.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--warning); margin-bottom:6px;';
         title.textContent = 'Acciones con tasa de confirmación < 80%';
         section.appendChild(title);
 
@@ -17505,7 +17526,7 @@
         var deptSection = document.createElement('div');
         deptSection.style.cssText = 'margin-top:10px;';
         var deptTitle = document.createElement('div');
-        deptTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
+        deptTitle.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--text-secondary); margin-bottom:4px;';
         deptTitle.textContent = 'Confirmación por departamento';
         deptSection.appendChild(deptTitle);
 
@@ -17517,15 +17538,15 @@
         deptKeys.slice(0, 5).forEach(function(dept) {
           var rate = Math.round((deptConfirm[dept].confirmado / deptConfirm[dept].total) * 100);
           var row = document.createElement('div');
-          row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0; font-size:10px;';
+          row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:2px 0; font-size:var(--font-size-xs);';
           var lbl = document.createElement('span');
           lbl.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary);';
           lbl.textContent = esc(dept);
           lbl.title = dept;
           var bar = document.createElement('div');
-          bar.style.cssText = 'width:60px; height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden;';
+          bar.style.cssText = 'width:60px; height:6px; background:var(--bg-input); border-radius:var(--radius-sm); overflow:hidden;';
           var fill = document.createElement('div');
-          fill.style.cssText = 'height:100%; border-radius:3px; background:' + (rate >= 70 ? 'var(--success)' : (rate >= 40 ? 'var(--warning)' : 'var(--danger)')) + '; width:' + rate + '%;';
+          fill.style.cssText = 'height:100%; border-radius:var(--radius-sm); background:' + (rate >= 70 ? 'var(--success)' : (rate >= 40 ? 'var(--warning)' : 'var(--danger)')) + '; width:' + rate + '%;';
           bar.appendChild(fill);
           var val = document.createElement('span');
           val.style.cssText = 'font-weight:600; min-width:30px; text-align:right; color:' + (rate >= 70 ? 'var(--success)' : (rate >= 40 ? 'var(--warning)' : 'var(--danger)')) + ';';
@@ -17682,7 +17703,7 @@
 
       chips.forEach(function(chip) {
         var el = document.createElement('span');
-        el.style.cssText = 'font-size:10px; padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
+        el.style.cssText = 'font-size:var(--font-size-xs); padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
         el.innerHTML = '<span style="font-weight:600; color:' + chip.color + ';">' + esc(chip.label) + ':</span> ' + esc(chip.value);
         summary.appendChild(el);
       });
@@ -17691,7 +17712,7 @@
       // Totals footer
       var avgHoursPerAction = totalCount > 0 ? (totalHours / totalCount).toFixed(1) : '0';
       var footerRow = document.createElement('div');
-      footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:10px; color:var(--text-muted);';
+      footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:var(--font-size-xs); color:var(--text-muted);';
       footerRow.innerHTML = '<span>' + totalCount + ' acciones en total</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
       container.appendChild(footerRow);
     }
@@ -17773,7 +17794,7 @@
       kpiItems.forEach(function(kpi) {
         var el = document.createElement('div');
         el.style.cssText = 'flex:1; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
-        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        el.innerHTML = '<div style="font-size:var(--font-size-md); font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:var(--font-size-xs); color:var(--text-muted);">' + esc(kpi.label) + '</div>';
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -17847,7 +17868,7 @@
         var tableSection = document.createElement('div');
         tableSection.style.cssText = 'margin-top:8px;';
         var tableTitle = document.createElement('div');
-        tableTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:4px;';
+        tableTitle.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--text-primary); margin-bottom:4px;';
         tableTitle.textContent = 'Top 10 más formados';
         tableSection.appendChild(tableTitle);
 
@@ -17869,7 +17890,7 @@
             tdName.textContent = esc(resolvedName);
             tdName.title = resolvedName + ' (' + item.nif + ')';
           } else {
-            tdName.style.cssText = 'padding:3px 6px; font-variant-numeric:tabular-nums; font-size:10px;';
+            tdName.style.cssText = 'padding:3px 6px; font-variant-numeric:tabular-nums; font-size:var(--font-size-xs);';
             tdName.textContent = esc(item.nif);
           }
 
@@ -17890,7 +17911,7 @@
       // Zero training indicator
       if (zeroTraining.length > 0) {
         var zeroEl = document.createElement('div');
-        zeroEl.style.cssText = 'margin-top:8px; padding:6px 10px; background:var(--warning-light); border-radius:var(--radius-sm); font-size:11px; color:var(--warning);';
+        zeroEl.style.cssText = 'margin-top:8px; padding:6px 10px; background:var(--warning-light); border-radius:var(--radius-sm); font-size:var(--font-size-xs); color:var(--warning);';
         zeroEl.innerHTML = '<strong>' + zeroTraining.length + '</strong> personas del Excel sin ninguna formación vinculada';
         container.appendChild(zeroEl);
       }
@@ -17943,7 +17964,7 @@
       var kpiEl = document.createElement('div');
       kpiEl.style.cssText = 'text-align:center; margin-bottom:12px; padding:10px; background:var(--bg-input); border-radius:var(--radius-sm);';
       var kpiColor = coveragePct >= 75 ? 'var(--success)' : (coveragePct >= 50 ? 'var(--warning)' : 'var(--danger)');
-      kpiEl.innerHTML = '<div style="font-size:28px; font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:11px; color:var(--text-muted);">Cobertura de encuestas</div>';
+      kpiEl.innerHTML = '<div style="font-size:var(--font-size-2xl); font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:var(--font-size-xs); color:var(--text-muted);">Cobertura de encuestas</div>';
       container.appendChild(kpiEl);
 
       // Donut
@@ -17968,7 +17989,7 @@
         var section = document.createElement('div');
         section.style.cssText = 'margin-top:10px;';
         var title = document.createElement('div');
-        title.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:4px;';
+        title.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--danger); margin-bottom:4px;';
         title.textContent = 'Acciones terminadas sin encuesta (' + withoutSurvey.length + ')';
         section.appendChild(title);
 
@@ -17978,13 +17999,13 @@
         for (var i = 0; i < maxShow; i++) {
           var a = withoutSurvey[i];
           var item = document.createElement('div');
-          item.style.cssText = 'font-size:11px; padding:3px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;';
+          item.style.cssText = 'font-size:var(--font-size-xs); padding:3px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;';
           var nameSpan = document.createElement('span');
           nameSpan.style.cssText = 'overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;';
           nameSpan.textContent = esc(a.nombre || a.codigo || '(Sin nombre)');
           nameSpan.title = a.nombre || '';
           var codeSpan = document.createElement('span');
-          codeSpan.style.cssText = 'color:var(--text-muted); font-size:10px;';
+          codeSpan.style.cssText = 'color:var(--text-muted); font-size:var(--font-size-xs);';
           codeSpan.textContent = esc(a.codigo || '');
           item.appendChild(nameSpan);
           item.appendChild(codeSpan);
@@ -18076,7 +18097,7 @@
       kpis.forEach(function(kpi) {
         var el = document.createElement('div');
         el.style.cssText = 'flex:1; min-width:60px; text-align:center; padding:6px; background:var(--bg-input); border-radius:var(--radius-sm);';
-        el.innerHTML = '<div style="font-size:16px; font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:10px; color:var(--text-muted);">' + esc(kpi.label) + '</div>';
+        el.innerHTML = '<div style="font-size:var(--font-size-md); font-weight:700; color:' + kpi.color + ';">' + kpi.val + '</div><div style="font-size:var(--font-size-xs); color:var(--text-muted);">' + esc(kpi.label) + '</div>';
         kpiRow.appendChild(el);
       });
       container.appendChild(kpiRow);
@@ -18127,7 +18148,7 @@
       var totalAttendees = sends.reduce(function(s, h) { return s + (h.attendeeCount || 0); }, 0);
       if (totalAttendees > 0) {
         var footer = document.createElement('div');
-        footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+        footer.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted); margin-top:4px;';
         footer.textContent = totalAttendees + ' personas destinatarias procesadas en total';
         container.appendChild(footer);
       }
@@ -18145,7 +18166,7 @@
         var daySection = document.createElement('div');
         daySection.style.cssText = 'margin-top:10px; padding-top:8px; border-top:1px solid var(--border);';
         var dayTitle = document.createElement('div');
-        dayTitle.style.cssText = 'font-size:10px; font-weight:600; color:var(--text-muted); margin-bottom:6px;';
+        dayTitle.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--text-muted); margin-bottom:6px;';
         dayTitle.textContent = 'Actividad por día de la semana';
         daySection.appendChild(dayTitle);
 
@@ -18157,9 +18178,9 @@
           var bar = document.createElement('div');
           var h = maxDayCount > 0 ? Math.max((count / maxDayCount) * 28, count > 0 ? 3 : 1) : 1;
           var opacity = count > 0 ? (0.3 + 0.7 * (count / maxDayCount)) : 0.1;
-          bar.style.cssText = 'width:100%; height:' + h + 'px; background:var(--accent); border-radius:2px; opacity:' + opacity + ';';
+          bar.style.cssText = 'width:100%; height:' + h + 'px; background:var(--accent); border-radius:var(--radius-sm); opacity:' + opacity + ';';
           var lbl = document.createElement('div');
-          lbl.style.cssText = 'font-size:8px; color:var(--text-muted);';
+          lbl.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted);';
           lbl.textContent = dayNames[idx];
           col.appendChild(bar);
           col.appendChild(lbl);
@@ -18304,7 +18325,7 @@
 
         // Budget
         var tdBudget = document.createElement('td');
-        tdBudget.style.cssText = 'padding:5px 6px; text-align:right; font-variant-numeric:tabular-nums; font-size:10px;';
+        tdBudget.style.cssText = 'padding:5px 6px; text-align:right; font-variant-numeric:tabular-nums; font-size:var(--font-size-xs);';
         tdBudget.textContent = formatCurrency(p.totalBudget);
 
         // Attendance
@@ -18330,7 +18351,7 @@
         var tdScore = document.createElement('td');
         tdScore.style.cssText = 'padding:5px 6px; text-align:center;';
         var scoreBadge = document.createElement('span');
-        scoreBadge.style.cssText = 'display:inline-block; padding:2px 8px; border-radius:var(--radius-lg); font-weight:700; font-size:11px;';
+        scoreBadge.style.cssText = 'display:inline-block; padding:2px 8px; border-radius:var(--radius-lg); font-weight:700; font-size:var(--font-size-xs);';
         if (p.score >= 70) {
           scoreBadge.style.background = 'var(--success-light)';
           scoreBadge.style.color = 'var(--success)';
@@ -18360,7 +18381,7 @@
       var totalActionsAll = scorecardData.reduce(function(s, p) { return s + p.numActions; }, 0);
       var avgBudgetPerAction = totalActionsAll > 0 ? totalBudgetAll / totalActionsAll : 0;
       var footer = document.createElement('div');
-      footer.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;';
+      footer.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;';
       footer.innerHTML = '<span>' + scorecardData.length + ' proveedores activos</span><span>' + totalActionsAll + ' acciones — ' + formatCurrency(totalBudgetAll) + '</span><span>Media: ' + formatCurrency(avgBudgetPerAction) + '/acción</span>';
       container.appendChild(footer);
 
@@ -18372,13 +18393,13 @@
         highlightRow.style.cssText = 'display:flex; gap:8px; margin-top:8px;';
 
         var bestEl = document.createElement('div');
-        bestEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--success-light); border-radius:var(--radius-sm); font-size:10px;';
+        bestEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--success-light); border-radius:var(--radius-sm); font-size:var(--font-size-xs);';
         bestEl.innerHTML = '<div style="font-weight:600; color:var(--success); margin-bottom:2px;">Mejor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(best.nombre) + ' \u2014 Punt. ' + best.score + '</div>'; // innerHTML OK: sanitized via esc()
         highlightRow.appendChild(bestEl);
 
         if (worst.score < best.score) {
           var worstEl = document.createElement('div');
-          worstEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--danger-light); border-radius:var(--radius-sm); font-size:10px;';
+          worstEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--danger-light); border-radius:var(--radius-sm); font-size:var(--font-size-xs);';
           worstEl.innerHTML = '<div style="font-weight:600; color:var(--danger); margin-bottom:2px;">Peor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(worst.nombre) + ' \u2014 Punt. ' + worst.score + '</div>'; // innerHTML OK: sanitized via esc()
           highlightRow.appendChild(worstEl);
         }
@@ -18479,7 +18500,7 @@
 
       // Summary text
       var summary = document.createElement('div');
-      summary.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-top:10px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;';
+      summary.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-secondary); margin-top:10px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;';
       summary.innerHTML =
         '<span>' + evaluated.length + ' de ' + acciones.length + ' acciones evaluadas</span>' +
         '<span>' + totalRespuestas + ' respuestas totales</span>' +
@@ -18494,7 +18515,7 @@
         var headerRow = document.createElement('tr');
         ['Acci\u00F3n','Utilidad','Formador','Materiales','NPS','Resp.','Pre','Post','Mejora'].forEach(function(h) {
           var th = document.createElement('th');
-          th.style.cssText = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text-muted); font-weight:500; font-size:10px;';
+          th.style.cssText = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text-muted); font-weight:500; font-size:var(--font-size-xs);';
           th.textContent = h;
           headerRow.appendChild(th);
         });
@@ -19517,7 +19538,7 @@
       });
 
       var pctLabel = document.createElement('div');
-      pctLabel.style.cssText = 'font-size:11px; color:var(--text-muted); text-align:right; margin-bottom:8px;';
+      pctLabel.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted); text-align:right; margin-bottom:8px;';
       pctLabel.textContent = pctProjected + '% proyectado sobre cr\u00E9dito total';
       sim.appendChild(pctLabel);
 
@@ -19741,7 +19762,7 @@
           illustration: 'noChart',
           icon: Icons.barChart(32),
           title: 'Sin datos en el cuadro de mando',
-          desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
+          desc: 'Crea tu primera acción formativa en Catálogos para ver métricas aquí.',
           ctaText: 'Ir a Catálogos',
           ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
         });
@@ -20244,7 +20265,7 @@
               '<div class="u-font-600 u-text-primary u-truncate">' + esc(p.accion) + '</div>' +
               '<div class="u-text-muted u-text-11">' + esc(tipoLabel) + ' — ' + esc(dateStr) + '</div>' +
             '</div>' +
-            '<span style="font-size:11px; font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
+            '<span style="font-size:var(--font-size-xs); font-weight:600; color:' + statusColor + '; white-space:nowrap;">' + esc(statusLabel) + '</span>' +
             (p.sent ? '' : '<button class="btn btn-secondary btnPlazoMarcar u-text-10 u-nowrap" data-codigo="' + esc(p.codigo) + '" data-tipo="' + p.tipo + '" style="padding:3px 8px;">Marcar enviada</button>') +
             '<button class="btn btn-secondary btnPlazoXml u-text-10 u-nowrap" data-codigo="' + esc(p.codigo) + '" style="padding:3px 8px;">Generar XML</button>' +
           '</div>';
@@ -20315,7 +20336,7 @@
 
         if (conRiesgo.length > 0) {
           var alertDiv = document.createElement('div');
-          alertDiv.style.cssText = 'padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:12px;';
+          alertDiv.style.cssText = 'padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:var(--font-size-sm);';
           var infrauso = conRiesgo.filter(function(p) { return p.riesgo === 'infrauso'; });
           var sobreuso = conRiesgo.filter(function(p) { return p.riesgo === 'sobreuso'; });
           if (infrauso.length > 0) {
@@ -20335,7 +20356,7 @@
 
         // Tabla de proyeccion
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%;font-size:11px;border-collapse:collapse;';
+        table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;';
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
         ['Empresa','Credito','Consumido','Planif.','Proy. Dic','%','Agotam.'].forEach(function(h) {
@@ -20610,7 +20631,7 @@
         if (!bonificables.length) {
           container.textContent = '';
           var p = document.createElement('p');
-          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:var(--font-size-base);';
           p.textContent = 'No hay acciones bonificables';
           container.appendChild(p);
           return;
@@ -20653,13 +20674,13 @@
         scored.forEach(function(s) {
           if (s.score === 0) return;
           var row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;';
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:var(--font-size-base);';
           // Progress bar
           var barWrap = document.createElement('div');
-          barWrap.style.cssText = 'width:60px;height:6px;background:var(--bg-input);border-radius:3px;flex-shrink:0;';
+          barWrap.style.cssText = 'width:60px;height:6px;background:var(--bg-input);border-radius:var(--radius-sm);flex-shrink:0;';
           var bar = document.createElement('div');
           var barColor = s.score >= 50 ? 'var(--danger)' : s.score >= 25 ? 'var(--warning)' : 'var(--success)';
-          bar.style.cssText = 'height:100%;border-radius:3px;background:' + barColor + ';width:' + s.score + '%;';
+          bar.style.cssText = 'height:100%;border-radius:var(--radius-sm);background:' + barColor + ';width:' + s.score + '%;';
           barWrap.appendChild(bar);
           // Score
           var scoreSpan = document.createElement('span');
@@ -20671,7 +20692,7 @@
           nameSpan.textContent = (s.accion.codigo || '') + ' ' + (s.accion.nombre || 'Sin nombre');
           // Factores
           var factorsSpan = document.createElement('span');
-          factorsSpan.style.cssText = 'color:var(--text-muted);font-size:11px;max-width:300px;text-align:right;';
+          factorsSpan.style.cssText = 'color:var(--text-muted);font-size:var(--font-size-xs);max-width:300px;text-align:right;';
           factorsSpan.textContent = s.factors.slice(0, 3).join(', ');
           row.appendChild(scoreSpan);
           row.appendChild(barWrap);
@@ -20690,7 +20711,7 @@
         container.textContent = '';
         if (!roi.length) {
           var p = document.createElement('p');
-          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:var(--font-size-base);';
           p.textContent = 'Sin datos suficientes';
           container.appendChild(p);
           return;
@@ -20715,7 +20736,7 @@
           d.className = 'dash-mini-kpi';
           var v = document.createElement('div');
           v.className = 'dash-mini-kpi-value';
-          v.style.fontSize = '16px';
+          v.style.fontSize = 'var(--font-size-md)';
           v.style.color = k.color;
           v.textContent = k.val;
           var l = document.createElement('div');
@@ -20744,7 +20765,7 @@
           // Barra oportunidad
           svg += '<rect x="' + (130 + wDirect) + '" y="' + (y + 2) + '" width="' + wOport + '" height="16" rx="2" fill="var(--warning)" opacity="0.6"/>';
           // Valor
-          svg += '<text x="' + (130 + wDirect + wOport + 4) + '" y="' + (y + 14) + '" font-size="10" fill="var(--text-muted)">' + fmt(r.costeNeto) + '</text>';
+          svg += '<text x="' + (130 + wDirect + wOport + 4) + '" y="' + (y + 14) + '" font-size="11" fill="var(--text-muted)">' + fmt(r.costeNeto) + '</text>'; /* scale: xs */
         });
         svg += '</svg>';
         var svgDiv = document.createElement('div');
@@ -20755,8 +20776,8 @@
         var legend = document.createElement('div');
         legend.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:var(--font-size-xs);color:var(--text-muted);';
         legend.insertAdjacentHTML('beforeend',
-          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px;opacity:0.8;"></span>Directo</span>' +
-          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:2px;margin-right:4px;opacity:0.6;"></span>Oportunidad</span>'
+          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:var(--radius-sm);margin-right:4px;opacity:0.8;"></span>Directo</span>' +
+          '<span><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:var(--radius-sm);margin-right:4px;opacity:0.6;"></span>Oportunidad</span>'
         );
         container.appendChild(legend);
       })();
@@ -20781,7 +20802,7 @@
         // Heatmap como tabla HTML (mas compatible que canvas)
         if (cov.depts.length > 0 && cov.empresas.length > 0 && cov.empresas.length <= 20) {
           var table = document.createElement('table');
-          table.style.cssText = 'width:100%;font-size:10px;border-collapse:collapse;margin-bottom:12px;';
+          table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;margin-bottom:12px;';
           var thead = document.createElement('thead');
           var tr = document.createElement('tr');
           var th0 = document.createElement('th');
@@ -20810,7 +20831,7 @@
                 var pct = Math.round((cell.formados / cell.total) * 100);
                 var bg = pct >= 80 ? hexToRgba(DS.success, 0.2) : pct >= 50 ? hexToRgba(DS.warning, 0.2) : pct > 0 ? hexToRgba(DS.danger, 0.2) : hexToRgba(DS.danger, 0.1);
                 td.style.background = bg;
-                td.style.borderRadius = '2px';
+                td.style.borderRadius = 'var(--radius-sm)';
                 td.textContent = pct + '%';
               }
               row.appendChild(td);
@@ -20825,11 +20846,11 @@
         if (cov.sinFormacion.length > 0) {
           var details = document.createElement('details');
           var summary = document.createElement('summary');
-          summary.style.cssText = 'cursor:pointer;font-size:12px;color:var(--text-secondary);padding:4px 0;';
+          summary.style.cssText = 'cursor:pointer;font-size:var(--font-size-sm);color:var(--text-secondary);padding:4px 0;';
           summary.textContent = cov.sinFormacion.length + ' personas sin formacion';
           details.appendChild(summary);
           var list = document.createElement('div');
-          list.style.cssText = 'max-height:200px;overflow-y:auto;font-size:11px;margin-top:4px;';
+          list.style.cssText = 'max-height:200px;overflow-y:auto;font-size:var(--font-size-xs);margin-top:4px;';
           cov.sinFormacion.slice(0, 50).forEach(function(e) {
             var d = document.createElement('div');
             d.style.cssText = 'padding:2px 0;color:var(--text-muted);';
@@ -20859,33 +20880,33 @@
           var section = document.createElement('div');
           section.style.cssText = 'margin-bottom:16px;';
           var title = document.createElement('div');
-          title.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;';
+          title.style.cssText = 'font-size:var(--font-size-sm);font-weight:600;color:var(--text-secondary);margin-bottom:8px;';
           title.textContent = dim.dimension;
           section.appendChild(title);
 
           dim.items.forEach(function(item) {
             var row = document.createElement('div');
-            row.style.cssText = 'display:grid;grid-template-columns:100px 1fr 1fr 50px;gap:8px;align-items:center;padding:3px 0;font-size:11px;';
+            row.style.cssText = 'display:grid;grid-template-columns:100px 1fr 1fr 50px;gap:8px;align-items:center;padding:3px 0;font-size:var(--font-size-xs);';
             var label = document.createElement('span');
             label.style.cssText = 'color:var(--text-primary);';
             label.textContent = item.category.substring(0, 14);
             // Barra plantilla
             var bar1Wrap = document.createElement('div');
-            bar1Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:2px;position:relative;';
+            bar1Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:var(--radius-sm);position:relative;';
             var bar1 = document.createElement('div');
-            bar1.style.cssText = 'height:100%;border-radius:2px;background:var(--accent);opacity:0.4;width:' + item.pctPlantilla + '%;';
+            bar1.style.cssText = 'height:100%;border-radius:var(--radius-sm);background:var(--accent);opacity:0.4;width:' + item.pctPlantilla + '%;';
             var bar1Label = document.createElement('span');
-            bar1Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:9px;color:var(--text-muted);line-height:12px;';
+            bar1Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:var(--font-size-xs);color:var(--text-muted);line-height:12px;';
             bar1Label.textContent = item.pctPlantilla + '%';
             bar1Wrap.appendChild(bar1);
             bar1Wrap.appendChild(bar1Label);
             // Barra formacion
             var bar2Wrap = document.createElement('div');
-            bar2Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:2px;position:relative;';
+            bar2Wrap.style.cssText = 'height:12px;background:var(--bg-input);border-radius:var(--radius-sm);position:relative;';
             var bar2 = document.createElement('div');
-            bar2.style.cssText = 'height:100%;border-radius:2px;background:var(--accent);width:' + item.pctFormacion + '%;';
+            bar2.style.cssText = 'height:100%;border-radius:var(--radius-sm);background:var(--accent);width:' + item.pctFormacion + '%;';
             var bar2Label = document.createElement('span');
-            bar2Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:9px;color:var(--text-muted);line-height:12px;';
+            bar2Label.style.cssText = 'position:absolute;right:4px;top:0;font-size:var(--font-size-xs);color:var(--text-muted);line-height:12px;';
             bar2Label.textContent = item.pctFormacion + '%';
             bar2Wrap.appendChild(bar2);
             bar2Wrap.appendChild(bar2Label);
@@ -20904,10 +20925,10 @@
 
           // Leyenda
           var leg = document.createElement('div');
-          leg.style.cssText = 'display:flex;gap:16px;font-size:10px;color:var(--text-muted);margin-top:4px;';
+          leg.style.cssText = 'display:flex;gap:16px;font-size:var(--font-size-xs);color:var(--text-muted);margin-top:4px;';
           leg.insertAdjacentHTML('beforeend',
-            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);opacity:0.4;border-radius:1px;margin-right:3px;"></span>Plantilla</span>' +
-            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:1px;margin-right:3px;"></span>Formacion</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);opacity:0.4;border-radius:var(--radius-sm);margin-right:3px;"></span>Plantilla</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:var(--radius-sm);margin-right:3px;"></span>Formacion</span>' +
             '<span>Gap = diferencia</span>'
           );
           section.appendChild(leg);
@@ -20923,7 +20944,7 @@
         container.textContent = '';
         if (!mgrs.length) {
           var p = document.createElement('p');
-          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:var(--font-size-base);';
           p.textContent = 'Sin datos del campo "Depende de"';
           container.appendChild(p);
           return;
@@ -20932,7 +20953,7 @@
         // Top 15 managers
         var top = mgrs.slice(0, 15);
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%;font-size:11px;border-collapse:collapse;';
+        table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;';
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
         ['Responsable','Equipo','Formados','%','h/persona','Presup.','Acciones'].forEach(function(h) {
@@ -20986,7 +21007,7 @@
         var pagadoras = Object.keys(cross.flujos).sort();
         if (!pagadoras.length) {
           var p = document.createElement('p');
-          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:13px;';
+          p.style.cssText = 'color:var(--text-muted);text-align:center;padding:20px;font-size:var(--font-size-base);';
           p.textContent = 'Sin datos de formacion interempresarial';
           container.appendChild(p);
           return;
@@ -20995,17 +21016,17 @@
         // Alertas de discrepancia CIF
         if (cross.alertas.length > 0) {
           var alertDiv = document.createElement('div');
-          alertDiv.style.cssText = 'padding:8px 12px;background:var(--danger-light);border-radius:var(--radius-sm);margin-bottom:12px;font-size:12px;color:var(--danger);';
+          alertDiv.style.cssText = 'padding:8px 12px;background:var(--danger-light);border-radius:var(--radius-sm);margin-bottom:12px;font-size:var(--font-size-sm);color:var(--danger);';
           alertDiv.textContent = cross.alertas.length + ' participante(s) con CIF diferente al de la empresa pagadora (riesgo FUNDAE)';
           container.appendChild(alertDiv);
 
           var details = document.createElement('details');
           var summary = document.createElement('summary');
-          summary.style.cssText = 'cursor:pointer;font-size:11px;color:var(--danger);margin-bottom:8px;';
+          summary.style.cssText = 'cursor:pointer;font-size:var(--font-size-xs);color:var(--danger);margin-bottom:8px;';
           summary.textContent = 'Ver detalle de discrepancias';
           details.appendChild(summary);
           var alertList = document.createElement('div');
-          alertList.style.cssText = 'font-size:11px;max-height:150px;overflow-y:auto;';
+          alertList.style.cssText = 'font-size:var(--font-size-xs);max-height:150px;overflow-y:auto;';
           cross.alertas.slice(0, 20).forEach(function(a) {
             var d = document.createElement('div');
             d.style.cssText = 'padding:2px 0;color:var(--text-muted);';
@@ -21024,16 +21045,16 @@
         var receptoras = Array.from(empresasReceptoras).sort();
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%;font-size:10px;border-collapse:collapse;';
+        table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;';
         var thead = document.createElement('thead');
         var hRow = document.createElement('tr');
         var thCorner = document.createElement('th');
-        thCorner.style.cssText = 'padding:4px;text-align:left;font-size:9px;color:var(--text-muted);';
+        thCorner.style.cssText = 'padding:4px;text-align:left;font-size:var(--font-size-xs);color:var(--text-muted);';
         thCorner.textContent = 'Pagadora \\ Personas trabajadoras';
         hRow.appendChild(thCorner);
         receptoras.forEach(function(r) {
           var th = document.createElement('th');
-          th.style.cssText = 'padding:4px;text-align:center;writing-mode:vertical-lr;transform:rotate(180deg);max-width:25px;font-size:9px;';
+          th.style.cssText = 'padding:4px;text-align:center;writing-mode:vertical-lr;transform:rotate(180deg);max-width:25px;font-size:var(--font-size-xs);';
           th.textContent = r.substring(0, 12);
           hRow.appendChild(th);
         });
@@ -21054,7 +21075,7 @@
             if (count > 0) {
               var isDiagonal = p.toLowerCase().indexOf(r.toLowerCase().substring(0, 5)) >= 0;
               td.style.background = isDiagonal ? hexToRgba(DS.accent, 0.1) : hexToRgba(DS.danger, 0.15);
-              td.style.borderRadius = '2px';
+              td.style.borderRadius = 'var(--radius-sm)';
               td.style.fontWeight = isDiagonal ? '400' : '600';
               td.textContent = count;
             }
@@ -22023,7 +22044,7 @@
 
       panel.innerHTML = '<div style="flex:1;">' + // innerHTML OK: sanitized via esc()
         '<div class="cal-detail-title">' +
-          '<span class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:2px;"></span>' +
+          '<span class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:var(--radius-sm);"></span>' +
           esc(item.nombre) +
         '</div>' +
         '<div class="cal-detail-meta">' +
@@ -22340,14 +22361,19 @@
       if (countEl) countEl.textContent = filtered.length + ' de ' + employees.length + ' personas';
 
       if (employees.length === 0) {
-        container.innerHTML = '<div style="padding:32px 20px; text-align:center; color:var(--text-muted); font-size:13px;">' +
-          '<div style="font-size:14px; font-weight:500; color:var(--text-secondary); margin-bottom:4px;">Sin datos</div>' +
-          'Carga un organigrama Excel en la pestaña Convocatoria para ver las personas.</div>';
+        container.textContent = '';
+        container.appendChild(createEmptyState({
+          illustration: 'upload',
+          title: 'Sin datos de personas',
+          desc: 'Carga un censo de personas trabajadoras desde la pestaña Convocatoria para ver los perfiles.',
+          ctaText: 'Ir a Convocatoria',
+          ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabConvocatoria"]').click(); }
+        }));
         return;
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin resultados para "' + esc(q) + '"</div>';
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:var(--font-size-base);">Sin resultados para "' + esc(q) + '"</div>';
         return;
       }
 
@@ -22405,11 +22431,11 @@
       var header = document.createElement('div');
       header.style.cssText = 'margin-bottom:20px;';
       var name = document.createElement('div');
-      name.style.cssText = 'font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:4px;';
+      name.style.cssText = 'font-size:var(--font-size-lg); font-weight:700; color:var(--text-primary); margin-bottom:4px;';
       name.textContent = emp.Empleado || '';
       header.appendChild(name);
       var meta = document.createElement('div');
-      meta.style.cssText = 'font-size:12px; color:var(--text-secondary); line-height:1.6;';
+      meta.style.cssText = 'font-size:var(--font-size-sm); color:var(--text-secondary); line-height:1.6;';
       var metaParts = ['NIF: ' + (nif || '-')];
       if (emp.Empresa) metaParts.push(emp.Empresa);
       if (emp.Departamento) metaParts.push(emp.Departamento);
@@ -22447,10 +22473,10 @@
         var card = document.createElement('div');
         card.style.cssText = 'background:var(--accent-subtle); padding:12px 20px; border-radius:var(--radius); text-align:center; min-width:100px;';
         var val = document.createElement('div');
-        val.style.cssText = 'font-size:22px; font-weight:700; color:' + k.color + '; font-variant-numeric:tabular-nums;';
+        val.style.cssText = 'font-size:var(--font-size-xl); font-weight:700; color:' + k.color + '; font-variant-numeric:tabular-nums;';
         val.textContent = k.value;
         var lbl = document.createElement('div');
-        lbl.style.cssText = 'font-size:11px; color:var(--text-secondary); margin-top:2px;';
+        lbl.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-secondary); margin-top:2px;';
         lbl.textContent = k.label;
         card.appendChild(val);
         card.appendChild(lbl);
@@ -22461,22 +22487,22 @@
       // Training history
       if (empAcciones.length === 0) {
         var empty = document.createElement('div');
-        empty.style.cssText = 'font-size:13px; color:var(--text-muted); padding:20px 0; text-align:center;';
+        empty.style.cssText = 'font-size:var(--font-size-base); color:var(--text-muted); padding:20px 0; text-align:center;';
         empty.textContent = 'Sin participaciones registradas.';
         wrapper.appendChild(empty);
       } else {
         var sectionTitle = document.createElement('div');
-        sectionTitle.style.cssText = 'font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;';
+        sectionTitle.style.cssText = 'font-size:var(--font-size-base); font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;';
         sectionTitle.textContent = 'Historial de participaciones';
         wrapper.appendChild(sectionTitle);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; border-collapse:collapse; font-size:12px;';
+        table.style.cssText = 'width:100%; border-collapse:collapse; font-size:var(--font-size-sm);';
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
         ['Acción formativa', 'Estado', 'Modalidad', 'Horas', 'Fechas', 'Asistencia'].forEach(function(h) {
           var th = document.createElement('th');
-          th.style.cssText = 'text-align:left; padding:8px 10px; background:var(--bg-input); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; border-bottom:2px solid var(--border); color:var(--text-secondary);';
+          th.style.cssText = 'text-align:left; padding:8px 10px; background:var(--bg-input); font-weight:600; font-size:var(--font-size-xs); text-transform:uppercase; letter-spacing:0.3px; border-bottom:2px solid var(--border); color:var(--text-secondary);';
           th.textContent = h;
           headerRow.appendChild(th);
         });
