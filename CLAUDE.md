@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Arquitectura
 
-Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~21,000 líneas. Dependencias externas vía CDN:
+Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~22,500 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
 
@@ -47,10 +47,10 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 ### Tipografía: Inter (única)
 
 - `--font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`
-- NO usar `font-family` directo — siempre `var(--font-body)`
-- NO añadir otras fuentes (ni display, ni serif, ni mono)
+- `--font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace` — para bloques de código/XML
+- NO usar `font-family` directo — siempre `var(--font-body)` o `var(--font-mono)`
 - Body: `font-feature-settings: 'cv11' 1, 'ss01' 1` (alternativas de Inter)
-- Tamaños: 11px (labels pequeños), 12px (filtros, chips), 13px (tabla, inputs), 15px (header)
+- Tamaños via variables: `--font-size-xs` (11px), `--font-size-sm` (12px), `--font-size-base` (13px), `--font-size-md` (15px), `--font-size-lg` (18px), `--font-size-xl` (22px), `--font-size-2xl` (28px). SIEMPRE usar `var(--font-size-*)`, nunca valores directos.
 
 ### Sombras: solo 2 niveles
 
@@ -67,10 +67,28 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `--radius-lg: 9999px` — pills (chips, session tabs)
 - NO usar otros valores de radius
 
+### Z-index: escala definida
+
+- `--z-dropdown: 100` — dropdowns, sticky headers
+- `--z-sticky: 200` — filter dropdowns
+- `--z-modal: 1000` — dialog overlays
+- `--z-overlay: 10000` — toast container
+- `--z-command-palette: 99999` — command palette
+- SIEMPRE usar `var(--z-*)`, nunca valores directos
+
 ### Transición estándar
 
 - `--transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1)`
 - Usar siempre `var(--transition)` para consistencia
+- NO usar `transition: all` — especificar propiedades: `transition: background-color var(--transition), color var(--transition), box-shadow var(--transition)`
+
+## Sistema de iconos
+
+- `Icons` object con ~40 iconos SVG inline (estilo Lucide, `currentColor`, tamaños 16/20/24)
+- `icon(name, size)` helper para insertar iconos
+- CSS: `.icon` (inline-flex), `.icon-sm` (16px), `.icon-md` (20px), `.icon-lg` (24px)
+- NUNCA usar emojis (📋⚡🎯) ni caracteres Unicode (✕▼◉) como iconos
+- Los SVGs usan `currentColor` → funcionan automáticamente en dark mode
 
 ## Componentes reutilizables
 
@@ -82,6 +100,31 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `.toast` + `.toast-success/error/warning/info` — notificaciones
 - `.filter-select` + `.filter-dropdown` — dropdowns de filtros con typeahead
 - `.preset-chip` — presets de filtros guardados
+- `.table-base` — estilos base compartidos por todas las tablas (`.att-table`, `.cat-table`, `.dash-table` la extienden)
+- `createEmptyState({icon, title, desc, ctaText, ctaAction, illustration})` — empty states con ilustración SVG opcional
+- `EMPTY_STATE_SVGS` — 4 ilustraciones geométricas: `noData`, `noResults`, `upload`, `noChart`
+
+## Utility classes
+
+- `u-hidden`, `u-flex`, `u-flex-col`, `u-flex-center` — display
+- `u-mt-xs/sm/md/lg`, `u-mb-xs/sm/md/lg` — margins (4/8/12/16px)
+- `u-gap-xs/sm/md/lg` — flex/grid gaps
+- `u-text-center`, `u-text-right`, `u-text-muted`, `u-text-secondary` — text
+- `u-text-xs`, `u-text-sm`, `u-font-semibold`, `u-font-bold` — typography
+- `u-w-full`, `u-truncate` — sizing
+- Preferir utility classes sobre `style=""` inline
+
+## Accesibilidad (WCAG AA)
+
+- `trapFocus(dialogEl)` / `releaseFocus(dialogEl)` — focus trap en modales (auto via MutationObserver)
+- Skip link: `<a class="skip-link">` al inicio de `<body>`
+- `scroll-behavior: smooth` en `:root`
+- Diálogos: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`
+- Tablas ordenables: `aria-sort` dinámico en `<th>`
+- Dropdowns custom: `aria-expanded`, `aria-haspopup="listbox"`, `role="option"`
+- Charts SVG: `role="img"` + `aria-label` descriptivo
+- Toasts: `role="alert"` (error/warning), `role="status"` (info/success)
+- `validateField(input)` — validación inline con `aria-invalid` y `.field-error-msg`
 
 ## Patrones JS
 
@@ -146,9 +189,12 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 
 ## Trabajo en paralelo (worktrees)
 
-- Los agentes en worktrees (`/private/tmp/worktree-*`) NO pueden hacer git commit — el coordinador commitea manualmente
-- Los merges de lanes paralelas producen conflictos en zonas de inserción comunes (final del `<script>`, bloques de diálogos HTML). Resolución: mantener ambos lados secuencialmente
+- Los agentes en worktrees NO pueden hacer git commit — el coordinador commitea manualmente
+- NUNCA lanzar múltiples agentes en paralelo sobre el mismo archivo SIN worktree — se pisan las ediciones y se pierden cambios
+- Si se usan worktrees: mergear con 3-way merge (`git merge` o `diff3`), resolver conflictos manualmente
+- Los merges producen conflictos en zonas de inserción comunes. Resolución: mantener ambos lados secuencialmente
 - Siempre verificar `grep '<<<<<<' convocatoria.html` tras un merge antes de commitear
+- Para evitar conflictos: lanzar agentes SECUENCIALMENTE sobre el mismo archivo, o en worktrees con merge posterior
 
 ## Principios UX
 
@@ -177,3 +223,8 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 - NO crear ficheros adicionales (todo va en convocatoria.html)
 - NO usar innerHTML para filas de tabla — usar `createRowElement()` (DOM API)
 - NO añadir alertas/avisos que salten automáticamente sin control del usuario
+- NO usar emojis ni Unicode como iconos — usar `Icons.*`
+- NO usar `font-size` directo — usar `var(--font-size-*)`
+- NO usar `z-index` directo — usar `var(--z-*)`
+- NO usar `transition: all` — especificar propiedades concretas
+- NO añadir datos demo que se mezclen con datos reales del usuario

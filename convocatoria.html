@@ -5052,22 +5052,22 @@
 </head>
 <body>
   <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
-  <div class="tab-bar" role="tablist">
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabDashboard">Cuadro de Mando<span class="tab-badge" id="tabBadgeDashboard" style="display:none;">0</span></button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCalendario">Calendario</button>
-    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tabConvocatoria">Convocatoria<span class="tab-badge" id="tabBadgeConvocatoria" style="display:none;">0</span></button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabPersonas">Personas</button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCatalogos">Catálogos FUNDAE</button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabXml">Generar XML FUNDAE</button>
+  <div class="tab-bar" role="tablist" aria-label="Pestañas principales">
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabDashboard" id="tab-tabDashboard" tabindex="-1" data-tab="tabDashboard">Cuadro de Mando<span class="tab-badge" id="tabBadgeDashboard" style="display:none;">0</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabCalendario" id="tab-tabCalendario" tabindex="-1" data-tab="tabCalendario">Calendario</button>
+    <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tabConvocatoria" id="tab-tabConvocatoria" tabindex="0" data-tab="tabConvocatoria">Convocatoria<span class="tab-badge" id="tabBadgeConvocatoria" style="display:none;">0</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabPersonas" id="tab-tabPersonas" tabindex="-1" data-tab="tabPersonas">Personas</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabCatalogos" id="tab-tabCatalogos" tabindex="-1" data-tab="tabCatalogos">Catálogos FUNDAE</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabXml" id="tab-tabXml" tabindex="-1" data-tab="tabXml">Generar XML FUNDAE</button>
   </div>
   <div id="alertBanner" class="alert-banner" role="status" aria-live="polite">
     <span class="alert-banner-count" id="alertBannerCount">0 avisos</span>
     <span class="alert-banner-text" id="alertBannerText"></span>
-    <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso">&#xD7;</button>
+    <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
   </div>
   <div class="activation-checklist" id="activationChecklist"></div>
   <main id="mainContent">
-  <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
+  <div class="tab-content active" id="tabConvocatoria" role="tabpanel" aria-labelledby="tab-tabConvocatoria">
   <div class="app">
     <!-- LEFT PANEL -->
     <div class="left-panel">
@@ -5075,7 +5075,7 @@
       <div class="app-header">
         <span class="app-header-title">Formación_AGORA</span>
         <div class="u-flex u-items-center u-gap-8">
-          <button class="settings-btn" id="btnSettings" title="Ajustes" aria-label="Abrir ajustes">&#9881;</button>
+          <button class="settings-btn" id="btnSettings" title="Ajustes" aria-label="Abrir ajustes"><span class="icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span></button>
           <button class="link-btn link-add u-text-13" id="btnHistory" aria-label="Ver historial" style="padding:4px 12px; background:var(--accent-light); border-radius:var(--radius-lg);">Historial</button>
         </div>
       </div>
@@ -5298,7 +5298,7 @@
         <div class="warning-text" id="noEmailWarning"></div>
         <div class="u-flex u-gap-10 u-items-center">
           <div class="u-relative u-inline-block">
-            <button class="btn btn-secondary" onclick="toggleMoreActions()" id="btnMoreActions" aria-expanded="false" aria-haspopup="true">Más acciones &#9662;</button>
+            <button class="btn btn-secondary" onclick="toggleMoreActions()" id="btnMoreActions" aria-expanded="false" aria-haspopup="true">Más acciones <span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
             <div class="filter-dropdown" id="moreActionsDropdown" role="menu" style="display:none;min-width:220px;right:0;left:auto;bottom:calc(100% + 4px);top:auto;">
               <div class="filter-option u-filter-action" id="btnExport">Exportar selección</div>
               <div class="filter-option u-filter-action" style="display:none;" id="btnCopyEmails">Copiar emails</div>
@@ -5318,7 +5318,7 @@
   </div>
 
   <!-- Tab: Personas -->
-  <div class="tab-content" id="tabPersonas" role="tabpanel">
+  <div class="tab-content" id="tabPersonas" role="tabpanel" aria-labelledby="tab-tabPersonas">
     <div class="personas-container u-flex-col u-h-full u-overflow-hidden">
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
@@ -5335,7 +5335,7 @@
   </div>
 
   <!-- Tab 2: Catálogos FUNDAE -->
-  <div class="tab-content" id="tabCatalogos" role="tabpanel">
+  <div class="tab-content" id="tabCatalogos" role="tabpanel" aria-labelledby="tab-tabCatalogos">
     <div class="catalog-header-bar u-flex u-items-center u-gap-8 u-flex-shrink-0 u-flex-wrap u-border-bottom u-bg-panel" style="padding:10px 20px;">
       <span class="u-text-15 u-font-600 u-text-primary u-mr-8">Catálogos FUNDAE</span>
       <div class="catalog-tabs u-items-center u-p-0 u-m-0">
@@ -5348,8 +5348,8 @@
       </div>
       <button class="catalog-view-toggle-btn u-ml-8 u-text-11 u-font-500 u-text-secondary u-cursor-pointer u-bg-input" id="btnAnnualPlan" style="display:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 14px;" title="Plan anual de formación">Plan anual</button>
       <div class="catalog-view-toggle u-ml-auto" id="catalogViewToggle">
-        <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha">&#9776; Ficha</button>
-        <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista">&#9783; Lista</button>
+        <button class="catalog-view-toggle-btn active" data-mode="ficha" title="Vista ficha"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span> Ficha</button>
+        <button class="catalog-view-toggle-btn" data-mode="lista" title="Vista lista"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Lista</button>
       </div>
     </div>
     <div class="app u-flex-1 u-min-h-0">
@@ -5386,7 +5386,7 @@
   </div>
 
   <!-- Tab 3: Generar XML FUNDAE -->
-  <div class="tab-content" id="tabXml" role="tabpanel">
+  <div class="tab-content" id="tabXml" role="tabpanel" aria-labelledby="tab-tabXml">
     <div class="app">
       <div class="left-panel u-overflow-y-auto" id="xmlConfigPanel">
         <div class="app-header">
@@ -5584,14 +5584,14 @@
   </div>
 
   <!-- Tab: Calendario -->
-  <div class="tab-content" id="tabCalendario" role="tabpanel">
+  <div class="tab-content" id="tabCalendario" role="tabpanel" aria-labelledby="tab-tabCalendario">
     <div id="calEmptyState" class="u-hidden"></div>
     <div class="cal-container" id="calContainer">
       <div class="cal-toolbar">
         <div class="cal-nav">
-          <button class="btn btn-secondary cal-nav-btn" id="calPrev" title="Anterior" aria-label="Periodo anterior">&#8249;</button>
+          <button class="btn btn-secondary cal-nav-btn" id="calPrev" title="Anterior" aria-label="Periodo anterior"><span class="icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span></button>
           <button class="btn btn-secondary cal-nav-btn" id="calToday">Hoy</button>
-          <button class="btn btn-secondary cal-nav-btn" id="calNext" title="Siguiente" aria-label="Periodo siguiente">&#8250;</button>
+          <button class="btn btn-secondary cal-nav-btn" id="calNext" title="Siguiente" aria-label="Periodo siguiente"><span class="icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span></button>
           <span class="cal-period" id="calPeriodLabel"></span>
         </div>
         <div class="cal-zoom">
@@ -5631,7 +5631,7 @@
   </div>
 
   <!-- Tab: Cuadro de Mando -->
-  <div class="tab-content" id="tabDashboard" role="tabpanel">
+  <div class="tab-content" id="tabDashboard" role="tabpanel" aria-labelledby="tab-tabDashboard">
     <div id="dashEmptyState" class="u-hidden"></div>
     <div class="dash-container" id="dashContainer">
       <!-- Header -->
@@ -5657,7 +5657,7 @@
         <div class="dash-alerts-toggle" id="dashAlertsToggle">
           <span class="dash-alerts-badge" id="dashAlertsBadge">0</span>
           <span class="dash-alerts-summary" id="dashAlertsSummary">avisos pendientes</span>
-          <span class="dash-alerts-arrow" id="dashAlertsArrow">&#9662;</span>
+          <span class="dash-alerts-arrow" id="dashAlertsArrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </div>
         <div class="dash-alerts-body u-hidden" id="dashAlertsBody"></div>
       </div>
@@ -5708,7 +5708,7 @@
       <!-- Plazos FUNDAE -->
       <div class="dash-card u-mb-16" id="dashPlazosFundae" data-card-id="plazos" data-module="dash-plazos" style="display:none;">
         <div class="dash-card-title">Plazos FUNDAE</div>
-        <div id="dashPlazosList"></div>
+        <div class="dash-card-body"><div id="dashPlazosList"></div></div>
       </div>
 
       <!-- Section: Visión general -->
@@ -5719,20 +5719,20 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="credito" data-module="dash-credito">
           <div class="dash-card-title">Crédito FUNDAE por empresa</div>
-          <div id="dashCreditChart"></div>
+          <div class="dash-card-body"><div id="dashCreditChart"></div>
           <div id="dashCreditProjection" class="u-mt-12"></div>
-          <div id="dashCreditSimulator"></div>
+          <div id="dashCreditSimulator"></div></div>
         </div>
         <div class="dash-card" data-card-id="estado" data-module="dash-estado">
           <div class="dash-card-title">Acciones por estado</div>
-          <div id="dashEstadoChart"></div>
+          <div class="dash-card-body"><div id="dashEstadoChart"></div></div>
         </div>
       </div>
 
       <!-- Completeness (now inside Vision general) -->
       <div class="dash-card u-mb-16" data-card-id="completitud" data-module="dash-completitud">
         <div class="dash-card-title">Completitud del catálogo</div>
-        <div id="dashCompletenessChart"></div>
+        <div class="dash-card-body"><div id="dashCompletenessChart"></div></div>
       </div>
       </div>
 
@@ -5744,11 +5744,11 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="proveedor" data-module="dash-proveedor">
           <div class="dash-card-title">Gasto por proveedor</div>
-          <div id="dashProveedorChart"></div>
+          <div class="dash-card-body"><div id="dashProveedorChart"></div></div>
         </div>
         <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad">
           <div class="dash-card-title">Horas por modalidad</div>
-          <div id="dashModalidadChart"></div>
+          <div class="dash-card-body"><div id="dashModalidadChart"></div></div>
         </div>
       </div>
 
@@ -5756,11 +5756,11 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="area" data-module="dash-area">
           <div class="dash-card-title">Acciones por área profesional</div>
-          <div id="dashAreaChart"></div>
+          <div class="dash-card-body"><div id="dashAreaChart"></div></div>
         </div>
         <div class="dash-card" data-card-id="departamento" data-module="dash-departamento">
           <div class="dash-card-title">Acciones por departamento</div>
-          <div id="dashDeptChart"></div>
+          <div class="dash-card-body"><div id="dashDeptChart"></div></div>
         </div>
       </div>
 
@@ -5774,11 +5774,11 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia">
           <div class="dash-card-title">Monitor de asistencia y abandono</div>
-          <div id="dashAttendance"></div>
+          <div class="dash-card-body"><div id="dashAttendance"></div></div>
         </div>
         <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones">
           <div class="dash-card-title">Efectividad de confirmaciones</div>
-          <div id="dashConfirmations"></div>
+          <div class="dash-card-body"><div id="dashConfirmations"></div></div>
         </div>
       </div>
 
@@ -5786,11 +5786,11 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad">
           <div class="dash-card-title">Estacionalidad formativa</div>
-          <div id="dashSeasonality"></div>
+          <div class="dash-card-body"><div id="dashSeasonality"></div></div>
         </div>
         <div class="dash-card" data-card-id="recurrencia" data-module="dash-recurrencia">
           <div class="dash-card-title">Recurrencia de participantes</div>
-          <div id="dashRecurrence"></div>
+          <div class="dash-card-body"><div id="dashRecurrence"></div></div>
         </div>
       </div>
       </div>
@@ -5803,18 +5803,18 @@
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="encuestas" data-module="dash-encuestas">
           <div class="dash-card-title">Cobertura de encuestas</div>
-          <div id="dashSurveyCoverage"></div>
+          <div class="dash-card-body"><div id="dashSurveyCoverage"></div></div>
         </div>
         <div class="dash-card" data-card-id="scorecard" data-module="dash-scorecard">
           <div class="dash-card-title">Scorecard de proveedores</div>
-          <div id="dashProviderScorecard"></div>
+          <div class="dash-card-body"><div id="dashProviderScorecard"></div></div>
         </div>
       </div>
 
       <!-- Evaluation Kirkpatrick L1-L2 summary -->
       <div class="dash-card u-mb-16" data-card-id="evaluacion-kirkpatrick" data-module="dash-evaluacion" style="display:none;" id="dashEvaluacionCard">
         <div class="dash-card-title">Evaluaci&oacute;n Kirkpatrick L1-L2</div>
-        <div id="dashEvaluacion"></div>
+        <div class="dash-card-body"><div id="dashEvaluacion"></div></div>
       </div>
 
       </div>
@@ -5826,32 +5826,32 @@
       <div class="dash-analytics-grid">
       <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk">
         <div class="dash-card-title">Riesgo de Bonificación FUNDAE</div>
-        <div id="dashRiskScoring"></div>
+        <div class="dash-card-body"><div id="dashRiskScoring"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi">
         <div class="dash-card-title">ROI de Formación por Empresa</div>
-        <div id="dashROI"></div>
+        <div class="dash-card-body"><div id="dashROI"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura">
         <div class="dash-card-title">Cobertura Formativa</div>
-        <div id="dashCoverage"></div>
+        <div class="dash-card-body"><div id="dashCoverage"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="equidad" data-module="dash-equity">
         <div class="dash-card-title">Equidad en Acceso a Formación</div>
-        <div id="dashEquity"></div>
+        <div class="dash-card-body"><div id="dashEquity"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager">
         <div class="dash-card-title">Inversión Formativa por Responsable</div>
-        <div id="dashByManager"></div>
+        <div class="dash-card-body"><div id="dashByManager"></div></div>
       </div>
 
       <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany">
         <div class="dash-card-title">Formación Interempresarial</div>
-        <div id="dashCrossCompany"></div>
+        <div class="dash-card-body"><div id="dashCrossCompany"></div></div>
       </div>
       </div>
 
@@ -5896,7 +5896,7 @@
     </div>
   </div>
 
-  <div id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
+  <div id="toastContainer" aria-relevant="additions" aria-atomic="false"></div>
   <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
@@ -6270,10 +6270,11 @@
       document.querySelectorAll('.tab-btn').forEach(function(b) {
         b.classList.remove('active');
         b.setAttribute('aria-selected', 'false');
+        b.setAttribute('tabindex', '-1');
       });
       document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
       var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
-      if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+      if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); btn.setAttribute('tabindex', '0'); }
       var content = document.getElementById(tabId);
       if (content) content.classList.add('active');
       // Trigger tab-specific rendering
@@ -6312,6 +6313,31 @@
           applyTabChange(tabId);
         }
       });
+    });
+
+    // WAI-ARIA Tabs: Arrow key navigation (roving tabindex)
+    document.querySelector('.tab-bar[role="tablist"]').addEventListener('keydown', function(e) {
+      var tabs = Array.from(document.querySelectorAll('.tab-btn'));
+      var currentIdx = tabs.indexOf(document.activeElement);
+      if (currentIdx === -1) return;
+      var newIdx = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        newIdx = (currentIdx + 1) % tabs.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        newIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        newIdx = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        newIdx = tabs.length - 1;
+      }
+      if (newIdx !== -1) {
+        tabs[newIdx].click();
+        tabs[newIdx].focus();
+      }
     });
 
     // ═══════════════════════════════════
@@ -6361,8 +6387,8 @@
           { group: 'Navegacion', label: 'Ir a Catalogos', icon: Icons.list(14), shortcut: 'Alt+5', action: () => document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click() },
           { group: 'Navegacion', label: 'Ir a XML FUNDAE', icon: Icons.fileText(14), shortcut: 'Alt+6', action: () => document.querySelector('.tab-btn[data-tab="tabXml"]').click() },
           { group: 'Herramientas', label: 'Abrir ajustes', icon: Icons.settings(14), action: () => { closeAllDialogs(); document.getElementById('btnSettings').click(); } },
-          { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => document.getElementById('historyDialog')?.classList.add('visible') },
-          { group: 'Convocatoria', label: 'Limpiar filtros', icon: Icons.x(14), action: () => { document.querySelectorAll('.filter-select').forEach(s => { s.value = ''; }); renderFilters(); renderTable(); } },
+          { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => document.getElementById('historyPanel')?.classList.add('visible') },
+          { group: 'Convocatoria', label: 'Limpiar filtros', icon: Icons.x(14), action: () => { state.activeFilters = {}; renderFilters(); renderTable(); } },
           { group: 'Convocatoria', label: 'Enviar convocatoria', icon: Icons.mail(14), shortcut: KBD.mod + '+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
         ];
 
@@ -6467,8 +6493,8 @@
 
       // Escape handling is in the unified handler at the end of the file
 
-      // Alt+1..5 — navigate tabs
-      if (e.altKey && e.key >= '1' && e.key <= '5') {
+      // Alt+1..6 — navigate tabs
+      if (e.altKey && e.key >= '1' && e.key <= '6') {
         e.preventDefault();
         var tabIndex = parseInt(e.key) - 1;
         var tabs = document.querySelectorAll('.tab-btn');
@@ -6507,7 +6533,9 @@
       var btnAdd = document.getElementById('btnAddToQueue');
       if (btnAdd) btnAdd.title = 'Anadir a cola (' + mod + '+Shift+Enter)';
       document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
-        btn.title = (btn.title || btn.textContent.trim()) + ' (Alt+' + (i+1) + ')';
+        var shortcut = '(Alt+' + (i+1) + ')';
+        if (btn.title && btn.title.indexOf(shortcut) !== -1) return;
+        btn.title = (btn.textContent.trim()) + ' ' + shortcut;
       });
     }
     updateShortcutTooltips();
@@ -7033,8 +7061,8 @@
           h += '</div>';
         } else if (col.type === 'number') {
           h += '<div class="filter-number-range">';
-          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? fv.min : '') + '" placeholder="Min" step="any">';
-          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="max" value="' + ((fv && fv.max != null) ? fv.max : '') + '" placeholder="Max" step="any">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? esc(String(fv.min)) : '') + '" placeholder="Min" step="any">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="max" value="' + ((fv && fv.max != null) ? esc(String(fv.max)) : '') + '" placeholder="Max" step="any">';
           h += '</div>';
         }
         h += '</th>';
@@ -10606,7 +10634,7 @@
       } else if (input.type === 'email' && value && !isValidEmail(value)) {
         isValid = false;
         message = 'Email no válido';
-      } else if (input.type === 'number' && value && isNaN(Number(value))) {
+      } else if (input.type === 'number' && (input.validity.badInput || (value && isNaN(Number(value))))) {
         isValid = false;
         message = 'Debe ser un número';
       }
@@ -10653,7 +10681,7 @@
 
     // Helper to escape HTML entities (prevents XSS from crafted Excel values)
     function esc(s) {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     // Unified empty state builder
@@ -10860,13 +10888,16 @@
       }
     }
 
-    // Auto-trap focus when .dialog-overlay gets .visible class
+    // Auto-trap focus when .dialog-overlay or .cmdk-overlay gets .visible class
     (function() {
+      function isTrappableOverlay(el) {
+        return el.classList.contains('dialog-overlay') || el.classList.contains('cmdk-overlay');
+      }
       var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(m) {
           if (m.type !== 'attributes' || m.attributeName !== 'class') return;
           var el = m.target;
-          if (!el.classList.contains('dialog-overlay')) return;
+          if (!isTrappableOverlay(el)) return;
           if (el.classList.contains('visible')) {
             trapFocus(el);
           } else {
@@ -10874,15 +10905,15 @@
           }
         });
       });
-      // Observe existing static dialog overlays
-      document.querySelectorAll('.dialog-overlay').forEach(function(overlay) {
+      // Observe existing static dialog overlays and cmdk-overlay
+      document.querySelectorAll('.dialog-overlay, .cmdk-overlay').forEach(function(overlay) {
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
       });
       // Also observe body for dynamically created dialog overlays
       var bodyObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(m) {
           m.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1 && node.classList.contains('dialog-overlay')) {
+            if (node.nodeType === 1 && isTrappableOverlay(node)) {
               observer.observe(node, { attributes: true, attributeFilter: ['class'] });
               if (node.classList.contains('visible')) {
                 trapFocus(node);
@@ -11191,32 +11222,41 @@
     // THEME
     // ═══════════════════════════════════
 
+    function updateDSColors() {
+      var cs = getComputedStyle(document.documentElement);
+      DS.accent = cs.getPropertyValue('--accent').trim();
+      DS.accentHover = cs.getPropertyValue('--accent-hover').trim();
+      DS.accentLight = cs.getPropertyValue('--accent-light').trim();
+      DS.danger = cs.getPropertyValue('--danger').trim();
+      DS.warning = cs.getPropertyValue('--warning').trim();
+      DS.success = cs.getPropertyValue('--success').trim();
+      DS.textPrimary = cs.getPropertyValue('--text-primary').trim();
+      DS.textSecondary = cs.getPropertyValue('--text-secondary').trim();
+      DS.textMuted = cs.getPropertyValue('--text-muted').trim();
+      DS.border = cs.getPropertyValue('--border').trim();
+      DS.bgInput = cs.getPropertyValue('--bg-input').trim();
+      DS.chart1 = cs.getPropertyValue('--chart-1').trim();
+      DS.chart2 = cs.getPropertyValue('--chart-2').trim();
+      DS.chart3 = cs.getPropertyValue('--chart-3').trim();
+      DS.chart4 = cs.getPropertyValue('--chart-4').trim();
+      DS.chart5 = cs.getPropertyValue('--chart-5').trim();
+      DS.chart6 = cs.getPropertyValue('--chart-6').trim();
+      DS.chart7 = cs.getPropertyValue('--chart-7').trim();
+      DS.chart8 = cs.getPropertyValue('--chart-8').trim();
+      CHART_PALETTE = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5, DS.chart6, DS.chart7, DS.chart8];
+    }
+
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       try { var s = loadSettings(); s.theme = theme; saveSettings(s); } catch(e) {}
-      // Re-read CSS variables for charts so dark mode colors apply
+      // Synchronously re-read CSS variables so DS colors are correct before any re-render
       requestAnimationFrame(function() {
-        var cs = getComputedStyle(document.documentElement);
-        DS.accent = cs.getPropertyValue('--accent').trim();
-        DS.accentHover = cs.getPropertyValue('--accent-hover').trim();
-        DS.accentLight = cs.getPropertyValue('--accent-light').trim();
-        DS.danger = cs.getPropertyValue('--danger').trim();
-        DS.warning = cs.getPropertyValue('--warning').trim();
-        DS.success = cs.getPropertyValue('--success').trim();
-        DS.textPrimary = cs.getPropertyValue('--text-primary').trim();
-        DS.textSecondary = cs.getPropertyValue('--text-secondary').trim();
-        DS.textMuted = cs.getPropertyValue('--text-muted').trim();
-        DS.border = cs.getPropertyValue('--border').trim();
-        DS.bgInput = cs.getPropertyValue('--bg-input').trim();
-        DS.chart1 = cs.getPropertyValue('--chart-1').trim();
-        DS.chart2 = cs.getPropertyValue('--chart-2').trim();
-        DS.chart3 = cs.getPropertyValue('--chart-3').trim();
-        DS.chart4 = cs.getPropertyValue('--chart-4').trim();
-        DS.chart5 = cs.getPropertyValue('--chart-5').trim();
-        DS.chart6 = cs.getPropertyValue('--chart-6').trim();
-        DS.chart7 = cs.getPropertyValue('--chart-7').trim();
-        DS.chart8 = cs.getPropertyValue('--chart-8').trim();
-        CHART_PALETTE = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5, DS.chart6, DS.chart7, DS.chart8];
+        updateDSColors();
+        // Re-render dashboard if it is the active tab so SVG fills update
+        var activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.tab === 'tabDashboard' && typeof renderDashboard === 'function') {
+          renderDashboard();
+        }
       });
     }
 
@@ -13214,7 +13254,7 @@
         return '<div class="queue-item">' +
           '<div>' +
             '<strong>' + esc(item.event.title) + '</strong>' +
-            '<span class="queue-item-meta"> · ' + item.event.date + ' · ' + item.attendeeCount + ' asist. · ' + type + series + '</span>' +
+            '<span class="queue-item-meta"> · ' + esc(String(item.event.date || '')) + ' · ' + esc(String(item.attendeeCount || 0)) + ' asist. · ' + esc(type) + series + '</span>' +
           '</div>' +
           '<div class="queue-item-actions">' +
             '<button class="link-btn link-add u-text-11" data-edit-queue="' + i + '">Editar</button>' +
@@ -16843,8 +16883,7 @@
         'text-anchor': 'middle',
         'fill': DS.textPrimary,
         'font-size': '28',
-        'font-weight': '700',
-        'font-family': 'Inter, -apple-system, sans-serif'
+        'font-weight': '700'
       });
       cvText.textContent = centerVal;
       svg.appendChild(cvText);
@@ -16854,8 +16893,7 @@
         'text-anchor': 'middle',
         'fill': DS.textMuted,
         'font-size': '10',
-        'font-weight': '500',
-        'font-family': 'Inter, -apple-system, sans-serif'
+        'font-weight': '500'
       });
       clText.textContent = centerLbl;
       svg.appendChild(clText);
@@ -17041,7 +17079,7 @@
         // Only draw line chart for multi-session actions
         if (sesiones.length > 1) {
           var chartLabel = document.createElement('div');
-          chartLabel.style.cssText = 'font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:6px; margin-top:12px;';
+          chartLabel.style.cssText = 'font-size:var(--font-size-sm); font-weight:600; color:var(--text-primary); margin-bottom:6px; margin-top:12px;';
           chartLabel.textContent = esc(a.nombre || a.codigo || '');
           container.appendChild(chartLabel);
 
@@ -17062,7 +17100,7 @@
             var y = padT + chartH - (v / 100) * chartH;
             var gridLine = svgEl('line', { x1: padL, y1: y, x2: svgW - padR, y2: y, stroke: DS.border, 'stroke-width': '0.5', 'aria-hidden': 'true' });
             svg.appendChild(gridLine);
-            var txt = svgEl('text', { x: padL - 4, y: y + 3, 'text-anchor': 'end', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif', 'aria-hidden': 'true' });
+            var txt = svgEl('text', { x: padL - 4, y: y + 3, 'text-anchor': 'end', fill: DS.textMuted, 'font-size': '9', 'aria-hidden': 'true' });
             txt.textContent = v + '%';
             svg.appendChild(txt);
           });
@@ -17101,7 +17139,7 @@
             hitCircle.addEventListener('blur', hideDashTooltip);
             svg.appendChild(hitCircle);
             svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '3', fill: dotColor }));
-            var valTxt = svgEl('text', { x: p.x, y: p.y - 6, 'text-anchor': 'middle', fill: dotColor, 'font-size': '9', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+            var valTxt = svgEl('text', { x: p.x, y: p.y - 6, 'text-anchor': 'middle', fill: dotColor, 'font-size': '9', 'font-weight': '600' });
             valTxt.textContent = p.pct + '%';
             svg.appendChild(valTxt);
           });
@@ -17109,7 +17147,7 @@
           // X axis labels (session dates)
           points.forEach(function(p) {
             var shortDate = p.fecha ? p.fecha.substring(5).replace('-', '/') : '';
-            var xTxt = svgEl('text', { x: p.x, y: svgH - 2, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+            var xTxt = svgEl('text', { x: p.x, y: svgH - 2, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
             xTxt.textContent = shortDate;
             svg.appendChild(xTxt);
           });
@@ -17144,10 +17182,10 @@
       kpi1.innerHTML = '<div class="u-kpi-value">' + avgAttendance + '%</div><div class="u-kpi-label">Asistencia media</div>'; // innerHTML OK: static template
       var kpi2 = document.createElement('div');
       kpi2.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
-      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div class="u-kpi-label">Acciones con registro</div>'; // innerHTML OK: static template
+      kpi2.innerHTML = '<div class="u-kpi-value">' + accionesConAsistencia.length + '</div><div class="u-kpi-label">Acciones con registro</div>'; // innerHTML OK: static template
       var kpi3 = document.createElement('div');
       kpi3.style.cssText = 'flex:1; text-align:center; padding:8px; background:' + (abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)') + '; border-radius:var(--radius-sm);';
-      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div class="u-kpi-label">Alertas de abandono</div>'; // innerHTML OK: static template
+      kpi3.innerHTML = '<div class="u-kpi-value" style="color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div class="u-kpi-label">Alertas de abandono</div>'; // innerHTML OK: static template
       kpiRow.appendChild(kpi1);
       kpiRow.appendChild(kpi2);
       kpiRow.appendChild(kpi3);
@@ -17159,12 +17197,12 @@
         var alertSection = document.createElement('div');
         alertSection.style.cssText = 'margin-top:12px;';
         var alertTitle = document.createElement('div');
-        alertTitle.style.cssText = 'font-size:11px; font-weight:600; color:var(--danger); margin-bottom:6px;';
+        alertTitle.style.cssText = 'font-size:var(--font-size-xs); font-weight:600; color:var(--danger); margin-bottom:6px;';
         alertTitle.textContent = 'Participantes con asistencia < 75%';
         alertSection.appendChild(alertTitle);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.style.cssText = 'width:100%; font-size:var(--font-size-xs); border-collapse:collapse;';
         var thead = document.createElement('thead');
         thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th">NIF</th><th class="u-dash-th-center">Sesiones</th><th class="u-dash-th-center">%</th></tr>'; // innerHTML OK: static template
         table.appendChild(thead);
@@ -17182,8 +17220,8 @@
           td1.title = alert.accion;
 
           var td2 = document.createElement('td');
-          td2.style.cssText = 'padding:4px 6px; font-variant-numeric:tabular-nums; font-size:10px;';
-          td2.textContent = esc(alert.nif);
+          td2.style.cssText = 'padding:4px 6px; font-variant-numeric:tabular-nums;';
+          td2.textContent = alert.nif;
 
           var td3 = document.createElement('td');
           td3.style.cssText = 'padding:4px 6px; text-align:center;';
@@ -17204,7 +17242,7 @@
 
         if (abandonmentAlerts.length > 10) {
           var more = document.createElement('div');
-          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+          more.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted); margin-top:4px;';
           more.textContent = '(+' + (abandonmentAlerts.length - 10) + ' más)';
           alertSection.appendChild(more);
         }
@@ -17292,7 +17330,7 @@
         section.appendChild(title);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.style.cssText = 'width:100%; font-size:var(--font-size-xs); border-collapse:collapse;';
         var thead = document.createElement('thead');
         thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th-center">Conf.</th><th class="u-dash-th-center">Rech.</th><th class="u-dash-th-center">Tasa</th></tr>'; // innerHTML OK: static template
         table.appendChild(thead);
@@ -17489,13 +17527,13 @@
 
         // Count label on top if > 0
         if (d.count > 0) {
-          var countTxt = svgEl('text', { x: x + barGroupW * 0.1 + barW / 2, y: yCount - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+          var countTxt = svgEl('text', { x: x + barGroupW * 0.1 + barW / 2, y: yCount - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600' });
           countTxt.textContent = d.count;
           svg.appendChild(countTxt);
         }
 
         // X label
-        var xLabel = svgEl('text', { x: x + barGroupW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+        var xLabel = svgEl('text', { x: x + barGroupW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
         xLabel.textContent = d.label;
         svg.appendChild(xLabel);
       });
@@ -17503,11 +17541,11 @@
       // Legend
       var legendY = 6;
       svg.appendChild(svgEl('rect', { x: svgW - 100, y: legendY, width: 8, height: 8, rx: '1', fill: DS.chart6 }));
-      var leg1 = svgEl('text', { x: svgW - 88, y: legendY + 7, fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+      var leg1 = svgEl('text', { x: svgW - 88, y: legendY + 7, fill: DS.textMuted, 'font-size': '9' });
       leg1.textContent = 'Acciones';
       svg.appendChild(leg1);
       svg.appendChild(svgEl('rect', { x: svgW - 50, y: legendY, width: 8, height: 8, rx: '1', fill: DS.chart2 }));
-      var leg2 = svgEl('text', { x: svgW - 38, y: legendY + 7, fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+      var leg2 = svgEl('text', { x: svgW - 38, y: legendY + 7, fill: DS.textMuted, 'font-size': '9' });
       leg2.textContent = 'Horas';
       svg.appendChild(leg2);
 
@@ -17642,7 +17680,7 @@
         svg.style.cssText = 'width:100%; max-width:320px; display:block;';
 
         // Y label
-        var yLabel = svgEl('text', { x: '4', y: padT + chartH / 2, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif', transform: 'rotate(-90, 4, ' + (padT + chartH / 2) + ')' });
+        var yLabel = svgEl('text', { x: '4', y: padT + chartH / 2, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', transform: 'rotate(-90, 4, ' + (padT + chartH / 2) + ')' });
         yLabel.textContent = 'Personas trabajadoras';
         svg.appendChild(yLabel);
 
@@ -17657,18 +17695,18 @@
           }));
 
           if (bin.count > 0) {
-            var valTxt = svgEl('text', { x: x + binW / 2, y: y - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+            var valTxt = svgEl('text', { x: x + binW / 2, y: y - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600' });
             valTxt.textContent = bin.count;
             svg.appendChild(valTxt);
           }
 
-          var xTxt = svgEl('text', { x: x + binW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+          var xTxt = svgEl('text', { x: x + binW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
           xTxt.textContent = bin.actions;
           svg.appendChild(xTxt);
         });
 
         // X axis label
-        var xAxisLabel = svgEl('text', { x: padL + chartW / 2, y: svgH, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+        var xAxisLabel = svgEl('text', { x: padL + chartW / 2, y: svgH, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
         xAxisLabel.textContent = 'N.º de acciones formativas';
         svg.appendChild(xAxisLabel);
 
@@ -17697,7 +17735,7 @@
         tableSection.appendChild(tableTitle);
 
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+        table.style.cssText = 'width:100%; font-size:var(--font-size-xs); border-collapse:collapse;';
         var tbody = document.createElement('tbody');
         top10.forEach(function(item, idx) {
           var tr = document.createElement('tr');
@@ -17838,7 +17876,7 @@
         section.appendChild(list);
         if (withoutSurvey.length > 10) {
           var more = document.createElement('div');
-          more.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
+          more.style.cssText = 'font-size:var(--font-size-xs); color:var(--text-muted); margin-top:4px;';
           more.textContent = '(+' + (withoutSurvey.length - 10) + ' más)';
           section.appendChild(more);
         }
@@ -17956,12 +17994,12 @@
         }));
 
         if (bucket.count > 0) {
-          var valTxt = svgEl('text', { x: x + barW / 2, y: y - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600', 'font-family': 'Inter, sans-serif' });
+          var valTxt = svgEl('text', { x: x + barW / 2, y: y - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600' });
           valTxt.textContent = bucket.count;
           svg.appendChild(valTxt);
         }
 
-        var xTxt = svgEl('text', { x: x + barW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9', 'font-family': 'Inter, sans-serif' });
+        var xTxt = svgEl('text', { x: x + barW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
         xTxt.textContent = bucket.label;
         svg.appendChild(xTxt);
       });
@@ -18114,7 +18152,7 @@
 
       // Table
       var table = document.createElement('table');
-      table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
+      table.style.cssText = 'width:100%; font-size:var(--font-size-xs); border-collapse:collapse;';
 
       var thead = document.createElement('thead');
       var headerRow = document.createElement('tr');
@@ -18334,7 +18372,7 @@
       // Per-action table
       if (evaluated.length > 0) {
         var table = document.createElement('table');
-        table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse; margin-top:12px;';
+        table.style.cssText = 'width:100%; font-size:var(--font-size-xs); border-collapse:collapse; margin-top:12px;';
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
         ['Acci\u00F3n','Utilidad','Formador','Materiales','NPS','Resp.','Pre','Post','Mejora'].forEach(function(h) {
@@ -19586,11 +19624,13 @@
           ctaAction: function() { document.querySelector('.tab-btn[data-tab="tabCatalogos"]').click(); }
         });
         dashEmpty.appendChild(emptyWidget);
+        dashEmpty.classList.remove('u-hidden');
         dashEmpty.style.display = 'flex';
         dashContainer.style.display = 'none';
         return;
       } else {
-        dashEmpty.style.display = 'none';
+        dashEmpty.classList.add('u-hidden');
+        dashEmpty.style.display = '';
         dashContainer.style.display = '';
         ActivationChecklist.markDone('exploreDash');
       }
@@ -20590,7 +20630,7 @@
 
         // Leyenda
         var legend = document.createElement('div');
-        legend.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px;color:var(--text-muted);';
+        legend.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:var(--font-size-xs);color:var(--text-muted);';
         legend.insertAdjacentHTML('beforeend',
           '<span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px;opacity:0.8;"></span>Directo</span>' +
           '<span><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:2px;margin-right:4px;opacity:0.6;"></span>Oportunidad</span>'
@@ -20807,7 +20847,7 @@
 
         if (mgrs.length > 15) {
           var more = document.createElement('div');
-          more.style.cssText = 'text-align:center;padding:8px;font-size:11px;color:var(--text-muted);';
+          more.style.cssText = 'text-align:center;padding:8px;font-size:var(--font-size-xs);color:var(--text-muted);';
           more.textContent = '... y ' + (mgrs.length - 15) + ' responsables mas';
           container.appendChild(more);
         }
@@ -22684,9 +22724,7 @@
     // Use event delegation on document to catch both static and dynamic overlays
     document.addEventListener('click', function(e) {
       if (e.target.classList.contains('dialog-overlay') && e.target.classList.contains('visible')) {
-        releaseFocus(e.target);
-        e.target.classList.remove('visible');
-        e.target.classList.remove('closing');
+        closeDialogAnimated(e.target);
       }
     });
 
@@ -22706,9 +22744,7 @@
         var dialogs = document.querySelectorAll('.dialog-overlay.visible');
         if (dialogs.length > 0) {
           var last = dialogs[dialogs.length - 1];
-          releaseFocus(last);
-          last.classList.remove('visible');
-          last.classList.remove('closing');
+          closeDialogAnimated(last);
           e.preventDefault();
         }
       }
