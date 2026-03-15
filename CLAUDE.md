@@ -13,10 +13,12 @@ Persistencia: `localStorage` para estado, presets, historial, cola. No hay backe
 ### Pestañas principales
 
 La app tiene múltiples pestañas (tabs) que comparten el mismo archivo:
+- **Cuadro de Mando** — KPIs, gráficos, informes (precomputado con `requestIdleCallback`)
+- **Calendario** — vista calendario de formaciones
 - **Convocatoria** — flujo principal: carga Excel → filtra → configura evento → envía
-- **Catálogo** — gestión de formaciones con vista lista/tarjeta
-- **Dashboard** — KPIs, gráficos, informes (precomputado con `requestIdleCallback`)
-- **Cola** — gestión de envíos programados
+- **Personas** — perfil formativo por persona trabajadora
+- **Catálogos** — sub-pestañas: Proveedores, Centros, Tutores, Acciones, Formación obligatoria (compliance), Necesidades (TNA). Vista ficha/lista toggle. Plan anual (solo en Acciones)
+- **XML FUNDAE** — generación de XML para comunicaciones FUNDAE
 
 El tab switching usa `data-tab` attributes y muestra/oculta paneles.
 
@@ -147,7 +149,8 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - Español para texto visible al usuario, inglés para código/variables
 - `FILTER_KEYS` y `RELEVANT_COLUMNS` definen las columnas del Excel esperadas
 - Los filtros normalizan espacios (`trim` + collapse) al parsear
-- `localStorage` keys: `convocatoria_state`, `convocatoria_employees`, `convocatoria_fileName`, `convocatoria_presets`, `convocatoria_history`, `convocatoria_queue`, `convocatoria_settings`, `convocatoria_unifiedTemplates`, `convocatoria_catalog_viewMode`, `convocatoria_corrections`, `convocatoria_compliance_types`, `convocatoria_compliance_records`, `convocatoria_tnaRequests`, `convocatoria_dashCollapsed`, `convocatoria_dash_mode`, `convocatoria_onboarding_done`, `convocatoria_lastBackup`, `convocatoria_kbdInteractions`
+- `localStorage` keys `convocatoria_*`: `_state`, `_employees`, `_fileName`, `_presets`, `_history`, `_queue`, `_settings`, `_unifiedTemplates`, `_catalog_viewMode`, `_corrections`, `_compliance_types`, `_compliance_records`, `_tnaRequests`, `_dashCollapsed`, `_dash_mode`, `_onboarding_done`, `_lastBackup`, `_kbdInteractions`
+- `localStorage` keys `fundae_*`: `_acciones`, `_proveedores`, `_centros`, `_tutores` — acceso vía `getCatalog(key)` / `saveCatalog(key, data)` (prefijan `fundae_` automáticamente)
 
 ## Dark mode
 
@@ -156,6 +159,11 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - JS: `applyTheme(theme)` pone el atributo en `<html>`, `initTheme()` lo restaura al cargar
 - Selector en settings dialog (`#themeSelect`)
 - NUNCA hardcodear colores fuera de las variables — dark mode los invierte automáticamente
+
+## Visibilidad de paneles
+
+- `u-hidden` class = `display:none` via CSS. Para mostrar/ocultar: `classList.remove('u-hidden')` / `classList.add('u-hidden')`. NUNCA usar `style.display=''` para mostrar un elemento con `u-hidden` — no funciona (la clase CSS tiene prioridad sobre inline vacío)
+- Los contenedores de compliance (`#complianceViewContainer`), TNA (`#tnaViewContainer`) y plan anual (`#annualPlanContainer`) usan `u-hidden`. El resto de paneles de catálogo usan `style.display`
 
 ## Layout
 
@@ -217,7 +225,7 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 - NO añadir más de 2 niveles de sombra
 - NO usar amber/stone (paleta anterior, reemplazada)
 - NO usar DM Serif Display ni Plus Jakarta Sans (fuentes anteriores, reemplazadas)
-- NO usar `alert()` — usar `showToast()`
+- NO usar `alert()`, `confirm()` ni `prompt()` — usar `showToast()` y diálogos custom con `.dialog-overlay`
 - NO usar NIF como clave de selección — usar `_id`
 - NO hardcodear colores rgba — usar variables CSS
 - NO crear ficheros adicionales (todo va en convocatoria.html)
@@ -228,3 +236,7 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 - NO usar `z-index` directo — usar `var(--z-*)`
 - NO usar `transition: all` — especificar propiedades concretas
 - NO añadir datos demo que se mezclen con datos reales del usuario
+
+## Testing
+
+- `test-data.js` en raíz — script para consola que carga datos realistas en todos los localStorage keys. Ejecutar en consola del navegador + recargar. Incluye 50 empleados, 12 acciones, 4 proveedores, compliance, TNA, historial, cola, templates.
