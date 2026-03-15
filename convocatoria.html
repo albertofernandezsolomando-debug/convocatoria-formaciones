@@ -71,6 +71,7 @@
       --chart-positive: #14B8A6;
       --chart-negative: #F59E0B;
       --chart-neutral: #94A3B8;
+      scroll-behavior: smooth;
     }
 
     /* Dark mode: only color/shadow overrides needed.
@@ -5033,9 +5034,24 @@
     .u-dash-th { text-align: left; padding: 4px 6px; color: var(--text-muted); font-weight: 500; }
     .u-dash-th-center { text-align: center; padding: 4px 6px; color: var(--text-muted); font-weight: 500; }
     .u-border-collapse { border-collapse: collapse; }
+
+    /* ── Inline form validation ── */
+    .input-error { border-color: var(--danger) !important; }
+    .input-error:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
+    .field-error-msg { color: var(--danger); font-size: var(--font-size-xs); margin-top: 4px; display: block; }
+    .field-tooltip { display: none; position: absolute; bottom: 100%; left: 0; background: var(--bg-panel); border: 1px solid var(--border); padding: 6px 10px; border-radius: var(--radius-sm); font-size: var(--font-size-xs); color: var(--text-secondary); box-shadow: var(--shadow-lg); max-width: 280px; z-index: var(--z-dropdown); }
+    .input-field:focus ~ .field-tooltip, .input-field:hover ~ .field-tooltip { display: block; }
+
+    /* ── Empty state illustrations ── */
+    .empty-state-illustration { margin-bottom: 16px; opacity: 0.7; }
+
+    /* Accessibility: skip navigation link */
+    .skip-link { position: absolute; top: -40px; left: 0; background: var(--accent); color: white; padding: 8px 16px; z-index: 100000; transition: top var(--transition); border-radius: 0 0 var(--radius-sm) 0; font-size: 13px; text-decoration: none; }
+    .skip-link:focus { top: 0; }
   </style>
 </head>
 <body>
+  <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
   <div class="tab-bar" role="tablist">
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabDashboard">Cuadro de Mando<span class="tab-badge" id="tabBadgeDashboard" style="display:none;">0</span></button>
     <button class="tab-btn" role="tab" aria-selected="false" data-tab="tabCalendario">Calendario</button>
@@ -5050,6 +5066,7 @@
     <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso">&#xD7;</button>
   </div>
   <div class="activation-checklist" id="activationChecklist"></div>
+  <main id="mainContent">
   <div class="tab-content active" id="tabConvocatoria" role="tabpanel">
   <div class="app">
     <!-- LEFT PANEL -->
@@ -5131,12 +5148,12 @@
         </div>
         <div class="u-flex-col u-gap-8">
           <div>
-            <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación">
+            <input class="input-field" type="text" id="eventTitle" placeholder="Título de la formación" data-required="true">
             <span class="field-hint" id="eventTitleHint"></span>
           </div>
           <div>
             <div class="event-row">
-              <input class="input-field u-flex-1" type="date" id="eventDate">
+              <input class="input-field u-flex-1" type="date" id="eventDate" data-required="true">
               <input class="input-field u-w-80" type="time" id="eventStart" value="10:00">
               <input class="input-field u-w-80" type="time" id="eventEnd" value="12:00">
             </div>
@@ -5266,10 +5283,10 @@
           <thead>
             <tr role="row">
               <th scope="col" style="width:40px;"><input type="checkbox" id="selectAll" checked aria-label="Seleccionar todos"></th>
-              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado">Persona trabajadora <span class="sort-arrow icon active" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:25%;" class="sortable" data-sort="Puesto">Puesto <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:20%;" class="sortable" data-sort="Ubicación">Ubicación <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:30%;" class="sortable" data-sort="Email trabajo">Email <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado" aria-sort="ascending">Persona trabajadora <span class="sort-arrow icon active" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:25%;" class="sortable" data-sort="Puesto" aria-sort="none">Puesto <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:20%;" class="sortable" data-sort="Ubicación" aria-sort="none">Ubicación <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:30%;" class="sortable" data-sort="Email trabajo" aria-sort="none">Email <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
             </tr>
           </thead>
           <tbody id="attendeeBody"></tbody>
@@ -5281,8 +5298,8 @@
         <div class="warning-text" id="noEmailWarning"></div>
         <div class="u-flex u-gap-10 u-items-center">
           <div class="u-relative u-inline-block">
-            <button class="btn btn-secondary" onclick="toggleMoreActions()" id="btnMoreActions">Más acciones &#9662;</button>
-            <div class="filter-dropdown" id="moreActionsDropdown" style="display:none;min-width:220px;right:0;left:auto;bottom:calc(100% + 4px);top:auto;">
+            <button class="btn btn-secondary" onclick="toggleMoreActions()" id="btnMoreActions" aria-expanded="false" aria-haspopup="true">Más acciones &#9662;</button>
+            <div class="filter-dropdown" id="moreActionsDropdown" role="menu" style="display:none;min-width:220px;right:0;left:auto;bottom:calc(100% + 4px);top:auto;">
               <div class="filter-option u-filter-action" id="btnExport">Exportar selección</div>
               <div class="filter-option u-filter-action" style="display:none;" id="btnCopyEmails">Copiar emails</div>
               <div class="filter-option u-filter-action" onclick="generateCertificates('asistencia')">Cert. Asistencia</div>
@@ -5391,21 +5408,25 @@
           <details class="form-section" open>
             <summary>Datos del grupo</summary>
             <div class="form-section-body">
-              <div class="form-group">
+              <div class="form-group" style="position:relative;">
                 <label class="form-label">ID Grupo</label>
-                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1">
+                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true">
+                <span class="field-tooltip">Identificador numérico del grupo formativo dentro de la acción (normalmente 1)</span>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position:relative;">
                 <label class="form-label">Descripción</label>
                 <input class="input-field u-text-13" type="text" id="xmlDescripcion">
+                <span class="field-tooltip">Descripción libre del grupo formativo (se incluirá en el XML)</span>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position:relative;">
                 <label class="form-label">Responsable</label>
-                <input class="input-field u-text-13" type="text" id="xmlResponsable">
+                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true">
+                <span class="field-tooltip">Persona responsable de la gestión de la formación bonificada ante FUNDAE</span>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position:relative;">
                 <label class="form-label">Teléfono contacto</label>
-                <input class="input-field u-text-13" type="text" id="xmlTelefono">
+                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true">
+                <span class="field-tooltip">Teléfono de contacto del responsable (9 dígitos, sin espacios ni prefijo)</span>
               </div>
               <div class="form-group">
                 <label class="form-label">Informa RLT</label>
@@ -5442,23 +5463,27 @@
             <summary>Calendario</summary>
             <div class="form-section-body">
               <div class="form-row">
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha inicio</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio" data-required="true">
+                  <span class="field-tooltip">Primer día del grupo formativo (formato AAAA-MM-DD)</span>
                 </div>
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha fin</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaFin">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaFin" data-required="true">
+                  <span class="field-tooltip">Último día del grupo formativo (debe ser posterior o igual a la fecha de inicio)</span>
                 </div>
               </div>
               <div class="form-row">
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Hora inicio</label>
                   <input class="input-field u-text-13" type="time" id="xmlHoraInicio">
+                  <span class="field-tooltip">Hora de inicio de las sesiones (formato HH:MM)</span>
                 </div>
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Hora fin</label>
                   <input class="input-field u-text-13" type="time" id="xmlHoraFin">
+                  <span class="field-tooltip">Hora de fin de las sesiones (formato HH:MM)</span>
                 </div>
               </div>
             </div>
@@ -5470,13 +5495,15 @@
             <div class="form-section-body">
               <div class="text-sm text-muted mb-md">Costes totales para el XML &lt;costes&gt;</div>
               <div class="u-flex u-gap-8">
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Directos (&euro;)</label>
                   <input class="input-field u-text-13" type="number" id="xmlCostesDirectos" step="0.01" value="0">
+                  <span class="field-tooltip">Costes directos: honorarios del formador, materiales, alquiler de aula, etc.</span>
                 </div>
-                <div class="u-flex-1">
+                <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Indirectos (&euro;)</label>
                   <input class="input-field u-text-13" type="number" id="xmlCostesIndirectos" step="0.01" value="0">
+                  <span class="field-tooltip">Costes indirectos de organización: hasta el 10% de los costes directos</span>
                 </div>
                 <div class="u-flex-1">
                   <label class="form-label">Salariales (&euro;)</label>
@@ -5645,8 +5672,8 @@
           <div class="dash-filter-group">
             <span class="dash-filter-label">Empresa</span>
             <div class="dash-empresa-filter u-relative" id="dashEmpresaFilter" style="min-width:180px;">
-              <button class="filter-select-btn u-text-12" id="dashEmpresaBtn" type="button" style="padding:4px 10px;">Todas</button>
-              <div class="filter-dropdown" id="dashEmpresaDropdown" style="min-width:220px;"></div>
+              <button class="filter-select-btn u-text-12" id="dashEmpresaBtn" type="button" aria-expanded="false" aria-haspopup="listbox" style="padding:4px 10px;">Todas</button>
+              <div class="filter-dropdown" id="dashEmpresaDropdown" role="listbox" aria-label="Empresa" style="min-width:220px;"></div>
             </div>
           </div>
           <div class="dash-filter-group">
@@ -5846,6 +5873,7 @@
 
     </div>
   </div>
+  </main>
 
   <!-- Queue panel (lateral) -->
   <div class="queue-panel-overlay" id="queueOverlay" onclick="toggleQueuePanel()"></div>
@@ -5872,7 +5900,7 @@
   <div class="dash-tooltip" id="dashTooltip"></div>
 
   <!-- Series dialog -->
-  <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="seriesDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
     <div class="dialog-box">
       <h3 id="dialogTitle">Sesión 1 de 3</h3>
       <p id="dialogBody">Se ha abierto la invitación en Outlook. Cuando hayas enviado, pulsa "Siguiente".</p>
@@ -5884,11 +5912,11 @@
   </div>
 
   <!-- Settings dialog (full-screen with sidebar) -->
-  <div class="dialog-overlay" id="settingsDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="settingsDialog" role="dialog" aria-modal="true" aria-labelledby="settingsDialogTitle">
     <div class="settings-fullscreen">
       <div class="settings-sidebar">
         <div class="settings-sidebar-header">
-          <span class="u-text-15 u-font-700 u-text-primary">Ajustes</span>
+          <span id="settingsDialogTitle" class="u-text-15 u-font-700 u-text-primary">Ajustes</span>
           <button class="settings-sidebar-close" id="settingsCloseX" title="Cerrar" aria-label="Cerrar"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
         </div>
         <nav class="settings-nav">
@@ -6025,9 +6053,9 @@
   </div>
 
   <!-- Instructions dialog -->
-  <div class="dialog-overlay" id="instructionsDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="instructionsDialog" role="dialog" aria-modal="true" aria-labelledby="instructionsDialogTitle">
     <div class="dialog-box dialog-box-wide">
-      <h3>Configurar encuestas de satisfacción</h3>
+      <h3 id="instructionsDialogTitle">Configurar encuestas de satisfacción</h3>
       <div class="instructions-content">
         <h4 class="instructions-h4">Opción A: Importar flujo (recomendado)</h4>
         <ol>
@@ -6071,7 +6099,7 @@
   </div>
 
   <!-- Confirmation dialog -->
-  <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="confirmDialog" role="dialog" aria-modal="true" aria-label="Confirmar envío">
     <div class="dialog-box confirm-dialog-enter u-max-w-520 u-p-0 u-border-accent-top">
       <div class="confirm-preview" id="confirmPreview"></div>
       <div class="confirm-alerts" id="confirmAlerts"></div>
@@ -6083,7 +6111,7 @@
   </div>
 
   <!-- Post-send summary dialog -->
-  <div class="dialog-overlay" id="postSendDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="postSendDialog" role="dialog" aria-modal="true" aria-label="Resumen de envío">
     <div class="dialog-box u-max-w-460 u-text-left">
       <div id="postSendContent"></div>
       <div class="dialog-buttons">
@@ -6094,10 +6122,10 @@
   </div>
 
   <!-- History panel -->
-  <div class="dialog-overlay" id="historyPanel" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="historyPanel" role="dialog" aria-modal="true" aria-labelledby="historyDialogTitle">
     <div class="dialog-box dialog-box-scrollable">
       <div class="dialog-header-row">
-        <h3 class="dialog-header-title">Historial de convocatorias</h3>
+        <h3 id="historyDialogTitle" class="dialog-header-title">Historial de convocatorias</h3>
         <button class="link-btn link-clear" id="historyClose" aria-label="Cerrar"><span class="icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
       </div>
       <input class="input-field dialog-history-search" type="text" id="historySearch" placeholder="Buscar por título...">
@@ -6107,7 +6135,7 @@
   </div>
 
   <!-- Employee report dialog -->
-  <div class="dialog-overlay" id="employeeReportDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="employeeReportDialog" role="dialog" aria-modal="true" aria-label="Ficha de persona trabajadora">
     <div class="dialog-box dialog-box-wide-scrollable">
       <div id="employeeReportContent"></div>
       <div class="dialog-buttons dialog-buttons-mt">
@@ -6118,9 +6146,9 @@
   </div>
 
   <!-- Employee selection dialog (multiple matches) -->
-  <div class="dialog-overlay" id="employeeSelectDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="employeeSelectDialog" role="dialog" aria-modal="true" aria-labelledby="employeeSelectDialogTitle">
     <div class="dialog-box dialog-box-narrow-scrollable">
-      <h3 class="dialog-employee-select-title">Selecciona una persona trabajadora</h3>
+      <h3 id="employeeSelectDialogTitle" class="dialog-employee-select-title">Selecciona una persona trabajadora</h3>
       <div id="employeeSelectList"></div>
       <div class="dialog-buttons dialog-buttons-mt">
         <button class="btn btn-secondary dialog-btn-sm" id="employeeSelectCancel">Cancelar</button>
@@ -6129,9 +6157,9 @@
   </div>
 
   <!-- Sheet selector dialog -->
-  <div class="dialog-overlay" id="sheetSelectorDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="sheetSelectorDialog" role="dialog" aria-modal="true" aria-labelledby="sheetSelectorDialogTitle">
     <div class="dialog-box dialog-box-narrow-scrollable">
-      <h3>Seleccionar hoja</h3>
+      <h3 id="sheetSelectorDialogTitle">Seleccionar hoja</h3>
       <p class="u-text-13 u-text-secondary u-mb-4">El fichero tiene varias hojas. Elige cuál contiene el organigrama:</p>
       <div class="sheet-selector-list" id="sheetSelectorList"></div>
       <div class="dialog-buttons dialog-buttons-mt">
@@ -6141,7 +6169,7 @@
   </div>
 
   <!-- F2.7: Excel error dialog -->
-  <div class="dialog-overlay" id="excelErrorDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="excelErrorDialog" role="dialog" aria-modal="true" aria-label="Error de Excel">
     <div class="dialog-box dialog-box-narrow-scrollable">
       <div id="excelErrorDialogContent"></div>
       <div class="dialog-buttons dialog-buttons-mt">
@@ -6151,9 +6179,9 @@
   </div>
 
   <!-- Batch send dialog -->
-  <div class="dialog-overlay" id="batchDialog" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="batchDialog" role="dialog" aria-modal="true" aria-labelledby="batchDialogTitle">
     <div class="dialog-box dialog-box-narrow-scrollable u-text-left">
-      <h3 class="u-m-0 u-mb-12">Enviar por lotes</h3>
+      <h3 id="batchDialogTitle" class="u-m-0 u-mb-12">Enviar por lotes</h3>
       <p class="u-text-13 u-text-secondary u-m-0 u-mb-12">Agrupa las personas destinatarias por un campo y añade una convocatoria por grupo a la cola.</p>
       <label class="u-text-12 u-font-600 u-text-secondary u-mb-4 u-block">Agrupar por</label>
       <select class="input-field u-mb-12" id="batchGroupField">
@@ -6171,9 +6199,9 @@
 
 
   <!-- Onboarding overlay -->
-  <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true">
+  <div class="dialog-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingDialogTitle">
     <div class="dialog-box dialog-box-compact">
-      <h3 class="dialog-onboarding-title">Bienvenido a Formación_AGORA</h3>
+      <h3 id="onboardingDialogTitle" class="dialog-onboarding-title">Bienvenido a Formación_AGORA</h3>
       <p class="dialog-onboarding-intro">Sigue estos 4 pasos para enviar tu primera convocatoria:</p>
       <div class="onboarding-step">
         <div class="onboarding-step-num">1</div>
@@ -7536,7 +7564,7 @@
           '<button class="btn btn-primary" onclick="document.getElementById(\'btnNewCatalog\').click();" style="margin-top:6px; font-size:12px;"><span class="icon" aria-hidden="true">' + Icons.plus(14) + '</span> Nuevo registro</button>' +
         '</div>';
       } else {
-        container.innerHTML = filtered.map(r => {
+        container.innerHTML = filtered.map(r => { // innerHTML OK: sanitized via esc()
           const pk = r[cfg.pk];
           const isActive = pk === catalogState.selectedPK;
           return '<div class="catalog-list-item' + (isActive ? ' active' : '') + '" data-pk="' + esc(pk) + '">' +
@@ -7712,7 +7740,7 @@
 
       container.textContent = '';
       var wrapper = document.createElement('div');
-      wrapper.innerHTML = parts.join('');
+      wrapper.innerHTML = parts.join(''); // innerHTML OK: sanitized via esc()
       while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
 
       // Bind: add type
@@ -7948,7 +7976,7 @@
       }
 
       html += '</div>';
-      container.innerHTML = html;
+      container.innerHTML = html; // innerHTML OK: sanitized via esc()
 
       // Bind: year selector
       var yearSelect = document.getElementById('annualPlanYear');
@@ -9484,7 +9512,7 @@
             '</div>';
           }
         });
-        listEl.innerHTML = html;
+        listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
       }
 
       // Bind remove buttons
@@ -9686,7 +9714,7 @@
             '<span style="color:var(--text-muted); margin-left:auto; flex-shrink:0;">' + esc(e.NIF) + '</span>' +
           '</label>';
         });
-        listEl.innerHTML = html;
+        listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
 
         // Bind checkboxes
         listEl.querySelectorAll('.ppCheck').forEach(function(cb) {
@@ -10563,6 +10591,53 @@
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    // ═══════════════════════════════════
+    // INLINE FORM VALIDATION
+    // ═══════════════════════════════════
+
+    function validateField(input) {
+      var value = input.value.trim();
+      var isRequired = input.hasAttribute('required') || input.dataset.required === 'true';
+      var isValid = true;
+      var message = '';
+      if (isRequired && !value) {
+        isValid = false;
+        message = 'Este campo es obligatorio';
+      } else if (input.type === 'email' && value && !isValidEmail(value)) {
+        isValid = false;
+        message = 'Email no válido';
+      } else if (input.type === 'number' && value && isNaN(Number(value))) {
+        isValid = false;
+        message = 'Debe ser un número';
+      }
+      input.classList.toggle('input-error', !isValid);
+      input.setAttribute('aria-invalid', String(!isValid));
+      var errorEl = input.parentElement.querySelector('.field-error-msg');
+      if (!isValid) {
+        if (!errorEl) {
+          errorEl = document.createElement('span');
+          errorEl.className = 'field-error-msg';
+          errorEl.setAttribute('role', 'alert');
+          input.parentElement.appendChild(errorEl);
+        }
+        errorEl.textContent = message;
+      } else if (errorEl) {
+        errorEl.remove();
+      }
+      return isValid;
+    }
+
+    // ═══════════════════════════════════
+    // EMPTY STATE SVG ILLUSTRATIONS
+    // ═══════════════════════════════════
+
+    var EMPTY_STATE_SVGS = {
+      noData: '<svg width="120" height="100" viewBox="0 0 120 100" fill="none"><rect x="20" y="20" width="80" height="60" rx="8" stroke="var(--border-strong)" stroke-width="2" stroke-dasharray="6 4"/><circle cx="60" cy="45" r="12" stroke="var(--accent)" stroke-width="2" opacity="0.5"/><line x1="45" y1="68" x2="75" y2="68" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/></svg>',
+      noResults: '<svg width="120" height="100" viewBox="0 0 120 100" fill="none"><circle cx="52" cy="42" r="24" stroke="var(--border-strong)" stroke-width="2"/><line x1="68" y1="58" x2="85" y2="75" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/><line x1="44" y1="42" x2="60" y2="42" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/></svg>',
+      upload: '<svg width="120" height="100" viewBox="0 0 120 100" fill="none"><rect x="30" y="25" width="60" height="50" rx="8" stroke="var(--border-strong)" stroke-width="2" stroke-dasharray="6 4"/><polyline points="48,55 60,40 72,55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="60" y1="40" x2="60" y2="65" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>',
+      noChart: '<svg width="120" height="100" viewBox="0 0 120 100" fill="none"><rect x="20" y="60" width="15" height="20" rx="2" fill="var(--accent)" opacity="0.15"/><rect x="42" y="40" width="15" height="40" rx="2" fill="var(--accent)" opacity="0.25"/><rect x="64" y="25" width="15" height="55" rx="2" fill="var(--accent)" opacity="0.35"/><rect x="86" y="35" width="15" height="45" rx="2" fill="var(--accent)" opacity="0.2"/><line x1="15" y1="80" x2="105" y2="80" stroke="var(--border)" stroke-width="1"/></svg>'
+    };
+
     function splitByEmail(employees) {
       const valid = [];
       const noEmail = [];
@@ -10583,14 +10658,21 @@
 
     // Unified empty state builder
     function createEmptyState(opts) {
-      // opts: { icon, title, desc, ctaText, ctaAction }
+      // opts: { icon, title, desc, ctaText, ctaAction, illustration }
       var wrap = document.createElement('div');
       wrap.className = 'empty-state';
+      if (opts.illustration && EMPTY_STATE_SVGS[opts.illustration]) {
+        var illus = document.createElement('div');
+        illus.className = 'empty-state-illustration';
+        illus.setAttribute('aria-hidden', 'true');
+        illus.innerHTML = EMPTY_STATE_SVGS[opts.illustration]; // innerHTML OK: static SVG template
+        wrap.appendChild(illus);
+      }
       if (opts.icon) {
         var ic = document.createElement('div');
         ic.className = 'empty-state-icon';
         ic.setAttribute('aria-hidden', 'true');
-        ic.innerHTML = opts.icon;
+        ic.innerHTML = opts.icon; // innerHTML OK: static icon from Icons object
         wrap.appendChild(ic);
       }
       if (opts.title) {
@@ -10692,7 +10774,7 @@
       const toast = document.createElement('div');
       toast.className = 'toast toast-' + type;
       toast.style.setProperty('--toast-duration', duration + 'ms');
-      toast.setAttribute('role', 'alert');
+      toast.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
 
       // Icon
       const iconEl = document.createElement('div');
@@ -10743,6 +10825,74 @@
         setTimeout(function() { if (toast.parentNode) toast.remove(); }, 400);
       }
     }
+
+    // ═══════════════════════════════════
+    // ACCESSIBILITY: FOCUS TRAP FOR MODALS
+    // ═══════════════════════════════════
+
+    function trapFocus(dialogEl) {
+      var focusable = dialogEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      function handler(e) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+      dialogEl._focusTrapHandler = handler;
+      dialogEl._focusTrapPrevFocus = document.activeElement;
+      dialogEl.addEventListener('keydown', handler);
+      first.focus();
+    }
+
+    function releaseFocus(dialogEl) {
+      if (dialogEl._focusTrapHandler) {
+        dialogEl.removeEventListener('keydown', dialogEl._focusTrapHandler);
+        delete dialogEl._focusTrapHandler;
+      }
+      if (dialogEl._focusTrapPrevFocus && typeof dialogEl._focusTrapPrevFocus.focus === 'function') {
+        dialogEl._focusTrapPrevFocus.focus();
+        delete dialogEl._focusTrapPrevFocus;
+      }
+    }
+
+    // Auto-trap focus when .dialog-overlay gets .visible class
+    (function() {
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          if (m.type !== 'attributes' || m.attributeName !== 'class') return;
+          var el = m.target;
+          if (!el.classList.contains('dialog-overlay')) return;
+          if (el.classList.contains('visible')) {
+            trapFocus(el);
+          } else {
+            releaseFocus(el);
+          }
+        });
+      });
+      // Observe existing static dialog overlays
+      document.querySelectorAll('.dialog-overlay').forEach(function(overlay) {
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+      });
+      // Also observe body for dynamically created dialog overlays
+      var bodyObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType === 1 && node.classList.contains('dialog-overlay')) {
+              observer.observe(node, { attributes: true, attributeFilter: ['class'] });
+              if (node.classList.contains('visible')) {
+                trapFocus(node);
+              }
+            }
+          });
+        });
+      });
+      bodyObserver.observe(document.body, { childList: true });
+    })();
 
     // ═══════════════════════════════════
     // APPLICATION STATE
@@ -10887,7 +11037,7 @@
       }
 
       html += '</div>';
-      container.innerHTML = html;
+      container.innerHTML = html; // innerHTML OK: sanitized via esc()
 
       // Bind new request button
       var btnNew = document.getElementById('btnNewTNA');
@@ -12204,11 +12354,11 @@
         return '<div class="filter-row">' +
           '<span class="filter-label">' + esc(key) + badgeHtml + '</span>' +
           '<div class="filter-select" data-key="' + esc(key) + '">' +
-            '<button class="' + btnClass + '" type="button">' + esc(btnText) + '</button>' +
-            '<div class="filter-dropdown">' +
+            '<button class="' + btnClass + '" type="button" aria-expanded="false" aria-haspopup="listbox">' + esc(btnText) + '</button>' +
+            '<div class="filter-dropdown" role="listbox" aria-label="' + esc(key) + '">' +
               '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off"></div>' +
               items.map(({ value: v, count }) =>
-                '<label>' +
+                '<label role="option" aria-selected="' + (selected.includes(v) ? 'true' : 'false') + '">' +
                   '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
                   esc(v) + ' <span style="color:var(--text-muted);font-size:11px;">(' + count + ')</span>' +
                 '</label>'
@@ -12228,12 +12378,14 @@
           container.querySelectorAll('.filter-dropdown.open').forEach(d => {
             if (d !== dropdown) {
               d.classList.remove('open');
+              d.previousElementSibling.setAttribute('aria-expanded', 'false');
               const si = d.querySelector('.filter-search input');
               if (si) { si.value = ''; }
               d.querySelectorAll('label').forEach(l => l.style.display = '');
             }
           });
           dropdown.classList.toggle('open');
+          btn.setAttribute('aria-expanded', String(dropdown.classList.contains('open')));
         });
 
         // Prevent clicks inside dropdown from closing it via document handler
@@ -12256,6 +12408,8 @@
             const newDd = newSel.querySelector('.filter-dropdown');
             if (newDd) {
               newDd.classList.add('open');
+              var newBtn = newSel.querySelector('.filter-select-btn');
+              if (newBtn) newBtn.setAttribute('aria-expanded', 'true');
               if (searchVal) {
                 const newSearch = newDd.querySelector('.filter-search input');
                 if (newSearch) {
@@ -12281,7 +12435,7 @@
 
       const chipsEl = document.getElementById('filterChips');
       const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
-      chipsEl.innerHTML = activeKeys.map(k =>
+      chipsEl.innerHTML = activeKeys.map(k => // innerHTML OK: sanitized via esc()
         state.activeFilters[k].map(v => '<span class="chip">' + esc(v) + '</span>').join(' ')
       ).join(' ');
 
@@ -12294,6 +12448,8 @@
     document.addEventListener('click', () => {
       document.querySelectorAll('.filter-dropdown.open').forEach(d => {
         d.classList.remove('open');
+        var prevBtn = d.previousElementSibling;
+        if (prevBtn) prevBtn.setAttribute('aria-expanded', 'false');
         const si = d.querySelector('.filter-search input');
         if (si) { si.value = ''; }
         d.querySelectorAll('label').forEach(l => l.style.display = '');
@@ -12344,7 +12500,7 @@
       if (unmatched.length > 0) {
         parts.push('<span class="u-text-warning"><br>Sin coincidencia: ' + unmatched.map(function(u) { return esc(u); }).join(', ') + '</span>');
       }
-      feedbackEl.innerHTML = parts.join('');
+      feedbackEl.innerHTML = parts.join(''); // innerHTML OK: sanitized via esc()
       renderTable();
       showToast(matched.length + ' personas seleccionadas por lista', 'success');
     });
@@ -12628,7 +12784,7 @@
       // Email cell
       var tdEmail = document.createElement('td');
       tdEmail.style.color = hasEmail ? 'var(--accent)' : 'var(--danger)';
-      if (hasEmail) { tdEmail.textContent = emp['Email trabajo'] || ''; } else { tdEmail.innerHTML = '<span class="icon" aria-hidden="true">' + Icons.alertTriangle(12) + '</span> Sin email'; }
+      if (hasEmail) { tdEmail.textContent = emp['Email trabajo'] || ''; } else { var emailIcon = document.createElement('span'); emailIcon.className = 'icon'; emailIcon.setAttribute('aria-hidden', 'true'); emailIcon.innerHTML = Icons.alertTriangle(12); tdEmail.appendChild(emailIcon); tdEmail.appendChild(document.createTextNode(' Sin email')); }
       tr.appendChild(tdEmail);
 
       // Checkbox change handler
@@ -12689,6 +12845,7 @@
         var noDataLoaded = allEmployees.length === 0;
         if (noDataLoaded) {
           emptyState.appendChild(createEmptyState({
+            illustration: 'upload',
             icon: Icons.upload(32),
             title: 'Carga tu censo de personas trabajadoras',
             desc: 'Arrastra un archivo Excel o haz clic en el botón para comenzar.',
@@ -12697,6 +12854,7 @@
           }));
         } else {
           emptyState.appendChild(createEmptyState({
+            illustration: 'noResults',
             icon: Icons.search(32),
             title: 'Sin resultados',
             desc: 'Ningún registro coincide con los filtros actuales.',
@@ -12724,15 +12882,17 @@
       document.getElementById('selectAll').checked =
         valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
 
-      // Update sort arrow indicators
+      // Update sort arrow indicators and aria-sort attributes
       document.querySelectorAll('.sort-arrow').forEach(arrow => {
         const th = arrow.parentElement;
         if (th.dataset.sort === state.sortColumn) {
           arrow.classList.add('active');
           arrow.innerHTML = state.sortDirection === 'asc' ? Icons.sortAsc() : Icons.sortDesc();
+          th.setAttribute('aria-sort', state.sortDirection === 'asc' ? 'ascending' : 'descending');
         } else {
           arrow.classList.remove('active');
           arrow.innerHTML = Icons.sortAsc();
+          th.setAttribute('aria-sort', 'none');
         }
       });
 
@@ -12781,7 +12941,13 @@
 
       const warningEl = document.getElementById('noEmailWarning');
       if (noEmail.length > 0) {
-        warningEl.innerHTML = '<span class="icon" aria-hidden="true">' + Icons.alertTriangle(12) + '</span> ' + (noEmail.length > 1 ? noEmail.length + ' personas trabajadoras' : noEmail.length + ' persona trabajadora') + ' sin Email trabajo \u2014 excluidas';
+        warningEl.textContent = '';
+        var warnIcon = document.createElement('span');
+        warnIcon.className = 'icon';
+        warnIcon.setAttribute('aria-hidden', 'true');
+        warnIcon.innerHTML = Icons.alertTriangle(12); // innerHTML OK: static icon
+        warningEl.appendChild(warnIcon);
+        warningEl.appendChild(document.createTextNode(' ' + (noEmail.length > 1 ? noEmail.length + ' personas trabajadoras' : noEmail.length + ' persona trabajadora') + ' sin Email trabajo \u2014 excluidas'));
       } else {
         warningEl.textContent = '';
       }
@@ -13042,7 +13208,7 @@
       bar.classList.add('visible');
       count.textContent = state.queue.length;
 
-      list.innerHTML = state.queue.map((item, i) => {
+      list.innerHTML = state.queue.map((item, i) => { // innerHTML OK: sanitized via esc()
         const type = item.event.isTeams ? 'Teams' : 'Presencial';
         const series = item.seriesDates ? ' · ' + item.seriesDates.length + ' sesiones' : '';
         return '<div class="queue-item">' +
@@ -13118,6 +13284,7 @@
       if (!queue.length) {
         body.replaceChildren();
         body.appendChild(createEmptyState({
+          illustration: 'noData',
           icon: Icons.list(32),
           title: 'Cola vacía',
           desc: 'Añade convocatorias a la cola para enviarlas en lote.'
@@ -13855,7 +14022,7 @@
           const dupDate = new Date(duplicate.timestamp).toLocaleDateString('es-ES');
           var dupOverlay = document.createElement('div');
           dupOverlay.className = 'dialog-overlay visible';
-          dupOverlay.innerHTML = '<div class="dialog-box u-max-w-440">' +
+          dupOverlay.innerHTML = '<div class="dialog-box u-max-w-440">' + // innerHTML OK: sanitized via esc()
             '<h3 class="u-dialog-heading" style="color:var(--warning);">Posible duplicado</h3>' +
             '<p class="u-text-13 u-text-secondary u-leading-relaxed">Ya enviaste <strong>' + esc(event.title) + '</strong> para el ' + esc(event.date) + ' a ' + duplicate.attendeeCount + ' personas (' + dupDate + ').</p>' +
             '<p class="u-text-13 u-text-secondary">¿Continuar de todos modos?</p>' +
@@ -14226,13 +14393,17 @@
     // --- More Actions dropdown ---
     function toggleMoreActions() {
       var dd = document.getElementById('moreActionsDropdown');
-      dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+      var btn = document.getElementById('btnMoreActions');
+      var isOpen = dd.style.display === 'none';
+      dd.style.display = isOpen ? 'block' : 'none';
+      btn.setAttribute('aria-expanded', String(isOpen));
     }
     document.addEventListener('click', function(e) {
       var dd = document.getElementById('moreActionsDropdown');
       var btn = document.getElementById('btnMoreActions');
       if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
         dd.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
       }
     });
 
@@ -14466,8 +14637,12 @@
           // Show restore option in upload zone
           const restoreDiv = document.createElement('div');
           restoreDiv.style.cssText = 'margin-top:10px; padding:10px; background:var(--accent-subtle); border-radius:var(--radius); cursor:pointer; font-size:12px; color:var(--accent); text-align:center;';
-          restoreDiv.innerHTML = '<strong>Usar organigrama anterior</strong><br>' +
-            employees.length + ' personas trabajadoras · ' + (savedFileName || 'fichero anterior');
+          var restoreTitle = document.createElement('strong');
+          restoreTitle.textContent = 'Usar organigrama anterior';
+          restoreDiv.appendChild(restoreTitle);
+          restoreDiv.appendChild(document.createElement('br'));
+          var restoreInfo = document.createTextNode(employees.length + ' personas trabajadoras \u00b7 ' + (savedFileName || 'fichero anterior'));
+          restoreDiv.appendChild(restoreInfo);
           restoreDiv.addEventListener('click', e => {
             e.stopPropagation();
             state.employees = employees;
@@ -14872,6 +15047,7 @@
         list.innerHTML = '';
         empty.textContent = '';
         empty.appendChild(createEmptyState({
+          illustration: 'noData',
           icon: Icons.history(32),
           title: 'Sin historial',
           desc: 'Las convocatorias enviadas se registrarán aquí automáticamente.'
@@ -14881,7 +15057,7 @@
       }
       empty.style.display = 'none';
 
-      list.innerHTML = history.map((h, i) => {
+      list.innerHTML = history.map((h, i) => { // innerHTML OK: sanitized via esc()
         const date = new Date(h.timestamp).toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
         const eventDate = h.eventDate || '';
         const type = h.isTeams ? 'Teams' : 'Presencial';
@@ -15043,7 +15219,7 @@
       var empresas = getEmpresasGrupo();
       var tbody = container.querySelector('tbody');
       if (!tbody) return;
-      tbody.innerHTML = empresas.map(function(e, i) {
+      tbody.innerHTML = empresas.map(function(e, i) { // innerHTML OK: sanitized via esc()
         return '<tr>' +
           '<td><input class="input-field u-w-full u-text-12" value="' + esc(e.razonSocial || '') + '" data-idx="' + i + '" data-field="razonSocial"></td>' +
           '<td><input class="input-field u-text-12" value="' + esc(e.cif || '') + '" data-idx="' + i + '" data-field="cif" style="width:120px;"></td>' +
@@ -15280,7 +15456,7 @@
       }
       emptyMsg.style.display = 'none';
 
-      tbody.innerHTML = xmlState.participantes.map((p, idx) => {
+      tbody.innerHTML = xmlState.participantes.map((p, idx) => { // innerHTML OK: sanitized via esc()
         const missingCat = !p.categoriaProfesional;
         const missingNivel = !p.nivelEstudios;
         return '<tr class="u-border-bottom">' +
@@ -15911,6 +16087,17 @@
     document.getElementById('btnGenXmlInicio').addEventListener('click', genXmlInicioGrupo);
     document.getElementById('btnGenXmlFin').addEventListener('click', genXmlFinalizacion);
 
+    // ─── Inline validation: blur listeners for XML FUNDAE required fields ───
+    ['xmlIdGrupo', 'xmlResponsable', 'xmlTelefono', 'xmlFechaInicio', 'xmlFechaFin'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('blur', function() { validateField(el); });
+        el.addEventListener('input', function() {
+          if (el.classList.contains('input-error')) validateField(el);
+        });
+      }
+    });
+
     // ─── Batch XML generation (3 XMLs in ZIP) ───
 
     document.getElementById('btnGenXmlBatch').addEventListener('click', function() {
@@ -16394,6 +16581,7 @@
     function renderEmptyState(container, hint) {
       container.textContent = '';
       container.appendChild(createEmptyState({
+        illustration: 'noChart',
         icon: Icons.barChart(32),
         title: 'Sin datos disponibles',
         desc: hint || ''
@@ -16953,13 +17141,13 @@
       kpiRow.style.cssText = 'display:flex; gap:16px; margin-bottom:12px;';
       var kpi1 = document.createElement('div');
       kpi1.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
-      kpi1.innerHTML = '<div class="u-kpi-value">' + avgAttendance + '%</div><div class="u-kpi-label">Asistencia media</div>';
+      kpi1.innerHTML = '<div class="u-kpi-value">' + avgAttendance + '%</div><div class="u-kpi-label">Asistencia media</div>'; // innerHTML OK: static template
       var kpi2 = document.createElement('div');
       kpi2.style.cssText = 'flex:1; text-align:center; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm);';
-      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div class="u-kpi-label">Acciones con registro</div>';
+      kpi2.innerHTML = '<div style="font-size:20px; font-weight:700; color:var(--text-primary);">' + accionesConAsistencia.length + '</div><div class="u-kpi-label">Acciones con registro</div>'; // innerHTML OK: static template
       var kpi3 = document.createElement('div');
       kpi3.style.cssText = 'flex:1; text-align:center; padding:8px; background:' + (abandonmentAlerts.length > 0 ? 'var(--danger-light)' : 'var(--success-light)') + '; border-radius:var(--radius-sm);';
-      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div class="u-kpi-label">Alertas de abandono</div>';
+      kpi3.innerHTML = '<div style="font-size:20px; font-weight:700; color:' + (abandonmentAlerts.length > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + abandonmentAlerts.length + '</div><div class="u-kpi-label">Alertas de abandono</div>'; // innerHTML OK: static template
       kpiRow.appendChild(kpi1);
       kpiRow.appendChild(kpi2);
       kpiRow.appendChild(kpi3);
@@ -16978,7 +17166,7 @@
         var table = document.createElement('table');
         table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
         var thead = document.createElement('thead');
-        thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th">NIF</th><th class="u-dash-th-center">Sesiones</th><th class="u-dash-th-center">%</th></tr>';
+        thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th">NIF</th><th class="u-dash-th-center">Sesiones</th><th class="u-dash-th-center">%</th></tr>'; // innerHTML OK: static template
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -17106,7 +17294,7 @@
         var table = document.createElement('table');
         table.style.cssText = 'width:100%; font-size:11px; border-collapse:collapse;';
         var thead = document.createElement('thead');
-        thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th-center">Conf.</th><th class="u-dash-th-center">Rech.</th><th class="u-dash-th-center">Tasa</th></tr>';
+        thead.innerHTML = '<tr class="u-border-bottom"><th class="u-dash-th">Acción</th><th class="u-dash-th-center">Conf.</th><th class="u-dash-th-center">Rech.</th><th class="u-dash-th-center">Tasa</th></tr>'; // innerHTML OK: static template
         table.appendChild(thead);
 
         var tbody = document.createElement('tbody');
@@ -17257,7 +17445,9 @@
       var barGroupW = chartW / 12;
       var barW = barGroupW * 0.35;
 
-      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+      var seasonAriaLabel = 'Estacionalidad formativa. Total: ' + totalCount + ' acciones, ' + Math.round(totalHours) + ' horas. ' +
+        monthData.map(function(d) { return d.label + ': ' + d.count + ' acciones'; }).join(', ') + '.';
+      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet', 'role': 'img', 'aria-label': seasonAriaLabel });
       svg.style.cssText = 'width:100%; display:block;';
 
       // Grid lines
@@ -17446,7 +17636,9 @@
         var maxBinCount = Math.max.apply(null, bins.map(function(b) { return b.count; })) || 1;
         var binW = Math.min(chartW / bins.length, 30);
 
-        var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+        var histAriaLabel = 'Distribución de participantes. ' +
+          bins.map(function(b) { return b.actions + ' acciones: ' + b.count + ' personas'; }).join(', ') + '.';
+        var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet', 'role': 'img', 'aria-label': histAriaLabel });
         svg.style.cssText = 'width:100%; max-width:320px; display:block;';
 
         // Y label
@@ -17743,7 +17935,9 @@
       var chartH = svgH - padT - padB;
       var barW = chartW / monthBuckets.length * 0.6;
 
-      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+      var sendsAriaLabel = 'Envíos por mes. ' +
+        monthBuckets.map(function(b) { return b.label + ': ' + b.count + ' envíos'; }).join(', ') + '.';
+      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet', 'role': 'img', 'aria-label': sendsAriaLabel });
       svg.style.cssText = 'width:100%; display:block;';
 
       // Baseline
@@ -18024,13 +18218,13 @@
 
         var bestEl = document.createElement('div');
         bestEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--success-light); border-radius:var(--radius-sm); font-size:10px;';
-        bestEl.innerHTML = '<div style="font-weight:600; color:var(--success); margin-bottom:2px;">Mejor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(best.nombre) + ' — Punt. ' + best.score + '</div>';
+        bestEl.innerHTML = '<div style="font-weight:600; color:var(--success); margin-bottom:2px;">Mejor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(best.nombre) + ' \u2014 Punt. ' + best.score + '</div>'; // innerHTML OK: sanitized via esc()
         highlightRow.appendChild(bestEl);
 
         if (worst.score < best.score) {
           var worstEl = document.createElement('div');
           worstEl.style.cssText = 'flex:1; padding:6px 10px; background:var(--danger-light); border-radius:var(--radius-sm); font-size:10px;';
-          worstEl.innerHTML = '<div style="font-weight:600; color:var(--danger); margin-bottom:2px;">Peor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(worst.nombre) + ' — Punt. ' + worst.score + '</div>';
+          worstEl.innerHTML = '<div style="font-weight:600; color:var(--danger); margin-bottom:2px;">Peor proveedor</div><div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(worst.nombre) + ' \u2014 Punt. ' + worst.score + '</div>'; // innerHTML OK: sanitized via esc()
           highlightRow.appendChild(worstEl);
         }
 
@@ -18696,8 +18890,13 @@
           e.stopPropagation();
           var isOpen = empresaDropdown.classList.contains('open');
           // Close other dropdowns
-          document.querySelectorAll('.filter-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+          document.querySelectorAll('.filter-dropdown.open').forEach(function(d) {
+            d.classList.remove('open');
+            var prevBtn = d.previousElementSibling;
+            if (prevBtn) prevBtn.setAttribute('aria-expanded', 'false');
+          });
           if (!isOpen) empresaDropdown.classList.add('open');
+          empresaBtn.setAttribute('aria-expanded', String(!isOpen));
         };
         // Checkbox change handler
         empresaDropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
@@ -18715,6 +18914,7 @@
         document.addEventListener('click', function(e) {
           if (!empresaBtn.contains(e.target) && !empresaDropdown.contains(e.target)) {
             empresaDropdown.classList.remove('open');
+            empresaBtn.setAttribute('aria-expanded', 'false');
           }
         });
       }
@@ -19378,6 +19578,7 @@
       if (allAcciones.length === 0) {
         dashEmpty.textContent = '';
         var emptyWidget = createEmptyState({
+          illustration: 'noChart',
           icon: Icons.barChart(32),
           title: 'Sin datos en el cuadro de mando',
           desc: 'Crea tu primera acción formativa en Catálogos FUNDAE para ver métricas aquí.',
@@ -21136,6 +21337,7 @@
       if (allWithDates.length === 0) {
         calEmpty.textContent = '';
         calEmpty.appendChild(createEmptyState({
+          illustration: 'noData',
           icon: Icons.calendar(32),
           title: 'Calendario vacío',
           desc: 'Las acciones formativas aparecerán aquí automáticamente cuando les asignes fechas.',
@@ -21634,7 +21836,7 @@
         return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
       };
 
-      panel.innerHTML = '<div style="flex:1;">' +
+      panel.innerHTML = '<div style="flex:1;">' + // innerHTML OK: sanitized via esc()
         '<div class="cal-detail-title">' +
           '<span class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:2px;"></span>' +
           esc(item.nombre) +
@@ -21982,7 +22184,7 @@
       if (filtered.length > 200) {
         html += '<div class="u-text-center u-text-muted u-text-11" style="padding:12px 16px;">Mostrando 200 de ' + filtered.length + '. Usa el buscador para filtrar.</div>';
       }
-      container.innerHTML = html;
+      container.innerHTML = html; // innerHTML OK: sanitized via esc()
 
       // Bind click
       container.querySelectorAll('.persona-list-item').forEach(function(item) {
@@ -22200,7 +22402,7 @@
           '<span class="u-text-secondary">' + esc(emp.NIF || '') + ' · ' + esc(emp.Empresa || '') + '</span>' +
         '</div>';
       });
-      listEl.innerHTML = html;
+      listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
 
       closeAllDialogs();
       var overlay = document.getElementById('employeeSelectDialog');
@@ -22456,6 +22658,7 @@
       ids.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) {
+          releaseFocus(el);
           el.classList.remove('visible');
           el.classList.remove('closing');
         }
@@ -22463,11 +22666,13 @@
       // Also close cmdkOverlay
       var cmdk = document.getElementById('cmdkOverlay');
       if (cmdk) {
+        releaseFocus(cmdk);
         cmdk.classList.remove('visible');
         cmdk.classList.remove('closing');
       }
       // Close any dynamically created overlays
       document.querySelectorAll('.dialog-overlay.visible').forEach(function(el) {
+        releaseFocus(el);
         el.classList.remove('visible');
         el.classList.remove('closing');
       });
@@ -22479,6 +22684,7 @@
     // Use event delegation on document to catch both static and dynamic overlays
     document.addEventListener('click', function(e) {
       if (e.target.classList.contains('dialog-overlay') && e.target.classList.contains('visible')) {
+        releaseFocus(e.target);
         e.target.classList.remove('visible');
         e.target.classList.remove('closing');
       }
@@ -22500,6 +22706,7 @@
         var dialogs = document.querySelectorAll('.dialog-overlay.visible');
         if (dialogs.length > 0) {
           var last = dialogs[dialogs.length - 1];
+          releaseFocus(last);
           last.classList.remove('visible');
           last.classList.remove('closing');
           e.preventDefault();
