@@ -8091,10 +8091,10 @@
       listPanel.style.display = 'none';
       formPanel.style.display = 'none';
       listViewContainer.style.display = 'none';
-      complianceContainer.style.display = 'none';
+      complianceContainer.classList.add('u-hidden');
       var tnaContainer = document.getElementById('tnaViewContainer');
-      if (tnaContainer) tnaContainer.style.display = 'none';
-      annualPlanContainer.style.display = '';
+      if (tnaContainer) tnaContainer.classList.add('u-hidden');
+      annualPlanContainer.classList.remove('u-hidden');
       if (viewToggle) viewToggle.style.display = 'none';
       if (btnAnnualPlan) {
         btnAnnualPlan.style.background = 'var(--accent)';
@@ -8110,7 +8110,7 @@
       var viewToggle = document.getElementById('catalogViewToggle');
       var btnAnnualPlan = document.getElementById('btnAnnualPlan');
 
-      annualPlanContainer.style.display = 'none';
+      annualPlanContainer.classList.add('u-hidden');
       if (viewToggle) viewToggle.style.display = '';
       if (btnAnnualPlan) {
         btnAnnualPlan.style.background = 'var(--bg-input)';
@@ -8165,7 +8165,7 @@
 
           // Always reset annual plan state when switching tabs
           annualPlanState.active = false;
-          annualPlanContainer.style.display = 'none';
+          annualPlanContainer.classList.add('u-hidden');
           if (btnAnnualPlan) {
             btnAnnualPlan.style.background = 'var(--bg-input)';
             btnAnnualPlan.style.color = 'var(--text-secondary)';
@@ -8181,8 +8181,8 @@
             listPanel.style.display = 'none';
             formPanel.style.display = 'none';
             listViewContainer.style.display = 'none';
-            complianceContainer.style.display = '';
-            tnaContainer.style.display = 'none';
+            complianceContainer.classList.remove('u-hidden');
+            tnaContainer.classList.add('u-hidden');
             if (viewToggle) viewToggle.style.display = 'none';
             loadCompliance();
             renderComplianceView();
@@ -8190,13 +8190,13 @@
             listPanel.style.display = 'none';
             formPanel.style.display = 'none';
             listViewContainer.style.display = 'none';
-            complianceContainer.style.display = 'none';
-            tnaContainer.style.display = '';
+            complianceContainer.classList.add('u-hidden');
+            tnaContainer.classList.remove('u-hidden');
             if (viewToggle) viewToggle.style.display = 'none';
             renderTNAView();
           } else {
-            complianceContainer.style.display = 'none';
-            tnaContainer.style.display = 'none';
+            complianceContainer.classList.add('u-hidden');
+            tnaContainer.classList.add('u-hidden');
             if (viewToggle) viewToggle.style.display = '';
             // Restore saved view mode for this catalog
             var savedModes = getCatalogViewModes();
