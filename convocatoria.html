@@ -6665,7 +6665,8 @@
         proveedores: getCatalog('proveedores'),
         centros: getCatalog('centros'),
         tutores: getCatalog('tutores'),
-        acciones: getCatalog('acciones')
+        acciones: getCatalog('acciones'),
+        puestos: getPuestosCatalog()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -6685,6 +6686,7 @@
           if (data.centros) saveCatalog('centros', data.centros);
           if (data.tutores) saveCatalog('tutores', data.tutores);
           if (data.acciones) saveCatalog('acciones', data.acciones);
+          if (data.puestos && Array.isArray(data.puestos)) savePuestosCatalog(data.puestos);
           showToast('Catálogos importados correctamente', 'success');
           if (typeof renderCatalogList === 'function') renderCatalogList();
           if (catalogState.viewMode === 'lista') renderCatalogListView(catalogState.activeCatalog);
