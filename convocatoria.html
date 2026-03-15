@@ -7686,6 +7686,7 @@
         types.forEach(function(ct) {
           var key = nif + '|' + ct.id;
           var rec = records[key];
+          if (rec && rec.inactivo) return; // Skip deactivated records (employee left)
           if (rec && rec.date) {
             var completionDate = new Date(rec.date);
             var expiryDate = new Date(completionDate);
