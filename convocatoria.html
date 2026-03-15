@@ -5093,7 +5093,7 @@
   <div id="alertBanner" class="alert-banner" role="status" aria-live="polite">
     <span class="alert-banner-count" id="alertBannerCount">0 avisos</span>
     <span class="alert-banner-text" id="alertBannerText"></span>
-    <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
+    <button class="alert-banner-close" id="alertBannerClose" title="Cerrar aviso" aria-label="Cerrar aviso"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></button>
   </div>
   <div class="activation-checklist" id="activationChecklist"></div>
   <main id="mainContent">
@@ -5219,7 +5219,7 @@
         </div>
         <div class="u-mt-10">
           <label class="filter-label u-text-11 u-text-muted">Formador/a</label>
-          <input type="text" class="input-field" id="eventFormador" placeholder="Nombre del formador/a">
+          <input type="text" class="input-field" id="eventFormador" placeholder="Nombre del formador/a" aria-label="Formador/a">
         </div>
         <div class="u-border-top u-pt-12" style="margin-top:14px;">
           <label class="u-flex u-items-center u-gap-8 u-cursor-pointer u-text-13 u-text-secondary">
@@ -5230,7 +5230,7 @@
         <div class="u-flex u-items-center u-gap-8 u-mt-8">
           <input type="checkbox" id="chkReminder" class="u-m-0">
           <label for="chkReminder" class="u-text-12 u-text-secondary">Enviar recordatorio</label>
-          <select id="selReminderDays" class="filter-select u-text-12 u-w-auto" style="padding:4px 8px;" disabled>
+          <select id="selReminderDays" class="filter-select u-text-12 u-w-auto" style="padding:4px 8px;" disabled aria-label="Días de antelación para recordatorio">
             <option value="1">1 día antes</option>
             <option value="2" selected>2 días antes</option>
             <option value="3">3 días antes</option>
@@ -5242,7 +5242,7 @@
         </div>
       </div>
 
-      <div class="save-indicator" id="saveIndicator">Sin cambios</div>
+      <div class="save-indicator" id="saveIndicator" aria-live="polite">Sin cambios</div>
 
     </div>
 
@@ -5277,7 +5277,7 @@
       <!-- Queue bar -->
       <div id="queueBar" class="queue-bar">
         <div class="queue-bar-header">
-          <span class="queue-bar-title" role="button" tabindex="0" onclick="toggleQueuePanel()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQueuePanel();}">
+          <span class="queue-bar-title" role="button" tabindex="0" aria-expanded="false" onclick="toggleQueuePanel()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQueuePanel();}">
             Cola de convocatorias (<span id="queueCount">0</span>) <span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
           </span>
           <div class="queue-bar-actions">
@@ -5289,7 +5289,7 @@
         <div class="queue-progress" id="queueProgress" style="display:none;">
           <div class="queue-progress-fill" id="queueProgressFill"></div>
         </div>
-        <div class="queue-status-text" id="queueStatusText" style="display:none;"></div>
+        <div class="queue-status-text" id="queueStatusText" style="display:none;" aria-live="polite"></div>
         <div id="queueList" class="queue-list"></div>
       </div>
 
@@ -5353,7 +5353,7 @@
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
         <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento..." aria-label="Buscar persona">
-        <span id="personasCount" class="u-text-11 u-text-muted"></span>
+        <span id="personasCount" class="u-text-11 u-text-muted" aria-live="polite"></span>
       </div>
       <div class="u-flex u-flex-1 u-min-h-0">
         <div class="personas-list u-overflow-y-auto u-bg-panel u-border-right" id="personasList" style="width:380px; min-width:380px;"></div>
@@ -5427,11 +5427,11 @@
           <!-- Acción formativa -->
           <div class="form-group-lg">
             <label class="form-label">Acción formativa</label>
-            <select class="input-field u-text-13" id="xmlAccionSelect">
+            <select class="input-field u-text-13" id="xmlAccionSelect" aria-label="Acción formativa">
               <option value="">-- Seleccionar acción --</option>
             </select>
             <div id="xmlAccionInfo" class="text-sm text-muted mt-sm"></div>
-            <div id="fundaeReadinessPanel" class="fundae-readiness u-hidden"></div>
+            <div id="fundaeReadinessPanel" class="fundae-readiness u-hidden" aria-live="polite"></div>
           </div>
 
           <!-- Grupo datos -->
@@ -5440,27 +5440,27 @@
             <div class="form-section-body">
               <div class="form-group" style="position:relative;">
                 <label class="form-label">ID Grupo</label>
-                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true" aria-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true" aria-required="true" aria-label="ID Grupo">
                 <span class="field-tooltip">Identificador numérico del grupo formativo dentro de la acción (normalmente 1)</span>
               </div>
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Descripción</label>
-                <input class="input-field u-text-13" type="text" id="xmlDescripcion">
+                <input class="input-field u-text-13" type="text" id="xmlDescripcion" aria-label="Descripción">
                 <span class="field-tooltip">Descripción libre del grupo formativo (se incluirá en el XML)</span>
               </div>
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Responsable</label>
-                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true" aria-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true" aria-required="true" aria-label="Responsable">
                 <span class="field-tooltip">Persona responsable de la gestión de la formación bonificada ante FUNDAE</span>
               </div>
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Teléfono contacto</label>
-                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true" aria-required="true">
+                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true" aria-required="true" aria-label="Teléfono contacto">
                 <span class="field-tooltip">Teléfono de contacto del responsable (9 dígitos, sin espacios ni prefijo)</span>
               </div>
               <div class="form-group">
                 <label class="form-label">Informa RLT</label>
-                <select class="input-field u-text-13" id="xmlInformaRLT">
+                <select class="input-field u-text-13" id="xmlInformaRLT" aria-label="Informa RLT">
                   <option value="S">Sí</option>
                   <option value="N">No</option>
                 </select>
@@ -5472,7 +5472,7 @@
           <details class="form-section" open>
             <summary>Centro de impartición</summary>
             <div class="form-section-body">
-              <select class="input-field u-text-13" id="xmlCentroSelect">
+              <select class="input-field u-text-13" id="xmlCentroSelect" aria-label="Centro de impartición">
                 <option value="">-- Seleccionar centro --</option>
               </select>
             </div>
@@ -5482,7 +5482,7 @@
           <details class="form-section" open>
             <summary>Tutor</summary>
             <div class="form-section-body">
-              <select class="input-field u-text-13" id="xmlTutorSelect">
+              <select class="input-field u-text-13" id="xmlTutorSelect" aria-label="Tutor">
                 <option value="">-- Seleccionar tutor --</option>
               </select>
             </div>
@@ -5495,24 +5495,24 @@
               <div class="form-row">
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha inicio</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio" data-required="true" aria-required="true">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaInicio" data-required="true" aria-required="true" aria-label="Fecha inicio">
                   <span class="field-tooltip">Primer día del grupo formativo (formato AAAA-MM-DD)</span>
                 </div>
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Fecha fin</label>
-                  <input class="input-field u-text-13" type="date" id="xmlFechaFin" data-required="true" aria-required="true">
+                  <input class="input-field u-text-13" type="date" id="xmlFechaFin" data-required="true" aria-required="true" aria-label="Fecha fin">
                   <span class="field-tooltip">Último día del grupo formativo (debe ser posterior o igual a la fecha de inicio)</span>
                 </div>
               </div>
               <div class="form-row">
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Hora inicio</label>
-                  <input class="input-field u-text-13" type="time" id="xmlHoraInicio">
+                  <input class="input-field u-text-13" type="time" id="xmlHoraInicio" aria-label="Hora inicio">
                   <span class="field-tooltip">Hora de inicio de las sesiones (formato HH:MM)</span>
                 </div>
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Hora fin</label>
-                  <input class="input-field u-text-13" type="time" id="xmlHoraFin">
+                  <input class="input-field u-text-13" type="time" id="xmlHoraFin" aria-label="Hora fin">
                   <span class="field-tooltip">Hora de fin de las sesiones (formato HH:MM)</span>
                 </div>
               </div>
@@ -5527,18 +5527,18 @@
               <div class="u-flex u-gap-8">
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Directos (&euro;)</label>
-                  <input class="input-field u-text-13" type="number" id="xmlCostesDirectos" step="0.01" value="0">
+                  <input class="input-field u-text-13" type="number" id="xmlCostesDirectos" step="0.01" value="0" aria-label="Costes directos">
                   <span class="field-tooltip">Costes directos: honorarios del formador, materiales, alquiler de aula, etc.</span>
                 </div>
                 <div class="u-flex-1" style="position:relative;">
                   <label class="form-label">Indirectos (&euro;)</label>
-                  <input class="input-field u-text-13" type="number" id="xmlCostesIndirectos" step="0.01" value="0">
+                  <input class="input-field u-text-13" type="number" id="xmlCostesIndirectos" step="0.01" value="0" aria-label="Costes indirectos">
                   <span class="field-tooltip">Costes indirectos de organización: hasta el 10% de los costes directos</span>
                 </div>
                 <div class="u-flex-1">
                   <label class="form-label">Salariales (&euro;)</label>
                   <div class="u-flex u-gap-4 u-items-center">
-                    <input class="input-field u-text-13 u-flex-1" type="number" id="xmlCostesSalariales" step="0.01" value="0">
+                    <input class="input-field u-text-13 u-flex-1" type="number" id="xmlCostesSalariales" step="0.01" value="0" aria-label="Costes salariales">
                     <button class="btn btn-secondary u-text-11 u-nowrap" id="btnCalcCostesSalariales" style="padding:6px 8px;" title="Calcular desde coste/hora de participantes">Calc.</button>
                   </div>
                 </div>
@@ -5573,7 +5573,7 @@
             <button class="btn btn-secondary u-text-12" id="btnXmlAddParticipant"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Añadir</button>
             <div class="u-flex u-items-center u-gap-4">
               <label class="u-text-11 u-text-muted">Diploma masivo:</label>
-              <select class="input-field u-text-12 u-w-60" id="xmlMassDiploma">
+              <select class="input-field u-text-12 u-w-60" id="xmlMassDiploma" aria-label="Diploma masivo">
                 <option value="">--</option>
                 <option value="S">S</option>
                 <option value="N">N</option>
@@ -5638,7 +5638,7 @@
         </div>
         <div class="cal-filter-group">
           <span class="cal-filter-label">Agrupar:</span>
-          <select class="input-field u-text-12 u-w-auto" id="calGroupBy" style="padding:4px 8px;">
+          <select class="input-field u-text-12 u-w-auto" id="calGroupBy" style="padding:4px 8px;" aria-label="Agrupar por">
             <option value="flat">Sin agrupar</option>
             <option value="departamento">Por departamento</option>
             <option value="estado">Por estado</option>
@@ -5647,10 +5647,10 @@
         </div>
         <div class="cal-filter-group">
           <span class="cal-filter-label">Persona trabajadora:</span>
-          <input class="input-field u-text-12" type="text" id="calEmployeeSearch" placeholder="Nombre o NIF" style="padding:4px 8px; width:180px;">
+          <input class="input-field u-text-12" type="text" id="calEmployeeSearch" placeholder="Nombre o NIF" style="padding:4px 8px; width:180px;" aria-label="Buscar persona trabajadora">
           <button class="link-btn link-clear u-text-11" id="calEmployeeClear" style="display:none;">Limpiar</button>
         </div>
-        <div class="cal-summary" id="calSummary"></div>
+        <div class="cal-summary" id="calSummary" aria-live="polite"></div>
       </div>
       <div class="cal-split-top" id="calSplitTop"></div>
       <div class="cal-divider" id="calDivider"><span class="cal-divider-grip"></span></div>
@@ -5684,12 +5684,12 @@
 
       <!-- Alerts (collapsible, repositioned above sections) -->
       <div class="dash-alerts-widget u-hidden" id="dashAlertsWidget">
-        <div class="dash-alerts-toggle" id="dashAlertsToggle">
+        <div class="dash-alerts-toggle" id="dashAlertsToggle" role="button" tabindex="0" aria-expanded="false">
           <span class="dash-alerts-badge" id="dashAlertsBadge">0</span>
           <span class="dash-alerts-summary" id="dashAlertsSummary">avisos pendientes</span>
-          <span class="dash-alerts-arrow" id="dashAlertsArrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <span class="dash-alerts-arrow" id="dashAlertsArrow" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         </div>
-        <div class="dash-alerts-body u-hidden" id="dashAlertsBody"></div>
+        <div class="dash-alerts-body u-hidden" id="dashAlertsBody" aria-live="polite"></div>
       </div>
 
       <!-- Unified toolbar: nav + filters -->
@@ -5717,7 +5717,7 @@
               </div>
             </div>
             <!-- Hidden select for backward compatibility with filter system -->
-            <select class="dash-filter-select u-hidden" id="dashFilterPeriodo">
+            <select class="dash-filter-select u-hidden" id="dashFilterPeriodo" aria-label="Periodo">
               <option value="">Todo</option>
               <option value="mes">Mes actual</option>
               <option value="trimestre">Trimestre actual</option>
@@ -5728,7 +5728,7 @@
             <span class="dash-filter-label">Estado</span>
             <div class="dash-status-pills" id="dashFilterEstado"></div>
           </div>
-          <input class="input-field u-text-12 u-max-w-240" type="text" id="dashEmployeeSearch" placeholder="Buscar persona trabajadora...">
+          <input class="input-field u-text-12 u-max-w-240" type="text" id="dashEmployeeSearch" placeholder="Buscar persona trabajadora..." aria-label="Buscar persona trabajadora">
           <div class="u-flex-1"></div>
           <button class="btn btn-secondary u-text-12" id="btnExportAnnualReport">Exportar informe</button>
           <button class="dash-filter-clear u-hidden" id="dashFilterClear">Limpiar filtros</button>
@@ -6214,7 +6214,7 @@
       <h3 id="batchDialogTitle" class="u-m-0 u-mb-12">Enviar por lotes</h3>
       <p class="u-text-13 u-text-secondary u-m-0 u-mb-12">Agrupa las personas destinatarias por un campo y añade una convocatoria por grupo a la cola.</p>
       <label class="u-text-12 u-font-600 u-text-secondary u-mb-4 u-block">Agrupar por</label>
-      <select class="input-field u-mb-12" id="batchGroupField">
+      <select class="input-field u-mb-12" id="batchGroupField" aria-label="Agrupar por">
         <option value="Ubicación">Ubicación</option>
         <option value="Departamento">Departamento</option>
         <option value="Empresa">Empresa</option>
@@ -7060,7 +7060,7 @@
     function renderListViewHeader(config) {
       var sort = listViewState.sort;
       var h = '<thead><tr class="header-row">';
-      h += '<th class="col-checkbox"><input type="checkbox" id="listViewSelectAll" title="Seleccionar todos"></th>';
+      h += '<th class="col-checkbox"><input type="checkbox" id="listViewSelectAll" title="Seleccionar todos" aria-label="Seleccionar todos"></th>';
       config.columns.forEach(function(col) {
         var ariaSort = 'none';
         var indicator = Icons.arrowUp(8) + Icons.arrowDown(8);
@@ -7079,21 +7079,21 @@
         h += '<th>';
         var fv = listViewState.filters[col.key] || '';
         if (col.type === 'text') {
-          h += '<input type="text" data-filter-key="' + esc(col.key) + '" placeholder="Filtrar..." value="' + esc(typeof fv === 'string' ? fv : '') + '">';
+          h += '<input type="text" data-filter-key="' + esc(col.key) + '" placeholder="Filtrar..." value="' + esc(typeof fv === 'string' ? fv : '') + '" aria-label="Filtrar ' + esc(col.label) + '">';
         } else if (col.type === 'select') {
           var opts = col.options ? col.options() : [];
-          h += '<select data-filter-key="' + esc(col.key) + '"><option value="">Todos</option>';
+          h += '<select data-filter-key="' + esc(col.key) + '" aria-label="Filtrar ' + esc(col.label) + '"><option value="">Todos</option>';
           opts.forEach(function(o) { h += '<option value="' + esc(o) + '"' + (fv === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
           h += '</select>';
         } else if (col.type === 'date') {
           h += '<div class="filter-date-range">';
-          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="from" value="' + esc((fv && fv.from) || '') + '" title="Desde">';
-          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="to" value="' + esc((fv && fv.to) || '') + '" title="Hasta">';
+          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="from" value="' + esc((fv && fv.from) || '') + '" title="Desde" aria-label="' + esc(col.label) + ' desde">';
+          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="to" value="' + esc((fv && fv.to) || '') + '" title="Hasta" aria-label="' + esc(col.label) + ' hasta">';
           h += '</div>';
         } else if (col.type === 'number') {
           h += '<div class="filter-number-range">';
-          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? esc(String(fv.min)) : '') + '" placeholder="Min" step="any">';
-          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="max" value="' + ((fv && fv.max != null) ? esc(String(fv.max)) : '') + '" placeholder="Max" step="any">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? esc(String(fv.min)) : '') + '" placeholder="Min" step="any" aria-label="' + esc(col.label) + ' mínimo">';
+          h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="max" value="' + ((fv && fv.max != null) ? esc(String(fv.max)) : '') + '" placeholder="Max" step="any" aria-label="' + esc(col.label) + ' máximo">';
           h += '</div>';
         }
         h += '</th>';
@@ -7113,7 +7113,7 @@
           var pk = String(record[config.pkField]);
           var sel = listViewState.selectedPKs.has(pk);
           h += '<tr class="data-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '"' + (sel ? ' aria-selected="true"' : '') + '>';
-          h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + '></td>';
+          h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
           config.columns.forEach(function(col) { h += renderListViewCell(col, record, config); });
           h += '</tr>';
         });
@@ -7338,7 +7338,7 @@
 
       if (col.type === 'select') {
         var opts = col.options ? col.options() : [];
-        var sh = '<select><option value="">-- --</option>';
+        var sh = '<select aria-label="' + esc(col.label) + '"><option value="">-- --</option>';
         opts.forEach(function(o) { sh += '<option value="' + esc(o) + '"' + (o === currentValue ? ' selected' : '') + '>' + esc(o) + '</option>'; });
         sh += '</select>';
         td.innerHTML = sh;
@@ -7351,7 +7351,7 @@
         });
         sel.addEventListener('blur', function() { setTimeout(function() { if (td.classList.contains('cell-editing')) commitInlineEdit(td, col, record, config, catalogKey, sel.value); }, 100); });
       } else if (col.type === 'date') {
-        td.innerHTML = '<input type="date" value="' + esc(currentValue) + '">';
+        td.innerHTML = '<input type="date" value="' + esc(currentValue) + '" aria-label="' + esc(col.label) + '">';
         var di = td.querySelector('input');
         di.focus();
         di.addEventListener('change', function() { commitInlineEdit(td, col, record, config, catalogKey, di.value); });
@@ -7363,7 +7363,7 @@
       } else if (col.type === 'number') {
         var stepA = col.step ? ' step="' + col.step + '"' : '';
         var minA = col.min != null ? ' min="' + col.min + '"' : '';
-        td.innerHTML = '<input type="number" value="' + esc(currentValue) + '"' + stepA + minA + '>';
+        td.innerHTML = '<input type="number" value="' + esc(currentValue) + '"' + stepA + minA + ' aria-label="' + esc(col.label) + '">';
         var ni = td.querySelector('input');
         ni.focus();
         ni.addEventListener('keydown', function(e) {
@@ -7457,13 +7457,13 @@
       var bh = '<span class="bulk-count">' + count + ' seleccionado' + (count !== 1 ? 's' : '') + '</span>';
       bh += '<div class="bulk-separator"></div>';
       if (catalogKey === 'acciones') {
-        bh += '<select id="bulkEstado" class="u-text-12"><option value="">Cambiar estado...</option>';
+        bh += '<select id="bulkEstado" class="u-text-12" aria-label="Cambiar estado"><option value="">Cambiar estado...</option>';
         ['Planificada','Pendiente','Buscando','En preparaci\u00F3n','En marcha','Terminada','Anulada','Retrasada'].forEach(function(o) { bh += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
         bh += '</select>';
-        bh += '<select id="bulkEmpresa" class="u-text-12"><option value="">Cambiar empresa...</option>';
+        bh += '<select id="bulkEmpresa" class="u-text-12" aria-label="Cambiar empresa"><option value="">Cambiar empresa...</option>';
         getEmpresasGrupo().forEach(function(e) { bh += '<option value="' + esc(e.razonSocial) + '">' + esc(e.razonSocial) + '</option>'; });
         bh += '</select>';
-        bh += '<input type="text" id="bulkDepartamento" placeholder="Departamento..." class="u-text-12" style="width:140px;">';
+        bh += '<input type="text" id="bulkDepartamento" placeholder="Departamento..." class="u-text-12" style="width:140px;" aria-label="Departamento">';
         bh += '<button class="btn btn-secondary u-text-11" id="bulkAssignParticipants" style="padding:5px 10px;">Asignar participantes</button>';
       }
       bh += '<div class="u-ml-auto"><button class="btn btn-secondary u-text-11 u-text-danger" id="bulkDelete" style="padding:5px 10px; border-color:var(--danger);">Eliminar</button></div>';
@@ -7712,13 +7712,13 @@
       // Company selector
       var rltEmpresas = getEmpresasGrupo();
       parts.push('<div class="u-flex u-gap-6 u-items-center u-flex-wrap">');
-      parts.push('<select id="rltEmpresaSelect" class="input-field u-text-12 u-w-auto" style="padding:4px 8px; min-width:180px;">');
+      parts.push('<select id="rltEmpresaSelect" class="input-field u-text-12 u-w-auto" style="padding:4px 8px; min-width:180px;" aria-label="Empresa">');
       parts.push('<option value="">Todas las empresas (consolidado)</option>');
       rltEmpresas.forEach(function(e) {
         parts.push('<option value="' + esc(e.cif) + '">' + esc(e.razonSocial) + '</option>');
       });
       parts.push('</select>');
-      parts.push('<input type="number" id="rltBalanceYear" value="' + new Date().getFullYear() + '" min="2000" max="2099" class="u-text-12" style="width:80px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius-sm);">');
+      parts.push('<input type="number" id="rltBalanceYear" value="' + new Date().getFullYear() + '" min="2000" max="2099" class="u-text-12" style="width:80px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius-sm);" aria-label="Año">');
       parts.push('<button class="btn btn-secondary u-text-11" id="btnRLTBalance" style="padding:5px 10px;">Balance anual RLT</button>');
       parts.push('</div>');
       if (rltEmpresas.length > 1) {
@@ -7786,7 +7786,7 @@
                 parts.push('<td title="Caduca el ' + esc(expiryStr) + '">' + esc(dateStr) + '</td>');
               }
             } else {
-              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:var(--font-size-xs); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;"></td>');
+              parts.push('<td><input type="date" class="compliance-date-input" data-nif="' + esc(nif) + '" data-type-id="' + esc(ct.id) + '" style="font-size:var(--font-size-xs); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 4px;" aria-label="Fecha de ' + esc(ct.name) + '"></td>');
             }
           });
           parts.push('</tr>');
@@ -7964,7 +7964,7 @@
       html += '<button class="annual-plan-back-btn" id="btnAnnualPlanBack"><span class="icon" aria-hidden="true">' + Icons.chevronLeft(14) + '</span> Volver</button>';
       html += '<h2>Plan anual de formaci\u00f3n</h2>';
       html += '</div>';
-      html += '<select class="annual-plan-year-select" id="annualPlanYear">' + yearOptions + '</select>';
+      html += '<select class="annual-plan-year-select" id="annualPlanYear" aria-label="Año del plan">' + yearOptions + '</select>';
       html += '</div>';
 
       // Render each quarter
@@ -8334,13 +8334,13 @@
         '<div id="cfNotasInner">' +
           '<div id="cfNotasList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;">' + notasListHtml + '</div>' +
           '<div class="u-flex u-gap-6 u-items-center">' +
-            '<select class="input-field u-text-12 u-w-auto" id="cfNotaTag" style="min-width:100px;">' +
+            '<select class="input-field u-text-12 u-w-auto" id="cfNotaTag" style="min-width:100px;" aria-label="Etiqueta de nota">' +
               '<option value="interno">interno</option>' +
               '<option value="proveedor">proveedor</option>' +
               '<option value="FUNDAE">FUNDAE</option>' +
               '<option value="empleado">persona trabajadora</option>' +
             '</select>' +
-            '<input class="input-field u-text-12 u-flex-1" id="cfNotaText" placeholder="Escribe una nota...">' +
+            '<input class="input-field u-text-12 u-flex-1" id="cfNotaText" placeholder="Escribe una nota..." aria-label="Texto de nota">' +
             '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddNota">A\u00F1adir</button>' +
           '</div>' +
         '</div>' +
@@ -8360,7 +8360,7 @@
       } else {
         // Add session row
         innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-8">' +
-          '<input class="input-field u-text-12 u-w-auto" id="cfAsistenciaDate" type="date">' +
+          '<input class="input-field u-text-12 u-w-auto" id="cfAsistenciaDate" type="date" aria-label="Fecha de sesión">' +
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddSesion">A\u00F1adir sesi\u00F3n</button>' +
         '</div>';
 
@@ -8404,7 +8404,7 @@
               var isChecked = nifRegistro[sj] === true;
               if (isChecked) checked++;
               innerHtml += '<td style="text-align:center; padding:6px 4px; border:1px solid var(--border);">' +
-                '<input type="checkbox" class="cfAsistenciaCheck" data-nif="' + esc(nif) + '" data-sesion-idx="' + sj + '"' + (isChecked ? ' checked' : '') + ' style="accent-color:var(--accent);">' +
+                '<input type="checkbox" class="cfAsistenciaCheck" data-nif="' + esc(nif) + '" data-sesion-idx="' + sj + '"' + (isChecked ? ' checked' : '') + ' style="accent-color:var(--accent);" aria-label="Asistencia de ' + esc(empName) + '">' +
               '</td>';
             }
 
@@ -8449,14 +8449,14 @@
         const placeholder = opts.placeholder ? ' placeholder="' + esc(opts.placeholder) + '"' : '';
         return '<div class="u-form-group">' +
           '<label class="u-form-label">' + esc(label) + '</label>' +
-          '<input class="input-field u-text-13" type="' + type + '" id="cf_' + id + '" value="' + value + '"' + disabled + max + placeholder + '>' +
+          '<input class="input-field u-text-13" type="' + type + '" id="cf_' + id + '" value="' + value + '"' + disabled + max + placeholder + ' aria-label="' + esc(label) + '">' +
           '</div>';
       }
 
       function select(label, id, value, options) {
         let html = '<div class="u-field-group">' +
           '<label class="u-label-sm">' + esc(label) + '</label>' +
-          '<select class="input-field u-text-13" id="cf_' + id + '">' +
+          '<select class="input-field u-text-13" id="cf_' + id + '" aria-label="' + esc(label) + '">' +
           '<option value="">-- Seleccionar --</option>';
         options.forEach(function(o) {
           const sel = (o.value === value) ? ' selected' : '';
@@ -8469,7 +8469,7 @@
       function textarea(label, id, value) {
         return '<div class="u-field-group">' +
           '<label class="u-label-sm">' + esc(label) + '</label>' +
-          '<textarea class="input-field u-text-13 u-resize-vertical" id="cf_' + id + '" rows="3">' + value + '</textarea>' +
+          '<textarea class="input-field u-text-13 u-resize-vertical" id="cf_' + id + '" rows="3" aria-label="' + esc(label) + '">' + value + '</textarea>' +
           '</div>';
       }
 
@@ -8694,7 +8694,7 @@
             '</div>' +
             '<div class="u-field-group">' +
               '<label style="font-size:var(--font-size-xs); color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
-              '<input class="input-field u-text-13" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '">' +
+              '<input class="input-field u-text-13" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '" aria-label="Fecha envío RLT">' +
             '</div>' +
             deadlineHtml +
             '<button class="btn btn-secondary u-text-12 u-mt-4" id="btnGenerateRLT">Generar comunicaci\u00F3n RLT</button>' +
@@ -8717,34 +8717,34 @@
             '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;">' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Utilidad (1-5)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL1Utilidad" value="' + (l1.utilidad != null ? esc(String(l1.utilidad)) : '') + '" min="1" max="5" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL1Utilidad" value="' + (l1.utilidad != null ? esc(String(l1.utilidad)) : '') + '" min="1" max="5" step="0.1" aria-label="Utilidad">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Calidad formador (1-5)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL1CalidadFormador" value="' + (l1.calidadFormador != null ? esc(String(l1.calidadFormador)) : '') + '" min="1" max="5" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL1CalidadFormador" value="' + (l1.calidadFormador != null ? esc(String(l1.calidadFormador)) : '') + '" min="1" max="5" step="0.1" aria-label="Calidad formador">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Materiales (1-5)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL1Materiales" value="' + (l1.materiales != null ? esc(String(l1.materiales)) : '') + '" min="1" max="5" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL1Materiales" value="' + (l1.materiales != null ? esc(String(l1.materiales)) : '') + '" min="1" max="5" step="0.1" aria-label="Materiales">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">NPS (0-10)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL1Nps" value="' + (l1.nps != null ? esc(String(l1.nps)) : '') + '" min="0" max="10" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL1Nps" value="' + (l1.nps != null ? esc(String(l1.nps)) : '') + '" min="0" max="10" step="0.1" aria-label="NPS">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">N\u00BA respuestas</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL1Respuestas" value="' + (l1.respuestas != null ? esc(String(l1.respuestas)) : '') + '" min="0" step="1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL1Respuestas" value="' + (l1.respuestas != null ? esc(String(l1.respuestas)) : '') + '" min="0" step="1" aria-label="Número de respuestas">' +
               '</div>' +
             '</div>' +
             '<div class="u-text-12 u-font-600 u-text-secondary u-mb-8" style="margin-top:12px;">L2 \u2014 Aprendizaje</div>' +
             '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px 12px;">' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Pre-test (%)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL2PreTest" value="' + (l2.preTest != null ? esc(String(l2.preTest)) : '') + '" min="0" max="100" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL2PreTest" value="' + (l2.preTest != null ? esc(String(l2.preTest)) : '') + '" min="0" max="100" step="0.1" aria-label="Pre-test">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Post-test (%)</label>' +
-                '<input class="input-field u-text-13" type="number" id="cf_evalL2PostTest" value="' + (l2.postTest != null ? esc(String(l2.postTest)) : '') + '" min="0" max="100" step="0.1">' +
+                '<input class="input-field u-text-13" type="number" id="cf_evalL2PostTest" value="' + (l2.postTest != null ? esc(String(l2.postTest)) : '') + '" min="0" max="100" step="0.1" aria-label="Post-test">' +
               '</div>' +
               '<div class="u-mb-6">' +
                 '<label class="u-label-sm">Mejora (auto)</label>' +
@@ -9216,7 +9216,7 @@
         var status = confirmaciones[nif] || 'pendiente';
         innerHtml += '<div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border);">' +
           '<span class="u-text-12 u-text-primary u-flex-1">' + esc(empName) + '</span>' +
-          '<select class="input-field cfConfirmacionSelect u-text-11 u-w-auto" data-nif="' + esc(nif) + '" style="padding:3px 6px;">' +
+          '<select class="input-field cfConfirmacionSelect u-text-11 u-w-auto" data-nif="' + esc(nif) + '" style="padding:3px 6px;" aria-label="Estado de confirmación de ' + esc(empName) + '">' +
             '<option value="pendiente"' + (status === 'pendiente' ? ' selected' : '') + '>Pendiente</option>' +
             '<option value="confirmado"' + (status === 'confirmado' ? ' selected' : '') + '>Confirmado</option>' +
             '<option value="rechazado"' + (status === 'rechazado' ? ' selected' : '') + '>Rechazado</option>' +
@@ -9687,7 +9687,7 @@
       empresas.sort(); departamentos.sort(); areas.sort();
 
       function buildFilterSelect(id, label, options) {
-        var h = '<select id="' + id + '" class="input-field u-text-11 u-flex-1" style="padding:4px 6px; min-width:0;">' +
+        var h = '<select id="' + id + '" class="input-field u-text-11 u-flex-1" style="padding:4px 6px; min-width:0;" aria-label="' + esc(label) + '">' +
           '<option value="">' + esc(label) + '</option>';
         options.forEach(function(o) {
           h += '<option value="' + esc(o) + '">' + esc(o) + '</option>';
@@ -9706,7 +9706,7 @@
       overlay.innerHTML =
         '<div class="dialog-box u-max-w-600 u-flex-col u-text-left u-p-24" style="width:95%; max-height:80vh;">' +
           '<h3 class="u-dialog-heading" id="' + ppHeadingId + '" style="margin-bottom:12px;">Asignar participantes</h3>' +
-          '<input class="input-field u-text-12 u-mb-8" type="text" id="ppSearch" placeholder="Buscar por nombre o NIF...">' +
+          '<input class="input-field u-text-12 u-mb-8" type="text" id="ppSearch" placeholder="Buscar por nombre o NIF..." aria-label="Buscar persona por nombre o NIF">' +
           '<div class="u-flex u-gap-6 u-mb-10">' +
             buildFilterSelect('ppEmpresa', 'Empresa', empresas) +
             buildFilterSelect('ppDepartamento', 'Departamento', departamentos) +
@@ -10507,6 +10507,7 @@
           input.type = 'text';
           input.value = current;
           input.placeholder = field === 'Email trabajo' ? 'correo@ejemplo.com' : 'NIF';
+          input.setAttribute('aria-label', 'Editar ' + field);
           var saveBtn = document.createElement('button');
           saveBtn.className = 'dq-save';
           saveBtn.textContent = 'Guardar';
@@ -11126,19 +11127,19 @@
         '<div class="u-flex-col u-gap-12">' +
           '<div>' +
             '<label class="u-text-12 u-font-500 u-text-secondary u-block u-mb-4">Área / Departamento</label>' +
-            '<input class="input-field u-w-full u-text-13" type="text" id="tnaArea" placeholder="Ej: Recursos Humanos">' +
+            '<input class="input-field u-w-full u-text-13" type="text" id="tnaArea" placeholder="Ej: Recursos Humanos" aria-label="Área / Departamento">' +
           '</div>' +
           '<div>' +
             '<label class="u-form-label">Tema de formación</label>' +
-            '<input class="input-field u-w-full u-text-13" type="text" id="tnaTema" placeholder="Ej: Gestión del cambio">' +
+            '<input class="input-field u-w-full u-text-13" type="text" id="tnaTema" placeholder="Ej: Gestión del cambio" aria-label="Tema de formación">' +
           '</div>' +
           '<div>' +
             '<label class="u-form-label">Justificación</label>' +
-            '<textarea class="input-field u-w-full u-text-13 u-resize-vertical" id="tnaJustificacion" rows="3" placeholder="Motivo de la solicitud..."></textarea>' +
+            '<textarea class="input-field u-w-full u-text-13 u-resize-vertical" id="tnaJustificacion" rows="3" placeholder="Motivo de la solicitud..." aria-label="Justificación"></textarea>' +
           '</div>' +
           '<div>' +
             '<label class="u-form-label">Urgencia</label>' +
-            '<select class="input-field u-w-full u-text-13" id="tnaUrgencia">' +
+            '<select class="input-field u-w-full u-text-13" id="tnaUrgencia" aria-label="Urgencia">' +
               '<option value="baja">Baja</option>' +
               '<option value="media" selected>Media</option>' +
               '<option value="alta">Alta</option>' +
@@ -12455,7 +12456,7 @@
           '<div class="filter-select" data-key="' + esc(key) + '">' +
             '<button class="' + btnClass + '" type="button" aria-expanded="false" aria-haspopup="listbox">' + esc(btnText) + '</button>' +
             '<div class="filter-dropdown" role="listbox" aria-label="' + esc(key) + '">' +
-              '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off"></div>' +
+              '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off" aria-label="Buscar en ' + esc(key) + '"></div>' +
               items.map(({ value: v, count }) =>
                 '<label role="option" aria-selected="' + (selected.includes(v) ? 'true' : 'false') + '">' +
                   '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
@@ -12628,7 +12629,7 @@
       overlay.innerHTML = '<div class="dialog-box u-max-w-400">' +
         '<h3 id="' + laHeadingId + '">Cargar desde Acción Formativa</h3>' +
         '<p class="u-text-13 u-text-secondary u-mb-12">Selecciona una acción para pre-seleccionar sus participantes vinculados.</p>' +
-        '<select class="input-field u-text-13 u-mb-16" id="loadAccionSelect">' +
+        '<select class="input-field u-text-13 u-mb-16" id="loadAccionSelect" aria-label="Acción formativa">' +
         '<option value="">-- Seleccionar acción --</option>' +
         acciones.map(a => '<option value="' + esc(a.codigo) + '">' + esc(a.nombre || a.codigo) + ' (' + (a.participantes || []).length + ' participantes)</option>').join('') +
         '</select>' +
@@ -12848,6 +12849,7 @@
       var cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.dataset.id = emp._id;
+      cb.setAttribute('aria-label', 'Seleccionar ' + (emp.Empleado || 'persona'));
       if (hasEmail && !isExcluded) cb.checked = true;
       if (!hasEmail) cb.disabled = true;
       tdCheck.appendChild(cb);
@@ -13144,7 +13146,7 @@
       if (container.children.length >= 12) return;
       const div = document.createElement('div');
       div.className = 'event-row';
-      div.innerHTML = '<input class="input-field u-flex-1" type="date"> <button class="link-btn link-clear" onclick="this.parentElement.remove(); updateSeriesTabs();" aria-label="Eliminar fecha"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button>';
+      div.innerHTML = '<input class="input-field u-flex-1" type="date" aria-label="Fecha de sesión"> <button class="link-btn link-clear" onclick="this.parentElement.remove(); updateSeriesTabs();" aria-label="Eliminar fecha"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button>';
       container.appendChild(div);
       div.querySelector('input').addEventListener('change', updateSeriesTabs);
     });
@@ -13380,6 +13382,8 @@
       var isOpen = panel.classList.contains('open');
       panel.classList.toggle('open');
       overlay.classList.toggle('open');
+      var titleEl = document.querySelector('.queue-bar-title');
+      if (titleEl) titleEl.setAttribute('aria-expanded', String(!isOpen));
       if (!isOpen) renderQueuePanel();
     }
 
@@ -15395,9 +15399,9 @@
       if (!tbody) return;
       tbody.innerHTML = empresas.map(function(e, i) { // innerHTML OK: sanitized via esc()
         return '<tr>' +
-          '<td><input class="input-field u-w-full u-text-12" value="' + esc(e.razonSocial || '') + '" data-idx="' + i + '" data-field="razonSocial"></td>' +
-          '<td><input class="input-field u-text-12" value="' + esc(e.cif || '') + '" data-idx="' + i + '" data-field="cif" style="width:120px;"></td>' +
-          '<td><input class="input-field u-text-12" type="number" value="' + (e.credito || 0) + '" data-idx="' + i + '" data-field="credito" style="width:100px;" step="0.01"></td>' +
+          '<td><input class="input-field u-w-full u-text-12" value="' + esc(e.razonSocial || '') + '" data-idx="' + i + '" data-field="razonSocial" aria-label="Razón social"></td>' +
+          '<td><input class="input-field u-text-12" value="' + esc(e.cif || '') + '" data-idx="' + i + '" data-field="cif" style="width:120px;" aria-label="CIF"></td>' +
+          '<td><input class="input-field u-text-12" type="number" value="' + (e.credito || 0) + '" data-idx="' + i + '" data-field="credito" style="width:100px;" step="0.01" aria-label="Crédito FUNDAE"></td>' +
           '<td><button class="link-btn link-clear u-text-11" onclick="removeEmpresaGrupo(' + i + ')">Eliminar</button></td>' +
         '</tr>';
       }).join('');
@@ -15637,22 +15641,22 @@
           '<td class="u-p-6"><button class="link-btn link-clear" data-remove-idx="' + idx + '" style="font-size:var(--font-size-xs); color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button></td>' +
           '<td class="u-p-6 u-text-12">' + esc(p.empleado) + '</td>' +
           '<td style="padding:6px; font-size:var(--font-size-sm);">' + esc(p.nif) + '</td>' +
-          '<td class="u-p-6"><select class="input-field u-text-11" data-field="tipoDocumento" data-idx="' + idx + '" style="padding:3px 6px;">' +
+          '<td class="u-p-6"><select class="input-field u-text-11" data-field="tipoDocumento" data-idx="' + idx + '" style="padding:3px 6px;" aria-label="Tipo documento">' +
             '<option value="10"' + (p.tipoDocumento == 10 ? ' selected' : '') + '>NIF</option>' +
             '<option value="60"' + (p.tipoDocumento == 60 ? ' selected' : '') + '>NIE</option>' +
             '<option value="20"' + (p.tipoDocumento == 20 ? ' selected' : '') + '>Pasaporte</option>' +
           '</select></td>' +
-          '<td class="u-p-6"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:140px;"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:100px;"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingCat ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingNivel ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '"></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;"></td>' +
-          '<td style="padding:6px;"><select class="input-field u-text-11" data-field="diploma" data-idx="' + idx + '" style="padding:3px 6px;">' +
+          '<td class="u-p-6"><input class="input-field" data-field="email" data-idx="' + idx + '" value="' + esc(p.email) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:140px;" aria-label="Email"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="telefono" data-idx="' + idx + '" value="' + esc(p.telefono) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:100px;" aria-label="Teléfono"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="categoriaProfesional" data-idx="' + idx + '" value="' + esc(p.categoriaProfesional) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingCat ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '" aria-label="Categoría profesional"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="nivelEstudios" data-idx="' + idx + '" value="' + esc(p.nivelEstudios) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;' + (missingNivel ? ' background:var(--danger-light); border-color:var(--danger);' : '') + '" aria-label="Nivel estudios"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="grupoCotizacion" data-idx="' + idx + '" value="' + esc(p.grupoCotizacion) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:40px;" aria-label="Grupo cotización"></td>' +
+          '<td style="padding:6px;"><select class="input-field u-text-11" data-field="diploma" data-idx="' + idx + '" style="padding:3px 6px;" aria-label="Diploma">' +
             '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
             '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
           '</select></td>' +
           '<td class="u-p-6 u-text-11 u-text-muted">' + esc(p.costeHora) + '</td>' +
-          '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + '></td>' +
+          '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + ' aria-label="Discapacidad"></td>' +
         '</tr>';
       }).join('');
 
@@ -20513,6 +20517,7 @@
         if (hasDanger) {
           alertsBodyEl.style.display = '';
           alertsArrowEl.className = 'dash-alerts-arrow open';
+          alertsToggleEl.setAttribute('aria-expanded', 'true');
         }
       }
 
@@ -20520,6 +20525,7 @@
         var open = alertsBodyEl.style.display !== 'none';
         alertsBodyEl.style.display = open ? 'none' : '';
         alertsArrowEl.className = 'dash-alerts-arrow' + (open ? '' : ' open');
+        alertsToggleEl.setAttribute('aria-expanded', String(!open));
       };
 
       // Wire employee search (now integrated into toolbar)
@@ -20549,6 +20555,9 @@
           group.classList.add('dash-group-collapsed');
           heading.classList.add('collapsed');
         }
+        heading.setAttribute('role', 'button');
+        heading.setAttribute('tabindex', '0');
+        heading.setAttribute('aria-expanded', String(!collapsedState[groupId]));
 
         if (heading._boundHandler) return;
         heading._boundHandler = true;
@@ -20563,7 +20572,11 @@
             heading.classList.add('collapsed');
             collapsedState[groupId] = true;
           }
+          heading.setAttribute('aria-expanded', String(!group.classList.contains('dash-group-collapsed')));
           try { localStorage.setItem(DASH_COLLAPSED_KEY, JSON.stringify(collapsedState)); } catch(e) {}
+        });
+        heading.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); heading.click(); }
         });
       });
 
@@ -21851,10 +21864,13 @@
       ];
       var listHtml = '<table><thead><tr>';
       calCols.forEach(function(col) {
-        var arrow = calState.sortCol === col.key
-          ? '<span class="cal-sort-arrow"><span class="icon" aria-hidden="true">' + (calState.sortDir === 'asc' ? Icons.sortAsc(10) : Icons.sortDesc(10)) + '</span></span>'
-          : '';
-        listHtml += '<th data-sortkey="' + col.key + '">' + col.label + arrow + '</th>';
+        var ariaSort = 'none';
+        var arrow = '';
+        if (calState.sortCol === col.key) {
+          ariaSort = calState.sortDir === 'asc' ? 'ascending' : 'descending';
+          arrow = '<span class="cal-sort-arrow"><span class="icon" aria-hidden="true">' + (calState.sortDir === 'asc' ? Icons.sortAsc(10) : Icons.sortDesc(10)) + '</span></span>';
+        }
+        listHtml += '<th data-sortkey="' + col.key + '" aria-sort="' + ariaSort + '">' + col.label + arrow + '</th>';
       });
       listHtml += '</tr></thead><tbody>';
       sortedForTable.forEach(function(item) {
