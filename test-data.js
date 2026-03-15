@@ -473,18 +473,159 @@
   });
 
   // ---------------------------------------------------------------------------
-  // 10. TNA REQUESTS (5 solicitudes de detección de necesidades)
+  // 10. PUESTOS CATALOG (10 sample positions with Mercer data)
   // ---------------------------------------------------------------------------
-  const tnaRequests = [
-    { id: ts(-15), area: 'Comercial', tema: 'Negociación avanzada para Key Accounts', justificacion: 'El equipo de KAM ha perdido 3 renovaciones en Q4 por falta de técnicas de cierre.', urgencia: 'alta', estado: 'aprobada', createdAt: iso(ts(-15)) },
-    { id: ts(-12), area: 'Tecnología', tema: 'Certificación AWS Cloud Practitioner', justificacion: 'Migración a AWS planificada para Q3. Equipo necesita fundamentos de cloud.', urgencia: 'alta', estado: 'pendiente', createdAt: iso(ts(-12)) },
-    { id: ts(-8), area: 'Recursos Humanos', tema: 'Entrevista por competencias', justificacion: 'Rotación del 18% en perfiles tech. Mejorar selección para reducir desvinculaciones en periodo de prueba.', urgencia: 'media', estado: 'convertida', createdAt: iso(ts(-8)) },
-    { id: ts(-5), area: 'Finanzas', tema: 'NIIF 16 — Arrendamientos', justificacion: 'Cambio normativo que afecta al cierre contable. Obligatorio para el equipo de contabilidad.', urgencia: 'media', estado: 'pendiente', createdAt: iso(ts(-5)) },
-    { id: ts(-2), area: 'Marketing', tema: 'GA4 y Google Tag Manager', justificacion: 'Migración de Universal Analytics completada pero el equipo no domina GA4.', urgencia: 'baja', estado: 'rechazada', createdAt: iso(ts(-2)) }
+  const puestosCatalog = [
+    {
+      id: 'director_hde_levante', nombre: 'Director HDE Levante-Aragon Sur', nombreOrganigrama: 'Director Regional Aragón Sur',
+      area: 'Hostelería Dirección', nivelCarrera: 'M4', pcRange: [53, 57], puntosTotales: 577, enUso: true,
+      purpose: 'Dirigir la estrategia y operativa comercial del canal Horeca en la zona Levante-Aragón Sur, asegurando el cumplimiento de objetivos de venta y rentabilidad.',
+      skills: ['Dirección de equipos comerciales', 'Negociación con clientes Horeca', 'Planificación comercial territorial', 'Gestión de P&L'],
+      responsibilities: [
+        { description: 'Definir y ejecutar el plan comercial anual para la zona asignada', percentage: 30 },
+        { description: 'Liderar y desarrollar al equipo de delegados comerciales', percentage: 25 },
+        { description: 'Gestionar la relación con clientes clave del canal Horeca', percentage: 20 }
+      ]
+    },
+    {
+      id: 'controller_financiero', nombre: 'Controller Financiero', nombreOrganigrama: 'Controller Financiero',
+      area: 'Finanzas', nivelCarrera: 'P3', pcRange: [48, 52], puntosTotales: 485, enUso: true,
+      purpose: 'Supervisar el control de gestión y reporting financiero del grupo, garantizando la fiabilidad de la información económico-financiera.',
+      skills: ['Análisis financiero', 'Consolidación contable', 'Presupuestación', 'SAP FI/CO', 'NIIF'],
+      responsibilities: [
+        { description: 'Elaborar y consolidar los cierres mensuales y anuales', percentage: 35 },
+        { description: 'Diseñar y gestionar el proceso presupuestario', percentage: 25 },
+        { description: 'Analizar desviaciones y proponer medidas correctoras', percentage: 20 }
+      ]
+    },
+    {
+      id: 'responsable_seleccion', nombre: 'Responsable de Selección', nombreOrganigrama: 'Responsable Selección',
+      area: 'Recursos Humanos', nivelCarrera: 'P2', pcRange: [44, 48], puntosTotales: 398, enUso: true,
+      purpose: 'Liderar el proceso de atracción y selección de talento, asegurando la cobertura de vacantes con perfiles alineados a la cultura organizacional.',
+      skills: ['Entrevista por competencias', 'Employer branding', 'Gestión de ATS', 'Assessment center', 'Headhunting'],
+      responsibilities: [
+        { description: 'Gestionar el ciclo completo de selección de todas las vacantes', percentage: 40 },
+        { description: 'Desarrollar la marca empleadora y presencia en portales de empleo', percentage: 20 },
+        { description: 'Coordinar con managers para definir perfiles y necesidades', percentage: 20 }
+      ]
+    },
+    {
+      id: 'jefe_almacen', nombre: 'Jefe de Almacén', nombreOrganigrama: 'Jefe Almacén',
+      area: 'Operaciones Logística', nivelCarrera: 'S2', pcRange: [40, 44], puntosTotales: 345, enUso: true,
+      purpose: 'Gestionar las operaciones de almacenaje, recepción y expedición de mercancías, optimizando recursos y cumpliendo plazos de entrega.',
+      skills: ['Gestión de inventarios', 'WMS (SGA)', 'Lean logistics', 'Gestión de equipos operativos', 'Seguridad en almacén'],
+      responsibilities: [
+        { description: 'Planificar y supervisar las operaciones diarias del almacén', percentage: 35 },
+        { description: 'Gestionar el equipo de operarios y mozos de almacén', percentage: 25 },
+        { description: 'Controlar el inventario y gestionar las incidencias de stock', percentage: 20 }
+      ]
+    },
+    {
+      id: 'delegado_comercial_alimentacion', nombre: 'Delegado Comercial Alimentación', nombreOrganigrama: 'Delegado Comercial',
+      area: 'Comercial Alimentación', nivelCarrera: 'S1', pcRange: [36, 40], puntosTotales: 298, enUso: true,
+      purpose: 'Gestionar la cartera de clientes del canal alimentación en la zona asignada, maximizando ventas y cuota de mercado.',
+      skills: ['Técnicas de venta consultiva', 'Negociación comercial', 'Gestión de cartera', 'Trade marketing', 'CRM'],
+      responsibilities: [
+        { description: 'Visitar y gestionar la cartera de clientes asignada', percentage: 40 },
+        { description: 'Negociar condiciones comerciales y acuerdos de surtido', percentage: 25 },
+        { description: 'Ejecutar las acciones de trade marketing en punto de venta', percentage: 15 }
+      ]
+    },
+    {
+      id: 'brand_manager', nombre: 'Brand Manager', nombreOrganigrama: 'Brand Manager',
+      area: 'Marketing', nivelCarrera: 'P2', pcRange: [44, 48], puntosTotales: 402, enUso: true,
+      purpose: 'Desarrollar y ejecutar la estrategia de marca para el portfolio asignado, maximizando el valor de marca y la cuota de mercado.',
+      skills: ['Estrategia de marca', 'Análisis de mercado', 'Gestión de agencias', 'Marketing digital', 'P&L de producto'],
+      responsibilities: [
+        { description: 'Definir el plan de marketing anual de las marcas asignadas', percentage: 30 },
+        { description: 'Gestionar el presupuesto de marketing y la relación con agencias', percentage: 25 },
+        { description: 'Analizar resultados de mercado (Nielsen, Kantar) y proponer acciones', percentage: 20 }
+      ]
+    },
+    {
+      id: 'tecnico_prl', nombre: 'Técnico de PRL', nombreOrganigrama: 'Técnico PRL',
+      area: 'Calidad y PRL', nivelCarrera: 'P2', pcRange: [42, 46], puntosTotales: 372, enUso: true,
+      purpose: 'Gestionar el sistema de prevención de riesgos laborales, asegurando el cumplimiento normativo y la mejora continua en seguridad y salud.',
+      skills: ['Evaluación de riesgos', 'Investigación de accidentes', 'Formación en PRL', 'ISO 45001', 'Coordinación de actividades empresariales'],
+      responsibilities: [
+        { description: 'Realizar evaluaciones de riesgos y planificar medidas preventivas', percentage: 30 },
+        { description: 'Investigar accidentes e incidentes y proponer acciones correctivas', percentage: 25 },
+        { description: 'Coordinar la formación obligatoria en PRL para todo el personal', percentage: 20 }
+      ]
+    },
+    {
+      id: 'data_analyst', nombre: 'Data Analyst', nombreOrganigrama: 'Analista de Datos',
+      area: 'Tecnología', nivelCarrera: 'P2', pcRange: [44, 48], puntosTotales: 388, enUso: true,
+      purpose: 'Extraer, analizar y visualizar datos para apoyar la toma de decisiones de negocio, identificando tendencias y oportunidades de mejora.',
+      skills: ['SQL avanzado', 'Python (Pandas/NumPy)', 'Power BI', 'Estadística aplicada', 'ETL y data warehousing'],
+      responsibilities: [
+        { description: 'Desarrollar dashboards e informes para las áreas de negocio', percentage: 35 },
+        { description: 'Automatizar procesos de extracción y transformación de datos', percentage: 25 },
+        { description: 'Realizar análisis ad hoc para soporte a decisiones estratégicas', percentage: 20 }
+      ]
+    },
+    {
+      id: 'director_rrhh', nombre: 'Director de RRHH', nombreOrganigrama: 'Director RRHH',
+      area: 'Recursos Humanos', nivelCarrera: 'M5', pcRange: [55, 60], puntosTotales: 620, enUso: true,
+      purpose: 'Definir e implementar la estrategia de personas del grupo, alineando las políticas de RRHH con los objetivos de negocio.',
+      skills: ['Estrategia de RRHH', 'Relaciones laborales', 'Desarrollo organizacional', 'Gestión del cambio', 'Compensación y beneficios'],
+      responsibilities: [
+        { description: 'Diseñar e implementar la estrategia de personas del grupo', percentage: 30 },
+        { description: 'Liderar las relaciones con los representantes de los trabajadores', percentage: 20 },
+        { description: 'Supervisar los procesos de desarrollo, formación y talento', percentage: 20 }
+      ]
+    },
+    {
+      id: 'key_account_manager', nombre: 'Key Account Manager', nombreOrganigrama: 'KAM Nacional',
+      area: 'Comercial', nivelCarrera: 'M3', pcRange: [48, 53], puntosTotales: 510, enUso: true,
+      purpose: 'Gestionar las cuentas clave nacionales del grupo, maximizando el valor de la relación comercial a largo plazo.',
+      skills: ['Negociación con grandes cuentas', 'Category management', 'Trade marketing estratégico', 'Análisis de rentabilidad', 'Gestión de contratos'],
+      responsibilities: [
+        { description: 'Negociar los acuerdos marco anuales con las cuentas clave', percentage: 35 },
+        { description: 'Desarrollar planes de negocio conjuntos con los clientes', percentage: 25 },
+        { description: 'Coordinar la ejecución de promociones y lanzamientos en cuentas', percentage: 20 }
+      ]
+    }
   ];
 
   // ---------------------------------------------------------------------------
-  // 11. UNIFIED TEMPLATES (3 plantillas)
+  // 11. TNA REQUESTS (5 solicitudes con nuevo modelo — vinculadas a puestos)
+  // ---------------------------------------------------------------------------
+  const tnaRequests = [
+    {
+      id: ts(-15), puestos: ['Key Account Manager', 'Delegado Comercial Alimentación'], skill: 'Negociación con grandes cuentas',
+      tema: 'Negociación avanzada para Key Accounts', justificacion: 'El equipo de KAM ha perdido 3 renovaciones en Q4 por falta de técnicas de cierre.',
+      urgencia: 'alta', estado: 'aprobada', origen: 'Dirección Comercial', createdAt: iso(ts(-15)),
+      numEmpleados: 8, areas: ['Comercial', 'Comercial Alimentación'], nivelCarrera: 'M3'
+    },
+    {
+      id: ts(-12), puestos: ['Data Analyst'], skill: 'Python (Pandas/NumPy)',
+      tema: 'Certificación AWS Cloud Practitioner', justificacion: 'Migración a AWS planificada para Q3. Equipo necesita fundamentos de cloud.',
+      urgencia: 'alta', estado: 'pendiente', origen: 'Dirección Tecnología', createdAt: iso(ts(-12)),
+      numEmpleados: 3, areas: ['Tecnología'], nivelCarrera: 'P2'
+    },
+    {
+      id: ts(-8), puestos: ['Responsable de Selección'], skill: 'Entrevista por competencias',
+      tema: 'Entrevista por competencias', justificacion: 'Rotación del 18% en perfiles tech. Mejorar selección para reducir desvinculaciones en periodo de prueba.',
+      urgencia: 'media', estado: 'convertida', origen: 'Recursos Humanos', createdAt: iso(ts(-8)),
+      numEmpleados: 2, areas: ['Recursos Humanos'], nivelCarrera: 'P2'
+    },
+    {
+      id: ts(-5), puestos: ['Controller Financiero'], skill: 'NIIF',
+      tema: 'NIIF 16 — Arrendamientos', justificacion: 'Cambio normativo que afecta al cierre contable. Obligatorio para el equipo de contabilidad.',
+      urgencia: 'media', estado: 'pendiente', origen: 'Dirección Financiera', createdAt: iso(ts(-5)),
+      numEmpleados: 4, areas: ['Finanzas'], nivelCarrera: 'P3'
+    },
+    {
+      id: ts(-2), puestos: ['Brand Manager'], skill: 'Marketing digital',
+      tema: 'GA4 y Google Tag Manager', justificacion: 'Migración de Universal Analytics completada pero el equipo no domina GA4.',
+      urgencia: 'baja', estado: 'rechazada', origen: 'Marketing', createdAt: iso(ts(-2)),
+      numEmpleados: 2, areas: ['Marketing'], nivelCarrera: 'P2'
+    }
+  ];
+
+  // ---------------------------------------------------------------------------
+  // 12. UNIFIED TEMPLATES (3 plantillas)
   // ---------------------------------------------------------------------------
   const unifiedTemplates = [
     {
@@ -526,7 +667,7 @@
   ];
 
   // ---------------------------------------------------------------------------
-  // 12. SETTINGS
+  // 13. SETTINGS
   // ---------------------------------------------------------------------------
   const settings = {
     theme: 'light',
@@ -545,7 +686,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // 13. STATE (convocatoria actual con filtros activos)
+  // 14. STATE (convocatoria actual con filtros activos)
   // ---------------------------------------------------------------------------
   const state = {
     activeFilters: {
@@ -575,7 +716,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // 14. CORRECTIONS (2 correcciones manuales de datos del Excel)
+  // 15. CORRECTIONS (2 correcciones manuales de datos del Excel)
   // ---------------------------------------------------------------------------
   const corrections = {
     '5': { 'Empleado': 'Laura Sánchez Gil-Ortega' },        // apellido compuesto
@@ -583,7 +724,7 @@
   };
 
   // ---------------------------------------------------------------------------
-  // 15. MINOR KEYS
+  // 16. MINOR KEYS
   // ---------------------------------------------------------------------------
   const catalogViewMode = { acciones: 'lista', proveedores: 'ficha', centros: 'ficha', tutores: 'ficha' };
   const dashCollapsed = { dashAlerts: false, dashActions: false };
@@ -605,6 +746,7 @@
     'convocatoria_corrections': corrections,
     'convocatoria_compliance_types': complianceTypes,
     'convocatoria_compliance_records': complianceRecords,
+    'convocatoria_puestos_catalog': puestosCatalog,
     'convocatoria_tnaRequests': tnaRequests,
     'convocatoria_dashCollapsed': dashCollapsed,
     'convocatoria_dash_mode': dashMode,
@@ -634,6 +776,7 @@
   console.log(`  Historial:    ${history.length} envios`);
   console.log(`  Cola:         ${queue.length} programados`);
   console.log(`  Compliance:   ${complianceTypes.length} tipos, ${Object.keys(complianceRecords).length} registros`);
+  console.log(`  Puestos:      ${puestosCatalog.length} posiciones en catálogo`);
   console.log(`  TNA:          ${tnaRequests.length} solicitudes`);
   console.log(`  Templates:    ${unifiedTemplates.length}`);
   console.log(`  Empresas:     ${settings.empresasGrupo.length} (credito total: ${settings.empresasGrupo.reduce((s,e) => s+e.creditoFundae, 0).toLocaleString('es-ES')}€)`);
