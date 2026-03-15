@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Arquitectura
 
-Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~22,500 líneas. Dependencias externas vía CDN:
+Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~23,800 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
 
@@ -143,13 +143,14 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `getUnifiedTemplates()` / `saveUnifiedTemplatesStore()` / `migrateTemplates()` — sistema unificado de plantillas (reemplaza los 4 stores legacy separados)
 - `precomputeDashboard()` — precalcula datos del dashboard con `requestIdleCallback` y cache basado en hash
 - `checkWaitlist()` — gestiona lista de espera cuando se supera capacidad máxima
+- Cuando un handler de `input` hace innerHTML re-render del contenedor que contiene el propio input: capturar `selectionStart` ANTES, y tras re-render hacer `focus()` + `setSelectionRange()` en el nuevo elemento. Si no, el usuario pierde foco tras cada tecla.
 
 ## Convenciones de código
 
 - Español para texto visible al usuario, inglés para código/variables
 - `FILTER_KEYS` y `RELEVANT_COLUMNS` definen las columnas del Excel esperadas
 - Los filtros normalizan espacios (`trim` + collapse) al parsear
-- `localStorage` keys `convocatoria_*`: `_state`, `_employees`, `_fileName`, `_presets`, `_history`, `_queue`, `_settings`, `_unifiedTemplates`, `_catalog_viewMode`, `_corrections`, `_compliance_types`, `_compliance_records`, `_tnaRequests`, `_dashCollapsed`, `_dash_mode`, `_onboarding_done`, `_lastBackup`, `_kbdInteractions`
+- `localStorage` keys `convocatoria_*`: `_state`, `_employees`, `_fileName`, `_presets`, `_history`, `_queue`, `_settings`, `_unifiedTemplates`, `_catalog_viewMode`, `_corrections`, `_compliance_types`, `_compliance_records`, `_tnaRequests`, `_puestos_catalog`, `_dashCollapsed`, `_dash_mode`, `_onboarding_done`, `_lastBackup`, `_kbdInteractions`
 - `localStorage` keys `fundae_*`: `_acciones`, `_proveedores`, `_centros`, `_tutores` — acceso vía `getCatalog(key)` / `saveCatalog(key, data)` (prefijan `fundae_` automáticamente)
 
 ## Dark mode
@@ -180,7 +181,8 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - **Virtual scrolling** — `VirtualScroll` object para tablas >500 filas
 - **Unified templates** — `migrateTemplates()` fusiona 4 stores legacy en `convocatoria_unifiedTemplates`
 - **Compliance tracking** — formación obligatoria con caducidades
-- **TNA requests** — mini sistema de detección de necesidades formativas
+- **TNA / Necesidades formativas** — explorador de puestos (catálogo Mercer con skills/responsabilidades), necesidades estructuradas vinculadas a puestos, multi-select con typeahead, conversión a acciones con código auto-generado
+- **Puestos catalog** — `getPuestosCatalog()` / `savePuestosCatalog(data)` con key `convocatoria_puestos_catalog`. Importable via JSON de catálogos
 - **Annual training plan** — plan anual con vista trimestral
 - **Provider management** — gestión de proveedores con scorecard
 - **Kirkpatrick L1-L2** — evaluación post-formación (utilidad, calidad formador, materiales, NPS, pre/post test)
@@ -239,4 +241,4 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 
 ## Testing
 
-- `test-data.js` en raíz — script para consola que carga datos realistas en todos los localStorage keys. Ejecutar en consola del navegador + recargar. Incluye 50 empleados, 12 acciones, 4 proveedores, compliance, TNA, historial, cola, templates.
+- `test-data.js` en raíz — script para consola que carga datos realistas en todos los localStorage keys. Ejecutar en consola del navegador + recargar. Incluye 50 empleados, 12 acciones, 4 proveedores, compliance, TNA (formato nuevo con puestos vinculados), puestos catalog (10 muestras), historial, cola, templates.
