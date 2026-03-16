@@ -8408,7 +8408,8 @@
                 '<span>' + esc(dateLabel) + '</span>' +
                 '<button class="cfDeleteSesion u-cursor-pointer u-text-danger u-text-11" data-sesion-idx="' + si + '" style="background:none; border:none; padding:0 2px; line-height:1;" title="Eliminar sesi\u00F3n" aria-label="Eliminar sesi\u00F3n"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
               '</div>' +
-              '<div style="margin-top:3px;"><label style="font-size:var(--font-size-xs); color:var(--text-muted); cursor:pointer; user-select:none;"><input class="cfToggleAllSesion u-accent-color" type="checkbox" data-sesion-idx="' + si + '" style="vertical-align:middle;"> todos</label></div>' +
+              '<div style="margin-top:3px;"><label style="font-size:var(--font-size-xs); color:var(--text-muted); cursor:pointer; user-select:none;"><input class="cfToggleAllSesion u-accent-color" type="checkbox" data-sesion-idx="' + si + '" style="vertical-align:middle;"> todos</label>' +
+              '<button class="cfMarkAllPresent link-btn u-text-accent" data-sesion-idx="' + si + '" title="Marcar todos presentes" style="margin-left:4px; padding:0; border:none; background:none; cursor:pointer; vertical-align:middle;">' + Icons.check(12) + '</button></div>' +
             '</th>';
           }
 
@@ -9174,6 +9175,46 @@
             }
           });
           upsertCatalogRecord('acciones', 'codigo', record);
+        });
+      });
+
+      // Mark all present icon buttons
+      document.querySelectorAll('.cfMarkAllPresent').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var sIdx = parseInt(btn.getAttribute('data-sesion-idx'), 10);
+          var colChecks = document.querySelectorAll('.cfAsistenciaCheck[data-sesion-idx="' + sIdx + '"]');
+          var allPresent = colChecks.length > 0;
+          colChecks.forEach(function(c) { if (!c.checked) allPresent = false; });
+          var newVal = !allPresent;
+
+          colChecks.forEach(function(c) {
+            c.checked = newVal;
+            var nif = c.getAttribute('data-nif');
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = new Array(record.asistencia.sesiones.length).fill(false);
+            }
+            record.asistencia.registro[nif][sIdx] = newVal;
+            var row = c.closest('tr');
+            if (row) {
+              var checks = row.querySelectorAll('.cfAsistenciaCheck');
+              var total = checks.length;
+              var checked = 0;
+              checks.forEach(function(ch) { if (ch.checked) checked++; });
+              var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+              var pctCell = row.querySelector('td:last-child');
+              if (pctCell) {
+                pctCell.textContent = pct + '%';
+                pctCell.style.color = pct < 75 ? 'var(--danger)' : 'var(--text-primary)';
+              }
+            }
+          });
+
+          // Sync toggle-all checkbox
+          var toggleCb = document.querySelector('.cfToggleAllSesion[data-sesion-idx="' + sIdx + '"]');
+          if (toggleCb) toggleCb.checked = newVal;
+
+          upsertCatalogRecord('acciones', 'codigo', record);
+          showToast(newVal ? 'Todos marcados presentes' : 'Todos marcados ausentes', 'success');
         });
       });
 
