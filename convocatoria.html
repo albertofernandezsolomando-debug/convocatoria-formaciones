@@ -23657,7 +23657,9 @@
       var container = document.getElementById('personasList');
       var countEl = document.getElementById('personasCount');
       if (!container) return;
-      var employees = state.employees || [];
+      var employees = (state.employees || []).filter(function(emp) {
+        return (emp.Departamento || '').toLowerCase() !== 'alta automatica';
+      });
       var q = (query || '').trim().toLowerCase();
 
       var filtered = employees;
