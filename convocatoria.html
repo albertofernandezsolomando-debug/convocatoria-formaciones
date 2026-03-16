@@ -18039,32 +18039,25 @@
         if (nifs.length === 0 || sesiones.length === 0) return;
 
         // Calculate attendance per session
-        var sessionData = sesiones.map(function(s) {
-          var fecha = s.fecha;
+        var sessionData = sesiones.map(function(s, idx) {
           var present = 0;
           var total = nifs.length;
           nifs.forEach(function(nif) {
             var asistNif = registro[nif];
-            if (asistNif && asistNif[fecha]) {
-              var val = asistNif[fecha];
-              if (val === true || val === 'presente' || val === 'Presente') {
-                present++;
-              }
+            if (asistNif && asistNif[idx] === true) {
+              present++;
             }
           });
-          return { fecha: fecha, present: present, total: total, pct: total > 0 ? Math.round((present / total) * 100) : 0 };
+          return { fecha: s, present: present, total: total, pct: total > 0 ? Math.round((present / total) * 100) : 0 };
         });
 
         // Detect abandonment: participants below 75% overall
         nifs.forEach(function(nif) {
           var attended = 0;
           var totalSessions = sesiones.length;
-          sesiones.forEach(function(s) {
+          sesiones.forEach(function(s, idx) {
             var asistNif = registro[nif];
-            if (asistNif && asistNif[s.fecha]) {
-              var val = asistNif[s.fecha];
-              if (val === true || val === 'presente' || val === 'Presente') attended++;
-            }
+            if (asistNif && asistNif[idx] === true) attended++;
           });
           var pct = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
           if (pct < 75 && totalSessions > 1) {
