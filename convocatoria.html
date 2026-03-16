@@ -5359,6 +5359,13 @@
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
         <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento..." aria-label="Buscar persona">
+        <select class="input-field u-text-12" id="personasGroupBy" aria-label="Agrupar por" style="max-width:170px; padding:4px 8px;">
+          <option value="">Orden alfab\u00e9tico</option>
+          <option value="Departamento">Departamento</option>
+          <option value="Puesto">Puesto</option>
+          <option value="\u00c1rea">\u00c1rea</option>
+          <option value="Empresa">Empresa</option>
+        </select>
         <span id="personasCount" class="u-text-11 u-text-muted" aria-live="polite"></span>
       </div>
       <div class="u-flex u-flex-1 u-min-h-0">
@@ -23683,23 +23690,68 @@
         return;
       }
 
-      // Limit to 200 for performance
-      var limited = filtered.slice(0, 200);
+      // Sort alphabetically
+      var sorted = filtered.slice().sort(function(a, b) {
+        return (a.Empleado || '').localeCompare(b.Empleado || '', 'es');
+      });
+
+      // Grouping
+      var groupByEl = document.getElementById('personasGroupBy');
+      var groupBy = groupByEl ? groupByEl.value : '';
+
       var html = '';
-      limited.forEach(function(emp) {
+      var renderItem = function(emp) {
         var name = emp.Empleado || 'Sin nombre';
         var initials = name.split(' ').slice(0, 2).map(function(w) { return w.charAt(0); }).join('').toUpperCase();
         var isActive = (emp.NIF || emp._id) === personasState.selectedNIF;
         var meta = [emp.Departamento, emp.Puesto, emp.Empresa].filter(Boolean).join(' · ');
-        html += '<div class="persona-list-item' + (isActive ? ' active' : '') + '" data-nif="' + esc(emp.NIF || emp._id || '') + '">' +
+        return '<div class="persona-list-item' + (isActive ? ' active' : '') + '" data-nif="' + esc(emp.NIF || emp._id || '') + '">' +
           '<div class="persona-avatar">' + esc(initials) + '</div>' +
           '<div class="persona-info">' +
           '<div class="persona-name">' + esc(name) + '</div>' +
           '<div class="persona-meta">' + esc(meta || emp.NIF || '') + '</div>' +
           '</div></div>';
-      });
-      if (filtered.length > 200) {
-        html += '<div class="u-text-center u-text-muted u-text-11" style="padding:12px 16px;">Mostrando 200 de ' + filtered.length + '. Usa el buscador para filtrar.</div>';
+      };
+
+      if (groupBy) {
+        // Group by selected field, sort groups alphabetically
+        var groups = {};
+        sorted.forEach(function(emp) {
+          var key = emp[groupBy] || 'Sin asignar';
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(emp);
+        });
+        var groupKeys = Object.keys(groups).sort(function(a, b) {
+          if (a === 'Sin asignar') return 1;
+          if (b === 'Sin asignar') return -1;
+          return a.localeCompare(b, 'es');
+        });
+
+        var totalRendered = 0;
+        groupKeys.forEach(function(key) {
+          if (totalRendered >= 200) return;
+          html += '<div class="persona-group-header" style="padding:8px 16px; background:var(--bg-input); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1;">' +
+            '<span class="u-text-xs u-font-semibold" style="color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">' + esc(key) + '</span>' +
+            '<span class="u-text-xs u-text-muted" style="margin-left:6px;">(' + groups[key].length + ')</span>' +
+          '</div>';
+          var items = groups[key].slice(0, 200 - totalRendered);
+          items.forEach(function(emp) {
+            html += renderItem(emp);
+            totalRendered++;
+          });
+        });
+        if (sorted.length > 200) {
+          html += '<div class="u-text-center u-text-muted u-text-11" style="padding:12px 16px;">Mostrando 200 de ' + sorted.length + '. Usa el buscador para filtrar.</div>';
+        }
+      } else {
+        // Flat alphabetical list
+        var limited = sorted.slice(0, 200);
+        limited.forEach(function(emp) {
+          html += renderItem(emp);
+        });
+        if (sorted.length > 200) {
+          html += '<div class="u-text-center u-text-muted u-text-11" style="padding:12px 16px;">Mostrando 200 de ' + sorted.length + '. Usa el buscador para filtrar.</div>';
+        }
       }
       container.innerHTML = html; // innerHTML OK: sanitized via esc()
 
@@ -23875,6 +23927,13 @@
           renderPersonasList(self.value);
         }, 200);
       });
+
+      var groupBySelect = document.getElementById('personasGroupBy');
+      if (groupBySelect) {
+        groupBySelect.addEventListener('change', function() {
+          renderPersonasList(input.value);
+        });
+      }
     })();
 
     // ═══════════════════════════════════
