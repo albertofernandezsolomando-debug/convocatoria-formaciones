@@ -9449,6 +9449,10 @@
             showToast('A\u00f1ade una sesi\u00f3n primero', 'warning');
             return;
           }
+          if (isNaN(sesionIdx) || sesionIdx < 0 || sesionIdx >= sesiones.length) {
+            showToast('Selecciona una sesi\u00f3n v\u00e1lida', 'warning');
+            return;
+          }
 
           // Parse tokens
           var tokens = rawInput.split(/[,;\n]/).map(function(t) { return t.trim(); }).filter(Boolean);
@@ -9496,7 +9500,7 @@
             });
             participantes.forEach(function(nif) {
               var emp = empByNif[nif];
-              var fullName = emp ? [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ') : '';
+              var fullName = emp ? (emp.Empleado || '') : '';
               empNames.push({ nif: nif, name: fullName, nameLower: fullName.toLowerCase() });
             });
           }
@@ -9573,6 +9577,8 @@
             var presRadio = document.querySelector('input[name="cfRrMode"][value="presentes"]');
             if (presRadio) presRadio.checked = true;
           }
+          var rrInput = document.getElementById('cfRrInput');
+          if (rrInput) rrInput.value = rawInput;
 
           // Build feedback
           var presentes = 0;
