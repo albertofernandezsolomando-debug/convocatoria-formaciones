@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Arquitectura
 
-Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~23,800 líneas. Dependencias externas vía CDN:
+Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~24,250 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
 
