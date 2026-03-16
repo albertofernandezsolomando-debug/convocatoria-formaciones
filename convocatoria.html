@@ -10597,6 +10597,8 @@
           if (!(ab === 1 || ab === '1')) return false;
           const dept = (row['Departamento'] || '').toString().trim().toLowerCase();
           if (dept === 'alta automatica') return false;
+          const puesto = (row['Puesto'] || '').toString().trim().toLowerCase();
+          if (puesto.indexOf('consejero delegado') !== -1) return false;
           return true;
         })
         .map((row, idx) => {
