@@ -18399,13 +18399,12 @@
         var registro = a.asistencia.registro || {};
         var sesiones = a.asistencia.sesiones || [];
         var nifs = Object.keys(registro);
-        sesiones.forEach(function(s) {
+        sesiones.forEach(function(s, idx) {
           nifs.forEach(function(nif) {
             totalSesiones++;
             var asistNif = registro[nif];
-            if (asistNif && asistNif[s.fecha]) {
-              var val = asistNif[s.fecha];
-              if (val === true || val === 'presente' || val === 'Presente') totalPresentes++;
+            if (asistNif && asistNif[idx] === true) {
+              totalPresentes++;
             }
           });
         });
@@ -19343,13 +19342,12 @@
           var registro = a.asistencia.registro;
           var sesiones = a.asistencia.sesiones;
           var nifs = Object.keys(registro);
-          sesiones.forEach(function(s) {
+          sesiones.forEach(function(s, idx) {
             nifs.forEach(function(nif) {
               prov.totalAttendanceSlots++;
               var asistNif = registro[nif];
-              if (asistNif && asistNif[s.fecha]) {
-                var val = asistNif[s.fecha];
-                if (val === true || val === 'presente' || val === 'Presente') prov.totalPresent++;
+              if (asistNif && asistNif[idx] === true) {
+                prov.totalPresent++;
               }
             });
           });
@@ -19728,11 +19726,10 @@
           parts.forEach(function(nif) {
             var r = reg[nif];
             if (!r) return;
-            sesiones.forEach(function(s) {
-              var fecha = typeof s === 'string' ? s : s.fecha;
-              if (fecha && r[fecha] !== undefined) {
+            sesiones.forEach(function(s, idx) {
+              if (r[idx] !== undefined) {
                 totalChecks++;
-                if (r[fecha] === true || r[fecha] === 'Presente') totalPresent++;
+                if (r[idx] === true) totalPresent++;
               }
             });
           });
