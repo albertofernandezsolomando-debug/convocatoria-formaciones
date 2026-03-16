@@ -29,13 +29,13 @@ Replace the read-only panel content with an actionable version. The panel keeps 
 
 Replace the static estado text with a `<select>` dropdown.
 
-- Options: Planificada, Pendiente, Buscando, En preparación, Convocada, En marcha, Terminada, Anulada, Retrasada
-- Pre-selected: current estado
+- Options: Planificada, Pendiente, Buscando, En preparación, Convocada, En marcha, Terminada, Anulada, Retrasada, Finalizada, Cancelada (all values from `CAL_ESTADO_COLORS` — some records may have legacy estados)
+- Pre-selected: current estado (if the value doesn't match any option, show it as-is)
 - `change` handler:
   1. Read new value
   2. Load full record via `getCatalog('acciones').find(a => a.codigo === item.codigo)`
   3. If estado actually changed:
-     - Add audit note: `{ id: Date.now(), date: ISO, tag: 'sistema', text: 'Estado: [old] → [new] (desde calendario)' }`
+     - Push audit note to `record.notas` (init if absent): `if (!record.notas) record.notas = []; record.notas.push({ id: Date.now(), date: new Date().toISOString(), tag: 'sistema', text: 'Estado: [old] → [new] (desde calendario)' })`
      - Update `record.estado`
      - Save via `upsertCatalogRecord('acciones', 'codigo', record)`
      - Update `item.estado` locally
@@ -50,12 +50,16 @@ Replace the static count with a list + edit button.
 
 - Show participant names (resolved from `state.employees` by NIF, fallback to NIF if organigrama not loaded)
 - Max 5 visible, then "+N más" collapse
-- "Editar" button opens `showParticipantPicker(currentNIFs, onSave)` (already exists at line 9697)
+- "Editar" button (class `link-btn link-add u-text-11`) opens `showParticipantPicker(currentNIFs, onSave)` (already exists at line 9697)
 - `onSave` callback:
   1. Load full record via catalog
-  2. Update `record.participantes`
-  3. Handle attendance `registro`: add empty arrays for new NIFs, remove arrays for removed NIFs (same pattern as existing participant editing at line 9608)
-  4. Save via `upsertCatalogRecord`
+  2. Compute diff: `addedNIFs` = in new but not old, `removedNIFs` = in old but not new
+  3. Update `record.participantes = newNIFs`
+  4. Sync attendance `registro`:
+     - For each added NIF: `record.asistencia.registro[nif] = new Array(record.asistencia.sesiones.length).fill(false)`
+     - For each removed NIF: `delete record.asistencia.registro[nif]`
+     - Also clean up `record.confirmaciones[nif]` and `record.asistencia.registro[nif]` for removed NIFs
+  5. Save via `upsertCatalogRecord`
   5. Update `item.participantes` locally
   6. Re-render the participantes section in the panel (not the full panel)
   7. Update participantes count in Gantt table row
@@ -144,14 +148,14 @@ Add a "Registro rápido" panel above the attendance table, inside the existing a
 
 The existing toggle-all checkbox is tiny and labeled just "todos". Enhance it:
 
-- Add a visible button next to each session header: `Icons.checkCircle(14)` icon button with `title="Marcar todos presentes"`
+- Add a visible button next to each session header: `Icons.check(14)` icon button with `title="Marcar todos presentes"` (class `link-btn u-text-accent`)
 - Clicking it marks ALL participants present for that session (same logic as toggle-all checked)
 - If all are already present, clicking it clears all (toggle behavior, same as current)
 - The existing toggle-all checkbox stays for consistency
 
 #### B. "Registro rápido" inline panel
 
-A collapsible panel triggered by a button "Registro rápido" above the attendance table.
+A collapsible panel triggered by a button "Registro rápido" above the attendance table. Generated inside `renderAsistenciaHtml()` as part of the returned HTML string, placed between the "Añadir sesión" row and the sessions table.
 
 **UI:**
 ```
@@ -208,7 +212,7 @@ A collapsible panel triggered by a button "Registro rápido" above the attendanc
 | Case | Handling |
 |---|---|
 | No sessions exist | Panel shows "Añade una sesión primero" with disabled Apply button |
-| Empty text area + Apply | In "ausencias" mode: marks everyone present (useful!). In "presentes" mode: shows toast "Escribe al menos un nombre o NIF" |
+| Empty text area + Apply | In "ausencias" mode: marks everyone present, shows explicit toast "Todos marcados presentes (sin ausencias indicadas)". In "presentes" mode: shows toast "Escribe al menos un nombre o NIF" and does nothing. |
 | Duplicate names in input | Deduplicate before processing |
 | NIF not in participantes | Reported as "no reconocido" — only participantes of the action can be matched |
 | Ambiguous partial match | Reported as "ambiguo: [token] (2 coincidencias)" — user must use full name or NIF |
@@ -224,26 +228,52 @@ A collapsible panel triggered by a button "Registro rápido" above the attendanc
 
 ### Fix
 
-Lines 18043, 18048, 18063-18064:
+Three changes across the function:
 
-**Before:**
+**1. Session mapping (line 18042-18055):**
+
+`sesiones` is an array of date strings (`['2025-03-15', ...]`), not objects. `s.fecha` is `undefined`.
+
+Before: `var fecha = s.fecha;` and `return { fecha: fecha, ... }`
+After: use `s` directly as the date string, and pass `idx` (the map index) for array lookups.
+
 ```javascript
-var fecha = s.fecha;
-// ...
-if (asistNif && asistNif[fecha]) {
+// Before:
+var sessionData = sesiones.map(function(s) {
+  var fecha = s.fecha;
+  // ...
+  if (asistNif && asistNif[fecha]) {
+  // ...
+  return { fecha: fecha, present: present, ... };
+
+// After:
+var sessionData = sesiones.map(function(s, idx) {
+  // s IS the date string, no .fecha property
+  // ...
+  if (asistNif && asistNif[idx] === true) {
+  // ...
+  return { fecha: s, present: present, ... };
 ```
 
-**After:**
+**2. Abandonment detection (lines 18059-18067):**
+
+Same issue — `s.fecha` → use index.
+
 ```javascript
-var sIdx = idx; // use the forEach/map index
-// ...
-if (asistNif && asistNif[sIdx] === true) {
+// Before:
+sesiones.forEach(function(s) {
+  if (asistNif && asistNif[s.fecha]) {
+
+// After:
+sesiones.forEach(function(s, idx) {
+  if (asistNif && asistNif[idx] === true) {
 ```
 
-- `sesiones.map(function(s, idx))` — use `idx` instead of `s.fecha`
-- `registro[nif][idx]` — array index, not date key
-- Remove checks for `'presente'` / `'Presente'` string values — the data model only stores booleans
-- Apply same fix at all three locations (lines 18043-18048, 18062-18064, and any similar pattern in the function)
+**3. Remove string value checks:**
+
+The data model only stores booleans in `registro[nif][]`. Remove checks for `'presente'` / `'Presente'` string values — they were never written and add dead code.
+
+Apply these fixes at all occurrences within `renderAttendanceMonitor()`. Downstream code that reads `sessionData[i].fecha` will work correctly once `fecha` is set to `s` (the actual date string).
 
 ---
 
