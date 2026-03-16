@@ -8388,6 +8388,36 @@
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddSesion">A\u00F1adir sesi\u00F3n</button>' +
         '</div>';
 
+        // Registro rápido panel
+        if (sesiones.length > 0 && participantes.length > 0) {
+          var rrSesionOptions = sesiones.map(function(s, i) {
+            var label = s;
+            try {
+              var p = s.split('-');
+              label = p[2] + '/' + p[1] + '/' + p[0];
+            } catch(e) {}
+            return '<option value="' + i + '"' + (i === sesiones.length - 1 ? ' selected' : '') + '>' + esc(label) + '</option>';
+          }).join('');
+
+          innerHtml += '<div style="margin-bottom:10px;">' +
+            '<button class="link-btn u-text-accent u-text-12 u-font-semibold" id="cfToggleRegistroRapido" style="display:inline-flex; align-items:center; gap:4px;">' +
+              '<span class="icon" aria-hidden="true">' + Icons.edit(14) + '</span> Registro r\u00e1pido</button>' +
+            '<div id="cfRegistroRapido" class="u-hidden" style="margin-top:8px; padding:10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-input);">' +
+              '<div class="u-flex u-gap-8 u-items-center u-mb-8">' +
+                '<label class="u-text-xs u-font-semibold" style="color:var(--text-primary);">Sesi\u00f3n:</label>' +
+                '<select class="input-field u-text-12" id="cfRrSesion" style="max-width:160px;" aria-label="Sesi\u00f3n">' + rrSesionOptions + '</select>' +
+              '</div>' +
+              '<div class="u-flex u-gap-8 u-items-center u-mb-8">' +
+                '<label class="u-text-xs u-font-semibold" style="color:var(--text-primary);">Modo:</label>' +
+                '<label class="u-text-xs" style="cursor:pointer;"><input type="radio" name="cfRrMode" value="ausencias" checked class="u-accent-color" style="vertical-align:middle;"> Marcar ausencias</label>' +
+                '<label class="u-text-xs" style="cursor:pointer;"><input type="radio" name="cfRrMode" value="presentes" class="u-accent-color" style="vertical-align:middle;"> Marcar presentes</label>' +
+              '</div>' +
+              '<textarea class="input-field u-text-12 u-w-full" id="cfRrInput" rows="3" placeholder="Nombres o NIFs (uno por l\u00ednea o separados por coma)" aria-label="Nombres o NIFs para registro r\u00e1pido"></textarea>' +
+              '<button class="btn btn-primary u-text-12 u-mt-6" id="cfRrApply">Aplicar</button>' +
+            '</div>' +
+          '</div>';
+        }
+
         if (sesiones.length === 0) {
           innerHtml += '<div class="u-text-11 u-text-muted" style="padding:4px 0;">Sin sesiones definidas</div>';
         } else {
@@ -9247,6 +9277,166 @@
       if (btnDossier) {
         btnDossier.addEventListener('click', function() {
           generateInspectionDossier(record.codigo);
+        });
+      }
+
+      // Registro rápido toggle
+      var rrToggle = document.getElementById('cfToggleRegistroRapido');
+      if (rrToggle) {
+        rrToggle.addEventListener('click', function() {
+          var panel = document.getElementById('cfRegistroRapido');
+          if (panel) panel.classList.toggle('u-hidden');
+        });
+      }
+
+      // Registro rápido apply
+      var rrApply = document.getElementById('cfRrApply');
+      if (rrApply) {
+        rrApply.addEventListener('click', function() {
+          var sesionIdx = parseInt(document.getElementById('cfRrSesion').value, 10);
+          var modeEl = document.querySelector('input[name="cfRrMode"]:checked');
+          var mode = modeEl ? modeEl.value : 'ausencias';
+          var rawInput = (document.getElementById('cfRrInput').value || '').trim();
+          var sesiones = record.asistencia.sesiones || [];
+          var participantes = record.participantes || [];
+
+          if (sesiones.length === 0) {
+            showToast('A\u00f1ade una sesi\u00f3n primero', 'warning');
+            return;
+          }
+
+          // Parse tokens
+          var tokens = rawInput.split(/[,;\n]/).map(function(t) { return t.trim(); }).filter(Boolean);
+          // Deduplicate
+          var seen = {};
+          tokens = tokens.filter(function(t) {
+            var key = t.toLowerCase();
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+          });
+
+          // Handle empty input
+          if (tokens.length === 0) {
+            if (mode === 'ausencias') {
+              // Mark everyone present
+              participantes.forEach(function(nif) {
+                if (!record.asistencia.registro[nif]) {
+                  record.asistencia.registro[nif] = new Array(sesiones.length).fill(false);
+                }
+                record.asistencia.registro[nif][sesionIdx] = true;
+              });
+              upsertCatalogRecord('acciones', 'codigo', record);
+              renderCatalogForm();
+              showToast('Todos marcados presentes (sin ausencias indicadas)', 'success');
+              return;
+            } else {
+              showToast('Escribe al menos un nombre o NIF', 'warning');
+              return;
+            }
+          }
+
+          // Build employee lookup
+          var hasOrganigrama = state.employees && state.employees.length > 0;
+          var empByNif = {};
+          var empNames = [];
+          if (hasOrganigrama) {
+            state.employees.forEach(function(e) {
+              empByNif[e.NIF] = e;
+            });
+            participantes.forEach(function(nif) {
+              var emp = empByNif[nif];
+              var fullName = emp ? [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ') : '';
+              empNames.push({ nif: nif, name: fullName, nameLower: fullName.toLowerCase() });
+            });
+          }
+
+          var nifSet = new Set(participantes);
+          var matchedNIFs = new Set();
+          var unmatched = [];
+          var ambiguous = [];
+          var noOrgWarned = false;
+
+          tokens.forEach(function(token) {
+            var tokenLower = token.toLowerCase();
+
+            // a) Exact NIF match
+            if (nifSet.has(token)) {
+              matchedNIFs.add(token);
+              return;
+            }
+
+            if (!hasOrganigrama) {
+              if (!noOrgWarned) {
+                noOrgWarned = true;
+              }
+              unmatched.push(token);
+              return;
+            }
+
+            // b) Exact full name match (case-insensitive)
+            var exactMatch = empNames.find(function(e) { return e.nameLower === tokenLower; });
+            if (exactMatch) {
+              matchedNIFs.add(exactMatch.nif);
+              return;
+            }
+
+            // c) Partial name match
+            var partials = empNames.filter(function(e) { return e.nameLower.indexOf(tokenLower) >= 0; });
+            if (partials.length === 1) {
+              matchedNIFs.add(partials[0].nif);
+              return;
+            }
+            if (partials.length > 1) {
+              ambiguous.push(token + ' (' + partials.length + ' coincidencias)');
+              return;
+            }
+
+            unmatched.push(token);
+          });
+
+          // Apply based on mode
+          participantes.forEach(function(nif) {
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = new Array(sesiones.length).fill(false);
+            }
+            if (mode === 'ausencias') {
+              // All present, matched = absent
+              record.asistencia.registro[nif][sesionIdx] = !matchedNIFs.has(nif);
+            } else {
+              // All absent, matched = present
+              record.asistencia.registro[nif][sesionIdx] = matchedNIFs.has(nif);
+            }
+          });
+
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+
+          // Build feedback
+          var presentes = 0;
+          var ausentes = 0;
+          participantes.forEach(function(nif) {
+            if (record.asistencia.registro[nif] && record.asistencia.registro[nif][sesionIdx]) presentes++;
+            else ausentes++;
+          });
+
+          var sesLabel = sesiones[sesionIdx] || '';
+          try {
+            var sp = sesLabel.split('-');
+            sesLabel = sp[2] + '/' + sp[1] + '/' + sp[0];
+          } catch(e) {}
+
+          var msg = 'Sesi\u00f3n ' + sesLabel + ': ' + presentes + ' presentes, ' + ausentes + ' ausentes.';
+          if (unmatched.length > 0) msg += ' No reconocidos: ' + unmatched.join(', ') + '.';
+          if (ambiguous.length > 0) msg += ' Ambiguos: ' + ambiguous.join(', ') + '.';
+          if (noOrgWarned) msg += ' Sin organigrama \u2014 solo se aceptan NIFs.';
+
+          var toastType = (unmatched.length > 0 || ambiguous.length > 0) ? 'warning' : 'success';
+          showToast(msg, toastType, 6000);
+
+          // Clear textarea
+          var inputEl = document.getElementById('cfRrInput');
+          if (inputEl) inputEl.value = '';
         });
       }
     }
