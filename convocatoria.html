@@ -8439,7 +8439,7 @@
                 '<button class="cfDeleteSesion u-cursor-pointer u-text-danger u-text-11" data-sesion-idx="' + si + '" style="background:none; border:none; padding:0 2px; line-height:1;" title="Eliminar sesi\u00F3n" aria-label="Eliminar sesi\u00F3n"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
               '</div>' +
               '<div style="margin-top:3px;"><label style="font-size:var(--font-size-xs); color:var(--text-muted); cursor:pointer; user-select:none;"><input class="cfToggleAllSesion u-accent-color" type="checkbox" data-sesion-idx="' + si + '" style="vertical-align:middle;"> todos</label>' +
-              '<button class="cfMarkAllPresent link-btn u-text-accent" data-sesion-idx="' + si + '" title="Marcar todos presentes" style="margin-left:4px; padding:0; border:none; background:none; cursor:pointer; vertical-align:middle;">' + Icons.check(12) + '</button></div>' +
+              '<button class="cfMarkAllPresent link-btn u-text-accent" data-sesion-idx="' + si + '" title="Marcar todos presentes" aria-label="Marcar todos presentes" style="margin-left:4px; padding:0; border:none; background:none; cursor:pointer; vertical-align:middle;"><span class="icon" aria-hidden="true">' + Icons.check(12) + '</span></button></div>' +
             '</th>';
           }
 
@@ -9327,7 +9327,12 @@
                 record.asistencia.registro[nif][sesionIdx] = true;
               });
               upsertCatalogRecord('acciones', 'codigo', record);
+              var rrSavedIdx = sesionIdx;
               renderCatalogForm();
+              var rrPanel = document.getElementById('cfRegistroRapido');
+              if (rrPanel) rrPanel.classList.remove('u-hidden');
+              var rrSel = document.getElementById('cfRrSesion');
+              if (rrSel) rrSel.value = String(rrSavedIdx);
               showToast('Todos marcados presentes (sin ausencias indicadas)', 'success');
               return;
             } else {
@@ -9410,17 +9415,29 @@
           });
 
           upsertCatalogRecord('acciones', 'codigo', record);
+          var rrSavedMode = mode;
+          var rrSavedSesIdx = sesionIdx;
           renderCatalogForm();
+
+          // Restore Registro rápido panel state after re-render
+          var rrPanel = document.getElementById('cfRegistroRapido');
+          if (rrPanel) rrPanel.classList.remove('u-hidden');
+          var rrSel = document.getElementById('cfRrSesion');
+          if (rrSel) rrSel.value = String(rrSavedSesIdx);
+          if (rrSavedMode === 'presentes') {
+            var presRadio = document.querySelector('input[name="cfRrMode"][value="presentes"]');
+            if (presRadio) presRadio.checked = true;
+          }
 
           // Build feedback
           var presentes = 0;
           var ausentes = 0;
           participantes.forEach(function(nif) {
-            if (record.asistencia.registro[nif] && record.asistencia.registro[nif][sesionIdx]) presentes++;
+            if (record.asistencia.registro[nif] && record.asistencia.registro[nif][rrSavedSesIdx]) presentes++;
             else ausentes++;
           });
 
-          var sesLabel = sesiones[sesionIdx] || '';
+          var sesLabel = sesiones[rrSavedSesIdx] || '';
           try {
             var sp = sesLabel.split('-');
             sesLabel = sp[2] + '/' + sp[1] + '/' + sp[0];
@@ -9433,10 +9450,6 @@
 
           var toastType = (unmatched.length > 0 || ambiguous.length > 0) ? 'warning' : 'success';
           showToast(msg, toastType, 6000);
-
-          // Clear textarea
-          var inputEl = document.getElementById('cfRrInput');
-          if (inputEl) inputEl.value = '';
         });
       }
     }
@@ -23340,6 +23353,13 @@
         }
 
         var matched = preloadConvocatoriaFromAccion(item.codigo);
+        if (matched === 0 && item.participantes && item.participantes.length > 0) {
+          // Participants exist but none match organigrama — side-effects already applied
+          renderFilters();
+          renderTable();
+          showToast('Ning\u00fan participante encontrado en el organigrama actual', 'warning');
+          return;
+        }
         if (matched > 0) {
           applyTabChange('tabConvocatoria');
           renderFilters();
