@@ -23158,7 +23158,7 @@
           '<td>' + formatShort(item.rawFin) + '</td>' +
           '<td>' + esc(item.modalidad || '\u2014') + '</td>' +
           '<td>' + item.horas + 'h</td>' +
-          '<td>' + item.participantes.length + '</td>' +
+          '<td class="cal-col-participantes">' + item.participantes.length + '</td>' +
           '<td>' + esc(item.departamento || '\u2014') + '</td>' +
         '</tr>';
       });
@@ -23427,12 +23427,19 @@
 
         // Update bar color in Gantt
         var newColor = CAL_ESTADO_COLORS[newEstado] || DS.accent;
-        var bar = document.querySelector('.cal-bar[data-codigo="' + item.codigo + '"]');
+        var bar = document.querySelector('.cal-bar[data-codigo="' + CSS.escape(item.codigo) + '"]');
         if (bar) bar.style.background = newColor;
 
         // Update dot in panel
         var dot = document.getElementById('calDetailDot');
         if (dot) dot.style.background = newColor;
+
+        // Update estado in list table
+        var listRow = document.querySelector('.cal-list-row[data-codigo="' + CSS.escape(item.codigo) + '"]');
+        if (listRow) {
+          var cells = listRow.querySelectorAll('td');
+          if (cells[1]) cells[1].innerHTML = '<span class="cal-list-dot" style="background:' + newColor + ';"></span>' + esc(newEstado);
+        }
 
         showToast('Estado actualizado: ' + newEstado, 'success');
       });
@@ -23498,8 +23505,8 @@
           var countLabel = panel.querySelector('.u-font-semibold');
           if (countLabel) countLabel.textContent = 'Participantes (' + newNIFs.length + ')';
 
-          // Update Gantt table row participant count
-          var row = document.querySelector('.cal-table-row[data-codigo="' + item.codigo + '"]');
+          // Update list table row participant count
+          var row = document.querySelector('.cal-list-row[data-codigo="' + CSS.escape(item.codigo) + '"]');
           if (row) {
             var partCell = row.querySelector('.cal-col-participantes');
             if (partCell) partCell.textContent = newNIFs.length;
