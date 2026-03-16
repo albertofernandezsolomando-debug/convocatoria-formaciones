@@ -22922,33 +22922,211 @@
         return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
       };
 
-      panel.innerHTML = '<div style="flex:1;">' + // innerHTML OK: sanitized via esc()
+      // Build estado dropdown options
+      var estadoOptions = Object.keys(CAL_ESTADO_COLORS);
+      var currentEstado = item.estado || '';
+      var hasMatchingEstado = estadoOptions.indexOf(currentEstado) >= 0;
+      var estadoSelectHtml = '<select id="calDetailEstado" class="input-field" style="font-size:var(--font-size-sm); padding:2px 6px; max-width:180px;">';
+      if (!hasMatchingEstado && currentEstado) {
+        estadoSelectHtml += '<option value="' + esc(currentEstado) + '" selected>' + esc(currentEstado) + '</option>';
+      }
+      estadoOptions.forEach(function(e) {
+        estadoSelectHtml += '<option value="' + esc(e) + '"' + (e === currentEstado ? ' selected' : '') + '>' + esc(e) + '</option>';
+      });
+      estadoSelectHtml += '</select>';
+
+      // Build participant names list
+      var participantNIFs = item.participantes || [];
+      var participantNames = participantNIFs.map(function(nif) {
+        if (state.employees && state.employees.length > 0) {
+          var emp = state.employees.find(function(e) { return e.NIF === nif; });
+          if (emp) return [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ');
+        }
+        return nif;
+      });
+      var maxVisible = 5;
+      var visibleNames = participantNames.slice(0, maxVisible);
+      var remaining = participantNames.length - maxVisible;
+      var participantListHtml = visibleNames.map(function(name) {
+        return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
+      }).join('');
+      if (remaining > 0) {
+        participantListHtml += '<div class="u-text-xs" style="padding:1px 0; color:var(--text-muted);">+' + remaining + ' m\u00e1s</div>';
+      }
+      if (participantNIFs.length === 0) {
+        participantListHtml = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
+      }
+
+      panel.innerHTML = '<div style="flex:1; overflow-y:auto;">' + // innerHTML OK: sanitized via esc()
         '<div class="cal-detail-title">' +
-          '<span class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:var(--radius-sm);"></span>' +
+          '<span id="calDetailDot" class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:var(--radius-sm);"></span>' +
           esc(item.nombre) +
         '</div>' +
         '<div class="cal-detail-meta">' +
           '<div><dt>Per\u00edodo</dt><dd>' + formatDate(item.rawInicio) + ' \u2192 ' + formatDate(item.rawFin) + '</dd></div>' +
-          '<div><dt>Estado</dt><dd>' + esc(item.estado || '\u2014') + '</dd></div>' +
+          '<div><dt>Estado</dt><dd>' + estadoSelectHtml + '</dd></div>' +
           '<div><dt>Modalidad</dt><dd>' + esc(item.modalidad || '\u2014') + '</dd></div>' +
           '<div><dt>Horas</dt><dd>' + item.horas + 'h</dd></div>' +
-          '<div><dt>Participantes</dt><dd>' + item.participantes.length + '</dd></div>' +
           (item.departamento ? '<div><dt>Departamento</dt><dd>' + esc(item.departamento) + '</dd></div>' : '') +
           (centroName ? '<div><dt>Centro</dt><dd>' + esc(centroName) + '</dd></div>' : '') +
           (tutorName ? '<div><dt>Tutor</dt><dd>' + esc(tutorName) + '</dd></div>' : '') +
           (item.bonificable ? '<div><dt>Bonificable</dt><dd>' + esc(item.bonificable) + '</dd></div>' : '') +
         '</div>' +
-        '<a href="#" id="calDetailOpenCatalog" class="u-inline-flex u-items-center u-gap-4 u-text-11 u-text-accent u-mt-6 u-font-500 u-cursor-pointer" style="text-decoration:none;">Ver en cat\u00e1logo \u2192</a>' +
+
+        // Participantes section
+        '<div style="margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">' +
+          '<div class="u-flex" style="justify-content:space-between; align-items:center; margin-bottom:4px;">' +
+            '<span class="u-text-xs u-font-semibold" style="color:var(--text-primary);">Participantes (' + participantNIFs.length + ')</span>' +
+            '<button class="link-btn link-add u-text-11" id="calDetailEditParticipants">Editar</button>' +
+          '</div>' +
+          '<div id="calDetailParticipantList">' + participantListHtml + '</div>' +
+        '</div>' +
+
+        // Action buttons
+        '<div style="margin-top:12px; display:flex; align-items:center; gap:8px;">' +
+          '<button class="btn btn-primary" id="calDetailConvocar" style="font-size:var(--font-size-sm); padding:5px 12px;">Convocar</button>' +
+          '<a href="#" id="calDetailOpenCatalog" class="u-text-11 u-text-accent" style="text-decoration:none; margin-left:auto;">Ver en cat\u00e1logo \u2192</a>' +
+        '</div>' +
       '</div>' +
       '<button class="cal-detail-close" id="calDetailClose" aria-label="Cerrar"><span class="icon" aria-hidden="true">' + Icons.close(16) + '</span></button>';
 
       panel.style.display = 'flex';
 
+      // Estado dropdown handler
+      document.getElementById('calDetailEstado').addEventListener('change', function() {
+        var newEstado = this.value;
+        var oldEstado = item.estado;
+        if (newEstado === oldEstado) return;
+
+        var record = getCatalog('acciones').find(function(a) { return a.codigo === item.codigo; });
+        if (!record) return;
+
+        // Audit note
+        if (!record.notas) record.notas = [];
+        record.notas.push({
+          id: Date.now(),
+          date: new Date().toISOString(),
+          tag: 'sistema',
+          text: 'Estado: ' + oldEstado + ' \u2192 ' + newEstado + ' (desde calendario)'
+        });
+
+        record.estado = newEstado;
+        upsertCatalogRecord('acciones', 'codigo', record);
+        item.estado = newEstado;
+
+        // Update bar color in Gantt
+        var newColor = CAL_ESTADO_COLORS[newEstado] || DS.accent;
+        var bar = document.querySelector('.cal-bar[data-codigo="' + item.codigo + '"]');
+        if (bar) bar.style.background = newColor;
+
+        // Update dot in panel
+        var dot = document.getElementById('calDetailDot');
+        if (dot) dot.style.background = newColor;
+
+        showToast('Estado actualizado: ' + newEstado, 'success');
+      });
+
+      // Edit participants handler
+      document.getElementById('calDetailEditParticipants').addEventListener('click', function() {
+        showParticipantPicker(participantNIFs.slice(), function(newNIFs) {
+          var record = getCatalog('acciones').find(function(a) { return a.codigo === item.codigo; });
+          if (!record) return;
+
+          var oldNIFs = record.participantes || [];
+          var oldSet = new Set(oldNIFs);
+          var newSet = new Set(newNIFs);
+
+          // Sync attendance registro
+          if (record.asistencia && record.asistencia.sesiones) {
+            if (!record.asistencia.registro) record.asistencia.registro = {};
+            var sesLen = record.asistencia.sesiones.length;
+            // Add new participants
+            newNIFs.forEach(function(nif) {
+              if (!oldSet.has(nif) && !record.asistencia.registro[nif]) {
+                record.asistencia.registro[nif] = new Array(sesLen).fill(false);
+              }
+            });
+            // Remove deleted participants
+            oldNIFs.forEach(function(nif) {
+              if (!newSet.has(nif)) {
+                delete record.asistencia.registro[nif];
+              }
+            });
+          }
+
+          // Clean up confirmaciones for removed
+          if (record.confirmaciones) {
+            oldNIFs.forEach(function(nif) {
+              if (!newSet.has(nif)) delete record.confirmaciones[nif];
+            });
+          }
+
+          record.participantes = newNIFs;
+          upsertCatalogRecord('acciones', 'codigo', record);
+          item.participantes = newNIFs;
+
+          // Re-render participant section in panel
+          var newNames = newNIFs.map(function(nif) {
+            if (state.employees && state.employees.length > 0) {
+              var emp = state.employees.find(function(e) { return e.NIF === nif; });
+              if (emp) return [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ');
+            }
+            return nif;
+          });
+          var vis = newNames.slice(0, maxVisible);
+          var rem = newNames.length - maxVisible;
+          var html = vis.map(function(name) {
+            return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
+          }).join('');
+          if (rem > 0) html += '<div class="u-text-xs" style="padding:1px 0; color:var(--text-muted);">+' + rem + ' m\u00e1s</div>';
+          if (newNIFs.length === 0) html = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
+          var listEl = document.getElementById('calDetailParticipantList');
+          if (listEl) listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
+
+          // Update count label
+          var countLabel = panel.querySelector('.u-font-semibold');
+          if (countLabel) countLabel.textContent = 'Participantes (' + newNIFs.length + ')';
+
+          // Update Gantt table row participant count
+          var row = document.querySelector('.cal-table-row[data-codigo="' + item.codigo + '"]');
+          if (row) {
+            var partCell = row.querySelector('.cal-col-participantes');
+            if (partCell) partCell.textContent = newNIFs.length;
+          }
+
+          // Update local reference
+          participantNIFs = newNIFs;
+          showToast('Participantes actualizados (' + newNIFs.length + ')', 'success');
+        });
+      });
+
+      // Convocar button handler
+      document.getElementById('calDetailConvocar').addEventListener('click', function() {
+        if (!state.employees || state.employees.length === 0) {
+          showToast('Carga el organigrama para poder convocar', 'warning');
+          return;
+        }
+        if (!item.participantes || item.participantes.length === 0) {
+          showToast('La acci\u00f3n no tiene participantes vinculados', 'warning');
+          return;
+        }
+
+        var matched = preloadConvocatoriaFromAccion(item.codigo);
+        if (matched > 0) {
+          applyTabChange('tabConvocatoria');
+          renderFilters();
+          renderTable();
+          showToast('Datos de "' + esc(item.nombre) + '" cargados (' + matched + ' participantes). Completa fecha y sala.', 'success');
+        }
+      });
+
+      // Ver en catálogo link
       document.getElementById('calDetailOpenCatalog').addEventListener('click', function(e) {
         e.preventDefault();
         navigateToAction(item.codigo);
       });
 
+      // Close button
       document.getElementById('calDetailClose').addEventListener('click', function() {
         panel.style.display = 'none';
         calState.selectedCodigo = null;
