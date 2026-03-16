@@ -10733,9 +10733,9 @@
         .filter(row => {
           const ab = row['Alta/Baja'];
           if (!(ab === 1 || ab === '1')) return false;
-          const dept = (row['Departamento'] || '').toString().trim().toLowerCase();
+          const dept = (row['Departamento'] || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           if (dept === 'alta automatica') return false;
-          const puesto = (row['Puesto'] || '').toString().trim().toLowerCase();
+          const puesto = (row['Puesto'] || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           if (puesto.indexOf('consejero delegado') !== -1) return false;
           return true;
         })
