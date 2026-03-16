@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Arquitectura
 
-Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~24,250 líneas. Dependencias externas vía CDN:
+Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~24,320 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
 
@@ -144,6 +144,8 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `precomputeDashboard()` — precalcula datos del dashboard con `requestIdleCallback` y cache basado en hash
 - `checkWaitlist()` — gestiona lista de espera cuando se supera capacidad máxima
 - Cuando un handler de `input` hace innerHTML re-render del contenedor que contiene el propio input: capturar `selectionStart` ANTES, y tras re-render hacer `focus()` + `setSelectionRange()` en el nuevo elemento. Si no, el usuario pierde foco tras cada tecla.
+- `record.asistencia.registro[nif]` es un array de booleans indexado por posición (`[idx]`), NO un objeto con claves de fecha (`[fecha]`). `sesiones` es `string[]` (fechas), NO `object[]` (no tiene `.fecha`)
+- `renderCatalogForm()` hace full innerHTML replace — destruye estado de paneles colapsables, selects, radios. Si se llama desde un panel interactivo: guardar estado antes, restaurar después (open/closed, valores seleccionados)
 
 ## Convenciones de código
 
@@ -234,6 +236,7 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 - NO usar innerHTML para filas de tabla — usar `createRowElement()` (DOM API)
 - NO añadir alertas/avisos que salten automáticamente sin control del usuario
 - NO usar emojis ni Unicode como iconos — usar `Icons.*`
+- NO usar escapes JS (`\u00e9`) en HTML estático — solo funcionan en strings JS. Usar caracteres literales (`é`, `á`, `ñ`) en el markup HTML
 - NO usar `font-size` directo — usar `var(--font-size-*)`
 - NO usar `z-index` directo — usar `var(--z-*)`
 - NO usar `transition: all` — especificar propiedades concretas
