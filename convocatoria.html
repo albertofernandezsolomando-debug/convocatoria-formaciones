@@ -13526,61 +13526,72 @@
           showToast('Selecciona una acción', 'warning');
           return;
         }
-        const accion = acciones.find(a => a.codigo === codigo);
+        var accion = acciones.find(a => a.codigo === codigo);
         if (!accion) { showToast('Acción formativa no encontrada', 'error'); return; }
-        const nifs = accion.participantes || [];
-        if (nifs.length === 0) {
-          showToast('La acción no tiene participantes vinculados', 'warning');
-          releaseFocus(overlay); overlay.remove();
-          return;
+
+        var matched = preloadConvocatoriaFromAccion(codigo);
+        if (matched > 0) {
+          renderFilters();
+          renderTable();
         }
-
-        // Clear all filters
-        state.activeFilters = {};
-        // Set excludedNIFs to exclude everyone NOT in the nif list
-        const nifSet = new Set(nifs);
-        state.excludedNIFs = new Set(
-          state.employees.filter(emp => !nifSet.has(emp.NIF)).map(emp => emp._id)
-        );
-
-        renderFilters();
-        renderTable();
         releaseFocus(overlay); overlay.remove();
 
-        // ── Auto-fill event fields from acción formativa ──
-        if (accion.nombre) {
-          document.getElementById('eventTitle').value = accion.nombre;
-          document.getElementById('eventTitle').classList.remove('error');
-        }
-
-        // Set Teams / Presencial based on modalidad
-        const modalidad = (accion.modalidad || '').toLowerCase();
-        if (modalidad === 'teleformación' || modalidad === 'teleformacion') {
-          document.querySelector('input[name="eventType"][value="teams"]').checked = true;
-        } else if (modalidad === 'presencial') {
-          document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
-        }
-        // Trigger the change handler so location field updates accordingly
-        const checkedRadio = document.querySelector('input[name="eventType"]:checked');
-        if (checkedRadio) checkedRadio.dispatchEvent(new Event('change', { bubbles: true }));
-
-        // Set formador from linked tutor
-        if (accion.tutorVinculado) {
-          const tutores = getCatalog('tutores');
-          const tutor = tutores.find(t => t.documento === accion.tutorVinculado);
-          if (tutor) {
-            const tutorName = [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
-            document.getElementById('eventFormador').value = tutorName;
-          }
-        }
-
-        saveState();
-
-        const matched = state.employees.filter(emp => nifSet.has(emp.NIF)).length;
-        const accionLabel = accion.nombre || accion.codigo;
+        var accionLabel = accion.nombre || accion.codigo;
         showToast('Datos de "' + accionLabel + '" cargados (' + matched + ' participantes). Completa fecha y sala.', 'success');
       });
     });
+
+    function preloadConvocatoriaFromAccion(codigo) {
+      var acciones = getCatalog('acciones');
+      var accion = acciones.find(function(a) { return a.codigo === codigo; });
+      if (!accion) { showToast('Acción formativa no encontrada', 'error'); return 0; }
+
+      var nifs = accion.participantes || [];
+      if (nifs.length === 0) {
+        showToast('La acción no tiene participantes vinculados', 'warning');
+        return 0;
+      }
+
+      // Clear all filters
+      state.activeFilters = {};
+
+      // Set excludedNIFs to exclude everyone NOT in the nif list
+      var nifSet = new Set(nifs);
+      state.excludedNIFs = new Set(
+        state.employees.filter(function(emp) { return !nifSet.has(emp.NIF); }).map(function(emp) { return emp._id; })
+      );
+
+      // Auto-fill event fields from acción formativa
+      if (accion.nombre) {
+        document.getElementById('eventTitle').value = accion.nombre;
+        document.getElementById('eventTitle').classList.remove('error');
+      }
+
+      // Set Teams / Presencial based on modalidad
+      var modalidad = (accion.modalidad || '').toLowerCase();
+      if (modalidad === 'teleformación' || modalidad === 'teleformacion') {
+        document.querySelector('input[name="eventType"][value="teams"]').checked = true;
+      } else if (modalidad === 'presencial') {
+        document.querySelector('input[name="eventType"][value="presencial"]').checked = true;
+      }
+      var checkedRadio = document.querySelector('input[name="eventType"]:checked');
+      if (checkedRadio) checkedRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Set formador from linked tutor
+      if (accion.tutorVinculado) {
+        var tutores = getCatalog('tutores');
+        var tutor = tutores.find(function(t) { return t.documento === accion.tutorVinculado; });
+        if (tutor) {
+          var tutorName = [tutor.nombre, tutor.apellido1, tutor.apellido2].filter(Boolean).join(' ');
+          document.getElementById('eventFormador').value = tutorName;
+        }
+      }
+
+      saveState();
+
+      var matched = state.employees.filter(function(emp) { return nifSet.has(emp.NIF); }).length;
+      return matched;
+    }
 
     // ═══════════════════════════════════
     // VIRTUAL SCROLL FOR LARGE DATASETS
