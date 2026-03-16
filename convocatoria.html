@@ -6321,17 +6321,6 @@
   </div>
 
   <script>
-    // ═══ DIAGNOSTIC: global error handler (remove after debugging) ═══
-    window.onerror = function(msg, url, line, col, err) {
-      document.title = 'JS ERROR L' + line + ': ' + msg;
-      console.error('DIAGNOSTIC:', msg, 'line:', line);
-      try {
-        var d = document.createElement('div');
-        d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:12px;z-index:999999;font:14px monospace;word-break:break-all;';
-        d.textContent = 'ERROR línea ' + line + ': ' + msg;
-        document.body.appendChild(d);
-      } catch(e2) {}
-    };
     // ═══════════════════════════════════
     // DESIGN SYSTEM CONSTANTS
     // ═══════════════════════════════════
@@ -6904,13 +6893,16 @@
       });
 
       confirmBtn.addEventListener('click', function() {
+        var preserveKeys = ['convocatoria_onboarding_done', 'convocatoria_settings'];
         var keysToRemove = [];
         for (var i = 0; i < localStorage.length; i++) {
           var key = localStorage.key(i);
-          if (key.indexOf('convocatoria_') === 0 || key.indexOf('fundae_') === 0) {
+          if ((key.indexOf('convocatoria_') === 0 || key.indexOf('fundae_') === 0) && preserveKeys.indexOf(key) === -1) {
             keysToRemove.push(key);
           }
         }
+        // Also remove unprefixed keys used by the app
+        if (localStorage.getItem('lastFile') !== null) keysToRemove.push('lastFile');
         keysToRemove.forEach(function(key) { localStorage.removeItem(key); });
         close();
         showToast('Almacenamiento limpiado (' + keysToRemove.length + ' claves). Recargando…', 'success');
@@ -13138,7 +13130,7 @@
     const fileNameEl = document.getElementById('fileName');
     const fileStats = document.getElementById('fileStats');
 
-    uploadZone.addEventListener('click', () => { console.log('DIAGNOSTIC: uploadZone click'); fileInput.click(); });
+    uploadZone.addEventListener('click', () => { fileInput.click(); });
     uploadZone.addEventListener('dragover', e => {
       e.preventDefault();
       uploadZone.classList.add('dragover');
@@ -13493,7 +13485,6 @@
     }
 
     function processParseResult(result, file) {
-      console.log('DIAGNOSTIC: processParseResult', result.employees.length, 'employees,', result.errors.length, 'errors');
       if (result.errors.length > 0) {
         var blocked = showExcelErrorDialog(result.errors);
         if (blocked || result.employees.length === 0) return;
@@ -13587,16 +13578,19 @@
     }
 
     function handleFile(file) {
-      console.log('DIAGNOSTIC: handleFile called with', file.name, file.size);
+      if (typeof XLSX === 'undefined') {
+        showToast('Error: la librería de Excel no se ha cargado. Comprueba tu conexión a Internet y recarga la página.', 'error', 8000);
+        return;
+      }
       const reader = new FileReader();
-      reader.onerror = function() { console.error('DIAGNOSTIC: FileReader error', reader.error); };
+      reader.onerror = function() { showToast('Error al leer el archivo', 'error'); };
       reader.onload = function(e) {
-        console.log('DIAGNOSTIC: reader.onload fired, bytes:', e.target.result.byteLength);
         // Show loading state
         uploadZone.classList.add('loading');
         var promptDiv = document.getElementById('uploadPrompt');
         var origPromptHTML = promptDiv.innerHTML;
-        promptDiv.querySelector('div:nth-child(2)').textContent = 'Procesando...';
+        var promptSubtext = promptDiv.querySelector('div:nth-child(2)');
+        if (promptSubtext) promptSubtext.textContent = 'Procesando...';
         document.getElementById('tableSkeleton').style.display = '';
         document.getElementById('attendeeTable').style.display = 'none';
         document.getElementById('emptyState').style.display = 'none';
@@ -19138,7 +19132,7 @@
         allEmployees.forEach(function(emp) {
           var empNif = (emp.NIF || emp.nif || '').toString().trim();
           if (empNif) {
-            var name = [emp.Nombre || emp.nombre || '', emp.Apellidos || emp.apellidos || ''].filter(Boolean).join(' ').trim();
+            var name = (emp.Empleado || emp.empleado || '').trim();
             if (name) nifNameMap[empNif] = name;
           }
         });
@@ -23351,7 +23345,7 @@
       var participantNames = participantNIFs.map(function(nif) {
         if (state.employees && state.employees.length > 0) {
           var emp = state.employees.find(function(e) { return e.NIF === nif; });
-          if (emp) return [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ');
+          if (emp) return emp.Empleado || nif;
         }
         return nif;
       });
@@ -23487,7 +23481,7 @@
           var newNames = newNIFs.map(function(nif) {
             if (state.employees && state.employees.length > 0) {
               var emp = state.employees.find(function(e) { return e.NIF === nif; });
-              if (emp) return [emp.Nombre, emp.Apellidos].filter(Boolean).join(' ');
+              if (emp) return emp.Empleado || nif;
             }
             return nif;
           });
