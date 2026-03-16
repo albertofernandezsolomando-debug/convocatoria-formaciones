@@ -256,7 +256,7 @@
     }
     .clear-storage-btn:hover {
       color: var(--danger);
-      background: rgba(220, 38, 38, 0.08);
+      background: color-mix(in srgb, var(--danger) 8%, transparent);
     }
     .clear-countdown-ring {
       transform: rotate(-90deg);
@@ -6786,7 +6786,15 @@
       'convocatoria_trainingTemplates',
       'convocatoria_unifiedTemplates',
       'convocatoria_puestos_catalog',
-      'convocatoria_tnaRequests'
+      'convocatoria_tnaRequests',
+      'convocatoria_compliance_types',
+      'convocatoria_compliance_records',
+      'convocatoria_corrections',
+      'convocatoria_catalog_viewMode',
+      'convocatoria_dashCollapsed',
+      'convocatoria_dash_mode',
+      'convocatoria_onboarding_done',
+      'convocatoria_kbdInteractions'
     ];
 
     function exportBackup() {
@@ -10739,9 +10747,9 @@
         .filter(row => {
           const ab = row['Alta/Baja'];
           if (!(ab === 1 || ab === '1')) return false;
-          const dept = (row['Departamento'] || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const dept = (row['Departamento'] || '').toString().trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           if (dept === 'alta automatica') return false;
-          const puesto = (row['Puesto'] || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const puesto = (row['Puesto'] || '').toString().trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           if (puesto.indexOf('consejero delegado') !== -1) return false;
           return true;
         })
@@ -23885,11 +23893,11 @@
         var totalRendered = 0;
         groupKeys.forEach(function(key) {
           if (totalRendered >= 200) return;
+          var items = groups[key].slice(0, 200 - totalRendered);
           html += '<div class="persona-group-header" style="padding:8px 16px; background:var(--bg-input); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1;">' +
             '<span class="u-text-xs u-font-semibold" style="color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">' + esc(key) + '</span>' +
-            '<span class="u-text-xs u-text-muted" style="margin-left:6px;">(' + groups[key].length + ')</span>' +
+            '<span class="u-text-xs u-text-muted" style="margin-left:6px;">(' + items.length + (items.length < groups[key].length ? '/' + groups[key].length : '') + ')</span>' +
           '</div>';
-          var items = groups[key].slice(0, 200 - totalRendered);
           items.forEach(function(emp) {
             html += renderItem(emp);
             totalRendered++;
