@@ -10594,7 +10594,10 @@
       const employees = rows
         .filter(row => {
           const ab = row['Alta/Baja'];
-          return ab === 1 || ab === '1';
+          if (!(ab === 1 || ab === '1')) return false;
+          const dept = (row['Departamento'] || '').toString().trim().toLowerCase();
+          if (dept === 'alta automatica') return false;
+          return true;
         })
         .map((row, idx) => {
           const emp = {};
@@ -23657,9 +23660,7 @@
       var container = document.getElementById('personasList');
       var countEl = document.getElementById('personasCount');
       if (!container) return;
-      var employees = (state.employees || []).filter(function(emp) {
-        return (emp.Departamento || '').toLowerCase() !== 'alta automatica';
-      });
+      var employees = state.employees || [];
       var q = (query || '').trim().toLowerCase();
 
       var filtered = employees;
