@@ -6321,6 +6321,17 @@
   </div>
 
   <script>
+    // ═══ DIAGNOSTIC: global error handler (remove after debugging) ═══
+    window.onerror = function(msg, url, line, col, err) {
+      document.title = 'JS ERROR L' + line + ': ' + msg;
+      console.error('DIAGNOSTIC:', msg, 'line:', line);
+      try {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:12px;z-index:999999;font:14px monospace;word-break:break-all;';
+        d.textContent = 'ERROR línea ' + line + ': ' + msg;
+        document.body.appendChild(d);
+      } catch(e2) {}
+    };
     // ═══════════════════════════════════
     // DESIGN SYSTEM CONSTANTS
     // ═══════════════════════════════════
@@ -13113,7 +13124,7 @@
     const fileNameEl = document.getElementById('fileName');
     const fileStats = document.getElementById('fileStats');
 
-    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('click', () => { console.log('DIAGNOSTIC: uploadZone click'); fileInput.click(); });
     uploadZone.addEventListener('dragover', e => {
       e.preventDefault();
       uploadZone.classList.add('dragover');
@@ -13468,6 +13479,7 @@
     }
 
     function processParseResult(result, file) {
+      console.log('DIAGNOSTIC: processParseResult', result.employees.length, 'employees,', result.errors.length, 'errors');
       if (result.errors.length > 0) {
         var blocked = showExcelErrorDialog(result.errors);
         if (blocked || result.employees.length === 0) return;
@@ -13561,8 +13573,11 @@
     }
 
     function handleFile(file) {
+      console.log('DIAGNOSTIC: handleFile called with', file.name, file.size);
       const reader = new FileReader();
+      reader.onerror = function() { console.error('DIAGNOSTIC: FileReader error', reader.error); };
       reader.onload = function(e) {
+        console.log('DIAGNOSTIC: reader.onload fired, bytes:', e.target.result.byteLength);
         // Show loading state
         uploadZone.classList.add('loading');
         var promptDiv = document.getElementById('uploadPrompt');
