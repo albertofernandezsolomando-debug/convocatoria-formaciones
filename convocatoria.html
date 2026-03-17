@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* --- Design: Indigo-600 + Slate neutrals + Inter --- */
     :root {
@@ -8574,6 +8575,8 @@
         innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-8">' +
           '<input class="input-field u-text-12 u-w-auto" id="cfAsistenciaDate" type="date" aria-label="Fecha de sesión">' +
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddSesion">A\u00F1adir sesi\u00F3n</button>' +
+          '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnImportFirmas" title="Importar asistencia desde PDF de firmas FUNDAE">' + Icons.upload(14) + ' Importar firmas</button>' +
+          '<input type="file" id="cfFirmasInput" accept=".pdf" style="display:none;">' +
         '</div>';
 
         // Registro rápido panel
@@ -9646,6 +9649,315 @@
           showToast(msg, toastType, 6000);
         });
       }
+
+      // Import firmas PDF button
+      var importFirmasBtn = document.getElementById('btnImportFirmas');
+      var firmasInput = document.getElementById('cfFirmasInput');
+      if (importFirmasBtn && firmasInput) {
+        importFirmasBtn.addEventListener('click', function() { firmasInput.click(); });
+        firmasInput.addEventListener('change', function() {
+          if (this.files[0]) {
+            importAttendancePdf(this.files[0], record);
+            this.value = '';
+          }
+        });
+      }
+    }
+
+    // ═══════════════════════════════════
+    // ATTENDANCE PDF IMPORT (FUNDAE sign sheets)
+    // ═══════════════════════════════════
+
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    function countInkPixels(imageData, x, y, w, h) {
+      var count = 0;
+      var data = imageData.data;
+      var imgW = imageData.width;
+      var startY = Math.max(0, Math.floor(y));
+      var endY = Math.min(imageData.height, Math.floor(y + h));
+      var startX = Math.max(0, Math.floor(x));
+      var endX = Math.min(imgW, Math.floor(x + w));
+      for (var py = startY; py < endY; py++) {
+        for (var px = startX; px < endX; px++) {
+          var i = (py * imgW + px) * 4;
+          var r = data[i], g = data[i + 1], b = data[i + 2];
+          if (r < 180 || g < 180 || b < 180) count++;
+        }
+      }
+      return count;
+    }
+
+    async function parseAttendancePdf(file) {
+      if (typeof pdfjsLib === 'undefined') {
+        showToast('Error: la librería PDF no se ha cargado. Comprueba tu conexión.', 'error', 8000);
+        return null;
+      }
+
+      var arrayBuffer = await file.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+
+      var headerInfo = { actionCode: '', group: '', sessionNum: '', date: '' };
+      var allAttendees = [];
+
+      for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        var page = await pdf.getPage(pageNum);
+        var scale = 2;
+        var viewport = page.getViewport({ scale: scale });
+        var textContent = await page.getTextContent();
+
+        // --- Header from first page ---
+        if (pageNum === 1) {
+          var fullText = textContent.items.map(function(it) { return it.str; }).join(' ');
+          var afMatch = fullText.match(/AF\s*(\d{4,8})/);
+          if (afMatch) headerInfo.actionCode = afMatch[1];
+          var groupMatch = fullText.match(/GRUPO\s+(\d+)/);
+          if (groupMatch) headerInfo.group = groupMatch[1];
+          var sesMatch = fullText.match(/SESI[OÓ]N\s+N[ºo°]?\s*:?\s*(\d+)/i);
+          if (sesMatch) headerInfo.sessionNum = sesMatch[1];
+          var dateMatch = fullText.match(/FECHA:\s*(\d{2}\/\d{2}\/\d{4})/);
+          if (dateMatch) headerInfo.date = dateMatch[1];
+        }
+
+        // --- Find FIRMA column X from header ---
+        var firmaHeaderX = null;
+        textContent.items.forEach(function(item) {
+          if (item.str.trim() === 'FIRMA') firmaHeaderX = item.transform[4];
+        });
+
+        // --- Extract NIFs with positions ---
+        var nifRegex = /^\d{8}[A-Z]$/;
+        var pageAttendees = [];
+
+        textContent.items.forEach(function(item) {
+          var text = item.str.trim();
+          if (nifRegex.test(text)) {
+            var coords = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+            pageAttendees.push({
+              nif: text,
+              name: '',
+              canvasY: coords[1],
+              pdfX: item.transform[4],
+              pdfY: item.transform[5],
+              signed: false
+            });
+          }
+        });
+
+        pageAttendees.sort(function(a, b) { return a.canvasY - b.canvasY; });
+
+        // --- Match names to NIFs (same Y, to the left) ---
+        pageAttendees.forEach(function(att) {
+          var nameTexts = [];
+          textContent.items.forEach(function(item) {
+            if (Math.abs(item.transform[5] - att.pdfY) < 5 &&
+                item.transform[4] < att.pdfX &&
+                item.str.trim() && !nifRegex.test(item.str.trim())) {
+              nameTexts.push({ x: item.transform[4], str: item.str.trim() });
+            }
+          });
+          nameTexts.sort(function(a, b) { return a.x - b.x; });
+          att.name = nameTexts.map(function(t) { return t.str; }).join(' ').replace(/\s+/g, ' ').trim();
+        });
+
+        // --- Render to canvas for signature detection ---
+        var canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        var ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // FIRMA column bounds
+        var firmaStartX;
+        if (firmaHeaderX !== null) {
+          firmaStartX = viewport.convertToViewportPoint(firmaHeaderX, 0)[0];
+        } else {
+          firmaStartX = canvas.width * 0.6;
+        }
+        var firmaEndX = canvas.width - 10;
+
+        // --- Detect signature per row ---
+        pageAttendees.forEach(function(att, idx) {
+          var rowTop = att.canvasY - 10;
+          var rowBottom = (idx < pageAttendees.length - 1) ?
+            pageAttendees[idx + 1].canvasY - 10 :
+            att.canvasY + 40;
+
+          // Scan middle of row (skip 5px top/bottom to avoid table lines)
+          var scanTop = Math.floor(rowTop + 5);
+          var scanBottom = Math.floor(rowBottom - 5);
+          var scanLeft = Math.floor(firmaStartX + 10);
+          var scanRight = Math.floor(firmaEndX - 10);
+          var scanW = scanRight - scanLeft;
+          var scanH = scanBottom - scanTop;
+
+          if (scanW > 0 && scanH > 0) {
+            var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
+            var totalPixels = scanW * scanH;
+            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.005;
+          }
+        });
+
+        allAttendees = allAttendees.concat(pageAttendees);
+      }
+
+      return { header: headerInfo, attendees: allAttendees };
+    }
+
+    async function importAttendancePdf(file, record) {
+      showToast('Procesando PDF de firmas…', 'info', 3000);
+
+      try {
+        var result = await parseAttendancePdf(file);
+        if (!result || result.attendees.length === 0) {
+          showToast('No se encontraron asistentes en el PDF. Comprueba que el PDF tiene texto extraíble.', 'error', 6000);
+          return;
+        }
+        showAttendanceImportDialog(result, record);
+      } catch (err) {
+        showToast('Error al procesar el PDF: ' + (err.message || err), 'error', 6000);
+      }
+    }
+
+    function showAttendanceImportDialog(result, record) {
+      var header = result.header;
+      var attendees = result.attendees;
+      var participantes = record.participantes || [];
+
+      // Convert header date DD/MM/YYYY → YYYY-MM-DD
+      var sessionDate = '';
+      if (header.date) {
+        var dp = header.date.split('/');
+        if (dp.length === 3) sessionDate = dp[2] + '-' + dp[1] + '-' + dp[0];
+      }
+
+      var signedCount = attendees.filter(function(a) { return a.signed; }).length;
+
+      var overlay = document.createElement('div');
+      overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+
+      var headerHtml = '<h3>Importar asistencia desde PDF</h3>';
+      headerHtml += '<div class="u-text-12 u-text-secondary u-mb-12">';
+      if (header.actionCode) headerHtml += 'Acción AF' + esc(header.actionCode);
+      if (header.sessionNum) headerHtml += ' · Sesión ' + esc(header.sessionNum);
+      if (header.date) headerHtml += ' · ' + esc(header.date);
+      headerHtml += '</div>';
+
+      var listHtml = '<div class="u-overflow-y-auto" style="max-height:400px;">';
+      attendees.forEach(function(att, idx) {
+        var inAction = participantes.indexOf(att.nif) !== -1;
+        var signIcon = att.signed ?
+          '<span style="color:var(--success);" title="Firma detectada">' + Icons.check(14) + '</span>' :
+          '<span style="color:var(--text-muted);" title="Sin firma detectada">' + Icons.x(14) + '</span>';
+
+        listHtml += '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); cursor:pointer;">' +
+          '<input type="checkbox" class="cfImportCheck" data-idx="' + idx + '"' + (att.signed ? ' checked' : '') + ' style="accent-color:var(--accent);">' +
+          '<span class="u-text-12 u-flex-1">' + esc(att.name || att.nif) + '</span>' +
+          '<span class="u-text-11 u-text-muted" style="font-family:var(--font-mono); min-width:80px;">' + esc(att.nif) + '</span>' +
+          signIcon +
+          (inAction ? '' : '<span class="chip u-text-xs" style="background:var(--warning); color:white;">No en participantes</span>') +
+        '</label>';
+      });
+      listHtml += '</div>';
+
+      var countHtml = '<div class="u-text-12 u-text-secondary u-mt-8" id="importFirmasCount">' +
+        signedCount + ' de ' + attendees.length + ' con firma detectada</div>';
+
+      overlay.innerHTML = '<div class="dialog-box" style="max-width:560px;">' +
+        headerHtml + listHtml + countHtml +
+        '<div class="dialog-buttons u-mt-12">' +
+          '<button class="btn btn-secondary" id="importFirmasCancel">Cancelar</button>' +
+          '<button class="btn btn-primary" id="importFirmasConfirm">Guardar asistencia</button>' +
+        '</div>' +
+      '</div>';
+
+      document.body.appendChild(overlay);
+
+      // Update count on checkbox changes
+      overlay.addEventListener('change', function(e) {
+        if (e.target.classList.contains('cfImportCheck')) {
+          var checked = overlay.querySelectorAll('.cfImportCheck:checked').length;
+          var countEl = document.getElementById('importFirmasCount');
+          if (countEl) countEl.textContent = checked + ' de ' + attendees.length + ' marcados como presentes';
+        }
+      });
+
+      function close() {
+        overlay.classList.add('closing');
+        setTimeout(function() { overlay.remove(); }, 200);
+      }
+
+      document.getElementById('importFirmasCancel').addEventListener('click', close);
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', function escH(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', escH); }
+      });
+
+      document.getElementById('importFirmasConfirm').addEventListener('click', function() {
+        if (!record.asistencia) record.asistencia = { sesiones: [], registro: {} };
+        if (!record.asistencia.sesiones) record.asistencia.sesiones = [];
+        if (!record.asistencia.registro) record.asistencia.registro = {};
+
+        // Create session if needed
+        if (sessionDate && record.asistencia.sesiones.indexOf(sessionDate) === -1) {
+          record.asistencia.sesiones.push(sessionDate);
+          record.asistencia.sesiones.sort();
+          // Pad existing registro arrays
+          var sesLen = record.asistencia.sesiones.length;
+          var newIdx = record.asistencia.sesiones.indexOf(sessionDate);
+          participantes.forEach(function(nif) {
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = new Array(sesLen).fill(false);
+            } else {
+              record.asistencia.registro[nif].splice(newIdx, 0, false);
+            }
+          });
+        }
+
+        var sesIdx = record.asistencia.sesiones.indexOf(sessionDate);
+        if (sesIdx === -1) sesIdx = record.asistencia.sesiones.length - 1;
+        if (sesIdx === -1) {
+          showToast('No se pudo determinar la sesión. Añádela manualmente primero.', 'error');
+          return;
+        }
+
+        // Apply attendance from checkboxes
+        var checks = overlay.querySelectorAll('.cfImportCheck');
+        var marked = 0;
+        var notInAction = [];
+
+        checks.forEach(function(cb) {
+          var idx = parseInt(cb.dataset.idx, 10);
+          var att = attendees[idx];
+          if (!att) return;
+
+          var nif = att.nif;
+          var isPresent = cb.checked;
+
+          if (participantes.indexOf(nif) !== -1) {
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = new Array(record.asistencia.sesiones.length).fill(false);
+            }
+            record.asistencia.registro[nif][sesIdx] = isPresent;
+            if (isPresent) marked++;
+          } else if (isPresent) {
+            notInAction.push(att.name || nif);
+          }
+        });
+
+        upsertCatalogRecord('acciones', 'codigo', record);
+        close();
+        renderCatalogForm();
+
+        var msg = 'Asistencia importada: ' + marked + ' presentes en sesión ' + (sessionDate || '');
+        if (notInAction.length > 0) msg += '. ' + notInAction.length + ' asistentes no están en participantes de la acción.';
+        showToast(msg, notInAction.length > 0 ? 'warning' : 'success', 6000);
+      });
     }
 
     function renderConfirmacionesHtml(record) {
