@@ -23745,8 +23745,10 @@
         '</div>' +
 
         // Action buttons
-        '<div style="margin-top:12px; display:flex; align-items:center; gap:8px;">' +
+        '<div style="margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
           '<button class="btn btn-primary" id="calDetailConvocar" style="font-size:var(--font-size-sm); padding:5px 12px;">Convocar</button>' +
+          '<button class="btn btn-secondary" id="calDetailImportFirmas" style="font-size:var(--font-size-sm); padding:5px 12px;">' + Icons.upload(12) + ' Importar firmas</button>' +
+          '<input type="file" id="calFirmasInput" accept=".pdf" style="display:none;">' +
           '<a href="#" id="calDetailOpenCatalog" class="u-text-11 u-text-accent" style="text-decoration:none; margin-left:auto;">Ver en cat\u00e1logo \u2192</a>' +
         '</div>' +
       '</div>' +
@@ -23895,6 +23897,24 @@
           showToast('Datos de "' + esc(item.nombre) + '" cargados (' + matched + ' participantes). Completa fecha y sala.', 'success');
         }
       });
+
+      // Import firmas button handler
+      var calImportBtn = document.getElementById('calDetailImportFirmas');
+      var calFirmasInput = document.getElementById('calFirmasInput');
+      if (calImportBtn && calFirmasInput) {
+        calImportBtn.addEventListener('click', function() { calFirmasInput.click(); });
+        calFirmasInput.addEventListener('change', function() {
+          if (this.files[0]) {
+            var record = getCatalog('acciones').find(function(a) { return a.codigo === item.codigo; });
+            if (record) {
+              importAttendancePdf(this.files[0], record);
+            } else {
+              showToast('Acción no encontrada en el catálogo', 'error');
+            }
+            this.value = '';
+          }
+        });
+      }
 
       // Ver en catálogo link
       document.getElementById('calDetailOpenCatalog').addEventListener('click', function(e) {
