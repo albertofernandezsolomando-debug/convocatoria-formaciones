@@ -7730,6 +7730,49 @@
     }
 
     // ═══════════════════════════════════
+    // FUNDAE CODE AUTO-GENERATION
+    // ═══════════════════════════════════
+
+    // codAccion = YY + NNN (year 2-digit + sequential 3-digit padded)
+    // codigoGrupo = NNN-01 (sequential part + group 01)
+    function generateActionCodes() {
+      var yearPrefix = String(new Date().getFullYear()).slice(-2);
+      var existing = getCatalog('acciones');
+      var maxSeq = 0;
+      existing.forEach(function(r) {
+        var code = String(r.codigo || '');
+        // Only consider codes with current year prefix (YYNNN format)
+        if (code.length >= 3 && code.indexOf(yearPrefix) === 0) {
+          var seq = parseInt(code.slice(2), 10);
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      });
+      var nextSeq = maxSeq + 1;
+      var seqStr = String(nextSeq).padStart(3, '0');
+      return {
+        codigo: yearPrefix + seqStr,
+        codigoGrupo: seqStr + '-01',
+        seq: nextSeq
+      };
+    }
+
+    // For duplicating: same action sequential, next group number
+    function generateGroupCode(originalCodigoGrupo) {
+      if (!originalCodigoGrupo || originalCodigoGrupo.indexOf('-') === -1) return '';
+      var parts = originalCodigoGrupo.split('-');
+      var prefix = parts[0]; // e.g., '011'
+      var existing = getCatalog('acciones');
+      var maxGroup = 0;
+      existing.forEach(function(r) {
+        if (r.codigoGrupo && r.codigoGrupo.indexOf(prefix + '-') === 0) {
+          var g = parseInt(r.codigoGrupo.split('-')[1], 10);
+          if (!isNaN(g) && g > maxGroup) maxGroup = g;
+        }
+      });
+      return prefix + '-' + String(maxGroup + 1).padStart(2, '0');
+    }
+
+    // ═══════════════════════════════════
     // NEW ROW
     // ═══════════════════════════════════
 
@@ -7737,10 +7780,9 @@
       var config = LIST_VIEW_CONFIG[catalogKey];
       var emptyRecord = {};
       if (catalogKey === 'acciones') {
-        var existing = getCatalog('acciones');
-        var maxCode = 0;
-        existing.forEach(function(r) { var num = parseInt(r.codigo, 10); if (!isNaN(num) && num > maxCode) maxCode = num; });
-        emptyRecord.codigo = String(maxCode + 1);
+        var codes = generateActionCodes();
+        emptyRecord.codigo = codes.codigo;
+        emptyRecord.codigoGrupo = codes.codigoGrupo;
         emptyRecord.estado = 'Pendiente';
         emptyRecord.participantes = [];
         emptyRecord.notas = [];
@@ -8405,13 +8447,9 @@
         return;
       }
 
-      // Generate new codigo: max existing + 1
-      var maxCodigo = 0;
-      for (var i = 0; i < allAcciones.length; i++) {
-        var c = parseInt(allAcciones[i].codigo, 10);
-        if (!isNaN(c) && c > maxCodigo) maxCodigo = c;
-      }
-      var newCodigo = String(maxCodigo + 1);
+      // Generate new codAccion (same year prefix, next sequential)
+      var codes = generateActionCodes();
+      var newCodigo = codes.codigo;
 
       // Deep clone
       var copy = JSON.parse(JSON.stringify(original));
@@ -8419,8 +8457,14 @@
       // Assign new pk
       copy.codigo = newCodigo;
 
-      // Prefix nombre
-      copy.nombre = 'Copia de ' + (original.nombre || 'Sin título');
+      // Generate next group code based on original's codigoGrupo
+      if (original.codigoGrupo) {
+        copy.codigoGrupo = generateGroupCode(original.codigoGrupo);
+        copy.nombre = (original.nombre || 'Sin título').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') + ' (Gr. ' + copy.codigoGrupo.split('-')[1].replace(/^0/, '') + ')';
+      } else {
+        copy.codigoGrupo = codes.codigoGrupo;
+        copy.nombre = 'Copia de ' + (original.nombre || 'Sin título');
+      }
 
       // Clear state/dates/participants
       copy.participantes = [];
@@ -8430,7 +8474,6 @@
       copy.fechaFin = '';
       copy.estado = 'En preparación';
       copy.grupoAccion = '';
-      copy.codigoGrupo = '';
       copy.createdAt = new Date().toISOString();
 
       upsertCatalogRecord('acciones', 'codigo', copy);
@@ -10378,7 +10421,7 @@
         }
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
-        else if (!/^\d{1,5}$/.test(record.codigo)) markError('codigo', 'El código de acción debe tener entre 1 y 5 dígitos');
+        else if (!/^\d{1,8}$/.test(record.codigo)) markError('codigo', 'El código de acción debe ser numérico (formato AANNN, ej: 26011)');
 
         if (record.nombre && record.nombre.length > 255) markError('nombre', 'El nombre no puede superar 255 caracteres');
 
@@ -10527,6 +10570,12 @@
       const key = catalogState.activeCatalog;
       const cfg = CATALOG_CONFIG[key];
       const emptyRecord = {};
+      if (key === 'acciones') {
+        var codes = generateActionCodes();
+        emptyRecord.codigo = codes.codigo;
+        emptyRecord.codigoGrupo = codes.codigoGrupo;
+        emptyRecord.estado = 'Pendiente';
+      }
       catalogState.selectedPK = null;
       renderCatalogList();
       const panel = document.getElementById('catalogFormPanel');
@@ -12347,15 +12396,8 @@
       }
       if (!request) return;
 
-      // Generate unique codigo
-      var catalog = getCatalog('acciones');
-      var maxCode = 0;
-      for (var ci = 0; ci < catalog.length; ci++) {
-        var codeStr = catalog[ci].codigo || '';
-        var codeNum = parseInt(codeStr.replace(/^TNA-/, ''), 10);
-        if (!isNaN(codeNum) && codeNum > maxCode) maxCode = codeNum;
-      }
-      var newCodigo = 'TNA-' + (maxCode + 1);
+      // Generate unique codigo using FUNDAE format (YYNNN)
+      var generatedCodes = generateActionCodes();
 
       // Build rich nota
       var notaText = 'Origen: solicitud TNA';
@@ -12364,7 +12406,8 @@
       if (request.justificacion) notaText += ' \u2014 ' + request.justificacion;
 
       var action = {
-        codigo: newCodigo,
+        codigo: generatedCodes.codigo,
+        codigoGrupo: generatedCodes.codigoGrupo,
         nombre: request.tema,
         departamento: (request.areas && request.areas.length > 0) ? request.areas.join(', ') : '',
         plazas: request.numEmpleados || '',
@@ -12379,7 +12422,7 @@
       request.estado = 'convertida';
       saveTNARequests(requests);
 
-      showToast('Acción formativa "' + newCodigo + '" creada desde solicitud', 'success');
+      showToast('Acción formativa "' + generatedCodes.codigo + '" creada desde solicitud', 'success');
       renderTNAView();
     }
 
@@ -17047,6 +17090,8 @@
       // All types: accion.codigo and accion.nombre required
       if (!accion || !accion.codigo) errors.push({ field: 'Codigo accion', message: 'El codigo de accion es obligatorio' });
       if (!accion || !accion.nombre) errors.push({ field: 'Nombre accion', message: 'El nombre de accion es obligatorio' });
+      if (accion && !accion.codigoGrupo) errors.push({ field: 'Codigo grupo', message: 'El código de grupo acción es obligatorio (formato NNN-NN)' });
+      else if (accion && accion.codigoGrupo && !/^\d{3}-\d{2}$/.test(accion.codigoGrupo)) errors.push({ field: 'Codigo grupo', message: 'El código de grupo debe tener formato NNN-NN (ej: 011-01)' });
 
       if (accion) {
         // Hours vs modalidad coherence
