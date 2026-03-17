@@ -9848,7 +9848,16 @@
       if (header.date) headerHtml += ' · ' + esc(header.date);
       headerHtml += '</div>';
 
-      var listHtml = '<div class="u-overflow-y-auto" style="max-height:400px;">';
+      var newNifs = attendees.filter(function(a) { return participantes.indexOf(a.nif) === -1; });
+
+      var listHtml = '';
+      if (newNifs.length > 0) {
+        listHtml += '<div class="u-text-12 u-mb-8" style="padding:6px 10px; background:var(--accent-subtle); border-radius:var(--radius-sm);">' +
+          Icons.users(14) + ' <strong>' + newNifs.length + ' asistente' + (newNifs.length > 1 ? 's' : '') + ' nuevo' + (newNifs.length > 1 ? 's' : '') + '</strong> — se añadirán automáticamente a participantes' +
+        '</div>';
+      }
+
+      listHtml += '<div class="u-overflow-y-auto" style="max-height:400px;">';
       attendees.forEach(function(att, idx) {
         var inAction = participantes.indexOf(att.nif) !== -1;
         var signIcon = att.signed ?
@@ -9860,7 +9869,7 @@
           '<span class="u-text-12 u-flex-1">' + esc(att.name || att.nif) + '</span>' +
           '<span class="u-text-11 u-text-muted" style="font-family:var(--font-mono); min-width:80px;">' + esc(att.nif) + '</span>' +
           signIcon +
-          (inAction ? '' : '<span class="chip u-text-xs" style="background:var(--warning); color:white;">No en participantes</span>') +
+          (inAction ? '' : '<span class="chip u-text-xs" style="background:var(--accent-light); color:var(--accent);">Nuevo</span>') +
         '</label>';
       });
       listHtml += '</div>';
@@ -9903,21 +9912,33 @@
         if (!record.asistencia.sesiones) record.asistencia.sesiones = [];
         if (!record.asistencia.registro) record.asistencia.registro = {};
 
+        // Add new NIFs to participantes automatically
+        var addedCount = 0;
+        if (!record.participantes) record.participantes = [];
+        attendees.forEach(function(att) {
+          if (record.participantes.indexOf(att.nif) === -1) {
+            record.participantes.push(att.nif);
+            addedCount++;
+          }
+        });
+
         // Create session if needed
         if (sessionDate && record.asistencia.sesiones.indexOf(sessionDate) === -1) {
           record.asistencia.sesiones.push(sessionDate);
           record.asistencia.sesiones.sort();
-          // Pad existing registro arrays
-          var sesLen = record.asistencia.sesiones.length;
-          var newIdx = record.asistencia.sesiones.indexOf(sessionDate);
-          participantes.forEach(function(nif) {
-            if (!record.asistencia.registro[nif]) {
-              record.asistencia.registro[nif] = new Array(sesLen).fill(false);
-            } else {
-              record.asistencia.registro[nif].splice(newIdx, 0, false);
-            }
-          });
         }
+
+        // Ensure all participants have registro arrays of correct length
+        var sesLen = record.asistencia.sesiones.length;
+        record.participantes.forEach(function(nif) {
+          if (!record.asistencia.registro[nif]) {
+            record.asistencia.registro[nif] = new Array(sesLen).fill(false);
+          } else {
+            while (record.asistencia.registro[nif].length < sesLen) {
+              record.asistencia.registro[nif].push(false);
+            }
+          }
+        });
 
         var sesIdx = record.asistencia.sesiones.indexOf(sessionDate);
         if (sesIdx === -1) sesIdx = record.asistencia.sesiones.length - 1;
@@ -9929,7 +9950,6 @@
         // Apply attendance from checkboxes
         var checks = overlay.querySelectorAll('.cfImportCheck');
         var marked = 0;
-        var notInAction = [];
 
         checks.forEach(function(cb) {
           var idx = parseInt(cb.dataset.idx, 10);
@@ -9939,24 +9959,20 @@
           var nif = att.nif;
           var isPresent = cb.checked;
 
-          if (participantes.indexOf(nif) !== -1) {
-            if (!record.asistencia.registro[nif]) {
-              record.asistencia.registro[nif] = new Array(record.asistencia.sesiones.length).fill(false);
-            }
-            record.asistencia.registro[nif][sesIdx] = isPresent;
-            if (isPresent) marked++;
-          } else if (isPresent) {
-            notInAction.push(att.name || nif);
+          if (!record.asistencia.registro[nif]) {
+            record.asistencia.registro[nif] = new Array(record.asistencia.sesiones.length).fill(false);
           }
+          record.asistencia.registro[nif][sesIdx] = isPresent;
+          if (isPresent) marked++;
         });
 
         upsertCatalogRecord('acciones', 'codigo', record);
         close();
         renderCatalogForm();
 
-        var msg = 'Asistencia importada: ' + marked + ' presentes en sesión ' + (sessionDate || '');
-        if (notInAction.length > 0) msg += '. ' + notInAction.length + ' asistentes no están en participantes de la acción.';
-        showToast(msg, notInAction.length > 0 ? 'warning' : 'success', 6000);
+        var msgParts = [marked + ' presentes en sesión ' + (sessionDate || '')];
+        if (addedCount > 0) msgParts.push(addedCount + ' participante' + (addedCount > 1 ? 's' : '') + ' añadido' + (addedCount > 1 ? 's' : ''));
+        showToast('Asistencia importada: ' + msgParts.join('. ') + '.', 'success', 6000);
       });
     }
 
