@@ -9834,7 +9834,7 @@
 
       for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         var page = await pdf.getPage(pageNum);
-        var scale = 2.5; // higher res for OCR accuracy
+        var scale = 2.5;
         var viewport = page.getViewport({ scale: scale });
 
         var canvas = document.createElement('canvas');
@@ -9860,65 +9860,78 @@
           if (dateMatch) headerInfo.date = dateMatch[1];
         }
 
-        // Extract NIFs from OCR text using word-level data for positions
-        var nifRegex = /\b(\d{8}[A-Z])\b/g;
+        // Extract NIFs and positions from OCR word-level data
         var words = ocrResult.data.words || [];
+        var pageAttendees = [];
+        var maxNifX1 = 0; // track rightmost edge of NIF column
 
-        // Strategy: find NIF patterns in each line, extract name from same line
         ocrLines.forEach(function(line) {
           var nifMatch = line.match(/\b(\d{8}[A-Z])\b/);
           if (nifMatch) {
             var nif = nifMatch[1];
-            // Name is the text before the NIF
             var namepart = line.substring(0, line.indexOf(nifMatch[0])).trim();
-            // Clean up OCR artifacts
             namepart = namepart.replace(/[|[\]{}]/g, '').replace(/\s+/g, ' ').trim();
-            // Skip header lines
             if (namepart.toUpperCase() === 'ASISTENTE' || namepart.toUpperCase() === 'NIF') return;
             if (namepart.length < 3) namepart = '';
 
-            // Find the NIF word in OCR data for Y position (for signature detection)
+            // Find the NIF word in OCR data for precise position
             var nifWord = words.find(function(w) {
-              return w.text && w.text.indexOf(nif) !== -1;
+              return w.text && w.text.replace(/\s/g, '').indexOf(nif) !== -1;
             });
-            var wordY = nifWord ? nifWord.bbox.y0 : 0;
 
-            allAttendees.push({
+            var bbox = nifWord ? nifWord.bbox : null;
+            if (bbox && bbox.x1 > maxNifX1) maxNifX1 = bbox.x1;
+
+            pageAttendees.push({
               nif: nif,
               name: namepart,
-              canvasY: wordY * (scale / 1), // approximate
+              canvasY: bbox ? bbox.y0 : 0,
+              canvasY1: bbox ? bbox.y1 : 0,
               pdfY: 0,
               signed: false
             });
           }
         });
 
-        // Signature detection from canvas (same as text-based flow)
+        pageAttendees.sort(function(a, b) { return a.canvasY - b.canvasY; });
+
+        // Signature detection — per page, only this page's attendees
         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        var firmaStartX = canvas.width * 0.6;
-        var firmaEndX = canvas.width - 10;
 
-        // Use word bounding boxes for row positions
-        allAttendees.forEach(function(att, idx) {
-          if (att.canvasY === 0) return; // no position data
-          var rowTop = att.canvasY - 5;
-          var rowBottom = (idx < allAttendees.length - 1 && allAttendees[idx + 1].canvasY > 0) ?
-            allAttendees[idx + 1].canvasY - 5 :
-            att.canvasY + 50;
+        // FIRMA column: starts after the NIF column, ends near right edge
+        // Use detected NIF positions or fallback to 55% of page
+        var firmaStartX = maxNifX1 > 0 ? maxNifX1 + 15 : canvas.width * 0.55;
+        var firmaEndX = canvas.width * 0.95; // leave margin for page edge
 
-          var scanTop = Math.floor(rowTop + 5);
-          var scanBottom = Math.floor(rowBottom - 5);
-          var scanLeft = Math.floor(firmaStartX + 10);
-          var scanRight = Math.floor(firmaEndX - 10);
+        pageAttendees.forEach(function(att, idx) {
+          if (att.canvasY === 0) return;
+
+          // Row bounds: from this NIF's top to next NIF's top (or +60px if last)
+          var rowTop = att.canvasY;
+          var rowBottom;
+          if (idx < pageAttendees.length - 1 && pageAttendees[idx + 1].canvasY > 0) {
+            rowBottom = pageAttendees[idx + 1].canvasY;
+          } else {
+            rowBottom = att.canvasY1 + 50;
+          }
+
+          // Scan inner area (skip borders)
+          var scanTop = Math.floor(rowTop + 8);
+          var scanBottom = Math.floor(rowBottom - 8);
+          var scanLeft = Math.floor(firmaStartX);
+          var scanRight = Math.floor(firmaEndX);
           var scanW = scanRight - scanLeft;
           var scanH = scanBottom - scanTop;
 
           if (scanW > 0 && scanH > 0) {
             var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
             var totalPixels = scanW * scanH;
-            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.004;
+            // Lower threshold for scans (more noise but also more ink variation)
+            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.003;
           }
         });
+
+        allAttendees = allAttendees.concat(pageAttendees);
       }
 
       await worker.terminate();
