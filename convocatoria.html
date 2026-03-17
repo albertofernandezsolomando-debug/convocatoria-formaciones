@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     /* --- Design: Indigo-600 + Slate neutrals + Inter --- */
     :root {
@@ -9807,15 +9808,142 @@
       return { header: headerInfo, attendees: allAttendees };
     }
 
+    // OCR fallback for scanned PDFs (no text layer)
+    async function ocrAttendancePdf(file) {
+      if (typeof Tesseract === 'undefined') {
+        showToast('Error: la librería OCR no se ha cargado. Comprueba tu conexión.', 'error', 8000);
+        return null;
+      }
+
+      var arrayBuffer = await file.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+
+      var headerInfo = { actionCode: '', group: '', sessionNum: '', date: '' };
+      var allAttendees = [];
+
+      // Create Tesseract worker
+      var worker = await Tesseract.createWorker('spa', 1, {
+        logger: function(m) {
+          if (m.status === 'recognizing text') {
+            var pct = Math.round((m.progress || 0) * 100);
+            var toastEl = document.querySelector('.toast:last-child .toast-message');
+            if (toastEl) toastEl.textContent = 'OCR en curso… ' + pct + '%';
+          }
+        }
+      });
+
+      for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        var page = await pdf.getPage(pageNum);
+        var scale = 2.5; // higher res for OCR accuracy
+        var viewport = page.getViewport({ scale: scale });
+
+        var canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        var ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        // Run OCR
+        var ocrResult = await worker.recognize(canvas);
+        var ocrText = ocrResult.data.text || '';
+        var ocrLines = ocrText.split('\n').filter(function(l) { return l.trim(); });
+
+        // Extract header from first page
+        if (pageNum === 1) {
+          var afMatch = ocrText.match(/AF\s*(\d{4,8})/);
+          if (afMatch) headerInfo.actionCode = afMatch[1];
+          var groupMatch = ocrText.match(/GRUPO\s+(\d+)/);
+          if (groupMatch) headerInfo.group = groupMatch[1];
+          var sesMatch = ocrText.match(/SESI[OÓ]N\s+N[ºo°]?\s*:?\s*(\d+)/i);
+          if (sesMatch) headerInfo.sessionNum = sesMatch[1];
+          var dateMatch = ocrText.match(/FECHA:\s*(\d{2}\/\d{2}\/\d{4})/);
+          if (dateMatch) headerInfo.date = dateMatch[1];
+        }
+
+        // Extract NIFs from OCR text using word-level data for positions
+        var nifRegex = /\b(\d{8}[A-Z])\b/g;
+        var words = ocrResult.data.words || [];
+
+        // Strategy: find NIF patterns in each line, extract name from same line
+        ocrLines.forEach(function(line) {
+          var nifMatch = line.match(/\b(\d{8}[A-Z])\b/);
+          if (nifMatch) {
+            var nif = nifMatch[1];
+            // Name is the text before the NIF
+            var namepart = line.substring(0, line.indexOf(nifMatch[0])).trim();
+            // Clean up OCR artifacts
+            namepart = namepart.replace(/[|[\]{}]/g, '').replace(/\s+/g, ' ').trim();
+            // Skip header lines
+            if (namepart.toUpperCase() === 'ASISTENTE' || namepart.toUpperCase() === 'NIF') return;
+            if (namepart.length < 3) namepart = '';
+
+            // Find the NIF word in OCR data for Y position (for signature detection)
+            var nifWord = words.find(function(w) {
+              return w.text && w.text.indexOf(nif) !== -1;
+            });
+            var wordY = nifWord ? nifWord.bbox.y0 : 0;
+
+            allAttendees.push({
+              nif: nif,
+              name: namepart,
+              canvasY: wordY * (scale / 1), // approximate
+              pdfY: 0,
+              signed: false
+            });
+          }
+        });
+
+        // Signature detection from canvas (same as text-based flow)
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var firmaStartX = canvas.width * 0.6;
+        var firmaEndX = canvas.width - 10;
+
+        // Use word bounding boxes for row positions
+        allAttendees.forEach(function(att, idx) {
+          if (att.canvasY === 0) return; // no position data
+          var rowTop = att.canvasY - 5;
+          var rowBottom = (idx < allAttendees.length - 1 && allAttendees[idx + 1].canvasY > 0) ?
+            allAttendees[idx + 1].canvasY - 5 :
+            att.canvasY + 50;
+
+          var scanTop = Math.floor(rowTop + 5);
+          var scanBottom = Math.floor(rowBottom - 5);
+          var scanLeft = Math.floor(firmaStartX + 10);
+          var scanRight = Math.floor(firmaEndX - 10);
+          var scanW = scanRight - scanLeft;
+          var scanH = scanBottom - scanTop;
+
+          if (scanW > 0 && scanH > 0) {
+            var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
+            var totalPixels = scanW * scanH;
+            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.004;
+          }
+        });
+      }
+
+      await worker.terminate();
+      return { header: headerInfo, attendees: allAttendees };
+    }
+
     async function importAttendancePdf(file, record) {
       showToast('Procesando PDF de firmas…', 'info', 3000);
 
       try {
+        // Try text extraction first (fast, works for digital PDFs)
         var result = await parseAttendancePdf(file);
+
         if (!result || result.attendees.length === 0) {
-          showToast('No se encontraron asistentes en el PDF. Comprueba que el PDF tiene texto extraíble.', 'error', 6000);
+          // No text layer — fall back to OCR (scanned PDFs)
+          showToast('PDF escaneado detectado. Iniciando OCR…', 'info', 30000);
+          result = await ocrAttendancePdf(file);
+        }
+
+        if (!result || result.attendees.length === 0) {
+          showToast('No se encontraron asistentes en el PDF. Comprueba que el documento es una hoja de firmas FUNDAE.', 'error', 6000);
           return;
         }
+
+        showToast('', 'info', 1); // dismiss OCR toast
         showAttendanceImportDialog(result, record);
       } catch (err) {
         showToast('Error al procesar el PDF: ' + (err.message || err), 'error', 6000);
