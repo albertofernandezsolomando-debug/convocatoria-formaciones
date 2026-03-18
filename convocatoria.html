@@ -10174,8 +10174,16 @@
         var pageAttendees = [];
         var maxNifX1 = 0; // track rightmost edge of NIF column
 
+        // Log OCR text for debugging
+        console.log('OCR page ' + pageNum + ' text:\n' + ocrText);
+
         ocrLines.forEach(function(line) {
-          var nifMatch = line.match(/\b(\d{8}[A-Z])\b/);
+          // Normalize OCR artifacts: O→0, l/I→1, space removal in digit sequences
+          var normalized = line.replace(/[OoQD](?=\d{6,}[A-Z])/g, '0')
+            .replace(/(?<=\d)[OoQD](?=\d)/g, '0')
+            .replace(/(?<=\d{2,})[lI](?=\d)/g, '1')
+            .replace(/(\d)\s+(\d)/g, '$1$2');
+          var nifMatch = normalized.match(/\b(\d{8}[A-Z])\b/);
           if (nifMatch) {
             var nif = nifMatch[1];
             var namepart = line.substring(0, line.indexOf(nifMatch[0])).trim();
