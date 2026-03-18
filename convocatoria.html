@@ -10000,43 +10000,43 @@
       return count;
     }
 
-    // Detect signature by analyzing spatial distribution of ink.
-    // A signature has INK CONCENTRATED in irregular strokes → HIGH variance across sub-regions.
-    // An empty cell has UNIFORM noise/table lines → LOW variance.
+    // Detect signature by counting INK RUNS (consecutive dark pixel sequences).
+    // A pen stroke crossing a horizontal scan line creates a "run" of 4+ dark pixels.
+    // Noise creates isolated pixels (not runs). Table lines create 1 long run.
+    // A signature: 2-8 distinct runs per scan line. Empty cell: 0-1 runs per line.
     function detectSignature(imageData, x, y, w, h) {
       var data = imageData.data;
       var imgW = imageData.width;
-      var GRID = 4; // 4x4 grid = 16 sub-cells
-      var cellW = Math.floor(w / GRID);
-      var cellH = Math.floor(h / GRID);
-      if (cellW < 3 || cellH < 3) return { signed: true, variance: 0 };
+      var startX = Math.max(0, Math.floor(x));
+      var endX = Math.min(imgW, Math.floor(x + w));
+      var startY = Math.max(0, Math.floor(y));
+      var endY = Math.min(imageData.height, Math.floor(y + h));
+      var scanLines = endY - startY;
+      if (scanLines < 2) return { signed: true, runs: 0 };
 
-      var cellRatios = [];
-      for (var gy = 0; gy < GRID; gy++) {
-        for (var gx = 0; gx < GRID; gx++) {
-          var cx = Math.floor(x + gx * cellW);
-          var cy = Math.floor(y + gy * cellH);
-          var ink = 0;
-          var total = 0;
-          for (var py = cy; py < cy + cellH && py < imageData.height; py++) {
-            for (var px = cx; px < cx + cellW && px < imgW; px++) {
-              var i = (py * imgW + px) * 4;
-              var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-              total++;
-              if (lum < 120) ink++;
-            }
+      var totalSignificantRuns = 0;
+
+      for (var py = startY; py < endY; py++) {
+        var inDark = false;
+        var runLen = 0;
+        for (var px = startX; px < endX; px++) {
+          var i = (py * imgW + px) * 4;
+          var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          if (lum < 120) {
+            inDark = true;
+            runLen++;
+          } else {
+            if (inDark && runLen >= 4) totalSignificantRuns++;
+            inDark = false;
+            runLen = 0;
           }
-          cellRatios.push(total > 0 ? ink / total : 0);
         }
+        if (inDark && runLen >= 4 && runLen < (endX - startX) * 0.8) totalSignificantRuns++;
+        // ^ ignore runs spanning >80% of width (table lines)
       }
 
-      // Compute variance of cell ratios
-      var mean = cellRatios.reduce(function(s, v) { return s + v; }, 0) / cellRatios.length;
-      var variance = cellRatios.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / cellRatios.length;
-      // Also count cells with significantly more ink than average (signature hotspots)
-      var hotspots = cellRatios.filter(function(r) { return r > mean * 2 && r > 0.02; }).length;
-
-      return { signed: variance > 0.0004 || hotspots >= 2, variance: variance, hotspots: hotspots, mean: mean };
+      var runsPerLine = totalSignificantRuns / scanLines;
+      return { signed: runsPerLine > 1.5, runs: runsPerLine };
     }
 
     async function parseAttendancePdf(file) {
@@ -10401,7 +10401,7 @@
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
             att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') var=' + result.variance.toFixed(6) + ' hotspots=' + result.hotspots + ' mean=' + result.mean.toFixed(4) + ' signed=' + result.signed);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') runs/line=' + result.runs.toFixed(2) + ' signed=' + result.signed);
           } else {
             att.signed = true;
           }
