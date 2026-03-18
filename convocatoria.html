@@ -9121,10 +9121,23 @@
           var color = allOk ? 'var(--success)' : 'var(--warning)';
           var summaryText = allOk ? 'Listo para FUNDAE' : okCount + '/' + total + ' · Faltan: ' + missing.join(', ');
 
+          // XML generation buttons (P1)
+          var xmlBtns = '';
+          if (!isNew) {
+            var inicioLabel = record.comunicacionInicioEnviada ? 'Regenerar XML Inicio' : 'Generar XML Inicio de Grupo';
+            var finLabel = record.comunicacionFinEnviada ? 'Regenerar XML Finalización' : 'Generar XML Finalización';
+            xmlBtns = '<div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">' +
+              '<button class="btn btn-secondary u-text-11" id="btnFichaXmlAccion">XML Acción</button>' +
+              '<button class="btn btn-secondary u-text-11" id="btnFichaXmlInicio">' + inicioLabel + '</button>' +
+              '<button class="btn btn-secondary u-text-11" id="btnFichaXmlFin">' + finLabel + '</button>' +
+            '</div>';
+          }
+
           return '<div style="margin-top:12px; padding:8px 12px; border-radius:var(--radius-sm); background:' + (allOk ? 'color-mix(in srgb, var(--success) 8%, transparent)' : 'color-mix(in srgb, var(--warning) 8%, transparent)') + '; border:1px solid ' + (allOk ? 'color-mix(in srgb, var(--success) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)') + ';">' +
             '<div class="u-text-12" style="color:' + color + '; font-weight:600;">' +
               (allOk ? Icons.check(14) : Icons.alertTriangle(14)) + ' ' + esc(summaryText) +
             '</div>' +
+            xmlBtns +
           '</div>';
         })() +
 
@@ -9381,7 +9394,63 @@
           });
         }
 
-        // RLT communication
+        // XML generation from ficha (P1)
+        var btnXmlAccion = document.getElementById('btnFichaXmlAccion');
+        if (btnXmlAccion) {
+          btnXmlAccion.addEventListener('click', function() {
+            var accion = getCatalog('acciones').find(function(a) { return a.codigo === record.codigo; });
+            if (!accion) { showToast('Acción no encontrada', 'error'); return; }
+            doGenXmlAccionFormativa(accion);
+          });
+        }
+        var btnXmlInicio = document.getElementById('btnFichaXmlInicio');
+        if (btnXmlInicio) {
+          btnXmlInicio.addEventListener('click', function() {
+            var accion = getCatalog('acciones').find(function(a) { return a.codigo === record.codigo; });
+            if (!accion) { showToast('Acción no encontrada', 'error'); return; }
+            // Build grupoData from catalog record
+            var centro = accion.centroVinculado ? getCatalog('centros').find(function(c) { return c.documento === accion.centroVinculado; }) : null;
+            var tutor = accion.tutorVinculado ? getCatalog('tutores').find(function(t) { return t.documento === accion.tutorVinculado; }) : null;
+            if (!centro) { showToast('Vincula un centro antes de generar XML de inicio', 'warning'); return; }
+            if (!tutor) { showToast('Vincula un tutor antes de generar XML de inicio', 'warning'); return; }
+            var grNum = accion.codigoGrupo ? accion.codigoGrupo.split('-')[1].replace(/^0/, '') : '1';
+            var defaults = loadXmlGroupDefaults(accion.empresaPagadora || '') || {};
+            var grupoData = {
+              idGrupo: grNum,
+              descripcion: accion.nombre || '',
+              responsable: defaults.responsable || '',
+              telefonoContacto: defaults.telefonoContacto || '',
+              centro: centro,
+              tutor: tutor,
+              fechaInicio: accion.fechaInicio || '',
+              fechaFin: accion.fechaFin || '',
+              horaInicio: '',
+              horaFin: ''
+            };
+            // Build xmlState.participantes from record
+            xmlState.participantes = (accion.participantes || []).map(function(nif) {
+              var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+              return buildParticipantRow(nif);
+            });
+            doGenXmlInicioGrupo(accion, grupoData);
+            renderCatalogForm(); // refresh flags
+          });
+        }
+        var btnXmlFin = document.getElementById('btnFichaXmlFin');
+        if (btnXmlFin) {
+          btnXmlFin.addEventListener('click', function() {
+            var accion = getCatalog('acciones').find(function(a) { return a.codigo === record.codigo; });
+            if (!accion) { showToast('Acción no encontrada', 'error'); return; }
+            var grNum = accion.codigoGrupo ? accion.codigoGrupo.split('-')[1].replace(/^0/, '') : '1';
+            xmlState.participantes = (accion.participantes || []).map(function(nif) {
+              var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
+              return buildParticipantRow(nif);
+            });
+            doGenXmlFinalizacion(accion, grNum);
+            renderCatalogForm(); // refresh flags
+          });
+        }
+
         // Notes timeline
         bindNotasEvents(record);
 
