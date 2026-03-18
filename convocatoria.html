@@ -10417,10 +10417,10 @@
           var colW = firmaEndX - firmaStartX;
           var scanX = Math.floor(firmaStartX + 10);
           var scanY = att.nameMatched
-            ? Math.floor(rowTop + rowH * 0.6)  // bottom 40%
+            ? Math.floor(rowTop + rowH * 0.4)  // center 20% (narrow — avoid both neighbors)
             : Math.floor(rowTop + rowH * 0.15); // center 70%
           var scanW = Math.floor(colW - 20);
-          var scanH = att.nameMatched ? Math.floor(rowH * 0.35) : Math.floor(rowH * 0.7);
+          var scanH = att.nameMatched ? Math.floor(rowH * 0.2) : Math.floor(rowH * 0.7);
 
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
