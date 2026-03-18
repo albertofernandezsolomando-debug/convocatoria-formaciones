@@ -10045,10 +10045,7 @@
       var rpl160 = runs160 / scanLines;
       var rplLong = longRuns / scanLines;
       var rpl140 = runs140 / scanLines;
-      // Signed = enough total runs AND (dark ink core OR overwhelmingly many)
-      var isSigned = rpl160 > 1.0 && (rpl140 > 0.8 || rpl160 > 3.0);
-
-      return { signed: isSigned, r160: rpl160, r140: rpl140 };
+      return { r160: rpl160, r140: rpl140 };
     }
 
     async function parseAttendancePdf(file) {
@@ -10424,8 +10421,10 @@
 
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
-            att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' region=[' + scanX + ',' + scanY + ',' + scanW + 'x' + scanH + ']' + (att.nameMatched ? ' [name-match]' : '') + ' signed=' + result.signed);
+            // Name-matched: stricter r140 threshold (position unreliable, need more evidence)
+            var r140threshold = att.nameMatched ? 1.5 : 0.8;
+            att.signed = result.r160 > 1.0 && (result.r140 > r140threshold || result.r160 > 3.0);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' region=[' + scanX + ',' + scanY + ',' + scanW + 'x' + scanH + ']' + (att.nameMatched ? ' [name-match,thr=1.5]' : '') + ' signed=' + att.signed);
           } else {
             att.signed = true;
           }
