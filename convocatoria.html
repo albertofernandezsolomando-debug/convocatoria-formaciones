@@ -8941,33 +8941,36 @@
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           sectionEnd +
 
-        // 5. Comunicación RLT (default: collapsed)
+        // 5. Checklist FUNDAE informativo (P5)
         (function() {
-          var rltEstado = record.rltEstado || 'Pendiente';
-          var rltFechaEnvio = record.rltFechaEnvio || '';
-          var rltFilled = (rltEstado !== 'Pendiente' ? 1 : 0) + (rltFechaEnvio ? 1 : 0);
-          var statusColor = rltEstado === 'Pendiente' ? 'var(--warning)' : 'var(--success)';
-          var deadlineHtml = '';
-          if (rltFechaEnvio) {
-            var deadlineDate = addBusinessDays(new Date(rltFechaEnvio + 'T00:00:00'), 15);
-            var deadlineStr = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            deadlineHtml = '<div class="u-field-group">' +
-              '<label class="u-label-sm">Plazo vencimiento (15 d\u00EDas h\u00E1biles)</label>' +
-              '<span style="font-size:var(--font-size-base); font-weight:500; color:var(--text-primary);">' + esc(deadlineStr) + '</span>' +
-              '</div>';
-          }
-          return sectionHeader('rlt', 'Comunicaci\u00F3n RLT', rltFilled, 2, false) +
-            '<div class="u-field-group">' +
-              '<label style="font-size:var(--font-size-xs); color:var(--text-muted); display:block; margin-bottom:3px;">Estado comunicaci\u00F3n</label>' +
-              '<span style="font-size:var(--font-size-base); font-weight:600; color:' + statusColor + ';">' + esc(rltEstado) + '</span>' +
+          var checks = [];
+          checks.push({ label: 'Nombre', ok: !!record.nombre });
+          checks.push({ label: 'Modalidad', ok: !!record.modalidad });
+          var mod = record.modalidad || '';
+          if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Horas presenciales', ok: Number(record.horasPresenciales) > 0 });
+          if (mod === 'Teleformación' || mod === 'Mixta') checks.push({ label: 'Horas teleformación', ok: Number(record.horasTeleformacion) > 0 });
+          if (!mod) checks.push({ label: 'Horas', ok: Number(record.horasPresenciales) > 0 || Number(record.horasTeleformacion) > 0 });
+          checks.push({ label: 'Objetivos', ok: !!record.objetivos });
+          checks.push({ label: 'Contenidos', ok: !!record.contenidos });
+          checks.push({ label: 'Participantes', ok: (record.participantes || []).length > 0 });
+          checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
+          checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
+          if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
+          checks.push({ label: 'Tutor', ok: !!record.tutorVinculado });
+          checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
+
+          var okCount = checks.filter(function(c) { return c.ok; }).length;
+          var total = checks.length;
+          var missing = checks.filter(function(c) { return !c.ok; }).map(function(c) { return c.label; });
+          var allOk = okCount === total;
+          var color = allOk ? 'var(--success)' : 'var(--warning)';
+          var summaryText = allOk ? 'Listo para FUNDAE' : okCount + '/' + total + ' · Faltan: ' + missing.join(', ');
+
+          return '<div style="margin-top:12px; padding:8px 12px; border-radius:var(--radius-sm); background:' + (allOk ? 'color-mix(in srgb, var(--success) 8%, transparent)' : 'color-mix(in srgb, var(--warning) 8%, transparent)') + '; border:1px solid ' + (allOk ? 'color-mix(in srgb, var(--success) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)') + ';">' +
+            '<div class="u-text-12" style="color:' + color + '; font-weight:600;">' +
+              (allOk ? Icons.check(14) : Icons.alertTriangle(14)) + ' ' + esc(summaryText) +
             '</div>' +
-            '<div class="u-field-group">' +
-              '<label style="font-size:var(--font-size-xs); color:var(--text-muted); display:block; margin-bottom:3px;">Fecha env\u00EDo RLT</label>' +
-              '<input class="input-field u-text-13" type="date" id="cf_rltSentDate" value="' + esc(rltFechaEnvio) + '" aria-label="Fecha envío RLT">' +
-            '</div>' +
-            deadlineHtml +
-            '<button class="btn btn-secondary u-text-12 u-mt-4" id="btnGenerateRLT">Generar comunicaci\u00F3n RLT</button>' +
-            sectionEnd;
+          '</div>';
         })() +
 
         // 6. Evaluación Kirkpatrick L1-L2 (default: collapsed)
@@ -9224,30 +9227,6 @@
         }
 
         // RLT communication
-        var btnRLT = document.getElementById('btnGenerateRLT');
-        if (btnRLT) {
-          btnRLT.addEventListener('click', function() {
-            generateRLTDocument([record]);
-          });
-        }
-        var rltDateInput = document.getElementById('cf_rltSentDate');
-        if (rltDateInput) {
-          rltDateInput.addEventListener('change', function() {
-            var dateVal = rltDateInput.value;
-            record.rltFechaEnvio = dateVal;
-            record.rltEstado = dateVal ? 'Enviada' : 'Pendiente';
-            upsertCatalogRecord('acciones', 'codigo', record);
-            renderCatalogForm();
-            if (dateVal) {
-              var deadline = addBusinessDays(new Date(dateVal + 'T00:00:00'), 15);
-              var deadlineStr = deadline.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-              showToast('Comunicaci\u00F3n RLT marcada como enviada. Plazo: ' + deadlineStr, 'success');
-            } else {
-              showToast('Fecha de env\u00EDo RLT eliminada', 'info');
-            }
-          });
-        }
-
         // Notes timeline
         bindNotasEvents(record);
 
@@ -10442,7 +10421,7 @@
         { label: 'Participantes registrados', ok: (action.participantes || []).length > 0 },
         { label: 'Sesiones con fechas', ok: !!(action.asistencia && action.asistencia.sesiones && action.asistencia.sesiones.length > 0) },
         { label: 'Asistencia registrada', ok: !!(action.asistencia && action.asistencia.registro && Object.keys(action.asistencia.registro).length > 0) },
-        { label: 'Comunicacion RLT', ok: !!(action.rltEstado && action.rltEstado !== 'Pendiente') },
+        { label: 'Objetivos y contenidos', ok: !!(action.objetivos && action.contenidos) },
         { label: 'Encuesta satisfaccion', ok: !!action.surveyStatus },
       ];
     }
@@ -10906,8 +10885,8 @@
         record.confirmaciones = existingAccion ? (existingAccion.confirmaciones || {}) : {};
         record.comunicacionInicioEnviada = existingAccion ? (existingAccion.comunicacionInicioEnviada || false) : false;
         record.comunicacionFinEnviada = existingAccion ? (existingAccion.comunicacionFinEnviada || false) : false;
-        record.rltEstado = existingAccion ? (existingAccion.rltEstado || 'Pendiente') : 'Pendiente';
-        record.rltFechaEnvio = existingAccion ? (existingAccion.rltFechaEnvio || '') : '';
+        // Preserve parentAccion
+        record.parentAccion = existingAccion ? (existingAccion.parentAccion || null) : null;
 
         // Collect evaluation (Kirkpatrick L1-L2) data from form
         var evalL1Utilidad = val('evalL1Utilidad');
@@ -21051,7 +21030,7 @@
     // Rules:
     //   1. Formation starting in ≤3 days without "Inicio comunicado" → danger
     //   2. Formation starting in ≤5 days still "En preparación" → warning
-    //   3. RLT: rltEstado === 'Enviada' for ≥15 business days → auto-transition
+    //   3. (removed — RLT tracking eliminated, FUNDAE only needs informaRLT S/N)
     //   4. Finished formation without "Fin comunicado" → danger
     // Sorted: danger first, then warning.
     function evaluateAlerts() {
@@ -21098,21 +21077,7 @@
           }
         }
 
-        // Rule 3: RLT auto-transition: rltEstado "Enviada" → "Sin objeciones (plazo vencido)"
-        // after 15 business days from rltFechaEnvio
-        if (a.rltEstado === 'Enviada' && a.rltFechaEnvio) {
-          var rltSent = new Date(a.rltFechaEnvio + 'T00:00:00');
-          var bizDays = calculateBusinessDays(rltSent, today);
-          if (bizDays >= 15) {
-            // Auto-transition
-            var allAcciones = getCatalog('acciones');
-            var idx = allAcciones.findIndex(function(x) { return x.codigo === a.codigo; });
-            if (idx >= 0) {
-              allAcciones[idx].rltEstado = 'Sin objeciones (plazo vencido)';
-              saveCatalog('acciones', allAcciones);
-            }
-          }
-        }
+        // Rule 3 (RLT auto-transition) removed — FUNDAE only needs informaRLT S/N
 
         // Rule 4: Formation finished without "Fin comunicado"
         if (a.fechaFin && !a.comunicacionFinEnviada) {
