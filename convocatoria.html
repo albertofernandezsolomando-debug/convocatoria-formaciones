@@ -10243,22 +10243,10 @@
             rowBottom = att.canvasY1 + 50;
           }
 
-          // Scan only the central 50% of each row to avoid signatures
-          // that overflow from adjacent rows (e.g., large signatures bleeding down)
-          var rowH = rowBottom - rowTop;
-          var scanTop = Math.floor(rowTop + rowH * 0.25);
-          var scanBottom = Math.floor(rowBottom - rowH * 0.25);
-          var scanLeft = Math.floor(firmaStartX);
-          var scanRight = Math.floor(firmaEndX);
-          var scanW = scanRight - scanLeft;
-          var scanH = scanBottom - scanTop;
-
-          if (scanW > 0 && scanH > 0) {
-            var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
-            var totalPixels = scanW * scanH;
-            // Lower threshold for scans (tenue signatures like pencil/light ink)
-            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.002;
-          }
+          // For scanned PDFs, pixel-based signature detection is unreliable
+          // (scan noise, overflowing signatures, variable ink density).
+          // Default all OCR'd attendees to signed=true — user unchecks non-signers.
+          att.signed = true;
         });
 
         allAttendees = allAttendees.concat(pageAttendees);
