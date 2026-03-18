@@ -10095,9 +10095,10 @@
             pageAttendees[idx + 1].canvasY - 10 :
             att.canvasY + 40;
 
-          // Scan middle of row (skip 5px top/bottom to avoid table lines)
-          var scanTop = Math.floor(rowTop + 5);
-          var scanBottom = Math.floor(rowBottom - 5);
+          // Scan only central 50% of row to avoid overflow from adjacent signatures
+          var rowH = rowBottom - rowTop;
+          var scanTop = Math.floor(rowTop + rowH * 0.25);
+          var scanBottom = Math.floor(rowBottom - rowH * 0.25);
           var scanLeft = Math.floor(firmaStartX + 10);
           var scanRight = Math.floor(firmaEndX - 10);
           var scanW = scanRight - scanLeft;
@@ -10223,9 +10224,11 @@
             rowBottom = att.canvasY1 + 50;
           }
 
-          // Scan inner area (skip borders)
-          var scanTop = Math.floor(rowTop + 8);
-          var scanBottom = Math.floor(rowBottom - 8);
+          // Scan only the central 50% of each row to avoid signatures
+          // that overflow from adjacent rows (e.g., large signatures bleeding down)
+          var rowH = rowBottom - rowTop;
+          var scanTop = Math.floor(rowTop + rowH * 0.25);
+          var scanBottom = Math.floor(rowBottom - rowH * 0.25);
           var scanLeft = Math.floor(firmaStartX);
           var scanRight = Math.floor(firmaEndX);
           var scanW = scanRight - scanLeft;
