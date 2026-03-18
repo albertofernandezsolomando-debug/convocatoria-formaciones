@@ -10546,6 +10546,7 @@
       });
 
       document.getElementById('importFirmasConfirm').addEventListener('click', function() {
+        console.log('IMPORT SAVE: record.codigo=' + record.codigo + ' sessionDate=' + sessionDate + ' attendees=' + attendees.length + ' participantes=' + (record.participantes || []).length);
         if (!record.asistencia) record.asistencia = { sesiones: [], registro: {} };
         if (!record.asistencia.sesiones) record.asistencia.sesiones = [];
         if (!record.asistencia.registro) record.asistencia.registro = {};
