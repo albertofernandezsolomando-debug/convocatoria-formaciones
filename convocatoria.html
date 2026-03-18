@@ -10241,7 +10241,45 @@
           }
         });
 
+        // Second pass: search individual OCR words for digit sequences missed by line parser
+        var foundNifs = new Set(pageAttendees.map(function(a) { return a.nif; }));
+        words.forEach(function(w) {
+          if (!w.text) return;
+          var wClean = w.text.replace(/\s/g, '');
+          // Look for 8+ digits in a single word
+          var digitMatch = wClean.match(/(\d{8,9})/);
+          if (!digitMatch) return;
+          var digits = digitMatch[1].slice(0, 8);
+          var letter = calcNifLetter(digits);
+          var nif = digits + letter;
+          if (foundNifs.has(nif)) return; // already found via line parsing
+          foundNifs.add(nif);
+
+          // Try to find associated name from nearby words (same Y level, to the left)
+          var nameWords = words.filter(function(nw) {
+            return nw.bbox && w.bbox &&
+              Math.abs(nw.bbox.y0 - w.bbox.y0) < 20 &&
+              nw.bbox.x1 < w.bbox.x0 &&
+              nw.text && /[A-Z]{2,}/.test(nw.text);
+          }).sort(function(a, b) { return a.bbox.x0 - b.bbox.x0; });
+          var name = nameWords.map(function(nw) { return nw.text.trim(); }).join(' ')
+            .replace(/[|[\]{}]/g, '').replace(/\s+/g, ' ').trim();
+
+          pageAttendees.push({
+            nif: nif,
+            name: name,
+            canvasY: w.bbox ? w.bbox.y0 : 0,
+            canvasY1: w.bbox ? w.bbox.y1 : 0,
+            pdfY: 0,
+            signed: true
+          });
+          if (w.bbox && w.bbox.x1 > maxNifX1) maxNifX1 = w.bbox.x1;
+        });
+
         pageAttendees.sort(function(a, b) { return a.canvasY - b.canvasY; });
+
+        // For scanned PDFs, default all to signed (user unchecks non-signers)
+        pageAttendees.forEach(function(att) { att.signed = true; });
 
         // Signature detection — per page, only this page's attendees
         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
