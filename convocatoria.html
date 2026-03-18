@@ -10319,21 +10319,16 @@
 
         pageAttendees.sort(function(a, b) { return a.canvasY - b.canvasY; });
 
-        // For scanned PDFs, default all to signed (user unchecks non-signers)
-        pageAttendees.forEach(function(att) { att.signed = true; });
-
-        // Signature detection — per page, only this page's attendees
+        // Signature detection via pixel analysis for attendees with known positions
         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        // FIRMA column: starts after the NIF column, ends near right edge
-        // Use detected NIF positions or fallback to 55% of page
         var firmaStartX = maxNifX1 > 0 ? maxNifX1 + 15 : canvas.width * 0.55;
-        var firmaEndX = canvas.width * 0.95; // leave margin for page edge
+        var firmaEndX = canvas.width * 0.95;
 
+        // Default: attendees found by name-match (no position) → signed=true (user corrects)
+        // Attendees with position → use pixel detection
         pageAttendees.forEach(function(att, idx) {
-          if (att.canvasY === 0) return;
+          if (att.canvasY === 0) { att.signed = true; return; } // no position data, assume signed
 
-          // Row bounds: from this NIF's top to next NIF's top (or +60px if last)
           var rowTop = att.canvasY;
           var rowBottom;
           if (idx < pageAttendees.length - 1 && pageAttendees[idx + 1].canvasY > 0) {
@@ -10343,9 +10338,22 @@
           }
 
           // For scanned PDFs, pixel-based signature detection is unreliable
-          // (scan noise, overflowing signatures, variable ink density).
-          // Default all OCR'd attendees to signed=true — user unchecks non-signers.
-          att.signed = true;
+          // Scan 70% central zone of row (skip 15% top/bottom for overflow)
+          var rowH = rowBottom - rowTop;
+          var scanTop = Math.floor(rowTop + rowH * 0.15);
+          var scanBottom = Math.floor(rowBottom - rowH * 0.15);
+          var scanLeft = Math.floor(firmaStartX);
+          var scanRight = Math.floor(firmaEndX);
+          var scanW = scanRight - scanLeft;
+          var scanH = scanBottom - scanTop;
+
+          if (scanW > 0 && scanH > 0) {
+            var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
+            var totalPixels = scanW * scanH;
+            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.003;
+          } else {
+            att.signed = true; // can't determine, assume signed
+          }
         });
 
         allAttendees = allAttendees.concat(pageAttendees);
