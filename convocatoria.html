@@ -5707,6 +5707,7 @@
             <option value="departamento">Por departamento</option>
             <option value="estado">Por estado</option>
             <option value="modalidad">Por modalidad</option>
+            <option value="accionFormativa">Por acción formativa</option>
           </select>
         </div>
         <div class="cal-filter-group">
@@ -23468,7 +23469,9 @@
           rawFin: a.fechaFin,
           centroVinculado: a.centroVinculado || '',
           tutorVinculado: a.tutorVinculado || '',
-          bonificable: a.bonificable || ''
+          bonificable: a.bonificable || '',
+          parentAccion: a.parentAccion || null,
+          codigoGrupo: a.codigoGrupo || ''
         };
       }).filter(Boolean).sort(function(a, b) { return a.fechaInicio - b.fechaInicio; });
 
@@ -23633,6 +23636,32 @@
       var groups = [];
       if (calState.groupBy === 'flat') {
         groups = [{ label: null, items: visible }];
+      } else if (calState.groupBy === 'accionFormativa') {
+        // Group by parent action
+        var groupMap = {};
+        var allAcciones = getCatalog('acciones');
+        visible.forEach(function(item) {
+          var parentKey = item.parentAccion || item.codigo;
+          if (!groupMap[parentKey]) {
+            // Find parent name
+            var parent = allAcciones.find(function(a) { return a.codigo === parentKey; });
+            var parentName = parent ? (parent.nombre || '').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') : item.nombre;
+            groupMap[parentKey] = { name: parentName, items: [] };
+          }
+          groupMap[parentKey].items.push(item);
+        });
+        Object.keys(groupMap).forEach(function(key) {
+          var g = groupMap[key];
+          var label = g.name;
+          if (g.items.length > 1) label += ' (' + g.items.length + ' grupos)';
+          groups.push({ label: label, items: g.items });
+        });
+        // Sort groups by earliest fechaInicio
+        groups.sort(function(a, b) {
+          var aMin = a.items.reduce(function(m, i) { return i.fechaInicio < m ? i.fechaInicio : m; }, a.items[0].fechaInicio);
+          var bMin = b.items.reduce(function(m, i) { return i.fechaInicio < m ? i.fechaInicio : m; }, b.items[0].fechaInicio);
+          return aMin - bMin;
+        });
       } else {
         var groupMap = {};
         visible.forEach(function(item) {
@@ -24020,7 +24049,19 @@
         participantListHtml = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
       }
 
+      // Group context
+      var groupContextHtml = '';
+      if (item.parentAccion) {
+        var allAcc = getCatalog('acciones');
+        var parentRec = allAcc.find(function(a) { return a.codigo === item.parentAccion; });
+        var parentName = parentRec ? (parentRec.nombre || '').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') : item.parentAccion;
+        var siblings = allAcc.filter(function(a) { return a.parentAccion === item.parentAccion || a.codigo === item.parentAccion; });
+        var grNum = item.codigoGrupo ? item.codigoGrupo.split('-')[1].replace(/^0/, '') : '?';
+        groupContextHtml = '<div class="u-text-xs u-text-muted" style="padding:0 0 4px 0;">Grupo ' + esc(grNum) + ' de ' + siblings.length + ' \u00B7 Acci\u00F3n: ' + esc(parentName) + '</div>';
+      }
+
       panel.innerHTML = '<div style="flex:1; overflow-y:auto;">' + // innerHTML OK: sanitized via esc()
+        groupContextHtml +
         '<div class="cal-detail-title">' +
           '<span id="calDetailDot" class="cal-legend-dot" style="background:' + color + '; display:inline-block; width:12px; height:12px; border-radius:var(--radius-sm);"></span>' +
           esc(item.nombre) +
