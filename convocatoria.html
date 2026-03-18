@@ -11245,31 +11245,44 @@
       var acciones = getCatalog('acciones');
       var today = new Date();
       today.setHours(0, 0, 0, 0);
+      var todayStr = today.toISOString().slice(0, 10);
       var transitions = [];
 
       acciones.forEach(function(a) {
-        if (!a.fechaInicio || !a.fechaFin) return;
-        var fi = new Date(a.fechaInicio + 'T00:00:00');
-        var ff = new Date(a.fechaFin + 'T00:00:00');
-        if (isNaN(fi.getTime()) || isNaN(ff.getTime())) return;
-
+        if (!a.fechaInicio && !a.fechaFin) return;
         var oldEstado = a.estado || '';
+        if (oldEstado === 'Anulada') return; // never auto-transition anulada
 
-        if (ff < today && oldEstado !== 'Terminada' && oldEstado !== 'Anulada') {
-          a.estado = 'Terminada';
-          transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' → Terminada');
-        } else if (fi <= today && today <= ff && oldEstado !== 'En marcha' && oldEstado !== 'Terminada' && oldEstado !== 'Anulada') {
+        var fi = a.fechaInicio ? new Date(a.fechaInicio + 'T00:00:00') : null;
+        var ff = a.fechaFin ? new Date(a.fechaFin + 'T00:00:00') : null;
+
+        // Rule 1: fechaFin < hoy + asistencia registrada → Terminada
+        if (ff && ff < today && oldEstado !== 'Terminada') {
+          var hasAttendance = a.asistencia && a.asistencia.registro && Object.keys(a.asistencia.registro).some(function(nif) {
+            return a.asistencia.registro[nif] && a.asistencia.registro[nif].some(function(v) { return v === true; });
+          });
+          if (hasAttendance) {
+            a.estado = 'Terminada';
+            transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' \u2192 Terminada');
+          }
+        }
+
+        // Rule 2: fechaInicio <= hoy + state is pre-start → En marcha
+        if (fi && fi <= today && ['Planificada', 'Pendiente', 'En preparación', 'Convocada', ''].indexOf(oldEstado) !== -1 && a.estado !== 'Terminada') {
           a.estado = 'En marcha';
-          transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' → En marcha');
-        } else if (fi > today && oldEstado === '') {
+          transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' \u2192 En marcha');
+        }
+
+        // Rule 3: empty estado + has fechaInicio → Pendiente
+        if (fi && fi > today && oldEstado === '') {
           a.estado = 'Pendiente';
-          transitions.push(esc(a.codigo) + ': (vacío) → Pendiente');
+          transitions.push(esc(a.codigo) + ': (vacío) \u2192 Pendiente');
         }
       });
 
       if (transitions.length > 0) {
         saveCatalog('acciones', acciones);
-        showToast(transitions.length + ' accion(es) actualizadas automáticamente', 'info', 5000);
+        showToast(transitions.length + ' acción(es) actualizadas automáticamente', 'info', 5000);
       }
     }
 
@@ -18166,6 +18179,10 @@
       if (returnOnly) return xml;
       downloadXML(xml, 'InicioGrupo_' + accion.codigo + '_G' + grupoData.idGrupo + '.xml');
       saveXmlGroupDefaults(accion.empresaPagadora || '', collectXmlGroupDefaults());
+      // Auto-set comunicacionInicioEnviada flag (P2)
+      var allAcc = getCatalog('acciones');
+      var accIdx = allAcc.findIndex(function(a) { return a.codigo === accion.codigo; });
+      if (accIdx >= 0) { allAcc[accIdx].comunicacionInicioEnviada = true; saveCatalog('acciones', allAcc); }
       showToast('XML Inicio de Grupo generado', 'success');
     }
 
@@ -18271,6 +18288,10 @@
       if (returnOnly) return xml;
       downloadXML(xml, 'Finalizacion_' + accion.codigo + '_G' + idGrupo + '.xml');
       saveXmlGroupDefaults(accion.empresaPagadora || '', collectXmlGroupDefaults());
+      // Auto-set comunicacionFinEnviada flag (P2)
+      var allAcc = getCatalog('acciones');
+      var accIdx = allAcc.findIndex(function(a) { return a.codigo === accion.codigo; });
+      if (accIdx >= 0) { allAcc[accIdx].comunicacionFinEnviada = true; saveCatalog('acciones', allAcc); }
       showToast('XML Finalizacion de Grupo generado', 'success');
     }
 
