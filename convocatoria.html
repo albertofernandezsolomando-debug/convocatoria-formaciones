@@ -10425,7 +10425,7 @@
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
             att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + (att.nameMatched ? ' [name-match,bottom40%]' : '') + ' signed=' + result.signed);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' region=[' + scanX + ',' + scanY + ',' + scanW + 'x' + scanH + ']' + (att.nameMatched ? ' [name-match]' : '') + ' signed=' + result.signed);
           } else {
             att.signed = true;
           }
