@@ -154,6 +154,17 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `catalogState.expandedGroups` — estado expand/collapse de la vista lista (en memoria)
 - Calendario: groupBy `accionFormativa` agrupa por `item.parentAccion || item.codigo`
 - Botones "XML Acción/Inicio/Finalización" en la ficha generan XML directamente desde datos del catálogo
+- **Códigos FUNDAE**: `codAccion = YYNNN` (ej: `26011` = año 2026, acción 11). `codigoGrupo = NNN-MM` (ej: `011-01` = acción 11, grupo 1). Letra NIF calculable determinísticamente.
+- `informaRLT` en XML siempre "S" — campos `rltEstado`/`rltFechaEnvio` eliminados del modelo
+
+## PDF Import y OCR (asistencia desde hojas de firmas)
+
+- **pdf.js worker**: cargado como `<script>` inline (no como Web Worker) porque `file://` no soporta Workers
+- **Tesseract.js v5**: OCR para PDFs escaneados. 3 pasadas de extracción: NIF en líneas → nombres vs organigrama → dígitos en words
+- **Cálculo de letra NIF**: `"TRWAGMYFPDXBNJZSQVHLCKE"[parseInt(digits8, 10) % 23]` — siempre verificar/calcular, OCR la lee mal frecuentemente
+- **Detección de firma**: análisis de ink runs (secuencias consecutivas de píxeles oscuros ≥3px). Dual threshold: lum<160 (toda tinta) + lum<140 (tinta oscura). NIF-matched: `r160>1.0 AND (r140>0.8 OR r160>3.0)`. Name-matched: `r140>1.5` + zona central 20%
+- **NO funciona**: densidad de tinta absoluta, varianza de sub-regiones, ratio relativo — el ruido del escáner genera baseline ~0.04 que solapa con firmas pequeñas
+- **CIFs de empresa** se filtran de la detección de NIF comparando contra `getEmpresasGrupo()`
 
 ## Patrones JS
 
@@ -252,6 +263,7 @@ Los objetos de catálogo usan campos en español: `nombre`, `fechaInicio`, `fech
 
 ## Lo que NO hacer
 
+- NO asumir que Cmd+Shift+R limpia la caché con `file://` — Chrome cachea agresivamente. Usar Cmd+Q + reabrir, o ventana de incógnito, o DevTools → Network → Disable cache
 - NO añadir body::before ni overlays decorativos
 - NO añadir más de 2 niveles de sombra
 - NO usar amber/stone (paleta anterior, reemplazada)
