@@ -10045,10 +10045,10 @@
       var rpl160 = runs160 / scanLines;
       var rplLong = longRuns / scanLines;
       var rpl140 = runs140 / scanLines;
-      // Signed = enough total runs AND (dark ink core OR many long runs OR overwhelmingly many)
-      var isSigned = rpl160 > 1.0 && (rpl140 > 0.8 || rplLong > 0.5 || rpl160 > 3.0);
+      // Signed = enough total runs AND (dark ink core OR overwhelmingly many)
+      var isSigned = rpl160 > 1.0 && (rpl140 > 0.8 || rpl160 > 3.0);
 
-      return { signed: isSigned, r160: rpl160, r140: rpl140, rLong: rplLong };
+      return { signed: isSigned, r160: rpl160, r140: rpl140 };
     }
 
     async function parseAttendancePdf(file) {
@@ -10341,7 +10341,8 @@
                 canvasY: nameWord ? nameWord.bbox.y0 : 0,
                 canvasY1: nameWord ? nameWord.bbox.y1 : 0,
                 pdfY: 0,
-                signed: true // will be overridden by signature detection if position found
+                signed: true,
+                nameMatched: true // position less reliable — use stricter scan zone
               });
             }
           });
@@ -10410,18 +10411,21 @@
             rowBottom = att.canvasY1 + 50;
           }
 
-          // Center 70% vertically (avoid neighbor overflow), full FIRMA width
+          // For name-matched attendees: scan only bottom 40% (avoid overflow from above)
+          // For NIF-matched: center 70% (more reliable position)
           var rowH = rowBottom - rowTop;
           var colW = firmaEndX - firmaStartX;
-          var scanX = Math.floor(firmaStartX + 10); // skip left border
-          var scanY = Math.floor(rowTop + rowH * 0.15);
+          var scanX = Math.floor(firmaStartX + 10);
+          var scanY = att.nameMatched
+            ? Math.floor(rowTop + rowH * 0.6)  // bottom 40%
+            : Math.floor(rowTop + rowH * 0.15); // center 70%
           var scanW = Math.floor(colW - 20);
-          var scanH = Math.floor(rowH * 0.7);
+          var scanH = att.nameMatched ? Math.floor(rowH * 0.35) : Math.floor(rowH * 0.7);
 
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
             att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' rLong=' + result.rLong.toFixed(2) + ' signed=' + result.signed);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + (att.nameMatched ? ' [name-match,bottom40%]' : '') + ' signed=' + result.signed);
           } else {
             att.signed = true;
           }
