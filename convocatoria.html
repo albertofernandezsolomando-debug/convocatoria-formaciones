@@ -10014,30 +10014,37 @@
       var scanLines = endY - startY;
       if (scanLines < 2) return { signed: true, runs: 0 };
 
-      var totalSignificantRuns = 0;
+      var topRuns = 0;
+      var bottomRuns = 0;
+      var midY = Math.floor((startY + endY) / 2);
 
       for (var py = startY; py < endY; py++) {
         var inDark = false;
         var runLen = 0;
         var lineWidth = endX - startX;
+        var lineRuns = 0;
         for (var px = startX; px < endX; px++) {
           var i = (py * imgW + px) * 4;
           var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          if (lum < 160) { // 160: catches blue ink on scans (blue has mid luminance)
+          if (lum < 140) { // 140: catches pen ink but filters most scan noise
             inDark = true;
             runLen++;
           } else {
-            // Count run if ≥3px (pen stroke) and <60% of line width (not a table line)
-            if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) totalSignificantRuns++;
+            if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) lineRuns++;
             inDark = false;
             runLen = 0;
           }
         }
-        if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) totalSignificantRuns++;
+        if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) lineRuns++;
+        if (py < midY) topRuns += lineRuns; else bottomRuns += lineRuns;
       }
 
-      var runsPerLine = totalSignificantRuns / scanLines;
-      return { signed: runsPerLine > 1.5, runs: runsPerLine };
+      var totalRuns = topRuns + bottomRuns;
+      var runsPerLine = totalRuns / scanLines;
+      // If >75% of runs are in the top half, it's likely overflow from the row above
+      var isOverflow = totalRuns > 0 && (topRuns / totalRuns) > 0.75;
+
+      return { signed: runsPerLine > 1.5 && !isOverflow, runs: runsPerLine, overflow: isOverflow, topPct: totalRuns > 0 ? topRuns / totalRuns : 0 };
     }
 
     async function parseAttendancePdf(file) {
@@ -10316,13 +10323,21 @@
             });
             if (matched && !foundNifsSet.has(matched.NIF)) {
               foundNifsSet.add(matched.NIF);
+              // Try to find Y position from name words in OCR
+              var nameParts = cleanName.split(/\s+/).filter(function(p) { return p.length > 2; });
+              var nameWord = null;
+              if (nameParts.length > 0) {
+                nameWord = words.find(function(w) {
+                  return w.text && w.bbox && nameParts[0] && w.text.toUpperCase().indexOf(nameParts[0]) !== -1;
+                });
+              }
               pageAttendees.push({
                 nif: matched.NIF,
                 name: matched.Empleado || matched.NIF,
-                canvasY: 0,
-                canvasY1: 0,
+                canvasY: nameWord ? nameWord.bbox.y0 : 0,
+                canvasY1: nameWord ? nameWord.bbox.y1 : 0,
                 pdfY: 0,
-                signed: true
+                signed: true // will be overridden by signature detection if position found
               });
             }
           });
@@ -10402,7 +10417,7 @@
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
             att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') runs/line=' + result.runs.toFixed(2) + ' signed=' + result.signed);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') runs=' + result.runs.toFixed(2) + ' overflow=' + result.overflow + ' topPct=' + result.topPct.toFixed(2) + ' signed=' + result.signed);
           } else {
             att.signed = true;
           }
