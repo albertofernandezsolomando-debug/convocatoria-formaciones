@@ -7758,20 +7758,38 @@
       };
     }
 
-    // For duplicating: same action sequential, next group number
-    function generateGroupCode(originalCodigoGrupo) {
-      if (!originalCodigoGrupo || originalCodigoGrupo.indexOf('-') === -1) return '';
-      var parts = originalCodigoGrupo.split('-');
-      var prefix = parts[0]; // e.g., '011'
+    // For duplicating: find siblings by parentAccion, next group number
+    function generateGroupCode(parentCodigo) {
       var existing = getCatalog('acciones');
+      var siblings = existing.filter(function(r) {
+        return r.parentAccion === parentCodigo || r.codigo === parentCodigo;
+      });
       var maxGroup = 0;
-      existing.forEach(function(r) {
-        if (r.codigoGrupo && r.codigoGrupo.indexOf(prefix + '-') === 0) {
+      siblings.forEach(function(r) {
+        if (r.codigoGrupo) {
           var g = parseInt(r.codigoGrupo.split('-')[1], 10);
           if (!isNaN(g) && g > maxGroup) maxGroup = g;
         }
       });
-      return prefix + '-' + String(maxGroup + 1).padStart(2, '0');
+      var parentRecord = existing.find(function(r) { return r.codigo === parentCodigo; });
+      var seqPart = parentRecord ? parentRecord.codigo.slice(2).padStart(3, '0') : '000';
+      return seqPart + '-' + String(maxGroup + 1).padStart(2, '0');
+    }
+
+    // Helper: get child groups of a parent action
+    function getChildGroups(parentCodigo) {
+      return getCatalog('acciones').filter(function(r) {
+        return r.parentAccion === parentCodigo;
+      });
+    }
+
+    // Helper: count siblings (including self) for a group
+    function getSiblingCount(record) {
+      var parent = record.parentAccion || record.codigo;
+      var all = getCatalog('acciones');
+      return all.filter(function(r) {
+        return r.parentAccion === parent || r.codigo === parent;
+      }).length;
     }
 
     // ═══════════════════════════════════
@@ -8453,36 +8471,40 @@
       var codes = generateActionCodes();
       var newCodigo = codes.codigo;
 
-      // Deep clone
+      // Deep clone — inherits all parent fields
       var copy = JSON.parse(JSON.stringify(original));
 
       // Assign new pk
       copy.codigo = newCodigo;
 
-      // Generate next group code based on original's codigoGrupo
-      if (original.codigoGrupo) {
-        copy.codigoGrupo = generateGroupCode(original.codigoGrupo);
-        copy.nombre = (original.nombre || 'Sin título').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') + ' (Gr. ' + copy.codigoGrupo.split('-')[1].replace(/^0/, '') + ')';
-      } else {
-        copy.codigoGrupo = codes.codigoGrupo;
-        copy.nombre = 'Copia de ' + (original.nombre || 'Sin título');
-      }
+      // Set parentAccion: point to the root parent (max 2 levels)
+      copy.parentAccion = original.parentAccion || original.codigo;
 
-      // Clear state/dates/participants
+      // Generate next group code based on parent
+      var parentCodigo = copy.parentAccion;
+      copy.codigoGrupo = generateGroupCode(parentCodigo);
+      var groupNum = copy.codigoGrupo.split('-')[1].replace(/^0/, '');
+      copy.nombre = (original.nombre || 'Sin título').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') + ' (Gr. ' + groupNum + ')';
+
+      // Clear group-specific fields (inherited content fields are kept)
       copy.participantes = [];
       copy.notas = [];
       copy.asistencia = { sesiones: [], registro: {} };
+      copy.confirmaciones = {};
       copy.fechaInicio = '';
       copy.fechaFin = '';
       copy.estado = 'En preparación';
-      copy.grupoAccion = '';
+      copy.comunicacionInicioEnviada = false;
+      copy.comunicacionFinEnviada = false;
       copy.createdAt = new Date().toISOString();
 
       upsertCatalogRecord('acciones', 'codigo', copy);
       catalogState.selectedPK = newCodigo;
       renderCatalogList();
       renderCatalogForm();
-      showToast('Acción duplicada: "' + esc(copy.nombre) + '"', 'success');
+
+      var siblingCount = getSiblingCount(copy);
+      showToast('Grupo ' + groupNum + ' creado (' + siblingCount + ' grupos en total)', 'success');
     }
 
     function renderCatalogForm() {
@@ -9015,7 +9037,7 @@
         '<div id="catalogStickyBar" class="u-flex u-gap-10 u-items-center u-flex-shrink-0 u-border-top u-bg-panel" style="padding:12px 20px;">' +
           '<button class="btn btn-primary u-text-12 u-relative" id="btnSaveCatalog">Guardar<span id="catalogDirtyDot" style="display:none; position:absolute; top:-2px; right:-2px; width:8px; height:8px; border-radius:50%; background:var(--warning);"></span></button>' +
           (isNew ? '' : '<button class="btn btn-secondary u-text-12 u-text-danger u-border-danger" id="btnDeleteCatalog">Eliminar</button>') +
-          (!isNew && key === 'acciones' ? '<button class="btn btn-secondary u-text-12" id="btnDuplicateCatalog">Duplicar</button>' : '') +
+          (!isNew && key === 'acciones' ? '<button class="btn btn-secondary u-text-12" id="btnDuplicateCatalog">' + (getChildGroups(record.codigo).length > 0 ? 'Nuevo grupo' : 'Crear grupo') + '</button>' : '') +
           '<span id="catalogDirtyLabel" class="u-text-11 u-text-warning u-ml-auto" style="display:none;">Cambios sin guardar</span>' +
         '</div>' +
       '</div>';
@@ -9118,6 +9140,31 @@
                   renderCatalogList();
                   renderCatalogForm();
                   showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' eliminado', 'success');
+                }
+              );
+              return;
+            }
+          }
+
+          // Check for child groups before deleting an accion
+          if (key === 'acciones') {
+            var children = getChildGroups(pkValue);
+            if (children.length > 0) {
+              showCatalogConfirm(
+                'Acción con grupos vinculados',
+                'Esta acción tiene ' + children.length + ' grupo(s) vinculado(s). Al eliminarla, los grupos se convertirán en acciones independientes. ¿Continuar?',
+                function() {
+                  // Orphanize children
+                  var acciones = getCatalog('acciones');
+                  acciones.forEach(function(a) {
+                    if (a.parentAccion === pkValue) a.parentAccion = null;
+                  });
+                  saveCatalog('acciones', acciones);
+                  deleteCatalogRecord(key, cfg.pk, pkValue);
+                  catalogState.selectedPK = null;
+                  renderCatalogList();
+                  renderCatalogForm();
+                  showToast('Acción eliminada. ' + children.length + ' grupo(s) desvinculado(s).', 'success');
                 }
               );
               return;
