@@ -10337,59 +10337,12 @@
         var firmaStartX = maxNifX1 > 0 ? maxNifX1 + 15 : canvas.width * 0.55;
         var firmaEndX = canvas.width * 0.95;
 
-        // Compute ink ratios for all attendees with positions, then use
-        // relative comparison (below median = likely unsigned) instead of
-        // absolute threshold (scan noise makes absolute unreliable).
-        var inkData = [];
-        pageAttendees.forEach(function(att, idx) {
-          if (att.canvasY === 0) { att.signed = true; att._inkRatio = -1; return; }
-
-          var rowTop = att.canvasY;
-          var rowBottom;
-          if (idx < pageAttendees.length - 1 && pageAttendees[idx + 1].canvasY > 0) {
-            rowBottom = pageAttendees[idx + 1].canvasY;
-          } else {
-            rowBottom = att.canvasY1 + 50;
-          }
-
-          // Scan central zone: 70% vertical, skip left 30% of FIRMA column (table borders)
-          var rowH = rowBottom - rowTop;
-          var colW = firmaEndX - firmaStartX;
-          var scanTop = Math.floor(rowTop + rowH * 0.15);
-          var scanBottom = Math.floor(rowBottom - rowH * 0.15);
-          var scanLeft = Math.floor(firmaStartX + colW * 0.2);
-          var scanRight = Math.floor(firmaEndX - colW * 0.05);
-          var scanW = scanRight - scanLeft;
-          var scanH = scanBottom - scanTop;
-
-          if (scanW > 0 && scanH > 0) {
-            var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
-            var totalPixels = scanW * scanH;
-            att._inkRatio = totalPixels > 0 ? (inkCount / totalPixels) : 0;
-            inkData.push(att._inkRatio);
-          } else {
-            att._inkRatio = -1;
-            att.signed = true;
-          }
-        });
-
-        // Relative detection: compute median, mark bottom 25% as unsigned
-        if (inkData.length >= 3) {
-          var sorted = inkData.slice().sort(function(a, b) { return a - b; });
-          var q1 = sorted[Math.floor(sorted.length * 0.25)];
-          var median = sorted[Math.floor(sorted.length * 0.5)];
-          // Threshold: halfway between Q1 and median
-          var threshold = (q1 + median) / 2;
-          console.log('FIRMA STATS: median=' + median.toFixed(5) + ' q1=' + q1.toFixed(5) + ' threshold=' + threshold.toFixed(5) + ' n=' + inkData.length);
-          pageAttendees.forEach(function(att) {
-            if (att._inkRatio < 0) return; // no data, already set to true
-            att.signed = att._inkRatio > threshold;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') ratio=' + att._inkRatio.toFixed(5) + ' signed=' + att.signed);
-          });
-        } else {
-          // Too few entries for statistical comparison, default all to signed
-          pageAttendees.forEach(function(att) { if (att._inkRatio >= 0) att.signed = true; });
-        }
+        // Signature detection: default all to signed=true.
+        // Pixel-based detection is unreliable on scanned documents — scan noise,
+        // table lines, and variable signature sizes make it impossible to
+        // distinguish small signatures from empty cells.
+        // The user unchecks non-signers manually (typically 2-3 per sheet).
+        pageAttendees.forEach(function(att) { att.signed = true; });
 
         allAttendees = allAttendees.concat(pageAttendees);
       }
