@@ -7260,13 +7260,103 @@
       return h;
     }
 
+    // Track expanded groups in catalog list view
+    if (!catalogState.expandedGroups) catalogState.expandedGroups = {};
+
     function renderListViewBody(config, data, catalogKey) {
       var h = '<tbody>';
       if (data.length === 0) {
         h += '<tr><td colspan="' + (config.columns.length + 1) + '" class="u-text-center u-text-muted u-text-13" style="padding:32px;">';
         h += Object.keys(listViewState.filters).length > 0 ? 'No hay registros con los filtros aplicados' : 'No hay registros';
         h += '</td></tr>';
+      } else if (catalogKey === 'acciones') {
+        // Group acciones by parentAccion for hierarchical display
+        var parentMap = {}; // parentCodigo → [children]
+        var childSet = new Set();
+        var allRecords = getCatalog('acciones') || [];
+
+        // Build parent→children map from ALL data (not just filtered)
+        allRecords.forEach(function(r) {
+          if (r.parentAccion) {
+            if (!parentMap[r.parentAccion]) parentMap[r.parentAccion] = [];
+            parentMap[r.parentAccion].push(r);
+            childSet.add(r.codigo);
+          }
+        });
+
+        // Render: iterate filtered data, skip children (they're rendered under parent)
+        var renderedChildren = new Set();
+        data.forEach(function(record) {
+          var pk = String(record[config.pkField]);
+
+          // Skip children that will be rendered under their parent
+          if (record.parentAccion && !renderedChildren.has(pk)) {
+            // Only skip if parent is also in the data or exists at all
+            var parentInData = data.some(function(d) { return d.codigo === record.parentAccion; });
+            if (parentInData) return; // will be rendered as child of parent
+          }
+
+          var sel = listViewState.selectedPKs.has(pk);
+          var children = parentMap[pk] || [];
+          var hasChildren = children.length > 0;
+          var isExpanded = catalogState.expandedGroups[pk] || false;
+
+          if (hasChildren) {
+            // Render parent row with expand/collapse chevron and group badge
+            h += '<tr class="data-row parent-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '" data-is-parent="true"' + (sel ? ' aria-selected="true"' : '') + '>';
+            h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
+            config.columns.forEach(function(col, ci) {
+              if (ci === 0) {
+                // First column: add chevron + badge
+                var value = record[col.key] != null ? String(record[col.key]) : '';
+                var totalGroups = children.length + 1; // parent counts as group 1
+                h += '<td class="cell-data" data-col-key="' + esc(col.key) + '">';
+                h += '<span class="group-toggle" data-parent="' + esc(pk) + '" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px;">';
+                h += '<span class="icon" style="transition:transform var(--transition);' + (isExpanded ? ' transform:rotate(90deg);' : '') + '">' + Icons.chevronRight(12) + '</span>';
+                h += esc(value);
+                h += '</span>';
+                h += ' <span class="chip u-text-xs" style="vertical-align:middle;">' + totalGroups + ' gr</span>';
+                h += '</td>';
+              } else if (ci === 1) {
+                // Name column: show parent name
+                var nameVal = record[col.key] != null ? String(record[col.key]) : '';
+                // Strip group suffix from parent name for cleaner display
+                nameVal = nameVal.replace(/\s*\(Gr\.\s*\d+\)\s*$/, '');
+                h += '<td class="cell-data' + (col.editable ? ' cell-editable' : '') + '" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '">' + esc(nameVal) + '</td>';
+              } else {
+                h += renderListViewCell(col, record, config);
+              }
+            });
+            h += '</tr>';
+
+            // Render child rows (indented, collapsible)
+            if (isExpanded) {
+              // Include parent as "Gr. 1" first
+              var parentGrNum = record.codigoGrupo ? record.codigoGrupo.split('-')[1].replace(/^0/, '') : '1';
+              h += renderGroupChildRow(config, record, pk, parentGrNum, true);
+
+              children.forEach(function(child) {
+                var grNum = child.codigoGrupo ? child.codigoGrupo.split('-')[1].replace(/^0/, '') : '?';
+                h += renderGroupChildRow(config, child, pk, grNum, false);
+                renderedChildren.add(child.codigo);
+              });
+            }
+          } else if (!record.parentAccion) {
+            // Regular row (no children, not a child)
+            h += '<tr class="data-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '"' + (sel ? ' aria-selected="true"' : '') + '>';
+            h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
+            config.columns.forEach(function(col) { h += renderListViewCell(col, record, config); });
+            h += '</tr>';
+          } else {
+            // Orphaned child (parent not in filtered data) — render as regular row
+            h += '<tr class="data-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '"' + (sel ? ' aria-selected="true"' : '') + '>';
+            h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
+            config.columns.forEach(function(col) { h += renderListViewCell(col, record, config); });
+            h += '</tr>';
+          }
+        });
       } else {
+        // Non-acciones catalogs: regular flat rendering
         data.forEach(function(record) {
           var pk = String(record[config.pkField]);
           var sel = listViewState.selectedPKs.has(pk);
@@ -7277,6 +7367,39 @@
         });
       }
       h += '</tbody>';
+      return h;
+    }
+
+    function renderGroupChildRow(config, record, parentPk, grNum, isParentRow) {
+      var pk = String(record[config.pkField]);
+      var sel = listViewState.selectedPKs.has(pk);
+      var tutorName = '';
+      if (record.tutorVinculado) {
+        var tutores = getCatalog('tutores');
+        var t = tutores.find(function(x) { return x.documento === record.tutorVinculado; });
+        tutorName = t ? [t.nombre, t.apellido1].filter(Boolean).join(' ') : '';
+      }
+      var partCount = (record.participantes || []).length;
+
+      var h = '<tr class="data-row child-row" data-pk="' + esc(pk) + '" data-parent-group="' + esc(parentPk) + '"' + (sel ? ' aria-selected="true"' : '') + ' style="background:var(--bg-primary);">';
+      h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
+      config.columns.forEach(function(col, ci) {
+        if (ci === 0) {
+          // Indented group number
+          h += '<td class="cell-data" data-col-key="' + esc(col.key) + '" style="padding-left:28px; color:var(--text-muted);">';
+          h += (isParentRow ? '\u251C ' : '\u251C ') + esc(grNum);
+          h += '</td>';
+        } else if (ci === 1) {
+          // Name: show Gr.N + tutor + participant count
+          var label = 'Gr.' + grNum;
+          if (tutorName) label += ' \u00B7 ' + tutorName;
+          if (partCount > 0) label += ' \u00B7 ' + partCount + ' part.';
+          h += '<td class="cell-data cell-editable" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '" style="font-size:var(--font-size-sm);">' + esc(label) + '</td>';
+        } else {
+          h += renderListViewCell(col, record, config);
+        }
+      });
+      h += '</tr>';
       return h;
     }
 
@@ -7467,6 +7590,15 @@
           toggleCatalogViewMode(catalogKey, 'ficha');
           renderCatalogList();
           renderCatalogForm();
+        });
+      });
+      // Group toggle (expand/collapse) for parent rows
+      document.querySelectorAll('.catalog-list-table .group-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var parentPk = toggle.dataset.parent;
+          catalogState.expandedGroups[parentPk] = !catalogState.expandedGroups[parentPk];
+          renderCatalogListView(catalogKey);
         });
       });
       // Inline edit on click
