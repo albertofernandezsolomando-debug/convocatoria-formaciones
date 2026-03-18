@@ -9993,12 +9993,50 @@
         for (var px = startX; px < endX; px++) {
           var i = (py * imgW + px) * 4;
           var r = data[i], g = data[i + 1], b = data[i + 2];
-          // Use luminance: only count truly dark pixels (ink, not scan noise)
           var lum = 0.299 * r + 0.587 * g + 0.114 * b;
           if (lum < 120) count++;
         }
       }
       return count;
+    }
+
+    // Detect signature by analyzing spatial distribution of ink.
+    // A signature has INK CONCENTRATED in irregular strokes → HIGH variance across sub-regions.
+    // An empty cell has UNIFORM noise/table lines → LOW variance.
+    function detectSignature(imageData, x, y, w, h) {
+      var data = imageData.data;
+      var imgW = imageData.width;
+      var GRID = 4; // 4x4 grid = 16 sub-cells
+      var cellW = Math.floor(w / GRID);
+      var cellH = Math.floor(h / GRID);
+      if (cellW < 3 || cellH < 3) return { signed: true, variance: 0 };
+
+      var cellRatios = [];
+      for (var gy = 0; gy < GRID; gy++) {
+        for (var gx = 0; gx < GRID; gx++) {
+          var cx = Math.floor(x + gx * cellW);
+          var cy = Math.floor(y + gy * cellH);
+          var ink = 0;
+          var total = 0;
+          for (var py = cy; py < cy + cellH && py < imageData.height; py++) {
+            for (var px = cx; px < cx + cellW && px < imgW; px++) {
+              var i = (py * imgW + px) * 4;
+              var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+              total++;
+              if (lum < 120) ink++;
+            }
+          }
+          cellRatios.push(total > 0 ? ink / total : 0);
+        }
+      }
+
+      // Compute variance of cell ratios
+      var mean = cellRatios.reduce(function(s, v) { return s + v; }, 0) / cellRatios.length;
+      var variance = cellRatios.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / cellRatios.length;
+      // Also count cells with significantly more ink than average (signature hotspots)
+      var hotspots = cellRatios.filter(function(r) { return r > mean * 2 && r > 0.02; }).length;
+
+      return { signed: variance > 0.0004 || hotspots >= 2, variance: variance, hotspots: hotspots, mean: mean };
     }
 
     async function parseAttendancePdf(file) {
@@ -10337,12 +10375,37 @@
         var firmaStartX = maxNifX1 > 0 ? maxNifX1 + 15 : canvas.width * 0.55;
         var firmaEndX = canvas.width * 0.95;
 
-        // Signature detection: default all to signed=true.
-        // Pixel-based detection is unreliable on scanned documents — scan noise,
-        // table lines, and variable signature sizes make it impossible to
-        // distinguish small signatures from empty cells.
-        // The user unchecks non-signers manually (typically 2-3 per sheet).
-        pageAttendees.forEach(function(att) { att.signed = true; });
+        // Signature detection using spatial distribution analysis.
+        // A signature has ink CONCENTRATED in irregular strokes → high variance.
+        // An empty cell has UNIFORM noise/table lines → low variance.
+        // Scan only the CENTER 50% of each cell to avoid overflow from neighbors.
+        pageAttendees.forEach(function(att, idx) {
+          if (att.canvasY === 0) { att.signed = true; return; }
+
+          var rowTop = att.canvasY;
+          var rowBottom;
+          if (idx < pageAttendees.length - 1 && pageAttendees[idx + 1].canvasY > 0) {
+            rowBottom = pageAttendees[idx + 1].canvasY;
+          } else {
+            rowBottom = att.canvasY1 + 50;
+          }
+
+          // Center 50% of the cell (both axes) to avoid neighbor overflow
+          var rowH = rowBottom - rowTop;
+          var colW = firmaEndX - firmaStartX;
+          var scanX = Math.floor(firmaStartX + colW * 0.25);
+          var scanY = Math.floor(rowTop + rowH * 0.25);
+          var scanW = Math.floor(colW * 0.5);
+          var scanH = Math.floor(rowH * 0.5);
+
+          if (scanW > 10 && scanH > 5) {
+            var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
+            att.signed = result.signed;
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') var=' + result.variance.toFixed(6) + ' hotspots=' + result.hotspots + ' mean=' + result.mean.toFixed(4) + ' signed=' + result.signed);
+          } else {
+            att.signed = true;
+          }
+        });
 
         allAttendees = allAttendees.concat(pageAttendees);
       }
