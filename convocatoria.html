@@ -10192,8 +10192,12 @@
             .replace(/(?<=\d)[oOQD](?=\d)/g, '0')   // O/Q/D between digits → 0
             .replace(/(?<=\d)[lI|](?=\d)/g, '1');    // l/I/| between digits → 1
 
-          // Try match: 8 digits + letter
+          // Try match: 8 digits + letter (always verify letter with calculation)
           var nifMatch = normalized.match(/\b(\d{8})\s*([A-Za-z])\b/);
+          if (nifMatch) {
+            // Verify OCR letter vs calculated — use calculated (OCR often wrong)
+            nifMatch[2] = calcNifLetter(nifMatch[1]);
+          }
           if (!nifMatch) {
             // Try: 8 digits alone (letter missing or garbled) → calculate letter
             nifMatch = normalized.match(/\b(\d{8})\b/);
@@ -10284,6 +10288,10 @@
 
         // Third pass: search individual OCR words for digit sequences missed by line parser
         var foundNifs = new Set(pageAttendees.map(function(a) { return a.nif; }));
+        // Build set of known CIFs to exclude
+        var knownCifs = new Set();
+        getEmpresasGrupo().forEach(function(e) { if (e.cif) knownCifs.add(e.cif.replace(/^[A-Za-z]/, '')); });
+
         words.forEach(function(w) {
           if (!w.text) return;
           var wClean = w.text.replace(/\s/g, '');
@@ -10291,9 +10299,11 @@
           var digitMatch = wClean.match(/(\d{8,9})/);
           if (!digitMatch) return;
           var digits = digitMatch[1].slice(0, 8);
+          // Skip known CIFs (empresa CIFs without the letter prefix)
+          if (knownCifs.has(digits)) return;
           var letter = calcNifLetter(digits);
           var nif = digits + letter;
-          if (foundNifs.has(nif)) return; // already found via line parsing
+          if (foundNifs.has(nif)) return;
           foundNifs.add(nif);
 
           // Try to find associated name from nearby words (same Y level, to the left)
@@ -10350,9 +10360,12 @@
           if (scanW > 0 && scanH > 0) {
             var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
             var totalPixels = scanW * scanH;
-            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.003;
+            var inkRatio = totalPixels > 0 ? (inkCount / totalPixels) : 0;
+            att.signed = inkRatio > 0.003;
+            console.log('FIRMA DEBUG: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') inkRatio=' + inkRatio.toFixed(5) + ' ink=' + inkCount + '/' + totalPixels + ' region=[' + scanLeft + ',' + scanTop + ',' + scanW + 'x' + scanH + '] canvas=' + canvas.width + 'x' + canvas.height + ' signed=' + att.signed);
           } else {
-            att.signed = true; // can't determine, assume signed
+            att.signed = true;
+            console.log('FIRMA DEBUG: ' + att.nif + ' — no scan region, defaulting signed=true');
           }
         });
 
