@@ -10218,6 +10218,11 @@
             var namepart = digitPos > 0 ? line.substring(0, digitPos).trim() : '';
             namepart = namepart.replace(/[|[\]{}]/g, '').replace(/\s+/g, ' ').trim();
             if (namepart.toUpperCase() === 'ASISTENTE' || namepart.toUpperCase() === 'NIF') return;
+            // Skip header lines (CIF empresarial, expediente, etc.)
+            var lineUpper = line.toUpperCase();
+            if (lineUpper.indexOf('CIF') !== -1 || lineUpper.indexOf('EMPRESARIAL') !== -1 ||
+                lineUpper.indexOf('EXPEDIENTE') !== -1 || lineUpper.indexOf('AGRUPACI') !== -1 ||
+                lineUpper.indexOf('FORMADOR') !== -1 || lineUpper.indexOf('DENOMINACI') !== -1) return;
             if (namepart.length < 3) namepart = '';
 
             // Find the NIF word in OCR data for precise position
@@ -10241,7 +10246,43 @@
           }
         });
 
-        // Second pass: search individual OCR words for digit sequences missed by line parser
+        // Second pass: match names without NIFs against loaded organigrama
+        if (state.employees && state.employees.length > 0) {
+          var foundNifsSet = new Set(pageAttendees.map(function(a) { return a.nif; }));
+          ocrLines.forEach(function(line) {
+            var lineUpper = line.toUpperCase().trim();
+            // Skip short lines, header lines, and lines that already matched a NIF
+            if (lineUpper.length < 5 || /\d{8}/.test(line)) return;
+            if (lineUpper.indexOf('CIF') !== -1 || lineUpper.indexOf('EMPRESARIAL') !== -1 ||
+                lineUpper.indexOf('ASISTENTE') !== -1 || lineUpper.indexOf('FORMADOR') !== -1 ||
+                lineUpper.indexOf('DENOMINACI') !== -1 || lineUpper.indexOf('OBSERVACIONES') !== -1) return;
+            // Clean name: remove OCR artifacts
+            var cleanName = lineUpper.replace(/[|[\]{}0-9=\-+><:;.]/g, '').replace(/\s+/g, ' ').trim();
+            if (cleanName.length < 5) return;
+            // Try matching against employees by apellidos
+            var matched = state.employees.find(function(emp) {
+              var empName = (emp.Empleado || '').toUpperCase().trim();
+              if (!empName || empName.length < 5) return false;
+              // Check if OCR line contains significant parts of the employee name
+              var parts = empName.split(/[,\s]+/).filter(function(p) { return p.length > 2; });
+              var matchCount = parts.filter(function(p) { return cleanName.indexOf(p) !== -1; }).length;
+              return matchCount >= 2 && parts.length >= 2; // at least 2 name parts match
+            });
+            if (matched && !foundNifsSet.has(matched.NIF)) {
+              foundNifsSet.add(matched.NIF);
+              pageAttendees.push({
+                nif: matched.NIF,
+                name: matched.Empleado || matched.NIF,
+                canvasY: 0,
+                canvasY1: 0,
+                pdfY: 0,
+                signed: true
+              });
+            }
+          });
+        }
+
+        // Third pass: search individual OCR words for digit sequences missed by line parser
         var foundNifs = new Set(pageAttendees.map(function(a) { return a.nif; }));
         words.forEach(function(w) {
           if (!w.text) return;
