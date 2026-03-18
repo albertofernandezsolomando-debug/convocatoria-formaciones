@@ -11195,11 +11195,27 @@
           return;
         }
 
+        // Sort: selected first, then alphabetical
+        filtered.sort(function(a, b) {
+          var asel = selectedSet[a.NIF] ? 0 : 1;
+          var bsel = selectedSet[b.NIF] ? 0 : 1;
+          if (asel !== bsel) return asel - bsel;
+          return (a.Empleado || '').localeCompare(b.Empleado || '');
+        });
+
         var html = '';
+        var lastWasSelected = true;
         filtered.forEach(function(e) {
-          var checked = selectedSet[e.NIF] ? ' checked' : '';
-          html += '<label class="u-flex u-items-center u-gap-8 u-cursor-pointer u-border-bottom u-text-12" style="padding:6px 10px;" ' +
-            'onmouseover="this.style.background=\'var(--accent-subtle)\'" onmouseout="this.style.background=\'\'">' +
+          var isSelected = !!selectedSet[e.NIF];
+          // Separator between selected and unselected
+          if (lastWasSelected && !isSelected) {
+            html += '<div style="border-top:2px solid var(--accent-light); margin:4px 0;"></div>';
+            lastWasSelected = false;
+          }
+          var checked = isSelected ? ' checked' : '';
+          var bgStyle = isSelected ? 'background:var(--accent-subtle);' : '';
+          html += '<label class="u-flex u-items-center u-gap-8 u-cursor-pointer u-border-bottom u-text-12" style="padding:6px 10px;' + bgStyle + '" ' +
+            'onmouseover="this.style.background=\'var(--accent-subtle)\'" onmouseout="this.style.background=\'' + (isSelected ? 'var(--accent-subtle)' : '') + '\'">' +
             '<input type="checkbox" class="ppCheck" data-nif="' + esc(e.NIF) + '"' + checked + ' style="margin:0; flex-shrink:0;">' +
             '<span style="color:var(--text-primary);">' + esc(e.Empleado) + '</span>' +
             '<span style="color:var(--text-muted); margin-left:auto; flex-shrink:0;">' + esc(e.NIF) + '</span>' +
