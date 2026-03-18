@@ -7,6 +7,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Single self-contained HTML file (`convocatoria.html`). Todo inline: CSS en `<style>`, HTML en `<body>`, JS en `<script>`. Sin servidor, sin build, sin frameworks. ~24,320 líneas. Dependencias externas vía CDN:
 - **Inter** (Google Fonts) — tipografía
 - **SheetJS** (xlsx-0.20.3) — parseo de Excel
+- **pdf.js** (3.11.174) — parseo de PDF para importar firmas
+- **Tesseract.js** (v5) — OCR para PDFs escaneados
+
+## Modelo de datos: Acción vs Grupo (decisión arquitectural)
+
+La app usa **modelo B** (agrupación UI sobre modelo plano): cada registro en `fundae_acciones` es una ejecución concreta (grupo). Los grupos se vinculan mediante `parentAccion` (referencia al código del padre). El modelo correcto desde diseño de datos sería **modelo A** (entidad Acción separada de entidad Grupo), pero se pospone por pragmatismo. Ver `docs/superpowers/specs/2026-03-18-grupos-formativos-design.md` para la decisión completa y criterios de migración futura.
+
+- `parentAccion: null` → acción independiente o raíz
+- `parentAccion: "26095"` → grupo que pertenece a la acción 26095
+- Campos heredados del padre al crear grupo: nombre, modalidad, horas, área, objetivos, contenidos, proveedor, centro, tutor, plataforma
+- Campos propios del grupo: participantes, fechas, asistencia, confirmaciones, codigoGrupo, estado
+
+## Campos eliminados
+
+- `rltEstado` y `rltFechaEnvio` — eliminados. FUNDAE solo pide `informaRLT` (S/N), que se asume siempre "S". No se borran de registros antiguos, simplemente no se leen ni se muestran.
 
 Persistencia: `localStorage` para estado, presets, historial, cola. No hay backend.
 
