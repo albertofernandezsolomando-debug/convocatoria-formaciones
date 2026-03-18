@@ -9993,7 +9993,9 @@
         for (var px = startX; px < endX; px++) {
           var i = (py * imgW + px) * 4;
           var r = data[i], g = data[i + 1], b = data[i + 2];
-          if (r < 180 || g < 180 || b < 180) count++;
+          // Use luminance: only count truly dark pixels (ink, not scan noise)
+          var lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (lum < 120) count++;
         }
       }
       return count;
