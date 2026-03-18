@@ -143,6 +143,18 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - Toasts: `role="alert"` (error/warning), `role="status"` (info/success)
 - `validateField(input)` — validación inline con `aria-invalid` y `.field-error-msg`
 
+## Grupos formativos (modelo B)
+
+- `parentAccion` vincula grupos a su acción padre (máximo 2 niveles)
+- `getChildGroups(codigo)` — retorna array de registros hijos
+- `getSiblingCount(record)` — cuenta hermanos (incluyendo al padre)
+- `generateGroupCode(parentCodigo)` — genera codigoGrupo buscando por parentAccion
+- Al duplicar una acción → `copy.parentAccion = original.parentAccion || original.codigo`
+- Al eliminar un padre → los hijos se huerfanizan (`parentAccion = null`)
+- `catalogState.expandedGroups` — estado expand/collapse de la vista lista (en memoria)
+- Calendario: groupBy `accionFormativa` agrupa por `item.parentAccion || item.codigo`
+- Botones "XML Acción/Inicio/Finalización" en la ficha generan XML directamente desde datos del catálogo
+
 ## Patrones JS
 
 - `esc(s)` — sanitizar CUALQUIER valor del Excel antes de innerHTML (prevención XSS)
