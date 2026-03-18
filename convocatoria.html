@@ -10019,20 +10019,21 @@
       for (var py = startY; py < endY; py++) {
         var inDark = false;
         var runLen = 0;
+        var lineWidth = endX - startX;
         for (var px = startX; px < endX; px++) {
           var i = (py * imgW + px) * 4;
           var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          if (lum < 120) {
+          if (lum < 160) { // 160: catches blue ink on scans (blue has mid luminance)
             inDark = true;
             runLen++;
           } else {
-            if (inDark && runLen >= 4) totalSignificantRuns++;
+            // Count run if ≥3px (pen stroke) and <60% of line width (not a table line)
+            if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) totalSignificantRuns++;
             inDark = false;
             runLen = 0;
           }
         }
-        if (inDark && runLen >= 4 && runLen < (endX - startX) * 0.8) totalSignificantRuns++;
-        // ^ ignore runs spanning >80% of width (table lines)
+        if (inDark && runLen >= 3 && runLen < lineWidth * 0.6) totalSignificantRuns++;
       }
 
       var runsPerLine = totalSignificantRuns / scanLines;
@@ -10390,13 +10391,13 @@
             rowBottom = att.canvasY1 + 50;
           }
 
-          // Center 50% of the cell (both axes) to avoid neighbor overflow
+          // Center 70% vertically (avoid neighbor overflow), full FIRMA width
           var rowH = rowBottom - rowTop;
           var colW = firmaEndX - firmaStartX;
-          var scanX = Math.floor(firmaStartX + colW * 0.25);
-          var scanY = Math.floor(rowTop + rowH * 0.25);
-          var scanW = Math.floor(colW * 0.5);
-          var scanH = Math.floor(rowH * 0.5);
+          var scanX = Math.floor(firmaStartX + 10); // skip left border
+          var scanY = Math.floor(rowTop + rowH * 0.15);
+          var scanW = Math.floor(colW - 20);
+          var scanH = Math.floor(rowH * 0.7);
 
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
