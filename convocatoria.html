@@ -8727,13 +8727,35 @@
       if (participantes.length === 0) {
         innerHtml = '<div class="u-text-11 u-text-muted" style="padding:4px 0;">Asigna participantes primero</div>';
       } else {
-        // Add session row
-        innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-8">' +
+        // Add session row (single date)
+        innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-4">' +
           '<input class="input-field u-text-12 u-w-auto" id="cfAsistenciaDate" type="date" aria-label="Fecha de sesión">' +
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddSesion">A\u00F1adir sesi\u00F3n</button>' +
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnImportFirmas" title="Importar asistencia desde PDF de firmas FUNDAE">' + Icons.upload(14) + ' Importar firmas</button>' +
           '<input type="file" id="cfFirmasInput" accept=".pdf" style="display:none;">' +
-        '</div>';
+        '</div>' +
+        // Date range picker (P4)
+        '<details class="u-mb-8" id="cfSesionRangeDetails">' +
+          '<summary class="u-text-11 u-text-accent u-cursor-pointer" style="list-style:none; display:inline-flex; align-items:center; gap:4px;">' +
+            Icons.calendar(12) + ' Generar sesiones por rango</summary>' +
+          '<div style="padding:8px 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">' +
+            '<label class="u-text-11 u-text-secondary">De:</label>' +
+            '<input class="input-field u-text-12 u-w-auto" type="date" id="cfSesionRangeFrom" aria-label="Desde">' +
+            '<label class="u-text-11 u-text-secondary">A:</label>' +
+            '<input class="input-field u-text-12 u-w-auto" type="date" id="cfSesionRangeEnd" aria-label="Hasta">' +
+          '</div>' +
+          '<div style="padding:0 0 8px 0; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">' +
+            '<label class="u-text-11 u-text-secondary">D\u00edas:</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="1" checked> L</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="2" checked> M</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="3" checked> X</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="4" checked> J</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="5" checked> V</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="6"> S</label>' +
+            '<label class="u-text-11"><input type="checkbox" class="cfDayCheck" value="0"> D</label>' +
+            '<button class="btn btn-secondary u-text-12" id="btnGenSesionRange">Generar</button>' +
+          '</div>' +
+        '</details>';
 
         // Registro rápido panel
         if (sesiones.length > 0 && participantes.length > 0) {
@@ -9820,6 +9842,64 @@
             importAttendancePdf(this.files[0], record);
             this.value = '';
           }
+        });
+      }
+
+      // Session date range generator (P4)
+      var rangeBtn = document.getElementById('btnGenSesionRange');
+      if (rangeBtn) {
+        rangeBtn.addEventListener('click', function() {
+          var fromEl = document.getElementById('cfSesionRangeFrom');
+          var toEl = document.getElementById('cfSesionRangeEnd');
+          if (!fromEl || !toEl || !fromEl.value || !toEl.value) {
+            showToast('Selecciona fecha de inicio y fin del rango', 'warning');
+            return;
+          }
+          var from = new Date(fromEl.value + 'T12:00:00');
+          var to = new Date(toEl.value + 'T12:00:00');
+          if (from > to) { showToast('La fecha de inicio debe ser anterior a la de fin', 'warning'); return; }
+
+          // Collect selected days (0=Sun, 1=Mon, ... 6=Sat)
+          var selectedDays = new Set();
+          document.querySelectorAll('.cfDayCheck:checked').forEach(function(cb) {
+            selectedDays.add(parseInt(cb.value, 10));
+          });
+          if (selectedDays.size === 0) { showToast('Selecciona al menos un día de la semana', 'warning'); return; }
+
+          if (!record.asistencia) record.asistencia = { sesiones: [], registro: {} };
+          if (!record.asistencia.sesiones) record.asistencia.sesiones = [];
+
+          var added = 0;
+          var d = new Date(from);
+          while (d <= to) {
+            if (selectedDays.has(d.getDay())) {
+              var dateStr = d.toISOString().slice(0, 10);
+              if (record.asistencia.sesiones.indexOf(dateStr) === -1) {
+                record.asistencia.sesiones.push(dateStr);
+                added++;
+              }
+            }
+            d.setDate(d.getDate() + 1);
+          }
+
+          if (added === 0) { showToast('No se generaron sesiones nuevas (ya existían o no hay días seleccionados en el rango)', 'info'); return; }
+
+          record.asistencia.sesiones.sort();
+          // Ensure registro arrays match new session count
+          var sesLen = record.asistencia.sesiones.length;
+          (record.participantes || []).forEach(function(nif) {
+            if (!record.asistencia.registro[nif]) {
+              record.asistencia.registro[nif] = new Array(sesLen).fill(false);
+            } else {
+              while (record.asistencia.registro[nif].length < sesLen) {
+                record.asistencia.registro[nif].push(false);
+              }
+            }
+          });
+
+          upsertCatalogRecord('acciones', 'codigo', record);
+          renderCatalogForm();
+          showToast(added + ' sesión' + (added > 1 ? 'es' : '') + ' generada' + (added > 1 ? 's' : ''), 'success');
         });
       }
     }
