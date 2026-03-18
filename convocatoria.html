@@ -10014,8 +10014,8 @@
       var scanLines = endY - startY;
       if (scanLines < 2) return { signed: true, runs: 0 };
 
-      // Dual-threshold: count runs at lum<160 (all ink) and lum<140 (dark ink only)
-      var runs160 = 0, runs140 = 0;
+      // Triple-metric: short runs (≥3px), long runs (≥6px), dark runs (lum<140, ≥3px)
+      var runs160 = 0, longRuns = 0, runs140 = 0;
 
       for (var py = startY; py < endY; py++) {
         var lineWidth = endX - startX;
@@ -10027,21 +10027,28 @@
           var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
 
           if (lum < 160) { inD160 = true; rl160++; }
-          else { if (inD160 && rl160 >= 3 && rl160 < lineWidth * 0.6) runs160++; inD160 = false; rl160 = 0; }
+          else {
+            if (inD160 && rl160 < lineWidth * 0.6) {
+              if (rl160 >= 3) runs160++;
+              if (rl160 >= 6) longRuns++;
+            }
+            inD160 = false; rl160 = 0;
+          }
 
           if (lum < 140) { inD140 = true; rl140++; }
           else { if (inD140 && rl140 >= 3 && rl140 < lineWidth * 0.6) runs140++; inD140 = false; rl140 = 0; }
         }
-        if (inD160 && rl160 >= 3 && rl160 < lineWidth * 0.6) runs160++;
+        if (inD160 && rl160 < lineWidth * 0.6) { if (rl160 >= 3) runs160++; if (rl160 >= 6) longRuns++; }
         if (inD140 && rl140 >= 3 && rl140 < lineWidth * 0.6) runs140++;
       }
 
       var rpl160 = runs160 / scanLines;
+      var rplLong = longRuns / scanLines;
       var rpl140 = runs140 / scanLines;
-      // Signed = enough total runs AND (has dark core ink OR overwhelmingly many runs)
-      var isSigned = rpl160 > 1.0 && (rpl140 > 0.8 || rpl160 > 3.0);
+      // Signed = enough total runs AND (dark ink core OR many long runs OR overwhelmingly many)
+      var isSigned = rpl160 > 1.0 && (rpl140 > 0.8 || rplLong > 0.5 || rpl160 > 3.0);
 
-      return { signed: isSigned, r160: rpl160, r140: rpl140 };
+      return { signed: isSigned, r160: rpl160, r140: rpl140, rLong: rplLong };
     }
 
     async function parseAttendancePdf(file) {
@@ -10414,7 +10421,7 @@
           if (scanW > 10 && scanH > 5) {
             var result = detectSignature(imageData, scanX, scanY, scanW, scanH);
             att.signed = result.signed;
-            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' signed=' + result.signed);
+            console.log('FIRMA: ' + att.nif + ' (' + (att.name || '?').substring(0, 20) + ') r160=' + result.r160.toFixed(2) + ' r140=' + result.r140.toFixed(2) + ' rLong=' + result.rLong.toFixed(2) + ' signed=' + result.signed);
           } else {
             att.signed = true;
           }
