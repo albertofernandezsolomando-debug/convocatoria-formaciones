@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     /* --- Design: Indigo-600 + Slate neutrals + Inter --- */
@@ -9977,9 +9978,8 @@
     // ATTENDANCE PDF IMPORT (FUNDAE sign sheets)
     // ═══════════════════════════════════
 
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
+    // pdf.js worker loaded as inline script (file:// protocol doesn't support Web Workers)
+    // No workerSrc needed — pdfjsLib detects the global worker automatically
 
     function countInkPixels(imageData, x, y, w, h) {
       var count = 0;
