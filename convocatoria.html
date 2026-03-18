@@ -10234,8 +10234,8 @@
           if (scanW > 0 && scanH > 0) {
             var inkCount = countInkPixels(imageData, scanLeft, scanTop, scanW, scanH);
             var totalPixels = scanW * scanH;
-            // Lower threshold for scans (more noise but also more ink variation)
-            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.003;
+            // Lower threshold for scans (tenue signatures like pencil/light ink)
+            att.signed = totalPixels > 0 && (inkCount / totalPixels) > 0.002;
           }
         });
 
