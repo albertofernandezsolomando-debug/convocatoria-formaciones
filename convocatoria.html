@@ -10230,10 +10230,11 @@
             if (namepart.length < 3) namepart = '';
 
             // Find the NIF word in OCR data for precise position
+            // Search by 8-digit part (not full NIF with calculated letter)
+            var nifDigits = nifMatch[1];
             var nifWord = words.find(function(w) {
               if (!w.text) return false;
-              var wClean = w.text.replace(/\s/g, '').toUpperCase();
-              return wClean.indexOf(nif) !== -1 || wClean.match(/\d{7,}/);
+              return w.text.replace(/\s/g, '').indexOf(nifDigits) !== -1;
             });
 
             var bbox = nifWord ? nifWord.bbox : null;
