@@ -10980,20 +10980,54 @@
       if (participantes.length === 0) {
         listEl.innerHTML = '<div class="u-text-11 u-text-muted" style="padding:4px 0;">Sin participantes asignados</div>';
       } else {
+        // Compute attendance status per participant
+        var registro = (record.asistencia && record.asistencia.registro) || {};
+        var sesiones = (record.asistencia && record.asistencia.sesiones) || [];
+        var totalSesiones = sesiones.length;
+
+        // Count attended and total participants
+        var attendedCount = 0;
+        participantes.forEach(function(nif) {
+          var reg = registro[nif];
+          if (reg && reg.some(function(v) { return v === true; })) attendedCount++;
+        });
+
+        // Summary line
         var html = '';
+        if (totalSesiones > 0) {
+          html += '<div class="u-text-11 u-mb-6" style="color:var(--text-muted);">' +
+            participantes.length + ' participante' + (participantes.length !== 1 ? 's' : '') +
+            ' · ' + attendedCount + ' con asistencia registrada' +
+            ' · ' + totalSesiones + ' sesión' + (totalSesiones !== 1 ? 'es' : '') +
+          '</div>';
+        }
+
         participantes.forEach(function(nif) {
           var emp = state.employees.find(function(e) { return e.NIF === nif; });
-          if (emp) {
-            html += '<div class="u-participant-row">' +
-              '<span style="font-size:var(--font-size-sm); color:var(--text-primary);">' + esc(emp.Empleado) + ' <span style="color:var(--text-muted);">(' + esc(nif) + ')</span></span>' +
-              '<button class="btn btn-secondary cfRemoveParticipant u-btn-remove-sm" data-nif="' + esc(nif) + '" aria-label="Eliminar participante"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
-            '</div>';
-          } else {
-            html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">' +
-              '<span style="font-size:var(--font-size-sm); color:var(--warning);"><span class="icon" aria-hidden="true">' + Icons.alertTriangle(12) + '</span> ' + esc(nif) + ' <span style="color:var(--text-muted);">(no encontrado en organigrama)</span></span>' +
-              '<button class="btn btn-secondary cfRemoveParticipant" data-nif="' + esc(nif) + '" style="font-size:var(--font-size-xs); padding:2px 6px; color:var(--danger); border-color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
-            '</div>';
+          var name = emp ? esc(emp.Empleado) : esc(nif);
+          var nameColor = emp ? 'var(--text-primary)' : 'var(--warning)';
+
+          // Attendance badge
+          var badge = '';
+          if (totalSesiones > 0) {
+            var reg = registro[nif];
+            if (reg) {
+              var attended = reg.filter(function(v) { return v === true; }).length;
+              var pct = Math.round((attended / totalSesiones) * 100);
+              var badgeColor = pct >= 75 ? 'var(--success)' : pct > 0 ? 'var(--warning)' : 'var(--text-muted)';
+              badge = '<span class="u-text-xs" style="color:' + badgeColor + '; margin-left:6px;">' +
+                attended + '/' + totalSesiones + ' (' + pct + '%)</span>';
+            } else {
+              badge = '<span class="u-text-xs" style="color:var(--text-muted); margin-left:6px;">Sin registro</span>';
+            }
           }
+
+          html += '<div class="u-participant-row">' +
+            '<span style="font-size:var(--font-size-sm); color:' + nameColor + ';">' + name +
+            (emp ? ' <span style="color:var(--text-muted);">(' + esc(nif) + ')</span>' : ' <span style="color:var(--text-muted);">(no en organigrama)</span>') +
+            badge + '</span>' +
+            '<button class="btn btn-secondary cfRemoveParticipant u-btn-remove-sm" data-nif="' + esc(nif) + '" aria-label="Eliminar participante"><span class="icon" aria-hidden="true">' + Icons.close(10) + '</span></button>' +
+          '</div>';
         });
         listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
       }
