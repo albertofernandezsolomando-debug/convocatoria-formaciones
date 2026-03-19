@@ -11837,17 +11837,17 @@
           return true;
         })
         .map((row, idx) => {
-          if (idx === 0) {
-            var rowKeys = Object.keys(row);
-            var costK = rowKeys.filter(function(k) { return k.toLowerCase().indexOf('coste') !== -1 || k.toLowerCase().indexOf('salario') !== -1 || k.toLowerCase().indexOf('hora') !== -1; });
-            console.log('PARSE ROW KEYS (' + rowKeys.length + ' total). Cost-related:', costK.length > 0 ? costK : 'NONE. Last 5 keys: ' + rowKeys.slice(-5).join(', '));
-          }
+          // Normalize row keys: trim whitespace (Excel headers sometimes have leading/trailing spaces)
+          var normalizedRow = {};
+          Object.keys(row).forEach(function(k) {
+            normalizedRow[k.trim()] = row[k];
+          });
           const emp = {};
           RELEVANT_COLUMNS.forEach(col => {
-            emp[col] = row[col] != null ? String(row[col]).trim() : '';
+            emp[col] = normalizedRow[col] != null ? String(normalizedRow[col]).trim() : '';
           });
           FUNDAE_COLUMNS.forEach(col => {
-            if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
+            if (normalizedRow[col] != null) emp['_f_' + col] = String(normalizedRow[col]).trim();
           });
           // BUG-01: synthetic unique key so duplicate/empty NIFs don't break selection
           emp._id = String(idx);
@@ -17130,12 +17130,14 @@
           const externalEmps = rows
             .filter(row => row.NIF && !existingNIFs.has(String(row.NIF).trim()))
             .map((row, idx) => {
+              var normalizedRow = {};
+              Object.keys(row).forEach(function(k) { normalizedRow[k.trim()] = row[k]; });
               const emp = {};
               RELEVANT_COLUMNS.forEach(col => {
-                emp[col] = row[col] != null ? String(row[col]).trim() : '';
+                emp[col] = normalizedRow[col] != null ? String(normalizedRow[col]).trim() : '';
               });
               FUNDAE_COLUMNS.forEach(col => {
-                if (row[col] != null) emp['_f_' + col] = String(row[col]).trim();
+                if (normalizedRow[col] != null) emp['_f_' + col] = String(normalizedRow[col]).trim();
               });
               emp._source = 'external';
               emp._id = 'ext-' + idx;
