@@ -11849,6 +11849,7 @@
           FUNDAE_COLUMNS.forEach(col => {
             if (normalizedRow[col] != null) emp['_f_' + col] = String(normalizedRow[col]).trim();
           });
+          if (idx === 0) console.log('FUNDAE fields loaded:', FUNDAE_COLUMNS.filter(function(c) { return emp['_f_' + c]; }).join(', ') || 'NONE');
           // BUG-01: synthetic unique key so duplicate/empty NIFs don't break selection
           emp._id = String(idx);
           // BUG-02: normalize filter fields (trim + collapse spaces) to avoid ghost duplicates
