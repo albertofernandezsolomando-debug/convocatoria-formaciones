@@ -17975,13 +17975,6 @@
 
     function buildParticipantRow(nif) {
       const emp = state.employees.find(e => e.NIF === nif);
-      // Debug: log available cost fields for first participant
-      if (emp && !buildParticipantRow._logged) {
-        var costKeys = Object.keys(emp).filter(function(k) { return k.toLowerCase().indexOf('coste') !== -1 || k.toLowerCase().indexOf('cost') !== -1 || k.toLowerCase().indexOf('hora') !== -1 || k.toLowerCase().indexOf('salarial') !== -1; });
-        if (costKeys.length > 0) console.log('COST FIELDS for ' + nif + ':', costKeys.map(function(k) { return k + '=' + emp[k]; }));
-        else console.log('NO COST FIELDS found. Sample keys:', Object.keys(emp).slice(0, 20));
-        buildParticipantRow._logged = true;
-      }
 
       const row = {
         nif: nif,
@@ -17993,7 +17986,14 @@
         nivelEstudios: emp ? mapNivelEstudios(emp['_f_' + COL_NIVEL_ESTUDIOS]) : '',
         grupoCotizacion: getEmpField(emp, ['_f_Grupo Cotización', '_f_Grupo cotización', 'Grupo Cotización']),
         diploma: 'N',
-        costeHora: getEmpField(emp, ['_f_Coste Salarial Hora', '_f_Coste salarial hora', '_f_Coste Hora', 'Coste Salarial Hora', 'Coste Hora']),
+        costeHora: (function() {
+          var v = getEmpField(emp, ['_f_Coste Salarial Hora', '_f_Coste salarial hora', '_f_Coste Hora', 'Coste Salarial Hora', 'Coste Hora']);
+          if (v) return v;
+          // Fallback: calculate from salary / 1720h (standard annual hours in Spain)
+          var salario = getEmpField(emp, ['_f_Salario fijo', '_f_Salario Fijo Jornada', 'Salario fijo']);
+          if (salario) { var s = parseFloat(salario); if (!isNaN(s) && s > 0) return (s / 1720).toFixed(2); }
+          return '';
+        })(),
         costeSS: getEmpField(emp, ['_f_Coste aproximado SS', '_f_Coste SS', 'Coste aproximado SS']),
         discapacidad: emp ? (emp['_f_DiscapacidadContrib'] === 'true' || emp['_f_DiscapacidadContrib'] === 'Sí' ? true : false) : false,
         // For XML generation
