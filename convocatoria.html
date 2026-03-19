@@ -3282,9 +3282,11 @@
     .cal-split-top {
       flex: 1;
       overflow: auto;
+      overflow-x: auto;
       position: relative;
       min-height: 80px;
       cursor: grab;
+      -webkit-overflow-scrolling: touch;
     }
     .cal-split-top.grabbing {
       cursor: grabbing;
@@ -23808,6 +23810,15 @@
           splitTop.classList.remove('grabbing');
         }
       });
+
+      // Horizontal scroll with mouse wheel (vertical wheel → horizontal scroll on Gantt)
+      splitTop.addEventListener('wheel', function(e) {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // native horizontal, let through
+        if (splitTop.scrollWidth > splitTop.clientWidth) {
+          splitTop.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }, { passive: false });
 
       var empInput = document.getElementById('calEmployeeSearch');
       var empClear = document.getElementById('calEmployeeClear');
