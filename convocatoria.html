@@ -8725,15 +8725,19 @@
 
       var innerHtml = '';
 
+      // Import firmas button always visible (adds participants automatically from PDF)
+      innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-4">' +
+        '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnImportFirmas" title="Importar asistencia desde PDF de firmas FUNDAE">' + Icons.upload(14) + ' Importar firmas</button>' +
+        '<input type="file" id="cfFirmasInput" accept=".pdf" style="display:none;">' +
+      '</div>';
+
       if (participantes.length === 0) {
-        innerHtml = '<div class="u-text-11 u-text-muted" style="padding:4px 0;">Asigna participantes primero</div>';
+        innerHtml += '<div class="u-text-11 u-text-muted" style="padding:4px 0;">Asigna participantes manualmente o importa desde PDF de firmas</div>';
       } else {
         // Add session row (single date)
         innerHtml += '<div class="u-flex u-gap-6 u-items-center u-mb-4">' +
           '<input class="input-field u-text-12 u-w-auto" id="cfAsistenciaDate" type="date" aria-label="Fecha de sesión">' +
           '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnAddSesion">A\u00F1adir sesi\u00F3n</button>' +
-          '<button class="btn btn-secondary u-text-12 u-nowrap" id="btnImportFirmas" title="Importar asistencia desde PDF de firmas FUNDAE">' + Icons.upload(14) + ' Importar firmas</button>' +
-          '<input type="file" id="cfFirmasInput" accept=".pdf" style="display:none;">' +
         '</div>' +
         // Date range picker (P4)
         '<details class="u-mb-8" id="cfSesionRangeDetails">' +
