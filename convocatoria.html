@@ -6402,6 +6402,8 @@
         }
       }
       if (tabId === 'tabXml' && typeof refreshXmlSelects === 'function') refreshXmlSelects();
+      // Remember active tab
+      try { localStorage.setItem('convocatoria_activeTab', tabId); } catch(e) {}
     }
 
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
@@ -6414,6 +6416,14 @@
         }
       });
     });
+
+    // Restore last active tab on load
+    (function() {
+      var saved = localStorage.getItem('convocatoria_activeTab');
+      if (saved && document.querySelector('.tab-btn[data-tab="' + saved + '"]')) {
+        applyTabChange(saved);
+      }
+    })();
 
     // WAI-ARIA Tabs: Arrow key navigation (roving tabindex)
     document.querySelector('.tab-bar[role="tablist"]').addEventListener('keydown', function(e) {
