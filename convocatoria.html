@@ -5638,6 +5638,7 @@
             <span id="xmlParticipantCount" class="u-text-12 u-text-muted">0</span>
             <div class="u-flex-1"></div>
             <button class="btn btn-secondary u-text-12" id="btnXmlAddParticipant"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Añadir</button>
+            <button class="btn btn-secondary u-text-12" id="btnXmlRestoreAll" title="Restaurar todos los datos del organigrama">Restaurar todos</button>
             <div class="u-flex u-items-center u-gap-4">
               <label class="u-text-11 u-text-muted">Diploma masivo:</label>
               <select class="input-field u-text-12 u-w-60" id="xmlMassDiploma" aria-label="Diploma masivo">
@@ -17956,22 +17957,29 @@
       renderFundaeReadinessPanel(codigo);
     });
 
+    function getEmpField(emp, names) {
+      if (!emp) return '';
+      for (var i = 0; i < names.length; i++) {
+        if (emp[names[i]] != null && String(emp[names[i]]).trim()) return String(emp[names[i]]).trim();
+      }
+      return '';
+    }
+
     function buildParticipantRow(nif) {
       const emp = state.employees.find(e => e.NIF === nif);
 
-      // Use Empleado for display, _f_Nombre/_f_Apellidos for XML
       const row = {
         nif: nif,
         empleado: emp ? (emp.Empleado || '') : nif,
         tipoDocumento: detectTipoDocumento(nif),
-        email: emp ? (emp['Email trabajo'] || '') : '',
-        telefono: emp ? (emp['_f_Móvil trabajo (largo)'] || emp['_f_Teléfono personal'] || '') : '',
+        email: emp ? (emp['Email trabajo'] || emp['_f_Email trabajo'] || '') : '',
+        telefono: getEmpField(emp, ['_f_Móvil trabajo (largo)', '_f_Teléfono personal', 'Teléfono']),
         categoriaProfesional: emp ? mapCategoriaProfesional(emp['_f_' + COL_CATEGORIA_PROF]) : '',
         nivelEstudios: emp ? mapNivelEstudios(emp['_f_' + COL_NIVEL_ESTUDIOS]) : '',
-        grupoCotizacion: emp ? (emp['_f_Grupo Cotización'] || '') : '',
+        grupoCotizacion: getEmpField(emp, ['_f_Grupo Cotización', '_f_Grupo cotización', 'Grupo Cotización']),
         diploma: 'N',
-        costeHora: emp ? (emp['_f_Coste Salarial Hora'] || '') : '',
-        costeSS: emp ? (emp['_f_Coste aproximado SS'] || '') : '',
+        costeHora: getEmpField(emp, ['_f_Coste Salarial Hora', '_f_Coste salarial hora', '_f_Coste Hora', 'Coste Salarial Hora', 'Coste Hora']),
+        costeSS: getEmpField(emp, ['_f_Coste aproximado SS', '_f_Coste SS', 'Coste aproximado SS']),
         discapacidad: emp ? (emp['_f_DiscapacidadContrib'] === 'true' || emp['_f_DiscapacidadContrib'] === 'Sí' ? true : false) : false,
         // For XML generation
         nombre: emp ? (emp['_f_Nombre'] || '') : '',
@@ -18018,8 +18026,9 @@
             '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
             '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
           '</select></td>' +
-          '<td class="u-p-6 u-text-11 u-text-muted">' + esc(p.costeHora) + '</td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="costeHora" data-idx="' + idx + '" value="' + esc(p.costeHora) + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:60px;" aria-label="Coste/hora"></td>' +
           '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + ' aria-label="Discapacidad"></td>' +
+          '<td class="u-p-6"><button class="link-btn xmlRestoreRow u-text-xs" data-idx="' + idx + '" title="Restaurar datos del organigrama" style="color:var(--accent);">' + Icons.refresh(12) + '</button></td>' +
         '</tr>';
       }).join('');
 
@@ -18043,9 +18052,29 @@
           renderXmlParticipants();
         });
       });
+
+      // Bind per-row restore buttons
+      tbody.querySelectorAll('.xmlRestoreRow').forEach(btn => {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(this.dataset.idx);
+          var nif = xmlState.participantes[idx].nif;
+          var fresh = buildParticipantRow(nif);
+          xmlState.participantes[idx] = fresh;
+          renderXmlParticipants();
+          showToast('Datos restaurados del organigrama para ' + esc(fresh.empleado), 'success');
+        });
+      });
     }
 
-    // Add participant button - reuses showParticipantPicker from Task 8
+    // Restore all participants from organigrama
+    document.getElementById('btnXmlRestoreAll').addEventListener('click', function() {
+      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'info'); return; }
+      xmlState.participantes = xmlState.participantes.map(function(p) { return buildParticipantRow(p.nif); });
+      renderXmlParticipants();
+      showToast('Datos de ' + xmlState.participantes.length + ' participantes restaurados del organigrama', 'success');
+    });
+
+    // Add participant button
     document.getElementById('btnXmlAddParticipant').addEventListener('click', function() {
       if (!state.employees || state.employees.length === 0) {
         showToast('Carga el organigrama primero en la pestaña Convocatoria', 'warning');
