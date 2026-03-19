@@ -5505,25 +5505,17 @@
           <details class="form-section" open>
             <summary>Datos del grupo</summary>
             <div class="form-section-body">
-              <div class="form-group" style="position:relative;">
-                <label class="form-label">ID Grupo</label>
-                <input class="input-field u-text-13" type="text" id="xmlIdGrupo" placeholder="Ej: 1" data-required="true" aria-required="true" aria-label="ID Grupo">
-                <span class="field-tooltip">Identificador numérico del grupo formativo dentro de la acción (normalmente 1)</span>
-              </div>
+              <!-- ID Grupo se genera automáticamente desde codigoGrupo de la acción -->
+              <input type="hidden" id="xmlIdGrupo" value="1">
               <div class="form-group" style="position:relative;">
                 <label class="form-label">Descripción</label>
                 <input class="input-field u-text-13" type="text" id="xmlDescripcion" aria-label="Descripción">
                 <span class="field-tooltip">Descripción libre del grupo formativo (se incluirá en el XML)</span>
               </div>
+              <!-- Responsable y teléfono se leen de Settings (configuración global) -->
+              <input type="hidden" id="xmlResponsable">
+              <input type="hidden" id="xmlTelefono">
               <div class="form-group" style="position:relative;">
-                <label class="form-label">Responsable</label>
-                <input class="input-field u-text-13" type="text" id="xmlResponsable" data-required="true" aria-required="true" aria-label="Responsable">
-                <span class="field-tooltip">Persona responsable de la gestión de la formación bonificada ante FUNDAE</span>
-              </div>
-              <div class="form-group" style="position:relative;">
-                <label class="form-label">Teléfono contacto</label>
-                <input class="input-field u-text-13" type="text" id="xmlTelefono" data-required="true" aria-required="true" aria-label="Teléfono contacto">
-                <span class="field-tooltip">Teléfono de contacto del responsable (9 dígitos, sin espacios ni prefijo)</span>
               </div>
               <div class="form-group">
                 <label class="form-label">Informa RLT</label>
@@ -6041,6 +6033,15 @@
               <option value="dark">Oscuro</option>
               <option value="system">Sistema</option>
             </select>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">FUNDAE</div>
+            <label class="settings-label" for="settingsFundaeResponsable">Responsable formación bonificada</label>
+            <div class="settings-desc">Persona responsable de la gestión ante FUNDAE (se usará en todos los XML).</div>
+            <input type="text" id="settingsFundaeResponsable" class="input-field u-text-13" placeholder="Nombre y apellidos" style="max-width:300px;">
+            <label class="settings-label u-mt-8" for="settingsFundaeTelefono">Teléfono de contacto</label>
+            <div class="settings-desc">Teléfono del responsable (9 dígitos).</div>
+            <input type="text" id="settingsFundaeTelefono" class="input-field u-text-13" placeholder="976123456" style="max-width:200px;">
           </div>
           <div class="settings-group">
             <div class="settings-group-title">Sincronización</div>
@@ -17293,6 +17294,8 @@
       document.getElementById('settingsSyncConvocatoria').checked = settings.syncConvocatoriaAccion !== false;
       document.getElementById('settingsProactiveAlerts').checked = settings.proactiveAlerts === true;
       document.getElementById('themeSelect').value = settings.theme || 'light';
+      document.getElementById('settingsFundaeResponsable').value = settings.fundaeResponsable || '';
+      document.getElementById('settingsFundaeTelefono').value = settings.fundaeTelefono || '';
       renderSettingsUnifiedTemplates();
       renderEmpresasGrupoSettings();
       document.getElementById('settingsDialog').classList.add('visible');
@@ -17328,8 +17331,10 @@
       const syncConvocatoriaAccion = document.getElementById('settingsSyncConvocatoria').checked;
       const proactiveAlerts = document.getElementById('settingsProactiveAlerts').checked;
       const theme = document.getElementById('themeSelect').value;
+      const fundaeResponsable = document.getElementById('settingsFundaeResponsable').value.trim();
+      const fundaeTelefono = document.getElementById('settingsFundaeTelefono').value.trim();
       var prev = loadSettings();
-      saveSettings(Object.assign(prev, { webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion, proactiveAlerts, theme }));
+      saveSettings(Object.assign(prev, { webhookUrl, formsUrl, formsQuestionId, diasAvisoInicio, diasAvisoFin, syncConvocatoriaAccion, proactiveAlerts, theme, fundaeResponsable, fundaeTelefono }));
       applyTheme(theme);
       document.getElementById('settingsDialog').classList.remove('visible');
       showToast('Ajustes guardados', 'success');
@@ -17962,6 +17967,17 @@
 
       // Pre-fill group defaults saved from last generation for this empresa
       applyXmlGroupDefaults(accion.empresaPagadora || '');
+
+      // Auto-fill responsable and teléfono from global settings
+      var sett = loadSettings();
+      if (sett.fundaeResponsable) document.getElementById('xmlResponsable').value = sett.fundaeResponsable;
+      if (sett.fundaeTelefono) document.getElementById('xmlTelefono').value = sett.fundaeTelefono;
+
+      // Auto-fill ID Grupo from codigoGrupo
+      if (accion.codigoGrupo) {
+        var grNum = accion.codigoGrupo.split('-')[1];
+        if (grNum) document.getElementById('xmlIdGrupo').value = grNum.replace(/^0+/, '') || '1';
+      }
 
       // Build participant rows from linked NIFs
       const nifs = accion.participantes || [];
