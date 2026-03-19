@@ -5690,6 +5690,8 @@
           <span class="cal-period" id="calPeriodLabel"></span>
         </div>
         <div class="cal-zoom">
+          <button class="cal-zoom-btn" data-zoom="day">Día</button>
+          <button class="cal-zoom-btn" data-zoom="week">Semana</button>
           <button class="cal-zoom-btn" data-zoom="month">Mes</button>
           <button class="cal-zoom-btn active" data-zoom="quarter">Trimestre</button>
           <button class="cal-zoom-btn" data-zoom="year">Año</button>
@@ -23688,7 +23690,11 @@
 
       document.getElementById('calPrev').addEventListener('click', function() {
         var d = calState.anchorDate;
-        if (calState.zoom === 'month') {
+        if (calState.zoom === 'day') {
+          calState.anchorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+        } else if (calState.zoom === 'week') {
+          calState.anchorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7);
+        } else if (calState.zoom === 'month') {
           calState.anchorDate = new Date(d.getFullYear(), d.getMonth() - 2, 1);
         } else if (calState.zoom === 'quarter') {
           calState.anchorDate = new Date(d.getFullYear(), d.getMonth() - 3, 1);
@@ -23700,7 +23706,11 @@
 
       document.getElementById('calNext').addEventListener('click', function() {
         var d = calState.anchorDate;
-        if (calState.zoom === 'month') {
+        if (calState.zoom === 'day') {
+          calState.anchorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        } else if (calState.zoom === 'week') {
+          calState.anchorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7);
+        } else if (calState.zoom === 'month') {
           calState.anchorDate = new Date(d.getFullYear(), d.getMonth() + 2, 1);
         } else if (calState.zoom === 'quarter') {
           calState.anchorDate = new Date(d.getFullYear(), d.getMonth() + 3, 1);
@@ -23971,7 +23981,15 @@
       // Calculate visible range
       var anchor = calState.anchorDate;
       var rangeStart, rangeEnd;
-      if (calState.zoom === 'month') {
+      if (calState.zoom === 'day') {
+        rangeStart = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+        rangeEnd = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+      } else if (calState.zoom === 'week') {
+        var dow = anchor.getDay();
+        var monday = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - (dow === 0 ? 6 : dow - 1));
+        rangeStart = new Date(monday);
+        rangeEnd = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      } else if (calState.zoom === 'month') {
         rangeStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
         rangeEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 2, 0);
       } else if (calState.zoom === 'quarter') {
@@ -23985,7 +24003,13 @@
 
       // Period label
       var label = '';
-      if (calState.zoom === 'month') {
+      if (calState.zoom === 'day') {
+        label = anchor.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      } else if (calState.zoom === 'week') {
+        var wEnd = new Date(rangeEnd);
+        label = 'Semana ' + rangeStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' \u2013 ' + wEnd.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+      } else if (calState.zoom === 'month') {
         var m1 = rangeStart.toLocaleDateString('es-ES', { month: 'long' });
         var m2 = new Date(rangeStart.getFullYear(), rangeStart.getMonth() + 1, 1).toLocaleDateString('es-ES', { month: 'long' });
         label = m1.charAt(0).toUpperCase() + m1.slice(1) + ' \u2013 ' + m2.charAt(0).toUpperCase() + m2.slice(1) + ' ' + rangeStart.getFullYear();
@@ -24029,20 +24053,41 @@
       // Time calculations
       var totalDays = Math.max(Math.round((rangeEnd - rangeStart) / 86400000) + 1, 1);
 
-      // Generate month columns
+      // Generate time columns (days for day/week, months for wider views)
       var months = [];
-      var cursor = new Date(rangeStart);
-      while (cursor <= rangeEnd) {
-        var monthStart = new Date(cursor);
-        var monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
-        if (monthEnd > rangeEnd) monthEnd = rangeEnd;
-        var daysInMonth = Math.round((monthEnd - monthStart) / 86400000) + 1;
-        months.push({
-          label: monthStart.toLocaleDateString('es-ES', { month: 'long', year: calState.zoom === 'year' ? '2-digit' : undefined }),
-          widthPct: (daysInMonth / totalDays) * 100,
-          startDay: Math.round((monthStart - rangeStart) / 86400000)
-        });
-        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      if (calState.zoom === 'day' || calState.zoom === 'week') {
+        // Show individual days
+        var dayCursor = new Date(rangeStart);
+        while (dayCursor <= rangeEnd) {
+          var dayNames = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+          var dayLabel = dayNames[dayCursor.getDay()] + ' ' + dayCursor.getDate();
+          if (calState.zoom === 'week') {
+            dayLabel = dayNames[dayCursor.getDay()] + ' ' + dayCursor.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+          } else {
+            dayLabel = dayCursor.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            dayLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+          }
+          months.push({
+            label: dayLabel,
+            widthPct: (1 / totalDays) * 100,
+            startDay: Math.round((dayCursor - rangeStart) / 86400000)
+          });
+          dayCursor = new Date(dayCursor.getFullYear(), dayCursor.getMonth(), dayCursor.getDate() + 1);
+        }
+      } else {
+        var cursor = new Date(rangeStart);
+        while (cursor <= rangeEnd) {
+          var monthStart = new Date(cursor);
+          var monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+          if (monthEnd > rangeEnd) monthEnd = rangeEnd;
+          var daysInMonth = Math.round((monthEnd - monthStart) / 86400000) + 1;
+          months.push({
+            label: monthStart.toLocaleDateString('es-ES', { month: 'long', year: calState.zoom === 'year' ? '2-digit' : undefined }),
+            widthPct: (daysInMonth / totalDays) * 100,
+            startDay: Math.round((monthStart - rangeStart) / 86400000)
+          });
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        }
       }
 
       // Grouping
@@ -24088,7 +24133,7 @@
       }
 
       // Build HTML — min-width enables horizontal scroll + drag-to-pan
-      var pxPerDay = calState.zoom === 'year' ? 8 : calState.zoom === 'quarter' ? 15 : 20;
+      var pxPerDay = calState.zoom === 'day' ? 200 : calState.zoom === 'week' ? 80 : calState.zoom === 'year' ? 8 : calState.zoom === 'quarter' ? 15 : 20;
       var ganttMinWidth = totalDays * pxPerDay;
       var html = '<div class="cal-timeline-inner" style="min-width:' + ganttMinWidth + 'px;">';
 
@@ -24174,15 +24219,28 @@
           var dur = Math.max(Math.round((clampEnd - clampStart) / 86400000) + 1, 1);
           var leftPct = (dayOffset / totalDays) * 100;
           var widthPct = (dur / totalDays) * 100;
+          // Minimum bar width: at least 30px equivalent in percentage
+          var minWidthPct = (30 / ganttMinWidth) * 100;
+          if (widthPct < minWidthPct) widthPct = minWidthPct;
           var barColor = CAL_ESTADO_COLORS[item.estado] || DS.accent;
           var isSel = calState.selectedCodigo === item.codigo;
           var barTop = item._lane * rowHeight + Math.floor((rowHeight - barHeight) / 2);
+
+          // Bar label: add date info for day/week views
+          var barLabel = item.nombre;
+          if (calState.zoom === 'day' || calState.zoom === 'week') {
+            var dateStr = item.fechaInicio.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            if (item.rawInicio !== item.rawFin) {
+              dateStr += ' \u2192 ' + item.fechaFin.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            }
+            barLabel = item.nombre + ' \u00B7 ' + dateStr;
+          }
 
           html += '<div class="cal-bar' + (isSel ? ' selected' : '') + '" ' +
             'data-codigo="' + esc(item.codigo) + '" ' +
             'title="' + esc((item.nombre || item.codigo) + ' \u2014 Doble clic para ver en cat\u00e1logo') + '" ' +
             'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + barTop + 'px; height:' + barHeight + 'px; line-height:' + barHeight + 'px; background:' + barColor + '; cursor:pointer;">' +
-            esc(item.nombre) +
+            esc(barLabel) +
           '</div>';
         });
 
