@@ -9064,9 +9064,9 @@
           select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
           '</div></details>' +
 
-        // 2. Participantes y sesiones (collapsed)
+        // 2. Participantes (collapsed)
         '<details class="catalog-details">' +
-          '<summary>Participantes y sesiones</summary>' +
+          '<summary>Participantes <span class="u-text-xs u-text-muted u-ml-4">(' + (record.participantes || []).length + ')</span></summary>' +
           '<div class="catalog-details-body">' +
           '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
             '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
@@ -9074,9 +9074,20 @@
           '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
           '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
           ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
+          '</div></details>' +
+
+        // 3. Asistencia (collapsed)
+        '<details class="catalog-details">' +
+          '<summary>Asistencia <span class="u-text-xs u-text-muted u-ml-4">(' + ((record.asistencia && record.asistencia.sesiones) || []).length + ' sesiones)</span></summary>' +
+          '<div class="catalog-details-body">' +
           renderAsistenciaHtml(record) +
+          '</div></details>' +
+
+        // 4. Notas (collapsed)
+        '<details class="catalog-details">' +
+          '<summary>Notas <span class="u-text-xs u-text-muted u-ml-4">(' + (record.notas || []).length + ')</span></summary>' +
+          '<div class="catalog-details-body">' +
           renderNotasTimelineHtml(record) +
-          renderConfirmacionesHtml(record) +
           '</div></details>' +
 
         // 3. Datos FUNDAE (collapsed)
