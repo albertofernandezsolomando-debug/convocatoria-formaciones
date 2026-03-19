@@ -18048,7 +18048,7 @@
             '<option value="N"' + (p.diploma === 'N' ? ' selected' : '') + '>N</option>' +
             '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
           '</select></td>' +
-          '<td style="padding:6px;"><input class="input-field" data-field="costeHora" data-idx="' + idx + '" value="' + esc(p.costeHora ? parseFloat(p.costeHora).toFixed(2) + ' \u20AC' : '') + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:80px;" aria-label="Coste/hora"></td>' +
+          '<td style="padding:6px;"><input class="input-field" data-field="costeHora" data-idx="' + idx + '" value="' + esc(p.costeHora ? parseFloat(p.costeHora).toFixed(2) : '') + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:70px;" aria-label="Coste/hora">' + (p.costeHora ? ' <span class="u-text-xs u-text-muted">\u20AC</span>' : '') + '</td>' +
           '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + ' aria-label="Discapacidad"></td>' +
           '<td class="u-p-6"><button class="link-btn xmlRestoreRow u-text-xs" data-idx="' + idx + '" title="Restaurar datos del organigrama" style="color:var(--accent);">' + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' + '</button></td>' +
         '</tr>';
