@@ -17894,10 +17894,16 @@
       // Populate acción select
       const acciones = getCatalog('acciones');
       const accionSel = document.getElementById('xmlAccionSelect');
-      const currentVal = accionSel.value;
+      const currentVal = accionSel.value || localStorage.getItem('convocatoria_xmlSelectedAccion') || '';
       accionSel.innerHTML = '<option value="">-- Seleccionar acción --</option>' +
         acciones.map(a => '<option value="' + esc(a.codigo) + '">' + esc(a.nombre || a.codigo) + '</option>').join('');
-      if (currentVal) accionSel.value = currentVal;
+      if (currentVal) {
+        accionSel.value = currentVal;
+        // Trigger change to reload participants if restored from localStorage
+        if (accionSel.value === currentVal && xmlState.participantes.length === 0) {
+          accionSel.dispatchEvent(new Event('change'));
+        }
+      }
 
       // Populate centro select
       const centros = getCatalog('centros');
@@ -17918,6 +17924,8 @@
 
     document.getElementById('xmlAccionSelect').addEventListener('change', function() {
       const codigo = this.value;
+      // Remember selected action
+      try { localStorage.setItem('convocatoria_xmlSelectedAccion', codigo || ''); } catch(e) {}
       if (!codigo) {
         xmlState.participantes = [];
         renderXmlParticipants();
@@ -17967,6 +17975,13 @@
 
     function buildParticipantRow(nif) {
       const emp = state.employees.find(e => e.NIF === nif);
+      // Debug: log available cost fields for first participant
+      if (emp && !buildParticipantRow._logged) {
+        var costKeys = Object.keys(emp).filter(function(k) { return k.toLowerCase().indexOf('coste') !== -1 || k.toLowerCase().indexOf('cost') !== -1 || k.toLowerCase().indexOf('hora') !== -1 || k.toLowerCase().indexOf('salarial') !== -1; });
+        if (costKeys.length > 0) console.log('COST FIELDS for ' + nif + ':', costKeys.map(function(k) { return k + '=' + emp[k]; }));
+        else console.log('NO COST FIELDS found. Sample keys:', Object.keys(emp).slice(0, 20));
+        buildParticipantRow._logged = true;
+      }
 
       const row = {
         nif: nif,
