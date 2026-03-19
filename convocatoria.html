@@ -7879,25 +7879,34 @@
     // FUNDAE CODE AUTO-GENERATION
     // ═══════════════════════════════════
 
+    // Convert internal code (AF2026108) to FUNDAE numeric code (26108)
+    function toFundaeCode(codigo) {
+      if (!codigo) return '';
+      // Strip common prefixes: AF20, AF, then return digits only
+      return String(codigo).replace(/^AF20/i, '').replace(/^AF/i, '').replace(/^20(\d{4,})$/, '$1');
+    }
+
     // codAccion = YY + NNN (year 2-digit + sequential 3-digit padded)
     // codigoGrupo = NNN-01 (sequential part + group 01)
     function generateActionCodes() {
-      var yearPrefix = String(new Date().getFullYear()).slice(-2);
+      var year = new Date().getFullYear();
+      var yearPrefix = String(year).slice(-2); // "26"
+      var fullPrefix = 'AF' + year; // "AF2026"
       var existing = getCatalog('acciones');
       var maxSeq = 0;
       existing.forEach(function(r) {
-        var code = String(r.codigo || '');
+        var fundaeCode = toFundaeCode(r.codigo || '');
         // Only consider codes with current year prefix (YYNNN format)
-        if (code.length >= 3 && code.indexOf(yearPrefix) === 0) {
-          var seq = parseInt(code.slice(2), 10);
+        if (fundaeCode.length >= 3 && fundaeCode.indexOf(yearPrefix) === 0) {
+          var seq = parseInt(fundaeCode.slice(2), 10);
           if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
         }
       });
       var nextSeq = maxSeq + 1;
       var seqStr = String(nextSeq).padStart(3, '0');
       return {
-        codigo: yearPrefix + seqStr,
-        codigoGrupo: seqStr + '-01',
+        codigo: fullPrefix + seqStr, // AF2026109
+        codigoGrupo: seqStr + '-01', // 109-01
         seq: nextSeq
       };
     }
@@ -7916,7 +7925,8 @@
         }
       });
       var parentRecord = existing.find(function(r) { return r.codigo === parentCodigo; });
-      var seqPart = parentRecord ? parentRecord.codigo.slice(2).padStart(3, '0') : '000';
+      var fundaeCode = parentRecord ? toFundaeCode(parentRecord.codigo) : '';
+      var seqPart = fundaeCode ? fundaeCode.slice(2).padStart(3, '0') : '000';
       return seqPart + '-' + String(maxGroup + 1).padStart(2, '0');
     }
 
@@ -9027,7 +9037,7 @@
         body = '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
           '<div class="catalog-details-body">' +
-          field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: '1-5 dígitos' }) +
+          field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
           field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
           select('Estado', 'estado', record.estado || '', [
             { value: 'Planificada', label: 'Planificada' },
@@ -11462,7 +11472,7 @@
         }
 
         if (!record.codigo) markError('codigo', 'El código de acción es obligatorio');
-        else if (!/^\d{1,8}$/.test(record.codigo)) markError('codigo', 'El código de acción debe ser numérico (formato AANNN, ej: 26011)');
+        else if (!/^(AF\d{7,}|\d{1,8})$/i.test(record.codigo)) markError('codigo', 'Formato: AF2026001 o 26001');
 
         if (record.nombre && record.nombre.length > 255) markError('nombre', 'El nombre no puede superar 255 caracteres');
 
@@ -18409,7 +18419,7 @@
       const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<AccionesFormativas>\n' +
         '  <AccionFormativa>\n' +
-        '    <codAccion>' + e(accion.codigo) + '</codAccion>\n' +
+        '    <codAccion>' + e(toFundaeCode(accion.codigo)) + '</codAccion>\n' +
         '    <nombreAccion>' + e(accion.nombre) + '</nombreAccion>\n' +
         '    <codGrupoAccion>' + e(accion.codigoGrupo) + '</codGrupoAccion>\n' +
         (accion.areaProfesional ? '    <codAreaProfesional>' + e(accion.areaProfesional) + '</codAreaProfesional>\n' : '') +
@@ -18560,7 +18570,7 @@
       const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<grupos>\n' +
         '  <grupo>\n' +
-        '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
+        '    <idAccion>' + e(toFundaeCode(accion.codigo)) + '</idAccion>\n' +
         '    <idGrupo>' + e(grupoData.idGrupo) + '</idGrupo>\n' +
         '    <descripcion>' + e(grupoData.descripcion) + '</descripcion>\n' +
         '    <NumeroParticipante>' + e(String(xmlState.participantes.length)) + '</NumeroParticipante>\n' +
@@ -18668,7 +18678,7 @@
       const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<grupos>\n' +
         '  <grupo>\n' +
-        '    <idAccion>' + e(accion.codigo) + '</idAccion>\n' +
+        '    <idAccion>' + e(toFundaeCode(accion.codigo)) + '</idAccion>\n' +
         '    <idGrupo>' + e(idGrupo) + '</idGrupo>\n' +
         '    <participantes>\n' +
         participantesXml + '\n' +
