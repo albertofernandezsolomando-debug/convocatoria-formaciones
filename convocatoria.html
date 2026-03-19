@@ -6417,13 +6417,7 @@
       });
     });
 
-    // Restore last active tab on load
-    (function() {
-      var saved = localStorage.getItem('convocatoria_activeTab');
-      if (saved && document.querySelector('.tab-btn[data-tab="' + saved + '"]')) {
-        applyTabChange(saved);
-      }
-    })();
+    // Tab restore is deferred to end of script (functions must be defined first)
 
     // WAI-ARIA Tabs: Arrow key navigation (roving tabindex)
     document.querySelector('.tab-bar[role="tablist"]').addEventListener('keydown', function(e) {
@@ -25717,6 +25711,14 @@
         updateDashboardAlerts(alerts);
       }
     }, 60 * 60 * 1000);
+
+    // Restore last active tab on load (must be at end — all functions defined)
+    (function() {
+      var saved = localStorage.getItem('convocatoria_activeTab');
+      if (saved && saved !== 'tabConvocatoria' && document.querySelector('.tab-btn[data-tab="' + saved + '"]')) {
+        applyTabChange(saved);
+      }
+    })();
 
   </script>
 </body>
