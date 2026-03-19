@@ -24411,17 +24411,14 @@
         }
         return nif;
       });
-      var maxVisible = 5;
-      var visibleNames = participantNames.slice(0, maxVisible);
-      var remaining = participantNames.length - maxVisible;
-      var participantListHtml = visibleNames.map(function(name) {
-        return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
-      }).join('');
-      if (remaining > 0) {
-        participantListHtml += '<div class="u-text-xs" style="padding:1px 0; color:var(--text-muted);">+' + remaining + ' m\u00e1s</div>';
-      }
+      var participantListHtml = '';
       if (participantNIFs.length === 0) {
         participantListHtml = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
+      } else {
+        participantListHtml = '<div style="max-height:150px; overflow-y:auto;">' +
+          participantNames.map(function(name) {
+            return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
+          }).join('') + '</div>';
       }
 
       // Group context
@@ -24561,13 +24558,15 @@
             }
             return nif;
           });
-          var vis = newNames.slice(0, maxVisible);
-          var rem = newNames.length - maxVisible;
-          var html = vis.map(function(name) {
-            return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
-          }).join('');
-          if (rem > 0) html += '<div class="u-text-xs" style="padding:1px 0; color:var(--text-muted);">+' + rem + ' m\u00e1s</div>';
-          if (newNIFs.length === 0) html = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
+          var html = '';
+          if (newNIFs.length === 0) {
+            html = '<div class="u-text-xs" style="color:var(--text-muted); font-style:italic;">Sin participantes</div>';
+          } else {
+            html = '<div style="max-height:150px; overflow-y:auto;">' +
+              newNames.map(function(name) {
+                return '<div class="u-text-xs" style="padding:1px 0; color:var(--text-secondary);">' + esc(name) + '</div>';
+              }).join('') + '</div>';
+          }
           var listEl = document.getElementById('calDetailParticipantList');
           if (listEl) listEl.innerHTML = html; // innerHTML OK: sanitized via esc()
 
