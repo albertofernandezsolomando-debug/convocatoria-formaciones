@@ -23811,14 +23811,33 @@
         }
       });
 
-      // Horizontal scroll with mouse wheel (vertical wheel → horizontal scroll on Gantt)
+      // Mouse wheel on Gantt: horizontal scroll if content overflows,
+      // otherwise navigate to next/prev period
       splitTop.addEventListener('wheel', function(e) {
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // native horizontal, let through
-        if (splitTop.scrollWidth > splitTop.clientWidth) {
-          splitTop.scrollLeft += e.deltaY;
+        var isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+        var delta = isHorizontal ? e.deltaX : e.deltaY;
+
+        if (splitTop.scrollWidth > splitTop.clientWidth + 5) {
+          // Content overflows: scroll horizontally
+          if (!isHorizontal) {
+            splitTop.scrollLeft += e.deltaY;
+            e.preventDefault();
+          }
+        } else {
+          // Content fits: navigate period with wheel
           e.preventDefault();
+          if (delta > 30) document.getElementById('calNext').click();
+          else if (delta < -30) document.getElementById('calPrev').click();
         }
       }, { passive: false });
+
+      // Arrow keys navigate periods when calendar tab is active
+      document.addEventListener('keydown', function(e) {
+        if (document.querySelector('.tab-btn[data-tab="tabCalendario"][aria-selected="true"]') === null) return;
+        if (e.target.matches('input, select, textarea')) return;
+        if (e.key === 'ArrowLeft') { document.getElementById('calPrev').click(); e.preventDefault(); }
+        else if (e.key === 'ArrowRight') { document.getElementById('calNext').click(); e.preventDefault(); }
+      });
 
       var empInput = document.getElementById('calEmployeeSearch');
       var empClear = document.getElementById('calEmployeeClear');
