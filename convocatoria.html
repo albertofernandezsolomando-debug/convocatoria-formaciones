@@ -5591,8 +5591,8 @@
             <summary>Costes del grupo</summary>
             <div class="form-section-body">
               <div class="text-sm text-muted mb-md">Costes totales para el XML &lt;costes&gt;</div>
-              <div class="u-flex u-gap-8">
-                <div class="u-flex-1" style="position:relative;">
+              <div class="u-flex u-gap-8" style="flex-wrap:wrap;">
+                <div class="u-flex-1" style="position:relative; min-width:100px;">
                   <label class="form-label">Directos (&euro;)</label>
                   <input class="input-field u-text-13" type="number" id="xmlCostesDirectos" step="0.01" value="0" aria-label="Costes directos">
                   <span class="field-tooltip">Costes directos: honorarios del formador, materiales, alquiler de aula, etc.</span>
@@ -5605,7 +5605,7 @@
                 <div class="u-flex-1">
                   <label class="form-label">Salariales (&euro;)</label>
                   <div class="u-flex u-gap-4 u-items-center">
-                    <input class="input-field u-text-13 u-flex-1" type="number" id="xmlCostesSalariales" step="0.01" value="0" aria-label="Costes salariales">
+                    <input class="input-field u-text-13 u-flex-1" type="number" id="xmlCostesSalariales" step="0.01" value="0" style="min-width:80px;" aria-label="Costes salariales">
                     <button class="btn btn-secondary u-text-11 u-nowrap" id="btnCalcCostesSalariales" style="padding:6px 8px;" title="Calcular desde coste/hora de participantes">Calc.</button>
                   </div>
                 </div>
