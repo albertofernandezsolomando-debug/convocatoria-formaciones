@@ -154,8 +154,10 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `catalogState.expandedGroups` — estado expand/collapse de la vista lista (en memoria)
 - Calendario: groupBy `accionFormativa` agrupa por `item.parentAccion || item.codigo`
 - Botones "XML Acción/Inicio/Finalización" en la ficha generan XML directamente desde datos del catálogo
-- **Códigos FUNDAE**: `codAccion = YYNNN` (ej: `26011` = año 2026, acción 11). `codigoGrupo = NNN-MM` (ej: `011-01` = acción 11, grupo 1). Letra NIF calculable determinísticamente.
-- `informaRLT` en XML siempre "S" — campos `rltEstado`/`rltFechaEnvio` eliminados del modelo
+- Código interno: `AF2026108` (lo que usa la usuaria). Código FUNDAE: `26108` (para XML)
+- `toFundaeCode(codigo)` — strips `AF20` prefix para XML `<codAccion>` y `<idAccion>`
+- `generateActionCodes()` genera formato `AF2026NNN`. Validación acepta ambos formatos
+- `codigoGrupo` se auto-genera: `NNN-MM` (ej: `108-01` para AF2026108, grupo 1). Letra NIF: `"TRWAGMYFPDXBNJZSQVHLCKE"[parseInt(digits8, 10) % 23]`
 
 ## PDF Import y OCR (asistencia desde hojas de firmas)
 
@@ -165,6 +167,29 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - **Detección de firma**: análisis de ink runs (secuencias consecutivas de píxeles oscuros ≥3px). Dual threshold: lum<160 (toda tinta) + lum<140 (tinta oscura). NIF-matched: `r160>1.0 AND (r140>0.8 OR r160>3.0)`. Name-matched: `r140>1.5` + zona central 20%
 - **NO funciona**: densidad de tinta absoluta, varianza de sub-regiones, ratio relativo — el ruido del escáner genera baseline ~0.04 que solapa con firmas pequeñas
 - **CIFs de empresa** se filtran de la detección de NIF comparando contra `getEmpresasGrupo()`
+
+## Excel parsing gotchas
+
+- SheetJS preserva espacios en headers del Excel → hacer `trim()` de todas las keys del row antes de matchear contra `RELEVANT_COLUMNS` / `FUNDAE_COLUMNS`
+- Columnas con fórmulas Excel pueden estar vacías en SheetJS (no evalúa fórmulas). Fallback: calcular desde otros campos (ej: `costeHora = salarioFijo / 1720`)
+
+## FUNDAE reglas de negocio
+
+- Asistencia ≥75% de sesiones lectivas para bonificación. Participantes <75% excluidos del cálculo de costes salariales
+- `informaRLT` siempre "S". Campos `rltEstado`/`rltFechaEnvio` eliminados
+- Responsable FUNDAE y teléfono contacto: en `loadSettings().fundaeResponsable` / `loadSettings().fundaeTelefono` (configuración global)
+- Múltiples tutores permitidos por grupo (XSD: `maxOccurs="unbounded"`) — pendiente de implementar
+- ID Grupo: auto-generado desde `codigoGrupo`, campo hidden en XML tab
+
+## Tab persistence
+
+- `convocatoria_activeTab` en localStorage. Restaurar al FINAL del script (no al principio — las funciones de renderizado deben estar definidas)
+
+## Calendario
+
+- Zoom levels: day (200px/día), week (80px/día), month (20px), quarter (15px), year (8px)
+- Flechas ← → navegan períodos. Wheel: scroll horizontal si overflow, navega período si no
+- Mínimo 30px de ancho para barras (eventos de 1 día visibles en todas las vistas)
 
 ## Patrones JS
 
