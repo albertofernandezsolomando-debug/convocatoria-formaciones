@@ -5657,6 +5657,7 @@
                   <th class="u-xml-th">Grupo Cot.</th>
                   <th class="u-xml-th">Diploma</th>
                   <th class="u-xml-th">Coste/h</th>
+                  <th class="u-xml-th">Asist.</th>
                   <th class="u-xml-th">Discap.</th>
                 </tr>
               </thead>
@@ -18064,10 +18065,33 @@
       }
       emptyMsg.style.display = 'none';
 
+      // Get attendance data from the selected action
+      var selectedCodigo = document.getElementById('xmlAccionSelect').value;
+      var selectedAccion = selectedCodigo ? getCatalog('acciones').find(function(a) { return a.codigo === selectedCodigo; }) : null;
+      var registro = (selectedAccion && selectedAccion.asistencia && selectedAccion.asistencia.registro) || {};
+      var totalSesiones = (selectedAccion && selectedAccion.asistencia && selectedAccion.asistencia.sesiones) ? selectedAccion.asistencia.sesiones.length : 0;
+
       tbody.innerHTML = xmlState.participantes.map((p, idx) => { // innerHTML OK: sanitized via esc()
         const missingCat = !p.categoriaProfesional;
         const missingNivel = !p.nivelEstudios;
-        return '<tr class="u-border-bottom">' +
+        // Calculate attendance percentage
+        var attPct = 0;
+        var attLabel = '';
+        var attColor = 'var(--text-muted)';
+        var bonificable = true;
+        if (totalSesiones > 0) {
+          var reg = registro[p.nif];
+          if (reg) {
+            var attended = reg.filter(function(v) { return v === true; }).length;
+            attPct = Math.round((attended / totalSesiones) * 100);
+          }
+          attLabel = attPct + '%';
+          bonificable = attPct >= 75;
+          attColor = bonificable ? 'var(--success)' : 'var(--danger)';
+        } else {
+          attLabel = '-';
+        }
+        return '<tr class="u-border-bottom"' + (!bonificable ? ' style="opacity:0.6;"' : '') + '>' +
           '<td class="u-p-6"><button class="link-btn link-clear" data-remove-idx="' + idx + '" style="font-size:var(--font-size-xs); color:var(--danger);" aria-label="Eliminar"><span class="icon" aria-hidden="true">' + Icons.close(12) + '</span></button></td>' +
           '<td class="u-p-6 u-text-12">' + esc(p.empleado) + '</td>' +
           '<td style="padding:6px; font-size:var(--font-size-sm);">' + esc(p.nif) + '</td>' +
@@ -18086,6 +18110,7 @@
             '<option value="S"' + (p.diploma === 'S' ? ' selected' : '') + '>S</option>' +
           '</select></td>' +
           '<td style="padding:6px;"><input class="input-field" data-field="costeHora" data-idx="' + idx + '" value="' + esc(p.costeHora ? parseFloat(p.costeHora).toFixed(2) : '') + '" style="font-size:var(--font-size-xs); padding:3px 6px; width:70px;" aria-label="Coste/hora">' + (p.costeHora ? ' <span class="u-text-xs u-text-muted">\u20AC</span>' : '') + '</td>' +
+          '<td style="padding:6px; text-align:center;"><span class="u-text-xs u-font-600" style="color:' + attColor + ';">' + attLabel + (!bonificable && totalSesiones > 0 ? ' <span title="No bonificable: asistencia < 75%">&#x26A0;</span>' : '') + '</span></td>' +
           '<td style="padding:6px;"><input type="checkbox" data-field="discapacidad" data-idx="' + idx + '"' + (p.discapacidad ? ' checked' : '') + ' aria-label="Discapacidad"></td>' +
           '<td class="u-p-6"><button class="link-btn xmlRestoreRow u-text-xs" data-idx="' + idx + '" title="Restaurar datos del organigrama" style="color:var(--accent);">' + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' + '</button></td>' +
         '</tr>';
@@ -18176,19 +18201,35 @@
       var totalCoste = 0;
       var breakdown = [];
       var sinCoste = 0;
+      var excluidos = 0;
+      // Get attendance data for bonificación check
+      var attRegistro = (accion.asistencia && accion.asistencia.registro) || {};
+      var attSesiones = (accion.asistencia && accion.asistencia.sesiones) ? accion.asistencia.sesiones.length : 0;
+
       xmlState.participantes.forEach(function(p) {
+        // Check attendance ≥75% for bonificación
+        if (attSesiones > 0) {
+          var reg = attRegistro[p.nif];
+          var attended = reg ? reg.filter(function(v) { return v === true; }).length : 0;
+          var pct = Math.round((attended / attSesiones) * 100);
+          if (pct < 75) {
+            excluidos++;
+            return; // skip — not bonificable
+          }
+        }
         var costeHora = parseFloat(p.costeHora);
         if (!isNaN(costeHora) && costeHora > 0) {
           var costeParticipante = costeHora * totalHoras;
           totalCoste += costeParticipante;
-          breakdown.push(esc(p.empleado) + ': ' + costeHora.toFixed(2) + ' x ' + totalHoras + 'h = ' + costeParticipante.toFixed(2) + ' €');
+          breakdown.push(esc(p.empleado) + ': ' + costeHora.toFixed(2) + ' x ' + totalHoras + 'h = ' + costeParticipante.toFixed(2) + ' \u20AC');
         } else {
           sinCoste++;
         }
       });
       document.getElementById('xmlCostesSalariales').value = totalCoste.toFixed(2);
-      var msg = 'Costes salariales: ' + totalCoste.toFixed(2) + ' € (' + (xmlState.participantes.length - sinCoste) + ' participantes x ' + totalHoras + 'h)';
-      if (sinCoste > 0) msg += ' · ' + sinCoste + ' sin coste/hora';
+      var msg = 'Costes salariales: ' + totalCoste.toFixed(2) + ' \u20AC (' + (xmlState.participantes.length - sinCoste - excluidos) + ' participantes x ' + totalHoras + 'h)';
+      if (sinCoste > 0) msg += ' \u00B7 ' + sinCoste + ' sin coste/hora';
+      if (excluidos > 0) msg += ' \u00B7 ' + excluidos + ' excluidos (asistencia < 75%)';
       showToast(msg, 'success', 6000);
     });
 
