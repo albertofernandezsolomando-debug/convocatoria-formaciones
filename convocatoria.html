@@ -14082,20 +14082,6 @@
       };
     }
 
-    // Track which emails already received a survey for a given parent action
-    function getSurveySentKey(parentAccion) { return 'convocatoria_surveySent_' + (parentAccion || 'unknown'); }
-
-    function getSurveySentEmails(parentAccion) {
-      try { return JSON.parse(localStorage.getItem(getSurveySentKey(parentAccion)) || '[]'); } catch(e) { return []; }
-    }
-
-    function markSurveySentEmails(parentAccion, emails) {
-      var existing = getSurveySentEmails(parentAccion);
-      var merged = existing.slice();
-      emails.forEach(function(e) { if (merged.indexOf(e) === -1) merged.push(e); });
-      try { localStorage.setItem(getSurveySentKey(parentAccion), JSON.stringify(merged)); } catch(e) {}
-    }
-
     function sendSurveyEmail(event, emails) {
       if (!event.date || !event.endTime) {
         showToast('Completa la fecha y hora de fin del evento para programar la encuesta', 'warning', 6000);
@@ -14108,20 +14094,7 @@
         return;
       }
 
-      // Deduplicate: skip emails that already received a survey for this parent action
-      var parentAccion = event.parentAccion || event.accionCodigo || event.title || '';
-      var alreadySent = getSurveySentEmails(parentAccion);
-      var newEmails = emails.filter(function(e) { return alreadySent.indexOf(e) === -1; });
-      var skipped = emails.length - newEmails.length;
-      if (newEmails.length === 0) {
-        showToast('Todos los destinatarios ya tienen encuesta programada para esta acción', 'info', 5000);
-        return;
-      }
-      if (skipped > 0) {
-        showToast(skipped + ' destinatario' + (skipped > 1 ? 's' : '') + ' ya tenían encuesta — se envía a ' + newEmails.length + ' nuevos', 'info', 4000);
-      }
-
-      const payload = buildSurveyPayload(event, newEmails, settings.formsUrl, settings.formsQuestionId);
+      const payload = buildSurveyPayload(event, emails, settings.formsUrl, settings.formsQuestionId);
       payload.formsUrl = settings.formsUrl;
       payload.eventTitle = event.title || '';
       const endTime = event.endTime || '??:??';
@@ -14132,9 +14105,8 @@
         body: JSON.stringify(payload)
       }).then(function(r) {
         if (r.ok || r.status === 202) {
-          showToast('Encuesta programada para las ' + endTime + ' (' + newEmails.length + ' destinatarios)', 'success');
+          showToast('Encuesta programada para las ' + endTime, 'success');
           markSurveyScheduled(event.title, event.date);
-          markSurveySentEmails(parentAccion, newEmails);
           scheduleSurveyReminder(payload, settings.webhookUrl);
         } else {
           showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
