@@ -7927,7 +7927,7 @@
       });
       var parentRecord = existing.find(function(r) { return r.codigo === parentCodigo; });
       var fundaeCode = parentRecord ? toFundaeCode(parentRecord.codigo) : '';
-      var seqPart = fundaeCode ? fundaeCode.slice(2).padStart(3, '0') : '000';
+      var seqPart = fundaeCode ? fundaeCode.slice(-3).padStart(3, '0') : '000';
       return seqPart + '-' + String(maxGroup + 1).padStart(2, '0');
     }
 
@@ -9464,13 +9464,11 @@
               horaInicio: '',
               horaFin: ''
             };
-            // Build xmlState.participantes from record
             xmlState.participantes = (accion.participantes || []).map(function(nif) {
-              var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
               return buildParticipantRow(nif);
             });
             doGenXmlInicioGrupo(accion, grupoData);
-            renderCatalogForm(); // refresh flags
+            renderCatalogForm();
           });
         }
         var btnXmlFin = document.getElementById('btnFichaXmlFin');
@@ -9480,11 +9478,11 @@
             if (!accion) { showToast('Acción no encontrada', 'error'); return; }
             var grNum = accion.codigoGrupo ? accion.codigoGrupo.split('-')[1].replace(/^0/, '') : '1';
             xmlState.participantes = (accion.participantes || []).map(function(nif) {
-              var emp = (state.employees || []).find(function(e) { return e.NIF === nif; });
               return buildParticipantRow(nif);
             });
-            doGenXmlFinalizacion(accion, grNum);
-            renderCatalogForm(); // refresh flags
+            // Pass presupuesto as directos when calling from ficha (XML tab costs not available)
+            doGenXmlFinalizacion(accion, grNum, false, { directos: accion.presupuesto || '0', indirectos: '0', salariales: '0' });
+            renderCatalogForm();
           });
         }
 
@@ -10051,7 +10049,7 @@
       if (scanLines < 2) return { signed: true, runs: 0 };
 
       // Triple-metric: short runs (≥3px), long runs (≥6px), dark runs (lum<140, ≥3px)
-      var runs160 = 0, longRuns = 0, runs140 = 0;
+      var runs160 = 0, runs140 = 0;
 
       for (var py = startY; py < endY; py++) {
         var lineWidth = endX - startX;
@@ -10066,7 +10064,6 @@
           else {
             if (inD160 && rl160 < lineWidth * 0.6) {
               if (rl160 >= 3) runs160++;
-              if (rl160 >= 6) longRuns++;
             }
             inD160 = false; rl160 = 0;
           }
@@ -10074,12 +10071,11 @@
           if (lum < 140) { inD140 = true; rl140++; }
           else { if (inD140 && rl140 >= 3 && rl140 < lineWidth * 0.6) runs140++; inD140 = false; rl140 = 0; }
         }
-        if (inD160 && rl160 < lineWidth * 0.6) { if (rl160 >= 3) runs160++; if (rl160 >= 6) longRuns++; }
+        if (inD160 && rl160 >= 3 && rl160 < lineWidth * 0.6) runs160++;
         if (inD140 && rl140 >= 3 && rl140 < lineWidth * 0.6) runs140++;
       }
 
       var rpl160 = runs160 / scanLines;
-      var rplLong = longRuns / scanLines;
       var rpl140 = runs140 / scanLines;
       return { r160: rpl160, r140: rpl140 };
     }
@@ -11611,8 +11607,8 @@
           }
         }
 
-        // Rule 2: fechaInicio <= hoy + state is pre-start → En marcha
-        if (fi && fi <= today && ['Planificada', 'Pendiente', 'En preparación', 'Convocada', ''].indexOf(oldEstado) !== -1 && a.estado !== 'Terminada') {
+        // Rule 2: fechaInicio <= hoy AND not ended → En marcha
+        if (fi && fi <= today && (!ff || ff >= today) && ['Planificada', 'Pendiente', 'En preparación', 'Convocada', ''].indexOf(oldEstado) !== -1 && a.estado !== 'Terminada') {
           a.estado = 'En marcha';
           transitions.push(esc(a.codigo) + ': ' + (oldEstado || '(vacío)') + ' \u2192 En marcha');
         }
@@ -11837,7 +11833,7 @@
         return { employees: [], errors };
       }
 
-      const headers = Object.keys(rows[0]);
+      const headers = Object.keys(rows[0]).map(function(k) { return k.trim(); });
       const missing = RELEVANT_COLUMNS.filter(c => !headers.includes(c));
       if (missing.length > 0) {
         const found = RELEVANT_COLUMNS.length - missing.length;
@@ -14086,6 +14082,20 @@
       };
     }
 
+    // Track which emails already received a survey for a given parent action
+    function getSurveySentKey(parentAccion) { return 'convocatoria_surveySent_' + (parentAccion || 'unknown'); }
+
+    function getSurveySentEmails(parentAccion) {
+      try { return JSON.parse(localStorage.getItem(getSurveySentKey(parentAccion)) || '[]'); } catch(e) { return []; }
+    }
+
+    function markSurveySentEmails(parentAccion, emails) {
+      var existing = getSurveySentEmails(parentAccion);
+      var merged = existing.slice();
+      emails.forEach(function(e) { if (merged.indexOf(e) === -1) merged.push(e); });
+      try { localStorage.setItem(getSurveySentKey(parentAccion), JSON.stringify(merged)); } catch(e) {}
+    }
+
     function sendSurveyEmail(event, emails) {
       if (!event.date || !event.endTime) {
         showToast('Completa la fecha y hora de fin del evento para programar la encuesta', 'warning', 6000);
@@ -14098,7 +14108,20 @@
         return;
       }
 
-      const payload = buildSurveyPayload(event, emails, settings.formsUrl, settings.formsQuestionId);
+      // Deduplicate: skip emails that already received a survey for this parent action
+      var parentAccion = event.parentAccion || event.accionCodigo || event.title || '';
+      var alreadySent = getSurveySentEmails(parentAccion);
+      var newEmails = emails.filter(function(e) { return alreadySent.indexOf(e) === -1; });
+      var skipped = emails.length - newEmails.length;
+      if (newEmails.length === 0) {
+        showToast('Todos los destinatarios ya tienen encuesta programada para esta acción', 'info', 5000);
+        return;
+      }
+      if (skipped > 0) {
+        showToast(skipped + ' destinatario' + (skipped > 1 ? 's' : '') + ' ya tenían encuesta — se envía a ' + newEmails.length + ' nuevos', 'info', 4000);
+      }
+
+      const payload = buildSurveyPayload(event, newEmails, settings.formsUrl, settings.formsQuestionId);
       payload.formsUrl = settings.formsUrl;
       payload.eventTitle = event.title || '';
       const endTime = event.endTime || '??:??';
@@ -14109,8 +14132,9 @@
         body: JSON.stringify(payload)
       }).then(function(r) {
         if (r.ok || r.status === 202) {
-          showToast('Encuesta programada para las ' + endTime, 'success');
+          showToast('Encuesta programada para las ' + endTime + ' (' + newEmails.length + ' destinatarios)', 'success');
           markSurveyScheduled(event.title, event.date);
+          markSurveySentEmails(parentAccion, newEmails);
           scheduleSurveyReminder(payload, settings.webhookUrl);
         } else {
           showToast('Power Automate respondió con error ' + r.status + '. Revisa el flujo', 'error', 6000);
@@ -17142,7 +17166,7 @@
             return;
           }
 
-          const headers = Object.keys(rows[0]);
+          const headers = Object.keys(rows[0]).map(function(k) { return k.trim(); });
           if (!headers.includes('NIF')) {
             showToast('El fichero externo necesita una columna "NIF" para poder cruzar datos.', 'error');
             return;
@@ -18697,7 +18721,7 @@
 
     // ─── 3. genXmlFinalizacion ───
 
-    function doGenXmlFinalizacion(accion, idGrupo, returnOnly) {
+    function doGenXmlFinalizacion(accion, idGrupo, returnOnly, costesOverride) {
       const e = v => esc(String(v || ''));
 
       const participantesXml = xmlState.participantes.map(p =>
@@ -18712,9 +18736,9 @@
         '      </participante>'
       ).join('\n');
 
-      const costesDirectos = document.getElementById('xmlCostesDirectos').value || '0';
-      const costesIndirectos = document.getElementById('xmlCostesIndirectos').value || '0';
-      const costesSalariales = document.getElementById('xmlCostesSalariales').value || '0';
+      const costesDirectos = costesOverride ? (costesOverride.directos || '0') : (document.getElementById('xmlCostesDirectos').value || '0');
+      const costesIndirectos = costesOverride ? (costesOverride.indirectos || '0') : (document.getElementById('xmlCostesIndirectos').value || '0');
+      const costesSalariales = costesOverride ? (costesOverride.salariales || '0') : (document.getElementById('xmlCostesSalariales').value || '0');
 
       const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<grupos>\n' +
