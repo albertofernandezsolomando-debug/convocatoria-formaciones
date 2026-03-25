@@ -9374,9 +9374,10 @@
           ]) +
           field('Departamento', 'departamento', v('departamento')) +
           select('Empresa pagadora', 'empresaPagadora', record.empresaPagadora || '', empresaOpts) +
-          (showAsParent ? '<div class="u-text-11 u-text-muted u-mb-4" style="font-style:italic;">Fechas informativas \u2014 las fechas reales se definen en cada grupo</div>' : '') +
-          field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
-          field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' }) +
+          (showAsParent ? '' :
+            field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
+            field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' })
+          ) +
           '<div id="cf_horasPresencialesWrap" style="' + (showPresencial ? '' : 'display:none;') + '">' +
             field('Horas presenciales', 'horasPresenciales', v('horasPresenciales'), { type: 'number' }) +
           '</div>' +
