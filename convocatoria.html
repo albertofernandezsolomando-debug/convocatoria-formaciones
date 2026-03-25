@@ -3292,7 +3292,7 @@
     /* Chart cards */
     .dash-chart-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       gap: 16px;
       margin-bottom: 16px;
     }
@@ -4097,7 +4097,7 @@
     }
     .dash-completeness-track {
       flex: 1;
-      height: 10px;
+      height: 6px;
       background: var(--bg-input);
       border-radius: var(--radius-sm);
       overflow: hidden;
@@ -23105,14 +23105,14 @@
       var estadoSemanticColors = {
         'En marcha': 'var(--accent)',
         'Terminada': 'var(--success)',
-        'Anulada': 'var(--text-muted)',
-        'Planificada': 'var(--border-strong)',
-        'Convocada': 'var(--chart-3)',
-        'En preparación': 'var(--chart-2)',
-        'Buscando': 'var(--chart-4)',
-        'Retrasada': 'var(--chart-5)',
-        'Pendiente': 'var(--border-strong)',
-        '(Sin estado)': 'var(--border)'
+        'Anulada': '#94a3b8',
+        'Planificada': '#cbd5e1',
+        'Convocada': 'var(--accent-light)',
+        'En preparación': '#e2e8f0',
+        'Buscando': '#f1f5f9',
+        'Retrasada': 'var(--warning)',
+        'Pendiente': '#e2e8f0',
+        '(Sin estado)': '#f1f5f9'
       };
       var estadoItems = Object.keys(estadoCounts).map(function(k) {
         return { label: k, value: estadoCounts[k], color: estadoSemanticColors[k] || 'var(--text-muted)' };
@@ -23144,7 +23144,8 @@
           // Label on segments >15%
           var pct = (item.value / totalEstado) * 100;
           if (pct > 15) {
-            var txt = svgEl('text', { x: x + w / 2, y: svgH / 2 + 1, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: 'white', 'font-size': '11', 'font-weight': '600' });
+            var isDark = item.color === 'var(--accent)' || item.color === 'var(--success)' || item.color === 'var(--warning)' || item.color === '#94a3b8';
+            var txt = svgEl('text', { x: x + w / 2, y: svgH / 2 + 1, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: isDark ? 'white' : 'var(--text-primary)', 'font-size': '11', 'font-weight': '600' });
             txt.textContent = item.label + ' (' + item.value + ')';
             svg.appendChild(txt);
           }
@@ -23185,7 +23186,7 @@
           { key: 'Mixta', icon: Icons.list(24), label: 'mixta' }
         ];
         var wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;';
+        wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:center;';
         wrap.setAttribute('role', 'img');
         wrap.setAttribute('aria-label', 'Horas por modalidad: ' + modalidades.map(function(m) { return (modalidadHoras[m.key] || 0) + 'h ' + m.label; }).join(', '));
         var hasAny = false;
