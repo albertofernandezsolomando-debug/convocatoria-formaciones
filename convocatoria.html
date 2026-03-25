@@ -24032,9 +24032,7 @@
       });
       applyDashMode(dashMode);
 
-      // --- Collapsible cards with localStorage persistence (progressive disclosure) ---
-      var collapsed = getDashCollapsedState();
-
+      // --- Cards are always open by default. User can still collapse manually. ---
       document.querySelectorAll('#dashContainer .dash-card[data-module]').forEach(function(card) {
         // Wrap non-title children in a .dash-card-body for smooth collapse
         if (!card.querySelector('.dash-card-body')) {
@@ -24049,8 +24047,8 @@
           card.appendChild(body);
         }
 
-        // Apply collapsed state from persistence
-        if (collapsed.indexOf(card.dataset.module) >= 0) {
+        // All cards start expanded, except plazos FUNDAE (collapsed by default)
+        if (card.dataset.module === 'dash-plazos') {
           card.classList.add('collapsed');
         } else {
           card.classList.remove('collapsed');
