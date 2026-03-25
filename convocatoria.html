@@ -6070,24 +6070,24 @@
       <div id="dash-group-personas">
       <div class="dash-section-heading">Personas y participación</div>
 
-      <!-- Charts row 4: Attendance + Confirmations -->
-      <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia">
-          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Monitor de asistencia y abandono</div>
+      <!-- Compact trio: Attendance + Confirmations + Seasonality -->
+      <div class="dash-chart-row dash-row-trio">
+        <div class="dash-card" data-card-id="asistencia" data-module="dash-asistencia" style="padding:var(--space-lg);">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Asistencia y abandono</div>
           <div class="dash-card-body"><div id="dashAttendance"></div></div>
         </div>
-        <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones">
-          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Efectividad de confirmaciones</div>
+        <div class="dash-card" data-card-id="confirmaciones" data-module="dash-confirmaciones" style="padding:var(--space-lg);">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Confirmaciones</div>
           <div class="dash-card-body"><div id="dashConfirmations"></div></div>
+        </div>
+        <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad" style="padding:var(--space-lg);">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Estacionalidad</div>
+          <div class="dash-card-body"><div id="dashSeasonality"></div></div>
         </div>
       </div>
 
-      <!-- Charts row 5: Seasonality + Recurrence -->
+      <!-- Recurrence: full-width (content-heavy: KPIs + chart + top10 table) -->
       <div class="dash-chart-row">
-        <div class="dash-card" data-card-id="estacionalidad" data-module="dash-estacionalidad">
-          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Estacionalidad formativa</div>
-          <div class="dash-card-body"><div id="dashSeasonality"></div></div>
-        </div>
         <div class="dash-card" data-card-id="recurrencia" data-module="dash-recurrencia">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Recurrencia de participantes</div>
           <div class="dash-card-body"><div id="dashRecurrence"></div></div>
@@ -6099,8 +6099,8 @@
       <div id="dash-group-calidad">
       <div class="dash-section-heading">Calidad y proveedores</div>
 
-      <!-- Charts row 6: Survey Coverage + Scorecard -->
-      <div class="dash-chart-row">
+      <!-- Pair: Survey + Scorecard (similar compact content) -->
+      <div class="dash-chart-row dash-row-pair">
         <div class="dash-card" data-card-id="encuestas" data-module="dash-encuestas">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Cobertura de encuestas</div>
           <div class="dash-card-body"><div id="dashSurveyCoverage"></div></div>
@@ -6123,36 +6123,48 @@
       <div id="dash-group-analytics">
       <div class="dash-section-heading">Analytics avanzado</div>
 
-      <div class="dash-analytics-grid">
-      <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Riesgo de Bonificación FUNDAE</div>
-        <div class="dash-card-body"><div id="dashRiskScoring"></div></div>
+      <!-- Riesgo FUNDAE: full-width (content-heavy: 20+ risk rows) -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="riesgo-fundae" data-module="dash-risk">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Riesgo de Bonificación FUNDAE</div>
+          <div class="dash-card-body"><div id="dashRiskScoring"></div></div>
+        </div>
       </div>
 
-      <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">ROI de Formación por Empresa</div>
-        <div class="dash-card-body"><div id="dashROI"></div></div>
+      <!-- ROI: full-width (stacked bars per empresa) -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="roi-formacion" data-module="dash-roi">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">ROI de Formación por Empresa</div>
+          <div class="dash-card-body"><div id="dashROI"></div></div>
+        </div>
       </div>
 
-      <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Cobertura Formativa</div>
-        <div class="dash-card-body"><div id="dashCoverage"></div></div>
+      <!-- Cobertura: full-width (heatmap table) -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="cobertura" data-module="dash-cobertura">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Cobertura Formativa</div>
+          <div class="dash-card-body"><div id="dashCoverage"></div></div>
+        </div>
       </div>
 
-      <div class="dash-card" data-card-id="equidad" data-module="dash-equity">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Equidad en Acceso a Formación</div>
-        <div class="dash-card-body"><div id="dashEquity"></div></div>
+      <!-- Pair: Equidad + Interempresarial (similar compact content) -->
+      <div class="dash-chart-row dash-row-pair">
+        <div class="dash-card" data-card-id="equidad" data-module="dash-equity">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Equidad en Acceso a Formación</div>
+          <div class="dash-card-body"><div id="dashEquity"></div></div>
+        </div>
+        <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Formación Interempresarial</div>
+          <div class="dash-card-body"><div id="dashCrossCompany"></div></div>
+        </div>
       </div>
 
-      <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Inversión Formativa por Responsable</div>
-        <div class="dash-card-body"><div id="dashByManager"></div></div>
-      </div>
-
-      <div class="dash-card" data-card-id="cross-company" data-module="dash-crosscompany">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Formación Interempresarial</div>
-        <div class="dash-card-body"><div id="dashCrossCompany"></div></div>
-      </div>
+      <!-- Inversión por Responsable: full-width (table with 100+ responsables) -->
+      <div class="dash-chart-row">
+        <div class="dash-card" data-card-id="inversion-manager" data-module="dash-manager">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Inversión Formativa por Responsable</div>
+          <div class="dash-card-body"><div id="dashByManager"></div></div>
+        </div>
       </div>
 
       </div>
