@@ -9263,6 +9263,10 @@
         const showTeleformacion = modalidad === 'Teleformación' || modalidad === 'Mixta';
         const showPlataforma = modalidad === 'Teleformación' || modalidad === 'Mixta';
 
+        // Parent with groups: hide group-level sections (participantes, asistencia, centro, tutor)
+        var childGroups = !isNew ? getChildGroups(record.codigo) : [];
+        var isParentWithGroups = childGroups.length > 0;
+
         const areaOpts = FUNDAE_AREAS.map(function(a) {
           return { value: a[0], label: a[0] + ' - ' + a[1] };
         });
@@ -9341,6 +9345,7 @@
           ]) +
           field('Departamento', 'departamento', v('departamento')) +
           select('Empresa pagadora', 'empresaPagadora', record.empresaPagadora || '', empresaOpts) +
+          (isParentWithGroups ? '<div class="u-text-11 u-text-muted u-mb-4" style="font-style:italic;">Fechas informativas \u2014 las fechas reales se definen en cada grupo</div>' : '') +
           field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
           field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' }) +
           '<div id="cf_horasPresencialesWrap" style="' + (showPresencial ? '' : 'display:none;') + '">' +
@@ -9354,39 +9359,62 @@
             { value: 'Sí', label: 'Sí' },
             { value: 'No', label: 'No' }
           ]) +
-          select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
-          select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-          '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
-          '<div id="cfTutoresList" class="u-mb-4"></div>' +
-          '<div class="u-flex u-gap-4 u-items-center">' +
-            '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
-              '<option value="">-- Seleccionar tutor --</option>' +
-              tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
-            '</select>' +
-            '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
-          '</div></div>' +
+          (isParentWithGroups ? '' :
+            select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+            select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+            '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
+            '<div id="cfTutoresList" class="u-mb-4"></div>' +
+            '<div class="u-flex u-gap-4 u-items-center">' +
+              '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
+                '<option value="">-- Seleccionar tutor --</option>' +
+                tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
+              '</select>' +
+              '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
+            '</div></div>'
+          ) +
           '</div></details>' +
 
-        // 2. Participantes (collapsed)
-        '<details class="catalog-details">' +
-          '<summary>Participantes <span class="u-text-xs u-text-muted u-ml-4">(' + (record.participantes || []).length + ')</span></summary>' +
-          '<div class="catalog-details-body">' +
-          '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
-            '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
-          '</div>' +
-          '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
-          '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
-          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
-          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
-          ' <button class="link-btn u-text-11 u-ml-8" id="btnExportAttendees" style="color:var(--success);"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>' +
-          '</div></details>' +
+        // 2. Participantes / Grupos (collapsed)
+        (isParentWithGroups ?
+          '<details class="catalog-details">' +
+            '<summary>Grupos <span class="u-text-xs u-text-muted u-ml-4">(' + childGroups.length + ')</span></summary>' +
+            '<div class="catalog-details-body">' +
+            '<div class="u-text-11 u-text-muted u-mb-8">Los participantes se asignan en cada grupo individualmente.</div>' +
+            childGroups.map(function(g) {
+              var grNum = g.codigoGrupo ? g.codigoGrupo.split('-')[1] : '?';
+              var nPart = (g.participantes || []).length;
+              return '<div class="u-flex u-items-center u-gap-8 u-border-bottom" style="padding:6px 0; cursor:pointer;" data-nav-grupo="' + esc(g.codigo) + '">' +
+                '<span class="u-text-12 u-font-600" style="color:var(--accent);">Gr. ' + esc(grNum) + '</span>' +
+                '<span class="u-text-12 u-text-primary u-flex-1 u-truncate">' + esc(g.nombre || '') + '</span>' +
+                '<span class="u-text-xs u-text-muted">' + nPart + ' part.</span>' +
+                '<span class="u-text-xs u-text-muted">' + esc(g.estado || '') + '</span>' +
+              '</div>';
+            }).join('') +
+            '<button class="btn btn-secondary u-text-12 u-mt-8" id="btnCreateGroupFromParent">' + (getChildGroups(record.codigo).length > 0 ? 'Nuevo grupo' : 'Crear grupo') + '</button>' +
+            '</div></details>' +
+          '' :
+          '<details class="catalog-details">' +
+            '<summary>Participantes <span class="u-text-xs u-text-muted u-ml-4">(' + (record.participantes || []).length + ')</span></summary>' +
+            '<div class="catalog-details-body">' +
+            '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
+              '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
+            '</div>' +
+            '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
+            '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
+            ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
+            ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
+            ' <button class="link-btn u-text-11 u-ml-8" id="btnExportAttendees" style="color:var(--success);"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>' +
+            '</div></details>'
+        ) +
 
-        // 3. Asistencia (collapsed)
-        '<details class="catalog-details">' +
-          '<summary>Asistencia <span class="u-text-xs u-text-muted u-ml-4">(' + ((record.asistencia && record.asistencia.sesiones) || []).length + ' sesiones)</span></summary>' +
-          '<div class="catalog-details-body">' +
-          renderAsistenciaHtml(record) +
-          '</div></details>' +
+        // 3. Asistencia (collapsed) — only for standalone/group actions
+        (isParentWithGroups ? '' :
+          '<details class="catalog-details">' +
+            '<summary>Asistencia <span class="u-text-xs u-text-muted u-ml-4">(' + ((record.asistencia && record.asistencia.sesiones) || []).length + ' sesiones)</span></summary>' +
+            '<div class="catalog-details-body">' +
+            renderAsistenciaHtml(record) +
+            '</div></details>'
+        ) +
 
         // 4. Notas (collapsed)
         '<details class="catalog-details">' +
@@ -9438,12 +9466,15 @@
           if (!mod) checks.push({ label: 'Horas', ok: Number(record.horasPresenciales) > 0 || Number(record.horasTeleformacion) > 0 });
           checks.push({ label: 'Objetivos', ok: !!record.objetivos });
           checks.push({ label: 'Contenidos', ok: !!record.contenidos });
-          checks.push({ label: 'Participantes', ok: (record.participantes || []).length > 0 });
-          checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
-          checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
-          if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
-          checks.push({ label: 'Tutor', ok: getRecordTutores(record).length > 0 });
-          checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
+          // Group-level checks: skip for parent actions with groups
+          if (!isParentWithGroups) {
+            checks.push({ label: 'Participantes', ok: (record.participantes || []).length > 0 });
+            checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
+            checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
+            if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
+            checks.push({ label: 'Tutor', ok: getRecordTutores(record).length > 0 });
+            checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
+          }
 
           var okCount = checks.filter(function(c) { return c.ok; }).length;
           var total = checks.length;
@@ -9766,6 +9797,19 @@
         var duplicateBtn = document.getElementById('btnDuplicateCatalog');
         if (duplicateBtn) {
           duplicateBtn.addEventListener('click', function() {
+            duplicateAction(record.codigo);
+          });
+        }
+
+        // Navigate to child group from parent's Grupos section
+        document.querySelectorAll('[data-nav-grupo]').forEach(function(el) {
+          el.addEventListener('click', function() {
+            navigateToAction(this.getAttribute('data-nav-grupo'));
+          });
+        });
+        var btnCreateGroup = document.getElementById('btnCreateGroupFromParent');
+        if (btnCreateGroup) {
+          btnCreateGroup.addEventListener('click', function() {
             duplicateAction(record.codigo);
           });
         }
@@ -18964,11 +19008,13 @@
         errors.push({ field: 'nombreAccion', message: 'El nombre de accion excede 255 caracteres (' + accion.nombre.length + ')' });
       }
 
-      // codGrupoAccion: required, NNN-NN
-      if (accion && !accion.codigoGrupo) {
-        errors.push({ field: 'codGrupoAccion', message: 'El codigo de grupo accion es obligatorio (formato NNN-NN)' });
-      } else if (accion && accion.codigoGrupo && !codGrupoRegex.test(accion.codigoGrupo)) {
-        errors.push({ field: 'codGrupoAccion', message: 'El codigo de grupo debe tener formato NNN-NN (ej: 011-01), valor: "' + accion.codigoGrupo + '"' });
+      // codigoGrupo: required only for inicioGrupo (group-level field, not action-level)
+      if (type === 'inicioGrupo') {
+        if (accion && !accion.codigoGrupo) {
+          errors.push({ field: 'codigoGrupo', message: 'El codigo de grupo es obligatorio (formato NNN-NN)' });
+        } else if (accion && accion.codigoGrupo && !codGrupoRegex.test(accion.codigoGrupo)) {
+          errors.push({ field: 'codigoGrupo', message: 'El codigo de grupo debe tener formato NNN-NN (ej: 011-01), valor: "' + accion.codigoGrupo + '"' });
+        }
       }
 
       if (accion) {
@@ -19330,7 +19376,7 @@
         '  <AccionFormativa>\n' +
         '    <codAccion>' + e(toFundaeCode(accion.codigo)) + '</codAccion>\n' +
         '    <nombreAccion>' + e(accion.nombre) + '</nombreAccion>\n' +
-        '    <codGrupoAccion>' + e(accion.codigoGrupo) + '</codGrupoAccion>\n' +
+        (accion.codigoGrupo ? '    <codGrupoAccion>' + e(accion.codigoGrupo) + '</codGrupoAccion>\n' : '') +
         (accion.areaProfesional ? '    <codAreaProfesional>' + e(accion.areaProfesional) + '</codAreaProfesional>\n' : '') +
         modalidadXml + '\n' +
         plataformaXml +
