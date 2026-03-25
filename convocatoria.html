@@ -20811,22 +20811,14 @@
       kpiEl.innerHTML = '<div style="font-size:var(--font-size-2xl); font-weight:700; color:' + kpiColor + ';">' + coveragePct + '%</div><div style="font-size:var(--font-size-xs); color:var(--text-muted);">Cobertura de encuestas</div>';
       container.appendChild(kpiEl);
 
-      // Donut
-      var donutItems = [
-        { label: 'Con encuesta', value: withSurvey, color: DS.chart3 },
-        { label: 'Sin encuesta', value: withoutSurvey.length, color: DS.chart5 }
-      ].filter(function(i) { return i.value > 0; });
-
-      // Create a temp container for the donut
-      var donutWrap = document.createElement('div');
-      donutWrap.id = 'dashSurveyCoverageDonut_' + Date.now();
-      container.appendChild(donutWrap);
-
-      // Render donut using the temp id
-      renderSvgDonut(donutWrap.id, donutItems, {
-        centerLabel: 'Terminadas',
-        centerValue: completedActions.length
-      });
+      // Simple progress bar instead of donut
+      var barWrap = document.createElement('div');
+      barWrap.style.cssText = 'margin-bottom:8px;';
+      barWrap.innerHTML = '<div class="d-gauge-bar" style="height:8px;"><div style="width:' + coveragePct + '%;height:100%;background:' + kpiColor + ';border-radius:var(--radius-sm);"></div></div>' +
+        '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:var(--font-size-xs);color:var(--text-muted);">' +
+        '<span>' + withSurvey + '/' + completedActions.length + ' con encuesta</span>' +
+        '<span>' + withoutSurvey.length + ' pendientes</span></div>';
+      container.appendChild(barWrap);
 
       // List of pending actions
       if (withoutSurvey.length > 0) {
@@ -20949,8 +20941,8 @@
       // Mini bar chart: sends per month (last 6 months)
       var maxSends = Math.max.apply(null, monthBuckets.map(function(b) { return b.count; })) || 1;
 
-      var svgW = 300, svgH = 90;
-      var padL = 24, padR = 10, padT = 12, padB = 22;
+      var svgW = 800, svgH = 120;
+      var padL = 40, padR = 20, padT = 16, padB = 28;
       var chartW = svgW - padL - padR;
       var chartH = svgH - padT - padB;
       var barW = chartW / monthBuckets.length * 0.6;
@@ -23553,22 +23545,19 @@
 
         // SVG barras apiladas
         var maxVal = Math.max.apply(null, roi.map(function(r) { return r.costeDirecto + r.costeOportunidad; }));
-        var svgH = roi.length * 32 + 20;
-        var svgW = 500;
+        var svgH = roi.length * 28 + 16;
+        var svgW = 900;
         var svg = '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" style="width:100%;height:auto;">';
         roi.forEach(function(r, i) {
-          var y = i * 32 + 10;
-          var barMax = svgW - 160;
+          var y = i * 28 + 8;
+          var barMax = svgW - 240;
           var wDirect = maxVal > 0 ? (r.costeDirecto / maxVal) * barMax : 0;
           var wOport = maxVal > 0 ? (r.costeOportunidad / maxVal) * barMax : 0;
           // Label
-          svg += '<text x="0" y="' + (y + 14) + '" font-size="11" fill="var(--text-secondary)">' + esc(r.empresa.substring(0, 18)) + '</text>';
-          // Barra directa
-          svg += '<rect x="130" y="' + (y + 2) + '" width="' + wDirect + '" height="16" rx="2" fill="var(--accent)" opacity="0.8"/>';
-          // Barra oportunidad
-          svg += '<rect x="' + (130 + wDirect) + '" y="' + (y + 2) + '" width="' + wOport + '" height="16" rx="2" fill="var(--warning)" opacity="0.6"/>';
-          // Valor
-          svg += '<text x="' + (130 + wDirect + wOport + 4) + '" y="' + (y + 14) + '" font-size="11" fill="var(--text-muted)">' + fmt(r.costeNeto) + '</text>'; /* scale: xs */
+          svg += '<text x="0" y="' + (y + 12) + '" font-size="11" fill="var(--text-secondary)">' + esc(r.empresa.substring(0, 25)) + '</text>';
+          svg += '<rect x="200" y="' + (y + 1) + '" width="' + wDirect + '" height="14" rx="2" fill="var(--accent)" opacity="0.8"/>';
+          svg += '<rect x="' + (200 + wDirect) + '" y="' + (y + 1) + '" width="' + wOport + '" height="14" rx="2" fill="var(--warning)" opacity="0.6"/>';
+          svg += '<text x="' + (200 + wDirect + wOport + 6) + '" y="' + (y + 12) + '" font-size="10" fill="var(--text-muted)">' + fmt(r.costeNeto) + '</text>';
         });
         svg += '</svg>';
         var svgDiv = document.createElement('div');
