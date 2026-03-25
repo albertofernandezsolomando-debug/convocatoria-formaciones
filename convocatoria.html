@@ -20,18 +20,19 @@
       --bg-warm: #f8fafc;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #64748b;
+      --text-muted: #57667a;
       --accent: #4F46E5;
       --accent-hover: #4338CA;
       --accent-light: #E0E7FF;
       --accent-subtle: #EEF2FF;
-      --border: #e2e8f0;
-      --border-strong: #cbd5e1;
+      --border: #cbd5e1;
+      --border-strong: #94a3b8;
+      --border-input: #708599;
       --danger: #dc2626;
       --danger-light: #fef2f2;
-      --warning: #d97706;
+      --warning: #b45309;
       --warning-light: #fffbeb;
-      --success: #16a34a;
+      --success: #15803d;
       --success-light: #f0fdf4;
       --radius: 8px;
       --radius-sm: 4px;
@@ -83,8 +84,8 @@
        Typography (--font-size-*), z-index (--z-*), font-mono, radii, spacing
        inherit correctly from :root — no re-declaration required. */
     [data-theme="dark"] {
-      --accent: #818CF8;
-      --accent-hover: #6366F1;
+      --accent: #A5B4FC;
+      --accent-hover: #818CF8;
       --accent-light: #312E81;
       --accent-subtle: #1E1B4B;
       --text-primary: #f1f5f9;
@@ -94,13 +95,14 @@
       --bg-panel: #1e293b;
       --bg-input: #334155;
       --bg-warm: #1e293b;
-      --border: #334155;
-      --border-strong: #475569;
+      --border: #475569;
+      --border-strong: #64748b;
+      --border-input: #94a3b8;
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
       --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-      --shadow-accent: 0 1px 3px rgba(129,140,248,0.2);
-      --shadow-accent-hover: 0 4px 12px rgba(129,140,248,0.25);
-      --danger: #ef4444;
+      --shadow-accent: 0 1px 3px rgba(165,180,252,0.2);
+      --shadow-accent-hover: 0 4px 12px rgba(165,180,252,0.25);
+      --danger: #f87171;
       --danger-light: #450a0a;
       --warning: #f59e0b;
       --warning-light: #451a03;
@@ -1401,8 +1403,10 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 2px;
+      padding: 6px;
       margin-left: 2px;
+      min-width: 28px;
+      min-height: 28px;
       border-radius: var(--radius-sm);
       color: var(--text-muted);
       opacity: 0.5;
@@ -1740,7 +1744,7 @@
       width: 100%;
       padding: 8px 12px;
       background: var(--bg-input);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-input);
       border-radius: var(--radius-sm);
       font-size: var(--font-size-base);
       font-family: var(--font-body);
@@ -1862,7 +1866,8 @@
       font-family: var(--font-body);
       font-weight: 500;
       cursor: pointer;
-      padding: 2px 0;
+      padding: 6px 4px;
+      min-height: 28px;
       transition: opacity var(--transition);
     }
 
@@ -5313,9 +5318,10 @@
     /* ── Empty state illustrations ── */
     .empty-state-illustration { margin-bottom: 16px; opacity: 0.7; }
 
-    /* Accessibility: skip navigation link */
+    /* Accessibility: skip navigation link + screen-reader-only */
     .skip-link { position: absolute; top: -40px; left: 0; background: var(--accent); color: white; padding: 8px 16px; z-index: var(--z-overlay); transition: top var(--transition); border-radius: 0 0 var(--radius-sm) 0; font-size: var(--font-size-base); text-decoration: none; }
     .skip-link:focus { top: 0; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
     /* ── Print stylesheet ── */
     @media print {
@@ -5363,6 +5369,7 @@
   </div>
   <div class="activation-checklist" id="activationChecklist"></div>
   <main id="mainContent">
+  <h1 class="sr-only" id="appTitle">Formación AGORA</h1>
   <div class="tab-content active" id="tabConvocatoria" role="tabpanel" aria-labelledby="tab-tabConvocatoria">
   <div class="app">
     <!-- LEFT PANEL -->
@@ -5640,13 +5647,13 @@
   <div class="tab-content" id="tabCatalogos" role="tabpanel" aria-labelledby="tab-tabCatalogos">
     <div class="catalog-header-bar u-flex u-items-center u-gap-8 u-flex-shrink-0 u-flex-wrap u-border-bottom u-bg-panel" style="padding:10px 20px;">
       <span class="u-text-15 u-font-600 u-text-primary u-mr-8">Catálogos</span>
-      <div class="catalog-tabs u-items-center u-p-0 u-m-0">
-        <button class="catalog-tab active" data-catalog="proveedores">Proveedores</button>
-        <button class="catalog-tab" data-catalog="centros">Centros</button>
-        <button class="catalog-tab" data-catalog="tutores">Tutores</button>
-        <button class="catalog-tab" data-catalog="acciones">Acciones</button>
-        <button class="catalog-tab" data-catalog="compliance">Formación obligatoria</button>
-        <button class="catalog-tab" data-catalog="necesidades">Necesidades</button>
+      <div class="catalog-tabs u-items-center u-p-0 u-m-0" role="tablist" aria-label="Catálogos">
+        <button class="catalog-tab active" data-catalog="proveedores" role="tab" aria-selected="true" tabindex="0">Proveedores</button>
+        <button class="catalog-tab" data-catalog="centros" role="tab" aria-selected="false" tabindex="-1">Centros</button>
+        <button class="catalog-tab" data-catalog="tutores" role="tab" aria-selected="false" tabindex="-1">Tutores</button>
+        <button class="catalog-tab" data-catalog="acciones" role="tab" aria-selected="false" tabindex="-1">Acciones</button>
+        <button class="catalog-tab" data-catalog="compliance" role="tab" aria-selected="false" tabindex="-1">Formación obligatoria</button>
+        <button class="catalog-tab" data-catalog="necesidades" role="tab" aria-selected="false" tabindex="-1">Necesidades</button>
       </div>
       <button class="catalog-view-toggle-btn u-ml-8 u-text-11 u-font-500 u-text-secondary u-cursor-pointer u-bg-input" id="btnAnnualPlan" style="display:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 14px;" title="Plan anual de formación">Plan anual</button>
       <div class="catalog-view-toggle u-ml-auto" id="catalogViewToggle">
@@ -6204,8 +6211,8 @@
 
   <div class="cmdk-overlay" id="cmdkOverlay" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
     <div class="cmdk-box">
-      <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Buscar comando, pestana o accion..." autocomplete="off" aria-label="Buscar comando">
-      <div class="cmdk-results" id="cmdkResults"></div>
+      <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Buscar comando, pestana o accion..." autocomplete="off" aria-label="Buscar comando" aria-expanded="false" aria-autocomplete="list" aria-controls="cmdkResults">
+      <div class="cmdk-results" id="cmdkResults" role="listbox"></div>
     </div>
   </div>
 
@@ -6599,6 +6606,9 @@
       if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); btn.setAttribute('tabindex', '0'); }
       var content = document.getElementById(tabId);
       if (content) content.classList.add('active');
+      // a11y: update page title to reflect active tab
+      var tabLabels = { tabDashboard:'Cuadro de Mando', tabCalendario:'Calendario', tabConvocatoria:'Convocatoria', tabPersonas:'Personas', tabCatalogos:'Catálogos', tabXml:'XML FUNDAE' };
+      document.title = (tabLabels[tabId] || 'Formación') + ' \u2014 Formación AGORA';
       // Trigger tab-specific rendering
       if (tabId === 'tabDashboard') {
         showDashboardSkeleton();
@@ -6737,6 +6747,8 @@
       close() {
         this.overlay.classList.add('closing');
         setTimeout(() => { this.overlay.classList.remove('visible', 'closing'); }, 150);
+        this.input.setAttribute('aria-expanded', 'false');
+        this.input.removeAttribute('aria-activedescendant');
       },
 
       fuzzyMatch(query, text) {
@@ -6761,6 +6773,8 @@
           empty.className = 'cmdk-empty';
           empty.textContent = 'Sin resultados para "' + query + '"';
           this.results.appendChild(empty);
+          this.input.setAttribute('aria-expanded', 'false');
+          this.input.removeAttribute('aria-activedescendant');
           return;
         }
 
@@ -6781,6 +6795,8 @@
           groups[groupName].forEach(function(cmd) {
             var item = document.createElement('div');
             item.className = 'cmdk-item';
+            item.id = 'cmdk-opt-' + itemIndex;
+            item.setAttribute('role', 'option');
             item.dataset.index = itemIndex++;
             item.innerHTML = '<span class="cmdk-item-icon">' + cmd.icon + '</span>'
               + '<span class="cmdk-item-label">' + cmd.label + '</span>'
@@ -6789,6 +6805,8 @@
             self.results.appendChild(item);
           });
         });
+        this.input.setAttribute('aria-expanded', 'true');
+        this.input.removeAttribute('aria-activedescendant');
       },
 
       handleKeydown(e) {
@@ -6800,8 +6818,13 @@
       },
 
       highlightActive(items) {
-        items.forEach(function(it, i) { it.classList.toggle('active', i === CmdK.activeIndex); });
-        if (items[this.activeIndex]) items[this.activeIndex].scrollIntoView({ block: 'nearest' });
+        items.forEach(function(it, i) { it.classList.toggle('active', i === CmdK.activeIndex); it.setAttribute('aria-selected', i === CmdK.activeIndex ? 'true' : 'false'); });
+        if (items[this.activeIndex]) {
+          items[this.activeIndex].scrollIntoView({ block: 'nearest' });
+          this.input.setAttribute('aria-activedescendant', items[this.activeIndex].id);
+        } else {
+          this.input.removeAttribute('aria-activedescendant');
+        }
       },
 
       execute(cmd) {
@@ -8759,8 +8782,10 @@
     document.querySelectorAll('.catalog-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         checkDirtyBeforeNavigation(function() {
-          document.querySelectorAll('.catalog-tab').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.catalog-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); b.setAttribute('tabindex','-1'); });
           btn.classList.add('active');
+          btn.setAttribute('aria-selected','true');
+          btn.setAttribute('tabindex','0');
           catalogState.activeCatalog = btn.dataset.catalog;
           catalogState.selectedPK = null;
           catalogState.cameFromList = false;
@@ -8828,6 +8853,23 @@
         });
       });
     });
+
+    // a11y: catalog sub-tabs arrow key navigation (roving tabindex)
+    (function() {
+      var tablist = document.querySelector('.catalog-tabs[role="tablist"]');
+      if (!tablist) return;
+      tablist.addEventListener('keydown', function(e) {
+        var tabs = Array.from(tablist.querySelectorAll('.catalog-tab'));
+        var idx = tabs.indexOf(document.activeElement);
+        if (idx === -1) return;
+        var newIdx = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); newIdx = (idx + 1) % tabs.length; }
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); newIdx = (idx - 1 + tabs.length) % tabs.length; }
+        else if (e.key === 'Home') { e.preventDefault(); newIdx = 0; }
+        else if (e.key === 'End') { e.preventDefault(); newIdx = tabs.length - 1; }
+        if (newIdx !== -1) { tabs[newIdx].click(); tabs[newIdx].focus(); }
+      });
+    })();
 
     // Search filter
     document.getElementById('catalogSearch').addEventListener('input', renderCatalogList);
@@ -11996,9 +12038,9 @@
       applyTabChange('tabCatalogos');
 
       // Switch to acciones sub-tab
-      document.querySelectorAll('.catalog-tab').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.catalog-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected','false'); b.setAttribute('tabindex','-1'); });
       var accionesTab = document.querySelector('.catalog-tab[data-catalog="acciones"]');
-      if (accionesTab) accionesTab.classList.add('active');
+      if (accionesTab) { accionesTab.classList.add('active'); accionesTab.setAttribute('aria-selected','true'); accionesTab.setAttribute('tabindex','0'); }
       catalogState.activeCatalog = 'acciones';
 
       // Show annual plan button for acciones
@@ -24730,8 +24772,12 @@
             barLabel = item.nombre + ' \u00B7 ' + dateStr;
           }
 
+          var ariaDateStr = item.fechaInicio.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+          if (item.rawInicio !== item.rawFin) ariaDateStr += ' a ' + item.fechaFin.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
           html += '<div class="cal-bar' + (isSel ? ' selected' : '') + '" ' +
             'data-codigo="' + esc(item.codigo) + '" ' +
+            'tabindex="0" role="button" ' +
+            'aria-label="' + esc((item.nombre || item.codigo) + ', ' + ariaDateStr) + '" ' +
             'title="' + esc((item.nombre || item.codigo) + ' \u2014 Doble clic para ver en cat\u00e1logo') + '" ' +
             'style="left:' + leftPct + '%; width:' + widthPct + '%; top:' + barTop + 'px; height:' + barHeight + 'px; line-height:' + barHeight + 'px; background:' + barColor + '; cursor:pointer;">' +
             esc(barLabel) +
@@ -24832,6 +24878,9 @@
           e.stopPropagation();
           var code = bar.dataset.codigo;
           if (code) navigateToAction(code);
+        });
+        bar.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectAction(bar.dataset.codigo); }
         });
       });
 
