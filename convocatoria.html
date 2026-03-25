@@ -9322,8 +9322,26 @@
           '</div>';
         }
 
+        // Context banner: parent indicator or group indicator
+        var contextBanner = '';
+        if (isParentWithGroups) {
+          contextBanner = '<div style="padding:8px 12px; margin-bottom:12px; background:var(--accent-subtle); border-left:4px solid var(--accent); border-radius:var(--radius-sm); font-size:var(--font-size-sm); color:var(--text-primary);">' +
+            '<span class="u-font-600" style="color:var(--accent);">Acci\u00F3n formativa</span> \u00B7 ' + childGroups.length + ' grupo' + (childGroups.length !== 1 ? 's' : '') +
+          '</div>';
+        } else if (record.parentAccion) {
+          var allAcc = getCatalog('acciones');
+          var parentRec = allAcc.find(function(a) { return a.codigo === record.parentAccion; });
+          var parentName = parentRec ? (parentRec.nombre || '').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') : record.parentAccion;
+          var siblings = allAcc.filter(function(a) { return a.parentAccion === record.parentAccion; });
+          var grNum = record.codigoGrupo ? record.codigoGrupo.split('-')[1].replace(/^0/, '') : '?';
+          contextBanner = '<div style="padding:8px 12px; margin-bottom:12px; background:color-mix(in srgb, var(--success) 8%, transparent); border-left:4px solid var(--success); border-radius:var(--radius-sm); font-size:var(--font-size-sm); color:var(--text-primary);">' +
+            '<span class="u-font-600" style="color:var(--success);">Grupo ' + esc(grNum) + '</span> de ' + (siblings.length + 1) + ' \u00B7 Acci\u00F3n: ' + esc(parentName) +
+            ' <a href="#" class="u-text-accent u-text-12" id="cfGoToParent" style="margin-left:8px;">\u2192 Ver acci\u00F3n padre</a>' +
+          '</div>';
+        }
+
         // 1. Datos básicos (open by default)
-        body = postCommBanner + '<details class="catalog-details" open>' +
+        body = postCommBanner + contextBanner + '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
           '<div class="catalog-details-body">' +
           field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
@@ -9811,6 +9829,15 @@
         if (btnCreateGroup) {
           btnCreateGroup.addEventListener('click', function() {
             duplicateAction(record.codigo);
+          });
+        }
+
+        // Navigate to parent from group's context banner
+        var goToParent = document.getElementById('cfGoToParent');
+        if (goToParent) {
+          goToParent.addEventListener('click', function(e) {
+            e.preventDefault();
+            navigateToAction(record.parentAccion);
           });
         }
 
