@@ -9308,8 +9308,17 @@
 
         var secVinculacionFields = ['proveedorVinculado','centroVinculado','tutorVinculado'];
 
+        // Post-communication change warning banner
+        var postCommBanner = '';
+        if (!isNew && hasParticipantsChanged(record)) {
+          postCommBanner = '<div style="padding:12px 16px; margin-bottom:12px; background:var(--warning-light); border-left:4px solid var(--warning); border-radius:var(--radius-sm); font-size:var(--font-size-sm); color:var(--text-primary);">' +
+            icon('alertTriangle', 16) + ' Los participantes han cambiado desde la última comunicación a FUNDAE. ' +
+            '<button class="link-btn u-text-accent u-text-12" id="btnRegenXmlInicio">Generar XML actualizado</button>' +
+          '</div>';
+        }
+
         // 1. Datos básicos (open by default)
-        body = '<details class="catalog-details" open>' +
+        body = postCommBanner + '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
           '<div class="catalog-details-body">' +
           field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
@@ -9367,6 +9376,7 @@
           '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
           '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
           ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
+          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
           '</div></details>' +
 
         // 3. Asistencia (collapsed)
@@ -9797,6 +9807,16 @@
             });
             doGenXmlInicioGrupo(accion, grupoData);
             renderCatalogForm();
+          });
+        }
+        // Bind "Generar XML actualizado" banner button (post-communication change)
+        var btnRegenXml = document.getElementById('btnRegenXmlInicio');
+        if (btnRegenXml) {
+          btnRegenXml.addEventListener('click', function() {
+            var realBtnInicio = document.getElementById('btnFichaXmlInicio');
+            if (realBtnInicio) {
+              realBtnInicio.click();
+            }
           });
         }
         var btnXmlFin = document.getElementById('btnFichaXmlFin');
@@ -10971,6 +10991,9 @@
         var msgParts = [marked + ' presentes en sesión ' + (sessionDate || '')];
         if (addedCount > 0) msgParts.push(addedCount + ' participante' + (addedCount > 1 ? 's' : '') + ' añadido' + (addedCount > 1 ? 's' : ''));
         showToast('Asistencia importada: ' + msgParts.join('. ') + '.', 'success', 6000);
+        if (addedCount > 0 && record.comunicacionInicioEnviada) {
+          showToast('Este grupo ya fue comunicado a FUNDAE. Los participantes han cambiado.', 'warning', 6000);
+        }
       });
     }
 
@@ -11311,6 +11334,7 @@
       const countEl = document.getElementById('cfParticipantCount');
       const assignBtn = document.getElementById('btnAssignParticipants');
       const copyBtn = document.getElementById('btnCopyParticipants');
+      const autoDistBtn = document.getElementById('btnAutoDistribute');
       if (!warningEl || !listEl || !assignBtn) return;
 
       if (!state.employees || state.employees.length === 0) {
@@ -11319,6 +11343,7 @@
         assignBtn.style.opacity = '0.5';
         assignBtn.style.cursor = 'not-allowed';
         if (copyBtn) { copyBtn.disabled = true; copyBtn.style.opacity = '0.5'; copyBtn.style.cursor = 'not-allowed'; }
+        if (autoDistBtn) { autoDistBtn.disabled = true; autoDistBtn.style.opacity = '0.5'; autoDistBtn.style.cursor = 'not-allowed'; }
         listEl.innerHTML = '';
         if (countEl) countEl.textContent = '';
         return;
@@ -11329,6 +11354,7 @@
       assignBtn.style.opacity = '';
       assignBtn.style.cursor = '';
       if (copyBtn) { copyBtn.disabled = false; copyBtn.style.opacity = ''; copyBtn.style.cursor = ''; }
+      if (autoDistBtn) { autoDistBtn.disabled = false; autoDistBtn.style.opacity = ''; autoDistBtn.style.cursor = ''; }
 
       var participantes = record.participantes || [];
       if (countEl) countEl.textContent = participantes.length > 0 ? '(' + participantes.length + ')' : '';
@@ -11407,6 +11433,9 @@
           record.participantes = selectedNIFs;
           var cfg = CATALOG_CONFIG['acciones'];
           upsertCatalogRecord('acciones', cfg.pk, record);
+          if (record.comunicacionInicioEnviada) {
+            showToast('Este grupo ya fue comunicado a FUNDAE. Los participantes han cambiado.', 'warning', 6000);
+          }
           renderAccionParticipants(record);
         });
       });
@@ -11417,6 +11446,15 @@
         copyBtn.parentNode.replaceChild(newCopyBtn, copyBtn);
         newCopyBtn.addEventListener('click', function() {
           showCopyParticipantsDialog(record);
+        });
+      }
+
+      // Bind auto-distribute by location button
+      if (autoDistBtn) {
+        var newAutoDistBtn = autoDistBtn.cloneNode(true);
+        autoDistBtn.parentNode.replaceChild(newAutoDistBtn, autoDistBtn);
+        newAutoDistBtn.addEventListener('click', function() {
+          autoDistributeByLocation(record);
         });
       }
     }
@@ -11490,6 +11528,219 @@
           showToast(imported + ' participantes importados desde ' + source.codigo, 'success');
         });
       });
+    }
+
+    // ═══════════════════════════════════
+    // AUTO-DISTRIBUTE BY LOCATION
+    // ═══════════════════════════════════
+
+    function autoDistributeByLocation(record) {
+      // 1. Check employees loaded
+      if (!state.employees || state.employees.length === 0) {
+        showToast('Carga el organigrama primero para distribuir por ubicaci\u00F3n', 'warning');
+        return;
+      }
+
+      // 2. Get participantes
+      var participantes = record.participantes || [];
+      if (participantes.length === 0) {
+        showToast('Asigna participantes antes de auto-distribuir', 'warning');
+        return;
+      }
+
+      // 3. Group participantes by Ubicación
+      var byLocation = {};
+      participantes.forEach(function(nif) {
+        var emp = state.employees.find(function(e) { return e.NIF === nif; });
+        var ubicacion = (emp && emp['Ubicaci\u00F3n']) ? emp['Ubicaci\u00F3n'].trim() : 'Sin ubicaci\u00F3n';
+        if (!byLocation[ubicacion]) byLocation[ubicacion] = [];
+        byLocation[ubicacion].push(nif);
+      });
+
+      var locations = Object.keys(byLocation).sort();
+      if (locations.length <= 1) {
+        showToast('Todos los participantes tienen la misma ubicaci\u00F3n \u2014 no se necesitan grupos', 'info');
+        return;
+      }
+
+      // 4. Check existing child groups
+      var parentCodigo = record.codigo;
+      var existingChildren = getChildGroups(parentCodigo);
+
+      if (existingChildren.length === 0) {
+        doCreateLocationGroups(record, byLocation, locations);
+      } else {
+        showAutoDistributeConfirm(record, existingChildren, byLocation, locations);
+      }
+    }
+
+    function doCreateLocationGroups(record, byLocation, locations) {
+      var parentCodigo = record.codigo;
+      var totalParticipants = 0;
+      var baseName = (record.nombre || 'Sin t\u00EDtulo').replace(/\s*\(Gr\.\s*\d+.*?\)\s*$/, '');
+
+      locations.forEach(function(ubicacion) {
+        var groupCode = generateGroupCode(parentCodigo);
+        var codes = generateActionCodes();
+        var groupNum = groupCode.split('-')[1].replace(/^0/, '');
+
+        var newGroup = {
+          codigo: codes.codigo,
+          parentAccion: parentCodigo,
+          codigoGrupo: groupCode,
+          nombre: baseName + ' (Gr. ' + groupNum + ' - ' + ubicacion + ')',
+          modalidad: record.modalidad || '',
+          horasPresenciales: record.horasPresenciales || '',
+          horasTeleformacion: record.horasTeleformacion || '',
+          areaProfesional: record.areaProfesional || '',
+          objetivos: record.objetivos || '',
+          contenidos: record.contenidos || '',
+          proveedorVinculado: record.proveedorVinculado || '',
+          centroVinculado: record.centroVinculado || '',
+          tutoresVinculados: record.tutoresVinculados ? record.tutoresVinculados.slice() : [],
+          tutorVinculado: record.tutorVinculado || '',
+          participantes: byLocation[ubicacion],
+          notas: [],
+          asistencia: { sesiones: [], registro: {} },
+          confirmaciones: {},
+          fechaInicio: '',
+          fechaFin: '',
+          estado: 'En preparaci\u00F3n',
+          comunicacionInicioEnviada: false,
+          comunicacionFinEnviada: false,
+          createdAt: new Date().toISOString()
+        };
+
+        upsertCatalogRecord('acciones', 'codigo', newGroup);
+        totalParticipants += byLocation[ubicacion].length;
+      });
+
+      showToast(locations.length + ' grupos creados, ' + totalParticipants + ' participantes distribuidos', 'success');
+      renderCatalogList();
+      renderCatalogForm();
+    }
+
+    function showAutoDistributeConfirm(record, existingChildren, byLocation, locations) {
+      var existingOverlay = document.getElementById('autoDistribOverlay');
+      if (existingOverlay) existingOverlay.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'autoDistribOverlay';
+      overlay.className = 'dialog-overlay visible';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      var headingId = 'dlg-heading-autodistrib-' + Date.now();
+      overlay.setAttribute('aria-labelledby', headingId);
+
+      overlay.innerHTML =
+        '<div class="dialog-box">' +
+          '<h3 id="' + headingId + '">Grupos existentes</h3>' +
+          '<p class="u-text-left u-text-13" style="margin:8px 0 16px;">Ya existen ' + existingChildren.length + ' grupo(s). \u00BFQu\u00E9 deseas hacer?</p>' +
+          '<div class="dialog-buttons" style="flex-wrap:wrap; gap:8px;">' +
+            '<button class="btn btn-secondary" id="autoDistribCancel">Cancelar</button>' +
+            '<button class="btn btn-secondary" id="autoDistribRedistribute">Redistribuir en existentes</button>' +
+            '<button class="btn btn-primary" id="autoDistribCreateNew">Crear nuevos grupos</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(overlay);
+
+      document.getElementById('autoDistribCancel').addEventListener('click', function() {
+        releaseFocus(overlay); overlay.remove();
+      });
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) { releaseFocus(overlay); overlay.remove(); }
+      });
+
+      document.getElementById('autoDistribRedistribute').addEventListener('click', function() {
+        releaseFocus(overlay); overlay.remove();
+        doRedistributeInExisting(record, existingChildren, byLocation, locations);
+      });
+
+      document.getElementById('autoDistribCreateNew').addEventListener('click', function() {
+        releaseFocus(overlay); overlay.remove();
+        doCreateLocationGroups(record, byLocation, locations);
+      });
+    }
+
+    function doRedistributeInExisting(record, existingChildren, byLocation, locations) {
+      var totalParticipants = 0;
+      var matchedLocations = {};
+      var baseName = (record.nombre || 'Sin t\u00EDtulo').replace(/\s*\(Gr\.\s*\d+.*?\)\s*$/, '');
+
+      // First try to match by name suffix (Gr. N - Ubicación)
+      existingChildren.forEach(function(child) {
+        var nameMatch = (child.nombre || '').match(/\(Gr\.\s*\d+\s*-\s*(.+?)\)\s*$/);
+        if (nameMatch) {
+          var childLocation = nameMatch[1].trim();
+          if (byLocation[childLocation]) {
+            child.participantes = byLocation[childLocation];
+            totalParticipants += byLocation[childLocation].length;
+            matchedLocations[childLocation] = true;
+            upsertCatalogRecord('acciones', 'codigo', child);
+          }
+        }
+      });
+
+      // For unmatched locations, assign by order to unmatched groups
+      var unmatchedChildren = existingChildren.filter(function(child) {
+        var nameMatch = (child.nombre || '').match(/\(Gr\.\s*\d+\s*-\s*(.+?)\)\s*$/);
+        if (nameMatch && matchedLocations[nameMatch[1].trim()]) return false;
+        return true;
+      });
+      var unmatchedLocations = locations.filter(function(loc) { return !matchedLocations[loc]; });
+
+      for (var i = 0; i < unmatchedLocations.length; i++) {
+        var loc = unmatchedLocations[i];
+        if (i < unmatchedChildren.length) {
+          var child = unmatchedChildren[i];
+          child.participantes = byLocation[loc];
+          var groupNum = child.codigoGrupo ? child.codigoGrupo.split('-')[1].replace(/^0/, '') : String(i + 1);
+          child.nombre = baseName + ' (Gr. ' + groupNum + ' - ' + loc + ')';
+          totalParticipants += byLocation[loc].length;
+          upsertCatalogRecord('acciones', 'codigo', child);
+        } else {
+          // More locations than groups — create new group for overflow
+          var groupCode = generateGroupCode(record.codigo);
+          var codes = generateActionCodes();
+          var gNum = groupCode.split('-')[1].replace(/^0/, '');
+
+          var newGroup = {
+            codigo: codes.codigo,
+            parentAccion: record.codigo,
+            codigoGrupo: groupCode,
+            nombre: baseName + ' (Gr. ' + gNum + ' - ' + loc + ')',
+            modalidad: record.modalidad || '',
+            horasPresenciales: record.horasPresenciales || '',
+            horasTeleformacion: record.horasTeleformacion || '',
+            areaProfesional: record.areaProfesional || '',
+            objetivos: record.objetivos || '',
+            contenidos: record.contenidos || '',
+            proveedorVinculado: record.proveedorVinculado || '',
+            centroVinculado: record.centroVinculado || '',
+            tutoresVinculados: record.tutoresVinculados ? record.tutoresVinculados.slice() : [],
+            tutorVinculado: record.tutorVinculado || '',
+            participantes: byLocation[loc],
+            notas: [],
+            asistencia: { sesiones: [], registro: {} },
+            confirmaciones: {},
+            fechaInicio: '',
+            fechaFin: '',
+            estado: 'En preparaci\u00F3n',
+            comunicacionInicioEnviada: false,
+            comunicacionFinEnviada: false,
+            createdAt: new Date().toISOString()
+          };
+
+          upsertCatalogRecord('acciones', 'codigo', newGroup);
+          totalParticipants += byLocation[loc].length;
+        }
+      }
+
+      var groupCount = existingChildren.length + Math.max(0, unmatchedLocations.length - unmatchedChildren.length);
+      showToast(groupCount + ' grupos, ' + totalParticipants + ' participantes distribuidos', 'success');
+      renderCatalogList();
+      renderCatalogForm();
     }
 
     function showParticipantPicker(currentNIFs, onSave) {
@@ -18661,44 +18912,187 @@
       var warnings = [];
       var validAreas = FUNDAE_AREAS.map(function(a) { return a[0]; });
       var validCifs = getEmpresasGrupo().map(function(e) { return e.cif; });
-      var nifRegex = /^[0-9]{8}[A-Z]$/;
-      var nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
+      var nifRegex = /^\d{8}[A-Z]$/;
+      var nieRegex = /^[XYZ]\d{7}[A-Z]$/;
+      var codAccionRegex = /^\d{1,8}$/;
+      var codGrupoRegex = /^\d{3}-\d{2}$/;
+      var validTipoDoc = ['10', '20', '60'];
+      var dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
-      // All types: accion.codigo and accion.nombre required
-      if (!accion || !accion.codigo) errors.push({ field: 'Codigo accion', message: 'El codigo de accion es obligatorio' });
-      if (!accion || !accion.nombre) errors.push({ field: 'Nombre accion', message: 'El nombre de accion es obligatorio' });
-      if (accion && !accion.codigoGrupo) errors.push({ field: 'Codigo grupo', message: 'El código de grupo acción es obligatorio (formato NNN-NN)' });
-      else if (accion && accion.codigoGrupo && !/^\d{3}-\d{2}$/.test(accion.codigoGrupo)) errors.push({ field: 'Codigo grupo', message: 'El código de grupo debe tener formato NNN-NN (ej: 011-01)' });
+      // ── Common validations (all types) ──
+
+      // codAccion: required, numeric 1-8 digits
+      if (!accion || !accion.codigo) {
+        errors.push({ field: 'codAccion', message: 'El codigo de accion es obligatorio' });
+      } else {
+        var fundaeCode = toFundaeCode(accion.codigo);
+        if (!codAccionRegex.test(fundaeCode)) {
+          errors.push({ field: 'codAccion', message: 'El codigo de accion debe ser numerico de 1 a 8 digitos (valor: "' + fundaeCode + '")' });
+        }
+      }
+
+      // nombreAccion: required, max 255
+      if (!accion || !accion.nombre) {
+        errors.push({ field: 'nombreAccion', message: 'El nombre de accion es obligatorio' });
+      } else if (accion.nombre.length > 255) {
+        errors.push({ field: 'nombreAccion', message: 'El nombre de accion excede 255 caracteres (' + accion.nombre.length + ')' });
+      }
+
+      // codGrupoAccion: required, NNN-NN
+      if (accion && !accion.codigoGrupo) {
+        errors.push({ field: 'codGrupoAccion', message: 'El codigo de grupo accion es obligatorio (formato NNN-NN)' });
+      } else if (accion && accion.codigoGrupo && !codGrupoRegex.test(accion.codigoGrupo)) {
+        errors.push({ field: 'codGrupoAccion', message: 'El codigo de grupo debe tener formato NNN-NN (ej: 011-01), valor: "' + accion.codigoGrupo + '"' });
+      }
 
       if (accion) {
-        // Hours vs modalidad coherence
+        // ── accionFormativa + inicioGrupo + finalizacion: modalidad/horas ──
         var mod = accion.modalidad || '';
-        if (mod === 'Presencial' && !(Number(accion.horasPresenciales) > 0)) {
-          errors.push({ field: 'Horas presenciales', message: 'La modalidad Presencial requiere horasPresenciales > 0' });
-        }
-        if (mod === 'Teleformacion' || mod === 'Teleformación') {
-          if (!(Number(accion.horasTeleformacion) > 0)) {
-            errors.push({ field: 'Horas teleformacion', message: 'La modalidad Teleformacion requiere horasTeleformacion > 0' });
+
+        if (type === 'accionFormativa' || type === 'inicioGrupo') {
+          // objetivos and contenidos required
+          if (!accion.objetivos || !String(accion.objetivos).trim()) {
+            errors.push({ field: 'objetivos', message: 'Los objetivos son obligatorios' });
           }
-        }
-        if (mod === 'Mixta') {
-          if (!(Number(accion.horasPresenciales) > 0)) errors.push({ field: 'Horas presenciales', message: 'La modalidad Mixta requiere horasPresenciales > 0' });
-          if (!(Number(accion.horasTeleformacion) > 0)) errors.push({ field: 'Horas teleformacion', message: 'La modalidad Mixta requiere horasTeleformacion > 0' });
+          if (!accion.contenidos || !String(accion.contenidos).trim()) {
+            errors.push({ field: 'contenidos', message: 'Los contenidos son obligatorios' });
+          }
+
+          // Hours vs modalidad coherence
+          if ((mod === 'Presencial' || mod === 'Mixta') && !(Number(accion.horasPresenciales) > 0)) {
+            errors.push({ field: 'horasPresenciales', message: 'La modalidad ' + mod + ' requiere horasPresenciales > 0' });
+          }
+          if ((mod === 'Teleformacion' || mod === 'Teleformación' || mod === 'Mixta') && !(Number(accion.horasTeleformacion) > 0)) {
+            errors.push({ field: 'horasTeleformacion', message: 'La modalidad ' + mod + ' requiere horasTeleformacion > 0' });
+          }
+
+          // Plataforma required for teleformacion/mixta
+          if (mod === 'Teleformación' || mod === 'Teleformacion' || mod === 'Mixta') {
+            if (!accion.plataformaCif) {
+              errors.push({ field: 'plataformaCif', message: 'El CIF de la plataforma es obligatorio para modalidad ' + mod });
+            }
+            if (!accion.plataformaUri) {
+              errors.push({ field: 'plataformaUri', message: 'La URI de la plataforma es obligatoria para modalidad ' + mod });
+            }
+          }
         }
 
         // Area profesional
         if (accion.areaProfesional && validAreas.indexOf(accion.areaProfesional) === -1) {
-          errors.push({ field: 'Area profesional', message: 'El area profesional "' + accion.areaProfesional + '" no es valida en FUNDAE' });
+          errors.push({ field: 'areaProfesional', message: 'El area profesional "' + accion.areaProfesional + '" no es valida en FUNDAE' });
         }
 
-        // Date coherence (grupo level)
-        if (grupo && grupo.fechaInicio && grupo.fechaFin) {
-          if (grupo.fechaInicio > grupo.fechaFin) {
+        // ── inicioGrupo-specific validations ──
+        if (type === 'inicioGrupo' && grupo) {
+          // idGrupo required, numeric
+          if (!grupo.idGrupo) {
+            errors.push({ field: 'idGrupo', message: 'El ID de grupo es obligatorio' });
+          } else if (!/^\d+$/.test(String(grupo.idGrupo))) {
+            errors.push({ field: 'idGrupo', message: 'El ID de grupo debe ser numerico' });
+          }
+
+          // responsable from Settings
+          var settings = loadSettings();
+          if (!grupo.responsable && !settings.fundaeResponsable) {
+            errors.push({ field: 'responsable', message: 'El responsable FUNDAE es obligatorio (configurar en Ajustes o en el formulario)' });
+          }
+
+          // telefonoContacto from Settings
+          if (!grupo.telefonoContacto && !settings.fundaeTelefono) {
+            errors.push({ field: 'telefonoContacto', message: 'El telefono de contacto es obligatorio (configurar en Ajustes o en el formulario)' });
+          }
+
+          // Centro: all required fields
+          var isPresencial = mod === 'Presencial' || mod === 'Mixta';
+          if (isPresencial) {
+            var centro = grupo.centro;
+            if (!centro) {
+              errors.push({ field: 'Centro', message: 'El centro de imparticion es obligatorio para modalidad presencial/mixta' });
+            } else {
+              if (!centro.documento) errors.push({ field: 'Centro.documento', message: 'El documento del centro es obligatorio' });
+              if (!centro.nombre) errors.push({ field: 'Centro.nombre', message: 'El nombre del centro es obligatorio' });
+              if (!centro.direccion) errors.push({ field: 'Centro.direccion', message: 'La direccion del centro es obligatoria' });
+              if (!centro.cp) errors.push({ field: 'Centro.cp', message: 'El codigo postal del centro es obligatorio' });
+              if (!centro.localidad) errors.push({ field: 'Centro.localidad', message: 'La localidad del centro es obligatoria' });
+            }
+          }
+
+          // Tutors: at least 1 with required fields
+          var tutorDocs = getRecordTutores(accion);
+          var allTutors = getCatalog('tutores');
+          var matchedTutors = tutorDocs.map(function(doc) { return allTutors.find(function(t) { return t.documento === doc; }); }).filter(Boolean);
+          if (matchedTutors.length === 0) {
+            errors.push({ field: 'Tutor', message: 'Se requiere al menos 1 tutor vinculado' });
+          } else {
+            matchedTutors.forEach(function(t, idx) {
+              var prefix = 'Tutor ' + (idx + 1);
+              if (!t.documento) errors.push({ field: prefix + '.documento', message: 'El documento del tutor es obligatorio' });
+              if (!t.nombre) errors.push({ field: prefix + '.nombre', message: 'El nombre del tutor es obligatorio' });
+              if (!t.apellido1) errors.push({ field: prefix + '.apellido1', message: 'El primer apellido del tutor es obligatorio' });
+              if (!t.telefono) errors.push({ field: prefix + '.telefono', message: 'El telefono del tutor es obligatorio' });
+              if (!t.email) errors.push({ field: prefix + '.email', message: 'El email del tutor es obligatorio' });
+              if (!(Number(t.horasDedicacion) > 0)) {
+                var totalHoras = Number(accion.horasPresenciales || 0) + Number(accion.horasTeleformacion || 0);
+                var autoHoras = Math.round((totalHoras || 1) / matchedTutors.length);
+                if (!(autoHoras > 0)) {
+                  errors.push({ field: prefix + '.horasDedicacion', message: 'Las horas de dedicacion del tutor deben ser > 0' });
+                }
+              }
+            });
+          }
+
+          // Fechas: required, valid, inicio <= fin
+          if (!grupo.fechaInicio) {
+            errors.push({ field: 'fechaInicio', message: 'La fecha de inicio es obligatoria' });
+          } else if (!dateRegex.test(grupo.fechaInicio) || isNaN(new Date(grupo.fechaInicio + 'T12:00:00').getTime())) {
+            errors.push({ field: 'fechaInicio', message: 'La fecha de inicio no es valida (formato YYYY-MM-DD)' });
+          }
+
+          if (!grupo.fechaFin) {
+            errors.push({ field: 'fechaFin', message: 'La fecha de fin es obligatoria' });
+          } else if (!dateRegex.test(grupo.fechaFin) || isNaN(new Date(grupo.fechaFin + 'T12:00:00').getTime())) {
+            errors.push({ field: 'fechaFin', message: 'La fecha de fin no es valida (formato YYYY-MM-DD)' });
+          }
+
+          if (grupo.fechaInicio && grupo.fechaFin && grupo.fechaInicio > grupo.fechaFin) {
             errors.push({ field: 'Fechas', message: 'La fecha de inicio (' + grupo.fechaInicio + ') es posterior a la fecha de fin (' + grupo.fechaFin + ')' });
+          }
+
+          // informaRLT must be S or N
+          var informaRLTEl = document.getElementById('xmlInformaRLT');
+          var informaRLT = informaRLTEl ? informaRLTEl.value : 'S';
+          if (informaRLT !== 'S' && informaRLT !== 'N') {
+            errors.push({ field: 'informaRLT', message: 'El valor de informaRLT debe ser S o N' });
           }
         }
 
-        // Attendance check
+        // ── finalizacion-specific validations ──
+        if (type === 'finalizacion') {
+          // Costes: numeric >= 0
+          var costesDirectosEl = document.getElementById('xmlCostesDirectos');
+          var costesIndirectosEl = document.getElementById('xmlCostesIndirectos');
+          var costesSalarialesEl = document.getElementById('xmlCostesSalariales');
+          var costesDirectos = costesDirectosEl ? costesDirectosEl.value : '0';
+          var costesIndirectos = costesIndirectosEl ? costesIndirectosEl.value : '0';
+          var costesSalariales = costesSalarialesEl ? costesSalarialesEl.value : '0';
+
+          if (isNaN(Number(costesDirectos)) || Number(costesDirectos) < 0) {
+            errors.push({ field: 'costesDirectos', message: 'Los costes directos deben ser un numero >= 0' });
+          }
+          if (isNaN(Number(costesIndirectos)) || Number(costesIndirectos) < 0) {
+            errors.push({ field: 'costesIndirectos', message: 'Los costes indirectos deben ser un numero >= 0' });
+          }
+          if (isNaN(Number(costesSalariales)) || Number(costesSalariales) < 0) {
+            errors.push({ field: 'costesSalariales', message: 'Los costes salariales deben ser un numero >= 0' });
+          }
+
+          // At least 1 participant
+          if (!participantes || participantes.length === 0) {
+            errors.push({ field: 'Participantes', message: 'Se requiere al menos 1 participante para finalizacion' });
+          }
+        }
+
+        // ── Attendance check (all types, as warning) ──
         var asistencia = accion.asistencia;
         if (asistencia && asistencia.sesiones && asistencia.sesiones.length > 0 && asistencia.registro) {
           var totalSesiones = asistencia.sesiones.length;
@@ -18715,7 +19109,7 @@
         }
       }
 
-      // Participant-level validations
+      // ── Participant-level validations (all types) ──
       participantes.forEach(function(p) {
         var nif = (p.nif || '').trim();
 
@@ -18724,15 +19118,22 @@
           errors.push({ field: 'NIF/NIE', message: 'Formato de documento invalido: "' + nif + '"', participantNif: nif });
         }
 
-        // Tipo documento coherence
+        // tipoDocumento must be in valid set
+        if (p.tipoDocumento !== undefined && p.tipoDocumento !== '') {
+          if (validTipoDoc.indexOf(String(p.tipoDocumento)) === -1) {
+            errors.push({ field: 'tipoDocumento', message: 'El tipo de documento "' + p.tipoDocumento + '" no es valido (valores: 10, 20, 60)', participantNif: nif });
+          }
+        }
+
+        // Tipo documento coherence (NIF vs NIE)
         if (nif) {
           var firstChar = nif.charAt(0).toUpperCase();
           var isNie = (firstChar === 'X' || firstChar === 'Y' || firstChar === 'Z');
           var tipoDoc = String(p.tipoDocumento);
           if (isNie && tipoDoc !== '60') {
-            warnings.push({ field: 'Tipo documento', message: 'El NIF empieza por ' + firstChar + ' (NIE) pero el tipo documento no es NIE (60)', participantNif: nif });
+            warnings.push({ field: 'tipoDocumento', message: 'El NIF empieza por ' + firstChar + ' (NIE) pero el tipo documento no es NIE (60)', participantNif: nif });
           } else if (!isNie && tipoDoc === '60') {
-            warnings.push({ field: 'Tipo documento', message: 'El NIF no empieza por X/Y/Z pero el tipo documento es NIE (60)', participantNif: nif });
+            warnings.push({ field: 'tipoDocumento', message: 'El NIF no empieza por X/Y/Z pero el tipo documento es NIE (60)', participantNif: nif });
           }
         }
 
@@ -18743,9 +19144,9 @@
 
         // Finalizacion-specific: required fields per participant
         if (type === 'finalizacion') {
-          if (!p.categoriaProfesional) errors.push({ field: 'Categoria profesional', message: 'Falta la categoria profesional', participantNif: nif });
-          if (!p.nivelEstudios) errors.push({ field: 'Nivel estudios', message: 'Falta el nivel de estudios', participantNif: nif });
-          if (!p.grupoCotizacion) errors.push({ field: 'Grupo cotizacion', message: 'Falta el grupo de cotizacion', participantNif: nif });
+          if (!p.categoriaProfesional) errors.push({ field: 'categoriaProfesional', message: 'Falta la categoria profesional', participantNif: nif });
+          if (!p.nivelEstudios) errors.push({ field: 'nivelEstudios', message: 'Falta el nivel de estudios', participantNif: nif });
+          if (!p.grupoCotizacion) errors.push({ field: 'grupoCotizacion', message: 'Falta el grupo de cotizacion', participantNif: nif });
         }
       });
 
@@ -18763,55 +19164,89 @@
       var hasErrors = errors.length > 0;
       var hasWarnings = warnings.length > 0;
 
-      var title = 'Validacion XML';
-      var subtitle = hasErrors
-        ? 'Corrige los errores para generar el XML'
-        : 'Hay avisos pero puedes continuar';
+      var titleText = 'Validaci\u00f3n XML';
+      var subtitleText = hasErrors
+        ? 'Corrige los errores antes de generar el XML'
+        : 'Hay avisos pero puedes continuar con la descarga';
 
-      function buildEntryHtml(entry, borderColor, textColor) {
-        var html = '<div style="border-left:3px solid ' + borderColor + '; padding:6px 10px; margin-bottom:6px; font-size:var(--font-size-sm); color:' + textColor + ';">';
-        html += '<strong>' + esc(entry.field) + '</strong>: ' + esc(entry.message);
+      // Build dialog DOM safely — all user data through esc()
+      var box = document.createElement('div');
+      box.className = 'dialog-box u-max-w-560 u-dialog-scroll u-text-left u-p-24';
+      box.style.width = '95%';
+
+      var heading = document.createElement('h3');
+      heading.className = 'u-mb-8';
+      heading.id = valHeadingId;
+      heading.textContent = titleText;
+      box.appendChild(heading);
+
+      var subtitle = document.createElement('p');
+      subtitle.className = 'u-text-13 u-text-secondary u-mb-12';
+      subtitle.textContent = subtitleText;
+      box.appendChild(subtitle);
+
+      var scrollArea = document.createElement('div');
+      scrollArea.className = 'u-overflow-y-auto u-flex-1 u-mb-16';
+
+      function buildEntryEl(entry, borderColor, textColor) {
+        var row = document.createElement('div');
+        row.style.cssText = 'border-left:3px solid ' + borderColor + '; padding:6px 10px; margin-bottom:6px; font-size:var(--font-size-sm); color:' + textColor + ';';
+        var strong = document.createElement('strong');
+        strong.textContent = entry.field;
+        row.appendChild(strong);
+        row.appendChild(document.createTextNode(': ' + entry.message));
         if (entry.participantNif) {
-          html += ' <span style="color:var(--text-muted); font-size:var(--font-size-xs);">(' + esc(entry.participantNif) + ')</span>';
+          var nifSpan = document.createElement('span');
+          nifSpan.style.cssText = 'color:var(--text-muted); font-size:var(--font-size-xs);';
+          nifSpan.textContent = ' (' + entry.participantNif + ')';
+          row.appendChild(nifSpan);
         }
-        html += '</div>';
-        return html;
+        return row;
       }
 
-      var bodyHtml = '';
       if (hasErrors) {
-        bodyHtml += '<div class="u-mb-12"><div class="u-text-12 u-font-600 u-text-danger u-mb-6">Errores (' + errors.length + ')</div>';
-        bodyHtml += errors.map(function(e) { return buildEntryHtml(e, 'var(--danger)', 'var(--danger)'); }).join('');
-        bodyHtml += '</div>';
+        var errSection = document.createElement('div');
+        errSection.className = 'u-mb-12';
+        var errHeader = document.createElement('div');
+        errHeader.className = 'u-text-12 u-font-600 u-text-danger u-mb-6';
+        errHeader.textContent = 'Errores (' + errors.length + ')';
+        errSection.appendChild(errHeader);
+        errors.forEach(function(e) { errSection.appendChild(buildEntryEl(e, 'var(--danger)', 'var(--danger)')); });
+        scrollArea.appendChild(errSection);
       }
       if (hasWarnings) {
-        bodyHtml += '<div class="u-mb-12"><div class="u-text-12 u-font-600 u-text-warning u-mb-6">Avisos (' + warnings.length + ')</div>';
-        bodyHtml += warnings.map(function(w) { return buildEntryHtml(w, 'var(--warning)', 'var(--warning)'); }).join('');
-        bodyHtml += '</div>';
+        var warnSection = document.createElement('div');
+        warnSection.className = 'u-mb-12';
+        var warnHeader = document.createElement('div');
+        warnHeader.className = 'u-text-12 u-font-600 u-text-warning u-mb-6';
+        warnHeader.textContent = 'Avisos (' + warnings.length + ')';
+        warnSection.appendChild(warnHeader);
+        warnings.forEach(function(w) { warnSection.appendChild(buildEntryEl(w, 'var(--warning)', 'var(--warning)')); });
+        scrollArea.appendChild(warnSection);
       }
+      box.appendChild(scrollArea);
 
-      var buttonsHtml = '';
-      if (hasErrors) {
-        buttonsHtml = '<button class="btn btn-secondary" id="xmlValClose">Cerrar</button>';
-      } else {
-        buttonsHtml = '<button class="btn btn-secondary" id="xmlValCancel">Cancelar</button>' +
-          '<button class="btn btn-primary" id="xmlValContinue">Generar igualmente</button>';
-      }
+      var btnRow = document.createElement('div');
+      btnRow.className = 'dialog-buttons';
 
-      overlay.innerHTML = '<div class="dialog-box u-max-w-560 u-dialog-scroll u-text-left u-p-24" style="width:95%;">' +
-        '<h3 class="u-mb-8" id="' + valHeadingId + '">' + esc(title) + '</h3>' +
-        '<p class="u-text-13 u-text-secondary u-mb-12">' + esc(subtitle) + '</p>' +
-        '<div class="u-overflow-y-auto u-flex-1 u-mb-16">' + bodyHtml + '</div>' +
-        '<div class="dialog-buttons">' + buttonsHtml + '</div>' +
-        '</div>';
+      var cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-secondary';
+      cancelBtn.textContent = 'Cancelar';
+      btnRow.appendChild(cancelBtn);
 
+      var continueBtn = document.createElement('button');
+      continueBtn.className = 'btn btn-primary';
+      continueBtn.textContent = 'Descargar de todos modos';
+      if (hasErrors) continueBtn.disabled = true;
+      btnRow.appendChild(continueBtn);
+
+      box.appendChild(btnRow);
+      overlay.appendChild(box);
       document.body.appendChild(overlay);
 
-      if (hasErrors) {
-        document.getElementById('xmlValClose').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
-      } else {
-        document.getElementById('xmlValCancel').addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
-        document.getElementById('xmlValContinue').addEventListener('click', function() {
+      cancelBtn.addEventListener('click', function() { releaseFocus(overlay); overlay.remove(); });
+      if (!hasErrors) {
+        continueBtn.addEventListener('click', function() {
           releaseFocus(overlay); overlay.remove();
           if (typeof onContinue === 'function') onContinue();
         });
@@ -18888,20 +19323,27 @@
     function genXmlAccionFormativa() {
       const accion = getXmlAccion();
       if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
-      if (!accion.modalidad) { showToast('La accion no tiene modalidad definida', 'error'); return; }
-      if (!accion.objetivos) { showToast('La accion no tiene objetivos definidos', 'error'); return; }
-      if (!accion.contenidos) { showToast('La accion no tiene contenidos definidos', 'error'); return; }
 
       var result = validateXmlData('accionFormativa', accion, null, xmlState.participantes);
-      if (result.errors.length > 0) {
-        showValidationDialog(result.errors, result.warnings);
-        return;
-      }
-      if (result.warnings.length > 0) {
+      if (result.errors.length > 0 || result.warnings.length > 0) {
         showValidationDialog(result.errors, result.warnings, function() { doGenXmlAccionFormativa(accion); });
         return;
       }
       doGenXmlAccionFormativa(accion);
+    }
+
+    // ─── Post-communication change detection ───
+
+    function hasParticipantsChanged(record) {
+      if (!record.comunicacionInicioEnviada) return false;
+      if (!record.participantesAlComunicar) return true;
+      var current = (record.participantes || []).slice().sort();
+      var snapshot = (record.participantesAlComunicar || []).slice().sort();
+      if (current.length !== snapshot.length) return true;
+      for (var i = 0; i < current.length; i++) {
+        if (current[i] !== snapshot[i]) return true;
+      }
+      return false;
     }
 
     // ─── 2. genXmlInicioGrupo ───
@@ -19049,7 +19491,11 @@
       // Auto-set comunicacionInicioEnviada flag (P2)
       var allAcc = getCatalog('acciones');
       var accIdx = allAcc.findIndex(function(a) { return a.codigo === accion.codigo; });
-      if (accIdx >= 0) { allAcc[accIdx].comunicacionInicioEnviada = true; saveCatalog('acciones', allAcc); }
+      if (accIdx >= 0) {
+        allAcc[accIdx].comunicacionInicioEnviada = true;
+        allAcc[accIdx].participantesAlComunicar = (allAcc[accIdx].participantes || []).slice();
+        saveCatalog('acciones', allAcc);
+      }
       showToast('XML Inicio de Grupo generado', 'success');
     }
 
@@ -19058,35 +19504,20 @@
       if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
 
       const idGrupo = document.getElementById('xmlIdGrupo').value;
-      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
-
       const descripcion = document.getElementById('xmlDescripcion').value;
-      if (!descripcion) { showToast('Indica la descripcion del grupo', 'warning'); return; }
-
       const responsable = document.getElementById('xmlResponsable').value;
-      if (!responsable) { showToast('Indica el responsable', 'warning'); return; }
-
       const telefonoContacto = document.getElementById('xmlTelefono').value;
-      if (!telefonoContacto) { showToast('Indica el telefono de contacto', 'warning'); return; }
 
       const mod = accion.modalidad;
       const isPresencial = mod === 'Presencial' || mod === 'Mixta';
-      const isTele = mod === 'Teleformación' || mod === 'Mixta';
 
       const centro = getXmlCentro();
-      if (isPresencial && !centro) { showToast('Selecciona un centro de imparticion para modalidad presencial/mixta', 'warning'); return; }
-
       const tutor = getXmlTutor();
-      if (!tutor) { showToast('Selecciona un tutor', 'warning'); return; }
 
       const fechaInicio = document.getElementById('xmlFechaInicio').value;
       const fechaFin = document.getElementById('xmlFechaFin').value;
       const horaInicio = document.getElementById('xmlHoraInicio').value;
       const horaFin = document.getElementById('xmlHoraFin').value;
-
-      if (!fechaInicio || !fechaFin) { showToast('Indica fechas de inicio y fin', 'warning'); return; }
-      if (isPresencial && (!horaInicio || !horaFin)) { showToast('Indica horario de inicio y fin para presencial', 'warning'); return; }
-      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
 
       var grupoData = {
         idGrupo: idGrupo,
@@ -19102,11 +19533,7 @@
       };
 
       var result = validateXmlData('inicioGrupo', accion, grupoData, xmlState.participantes);
-      if (result.errors.length > 0) {
-        showValidationDialog(result.errors, result.warnings);
-        return;
-      }
-      if (result.warnings.length > 0) {
+      if (result.errors.length > 0 || result.warnings.length > 0) {
         showValidationDialog(result.errors, result.warnings, function() { doGenXmlInicioGrupo(accion, grupoData); });
         return;
       }
@@ -19167,16 +19594,9 @@
       if (!accion) { showToast('Selecciona una accion formativa', 'warning'); return; }
 
       const idGrupo = document.getElementById('xmlIdGrupo').value;
-      if (!idGrupo) { showToast('Indica el ID de grupo', 'warning'); return; }
-
-      if (xmlState.participantes.length === 0) { showToast('No hay participantes', 'warning'); return; }
 
       var result = validateXmlData('finalizacion', accion, null, xmlState.participantes);
-      if (result.errors.length > 0) {
-        showValidationDialog(result.errors, result.warnings);
-        return;
-      }
-      if (result.warnings.length > 0) {
+      if (result.errors.length > 0 || result.warnings.length > 0) {
         showValidationDialog(result.errors, result.warnings, function() { doGenXmlFinalizacion(accion, idGrupo); });
         return;
       }
@@ -19301,11 +19721,7 @@
       }
 
       // 4. Show errors or warnings, or proceed
-      if (allErrors.length > 0) {
-        showValidationDialog(allErrors, allWarnings);
-        return;
-      }
-      if (allWarnings.length > 0) {
+      if (allErrors.length > 0 || allWarnings.length > 0) {
         showValidationDialog(allErrors, allWarnings, doBatchGenerate);
         return;
       }
