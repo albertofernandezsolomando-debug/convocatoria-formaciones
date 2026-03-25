@@ -9355,53 +9355,85 @@
         body = postCommBanner + '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
           '<div class="catalog-details-body">' +
-          field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
-          field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
-          select('Estado', 'estado', record.estado || '', [
-            { value: 'Planificada', label: 'Planificada' },
-            { value: 'Pendiente', label: 'Pendiente' },
-            { value: 'Buscando', label: 'Buscando' },
-            { value: 'En preparación', label: 'En preparación' },
-            { value: 'En marcha', label: 'En marcha' },
-            { value: 'Terminada', label: 'Terminada' },
-            { value: 'Anulada', label: 'Anulada' },
-            { value: 'Retrasada', label: 'Retrasada' }
-          ]) +
-          select('Modalidad', 'modalidad', modalidad, [
-            { value: 'Presencial', label: 'Presencial' },
-            { value: 'Teleformación', label: 'Teleformación' },
-            { value: 'Mixta', label: 'Mixta' }
-          ]) +
-          field('Departamento', 'departamento', v('departamento')) +
-          select('Empresa pagadora', 'empresaPagadora', record.empresaPagadora || '', empresaOpts) +
-          (showAsParent ? '' :
-            field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
-            field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' })
-          ) +
-          '<div id="cf_horasPresencialesWrap" style="' + (showPresencial ? '' : 'display:none;') + '">' +
-            field('Horas presenciales', 'horasPresenciales', v('horasPresenciales'), { type: 'number' }) +
-          '</div>' +
-          '<div id="cf_horasTeleformacionWrap" style="' + (showTeleformacion ? '' : 'display:none;') + '">' +
-            field('Horas teleformación', 'horasTeleformacion', v('horasTeleformacion'), { type: 'number' }) +
-          '</div>' +
-          field('Presupuesto', 'presupuesto', v('presupuesto'), { type: 'number' }) +
-          select('Bonificable', 'bonificable', record.bonificable || '', [
-            { value: 'Sí', label: 'Sí' },
-            { value: 'No', label: 'No' }
-          ]) +
-          (showAsParent ? '' :
-            select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
-            select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-            '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
-            '<div id="cfTutoresList" class="u-mb-4"></div>' +
-            '<div class="u-flex u-gap-4 u-items-center">' +
-              '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
-                '<option value="">-- Seleccionar tutor --</option>' +
-                tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
-              '</select>' +
-              '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
-            '</div></div>'
-          ) +
+          (function() {
+            var isGroupLevel = showAsGroup || !!record.parentAccion;
+            if (isGroupLevel) {
+              // Group view: only group-specific fields
+              return field('Código', 'codigo', v('codigo'), { disabled: true }) +
+                field('Nombre grupo', 'nombre', v('nombre'), { maxlength: 255 }) +
+                select('Estado', 'estado', record.estado || '', [
+                  { value: 'Planificada', label: 'Planificada' },
+                  { value: 'Pendiente', label: 'Pendiente' },
+                  { value: 'Buscando', label: 'Buscando' },
+                  { value: 'En preparación', label: 'En preparación' },
+                  { value: 'En marcha', label: 'En marcha' },
+                  { value: 'Terminada', label: 'Terminada' },
+                  { value: 'Anulada', label: 'Anulada' },
+                  { value: 'Retrasada', label: 'Retrasada' }
+                ]) +
+                field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
+                field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' }) +
+                select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+                select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+                '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
+                '<div id="cfTutoresList" class="u-mb-4"></div>' +
+                '<div class="u-flex u-gap-4 u-items-center">' +
+                  '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
+                    '<option value="">-- Seleccionar tutor --</option>' +
+                    tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
+                  '</select>' +
+                  '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
+                '</div></div>';
+            }
+            // Action view (parent or standalone): all action-level fields
+            return field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
+              field('Nombre acción', 'nombre', v('nombre'), { maxlength: 255 }) +
+              select('Estado', 'estado', record.estado || '', [
+                { value: 'Planificada', label: 'Planificada' },
+                { value: 'Pendiente', label: 'Pendiente' },
+                { value: 'Buscando', label: 'Buscando' },
+                { value: 'En preparación', label: 'En preparación' },
+                { value: 'En marcha', label: 'En marcha' },
+                { value: 'Terminada', label: 'Terminada' },
+                { value: 'Anulada', label: 'Anulada' },
+                { value: 'Retrasada', label: 'Retrasada' }
+              ]) +
+              select('Modalidad', 'modalidad', modalidad, [
+                { value: 'Presencial', label: 'Presencial' },
+                { value: 'Teleformación', label: 'Teleformación' },
+                { value: 'Mixta', label: 'Mixta' }
+              ]) +
+              field('Departamento', 'departamento', v('departamento')) +
+              select('Empresa pagadora', 'empresaPagadora', record.empresaPagadora || '', empresaOpts) +
+              (showAsParent ? '' :
+                field('Fecha inicio', 'fechaInicio', v('fechaInicio'), { type: 'date' }) +
+                field('Fecha fin', 'fechaFin', v('fechaFin'), { type: 'date' })
+              ) +
+              '<div id="cf_horasPresencialesWrap" style="' + (showPresencial ? '' : 'display:none;') + '">' +
+                field('Horas presenciales', 'horasPresenciales', v('horasPresenciales'), { type: 'number' }) +
+              '</div>' +
+              '<div id="cf_horasTeleformacionWrap" style="' + (showTeleformacion ? '' : 'display:none;') + '">' +
+                field('Horas teleformación', 'horasTeleformacion', v('horasTeleformacion'), { type: 'number' }) +
+              '</div>' +
+              field('Presupuesto', 'presupuesto', v('presupuesto'), { type: 'number' }) +
+              select('Bonificable', 'bonificable', record.bonificable || '', [
+                { value: 'Sí', label: 'Sí' },
+                { value: 'No', label: 'No' }
+              ]) +
+              (showAsParent ? '' :
+                select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+                select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+                '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
+                '<div id="cfTutoresList" class="u-mb-4"></div>' +
+                '<div class="u-flex u-gap-4 u-items-center">' +
+                  '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
+                    '<option value="">-- Seleccionar tutor --</option>' +
+                    tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
+                  '</select>' +
+                  '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
+                '</div></div>'
+              );
+          })() +
           '</div></details>' +
 
         // 2. Grupos list (only for parent in action view — includes Gr.1 as self)
@@ -9473,29 +9505,40 @@
           '</div></details>' +
 
         // 3. Datos FUNDAE (collapsed)
-        '<details class="catalog-details">' +
-          '<summary>Datos FUNDAE ' + pendingFundaeHtml + '</summary>' +
-          '<div class="catalog-details-body">' +
-          field('Código grupo acción', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
-          select('Área profesional', 'areaProfesional', record.areaProfesional || '', areaOpts) +
-          select('Nivel formación', 'nivelFormacion', String(record.nivelFormacion || ''), [
-            { value: '0', label: 'Básico' }, { value: '1', label: 'Superior' }
-          ]) +
-          '<div id="cf_plataformaWrap" style="' + (showPlataforma ? '' : 'display:none;') + '">' +
-            '<div class="u-field-group">' +
-              '<div onclick="toggleFundaeSub(\'cf_plataformaInner\')" class="u-cursor-pointer u-text-12 u-font-600 u-text-accent u-select-none" style="padding:6px 0;"><span class="icon" aria-hidden="true">' + Icons.chevronDown(12) + '</span> Plataforma teleformación</div>' +
-              '<div id="cf_plataformaInner">' +
-                field('CIF plataforma', 'plataformaCif', v('plataformaCif')) +
-                field('Razón social plataforma', 'plataformaRazonSocial', v('plataformaRazonSocial')) +
-                field('URI plataforma', 'plataformaUri', v('plataformaUri')) +
-                field('Usuario plataforma', 'plataformaUsuario', v('plataformaUsuario')) +
-                field('Password plataforma', 'plataformaPassword', v('plataformaPassword')) +
+        // Groups only need codigoGrupo — objetivos, contenidos, área, nivel, plataforma are action-level
+        (function() {
+          var isGroupLevel = showAsGroup || !!record.parentAccion;
+          if (isGroupLevel) {
+            return '<details class="catalog-details">' +
+              '<summary>Datos FUNDAE grupo</summary>' +
+              '<div class="catalog-details-body">' +
+              field('Código grupo', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
+              '</div></details>';
+          }
+          return '<details class="catalog-details">' +
+            '<summary>Datos FUNDAE ' + pendingFundaeHtml + '</summary>' +
+            '<div class="catalog-details-body">' +
+            field('Código grupo acción', 'codigoGrupo', v('codigoGrupo'), { placeholder: 'NNN-NN' }) +
+            select('Área profesional', 'areaProfesional', record.areaProfesional || '', areaOpts) +
+            select('Nivel formación', 'nivelFormacion', String(record.nivelFormacion || ''), [
+              { value: '0', label: 'Básico' }, { value: '1', label: 'Superior' }
+            ]) +
+            '<div id="cf_plataformaWrap" style="' + (showPlataforma ? '' : 'display:none;') + '">' +
+              '<div class="u-field-group">' +
+                '<div onclick="toggleFundaeSub(\'cf_plataformaInner\')" class="u-cursor-pointer u-text-12 u-font-600 u-text-accent u-select-none" style="padding:6px 0;"><span class="icon" aria-hidden="true">' + Icons.chevronDown(12) + '</span> Plataforma teleformación</div>' +
+                '<div id="cf_plataformaInner">' +
+                  field('CIF plataforma', 'plataformaCif', v('plataformaCif')) +
+                  field('Razón social plataforma', 'plataformaRazonSocial', v('plataformaRazonSocial')) +
+                  field('URI plataforma', 'plataformaUri', v('plataformaUri')) +
+                  field('Usuario plataforma', 'plataformaUsuario', v('plataformaUsuario')) +
+                  field('Password plataforma', 'plataformaPassword', v('plataformaPassword')) +
+                '</div>' +
               '</div>' +
             '</div>' +
-          '</div>' +
-          textarea('Objetivos', 'objetivos', v('objetivos')) +
-          textarea('Contenidos', 'contenidos', v('contenidos')) +
-          sectionEnd +
+            textarea('Objetivos', 'objetivos', v('objetivos')) +
+            textarea('Contenidos', 'contenidos', v('contenidos')) +
+            '</div></details>';
+        })() +
 
         // 4. Vinculaciones (default: collapsed)
         sectionHeader('vinculaciones', 'Vinculaciones', countFilled(secVinculacionFields), secVinculacionFields.length, false) +
