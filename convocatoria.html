@@ -9379,27 +9379,24 @@
             { value: 'Sí', label: 'Sí' },
             { value: 'No', label: 'No' }
           ]) +
-          (isParentWithGroups ? '' :
-            select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
-            select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-            '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
-            '<div id="cfTutoresList" class="u-mb-4"></div>' +
-            '<div class="u-flex u-gap-4 u-items-center">' +
-              '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
-                '<option value="">-- Seleccionar tutor --</option>' +
-                tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
-              '</select>' +
-              '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
-            '</div></div>'
-          ) +
+          select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+          select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+          '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
+          '<div id="cfTutoresList" class="u-mb-4"></div>' +
+          '<div class="u-flex u-gap-4 u-items-center">' +
+            '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
+              '<option value="">-- Seleccionar tutor --</option>' +
+              tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
+            '</select>' +
+            '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
+          '</div></div>' +
           '</div></details>' +
 
-        // 2. Participantes / Grupos (collapsed)
+        // 2. Otros grupos (only for parent with groups)
         (isParentWithGroups ?
           '<details class="catalog-details">' +
-            '<summary>Grupos <span class="u-text-xs u-text-muted u-ml-4">(' + childGroups.length + ')</span></summary>' +
+            '<summary>Otros grupos <span class="u-text-xs u-text-muted u-ml-4">(' + childGroups.length + ')</span></summary>' +
             '<div class="catalog-details-body">' +
-            '<div class="u-text-11 u-text-muted u-mb-8">Los participantes se asignan en cada grupo individualmente.</div>' +
             childGroups.map(function(g) {
               var grNum = g.codigoGrupo ? g.codigoGrupo.split('-')[1] : '?';
               var nPart = (g.participantes || []).length;
@@ -9412,31 +9409,37 @@
                 '<span class="u-text-xs" style="color:' + estadoColor + ';">' + esc(g.estado || '') + '</span>' +
               '</div>';
             }).join('') +
-            '<button class="btn btn-secondary u-text-12 u-mt-8" id="btnCreateGroupFromParent">' + (getChildGroups(record.codigo).length > 0 ? 'Nuevo grupo' : 'Crear grupo') + '</button>' +
+            '<button class="btn btn-secondary u-text-12 u-mt-8" id="btnCreateGroupFromParent">Nuevo grupo</button>' +
             '</div></details>' +
-          '' :
-          '<details class="catalog-details">' +
-            '<summary>Participantes <span class="u-text-xs u-text-muted u-ml-4">(' + (record.participantes || []).length + ')</span></summary>' +
-            '<div class="catalog-details-body">' +
-            '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
-              '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
-            '</div>' +
-            '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
-            '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
-            ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
-            ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
-            ' <button class="link-btn u-text-11 u-ml-8" id="btnExportAttendees" style="color:var(--success);"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>' +
-            '</div></details>'
-        ) +
+          '' : '') +
 
-        // 3. Asistencia (collapsed) — only for standalone/group actions
-        (isParentWithGroups ? '' :
-          '<details class="catalog-details">' +
-            '<summary>Asistencia <span class="u-text-xs u-text-muted u-ml-4">(' + ((record.asistencia && record.asistencia.sesiones) || []).length + ' sesiones)</span></summary>' +
-            '<div class="catalog-details-body">' +
-            renderAsistenciaHtml(record) +
-            '</div></details>'
-        ) +
+        // Group 1 divider (only for parent — marks the boundary between action-level and group-level)
+        (isParentWithGroups ?
+          '<div style="margin:16px 0 8px; padding:6px 12px; background:color-mix(in srgb, var(--success) 8%, transparent); border-radius:var(--radius-sm); border-left:3px solid var(--success);">' +
+            '<span class="u-text-12 u-font-600" style="color:var(--success);">Grupo 1</span>' +
+            ' <span class="u-text-11 u-text-muted">\u2014 datos de ejecuci\u00F3n de este grupo</span>' +
+          '</div>' : '') +
+
+        // 3. Participantes (collapsed)
+        '<details class="catalog-details">' +
+          '<summary>Participantes <span class="u-text-xs u-text-muted u-ml-4">(' + (record.participantes || []).length + ')</span></summary>' +
+          '<div class="catalog-details-body">' +
+          '<div id="cfParticipantWarning" class="u-text-11 u-text-warning u-mb-8" style="display:none;">' +
+            '\u26A0 Carga el organigrama en la pesta\u00F1a Convocatoria para asignar participantes' +
+          '</div>' +
+          '<div id="cfParticipantList" class="u-overflow-y-auto u-mb-8" style="max-height:200px;"></div>' +
+          '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
+          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
+          ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
+          ' <button class="link-btn u-text-11 u-ml-8" id="btnExportAttendees" style="color:var(--success);"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>' +
+          '</div></details>' +
+
+        // 4. Asistencia (collapsed)
+        '<details class="catalog-details">' +
+          '<summary>Asistencia <span class="u-text-xs u-text-muted u-ml-4">(' + ((record.asistencia && record.asistencia.sesiones) || []).length + ' sesiones)</span></summary>' +
+          '<div class="catalog-details-body">' +
+          renderAsistenciaHtml(record) +
+          '</div></details>' +
 
         // 4. Notas (collapsed)
         '<details class="catalog-details">' +
@@ -9488,15 +9491,12 @@
           if (!mod) checks.push({ label: 'Horas', ok: Number(record.horasPresenciales) > 0 || Number(record.horasTeleformacion) > 0 });
           checks.push({ label: 'Objetivos', ok: !!record.objetivos });
           checks.push({ label: 'Contenidos', ok: !!record.contenidos });
-          // Group-level checks: skip for parent actions with groups
-          if (!isParentWithGroups) {
-            checks.push({ label: 'Participantes', ok: (record.participantes || []).length > 0 });
-            checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
-            checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
-            if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
-            checks.push({ label: 'Tutor', ok: getRecordTutores(record).length > 0 });
-            checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
-          }
+          checks.push({ label: 'Participantes' + (isParentWithGroups ? ' (Gr.1)' : ''), ok: (record.participantes || []).length > 0 });
+          checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
+          checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
+          if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
+          checks.push({ label: 'Tutor', ok: getRecordTutores(record).length > 0 });
+          checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
 
           var okCount = checks.filter(function(c) { return c.ok; }).length;
           var total = checks.length;
