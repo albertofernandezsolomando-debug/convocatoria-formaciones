@@ -6809,10 +6809,23 @@
       return data;
     }
 
+    // Get tutors array from a record (handles legacy tutorVinculado + new tutoresVinculados)
+    function getRecordTutores(record) {
+      if (record.tutoresVinculados && record.tutoresVinculados.length > 0) return record.tutoresVinculados;
+      if (record.tutorVinculado) return [record.tutorVinculado];
+      return [];
+    }
+
+    // Set tutors array on a record (writes both for backward compat)
+    function setRecordTutores(record, docs) {
+      record.tutoresVinculados = docs;
+      record.tutorVinculado = docs.length > 0 ? docs[0] : '';
+    }
+
     function getLinkedAcciones(type, documento) {
       return getCatalog('acciones').filter(function(a) {
         if (type === 'centros') return a.centroVinculado === documento;
-        if (type === 'tutores') return a.tutorVinculado === documento;
+        if (type === 'tutores') return (a.tutoresVinculados || []).indexOf(documento) !== -1 || a.tutorVinculado === documento;
         if (type === 'proveedores') return a.proveedorVinculado === documento;
         return false;
       });
@@ -9201,7 +9214,15 @@
           ]) +
           select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
           select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+          '<div class="u-field-group"><label class="u-text-12 u-font-600 u-text-secondary u-mb-4" style="display:block;">Tutores vinculados</label>' +
+          '<div id="cfTutoresList" class="u-mb-4"></div>' +
+          '<div class="u-flex u-gap-4 u-items-center">' +
+            '<select class="input-field u-text-12 u-flex-1" id="cfTutorAdd" aria-label="Añadir tutor">' +
+              '<option value="">-- Seleccionar tutor --</option>' +
+              tutorOpts.map(function(o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') +
+            '</select>' +
+            '<button class="btn btn-secondary u-text-12 u-nowrap" id="cfTutorAddBtn" type="button">+ A\u00F1adir</button>' +
+          '</div></div>' +
           '</div></details>' +
 
         // 2. Participantes (collapsed)
@@ -9277,7 +9298,7 @@
           checks.push({ label: 'Fecha inicio', ok: !!record.fechaInicio });
           checks.push({ label: 'Fecha fin', ok: !!record.fechaFin });
           if (mod === 'Presencial' || mod === 'Mixta') checks.push({ label: 'Centro', ok: !!record.centroVinculado });
-          checks.push({ label: 'Tutor', ok: !!record.tutorVinculado });
+          checks.push({ label: 'Tutor', ok: getRecordTutores(record).length > 0 });
           checks.push({ label: 'Código grupo', ok: !!(record.codigoGrupo && /^\d{3}-\d{2}$/.test(record.codigoGrupo)) });
 
           var okCount = checks.filter(function(c) { return c.ok; }).length;
@@ -9524,6 +9545,51 @@
 
       // Acciones-specific bindings
       if (key === 'acciones') {
+        // Multi-tutor UI
+        function renderTutoresList() {
+          var listEl = document.getElementById('cfTutoresList');
+          if (!listEl) return;
+          var docs = getRecordTutores(record);
+          var tutores = getCatalog('tutores');
+          if (docs.length === 0) {
+            listEl.innerHTML = '<div class="u-text-11 u-text-muted">Sin tutores vinculados</div>';
+            return;
+          }
+          listEl.innerHTML = docs.map(function(doc) {
+            var t = tutores.find(function(x) { return x.documento === doc; });
+            var name = t ? [t.nombre, t.apellido1, t.apellido2].filter(Boolean).join(' ') : doc;
+            return '<div class="u-flex u-items-center u-gap-6 u-border-bottom" style="padding:3px 0;">' +
+              '<span class="u-text-12">' + esc(name) + ' <span class="u-text-muted u-text-xs">(' + esc(doc) + ')</span></span>' +
+              '<button class="link-btn link-clear u-ml-auto cfRemoveTutor" data-doc="' + esc(doc) + '" style="color:var(--danger); font-size:var(--font-size-xs);">' + Icons.close(10) + '</button>' +
+            '</div>';
+          }).join('');
+          listEl.querySelectorAll('.cfRemoveTutor').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var docToRemove = this.getAttribute('data-doc');
+              var current = getRecordTutores(record);
+              setRecordTutores(record, current.filter(function(d) { return d !== docToRemove; }));
+              upsertCatalogRecord('acciones', 'codigo', record);
+              renderTutoresList();
+            });
+          });
+        }
+        renderTutoresList();
+        var addTutorBtn = document.getElementById('cfTutorAddBtn');
+        var addTutorSel = document.getElementById('cfTutorAdd');
+        if (addTutorBtn && addTutorSel) {
+          addTutorBtn.addEventListener('click', function() {
+            var doc = addTutorSel.value;
+            if (!doc) return;
+            var current = getRecordTutores(record);
+            if (current.indexOf(doc) !== -1) { showToast('Tutor ya vinculado', 'info'); return; }
+            current.push(doc);
+            setRecordTutores(record, current);
+            upsertCatalogRecord('acciones', 'codigo', record);
+            addTutorSel.value = '';
+            renderTutoresList();
+          });
+        }
+
         // Collapsible section headers
         document.querySelectorAll('.cfSectionHeader').forEach(function(header) {
           header.addEventListener('click', function() {
@@ -9576,9 +9642,10 @@
             if (!accion) { showToast('Acción no encontrada', 'error'); return; }
             // Build grupoData from catalog record
             var centro = accion.centroVinculado ? getCatalog('centros').find(function(c) { return c.documento === accion.centroVinculado; }) : null;
-            var tutor = accion.tutorVinculado ? getCatalog('tutores').find(function(t) { return t.documento === accion.tutorVinculado; }) : null;
+            var tutorDocs = getRecordTutores(accion);
+            var tutor = tutorDocs.length > 0 ? getCatalog('tutores').find(function(t) { return t.documento === tutorDocs[0]; }) : null;
             if (!centro) { showToast('Vincula un centro antes de generar XML de inicio', 'warning'); return; }
-            if (!tutor) { showToast('Vincula un tutor antes de generar XML de inicio', 'warning'); return; }
+            if (tutorDocs.length === 0) { showToast('Vincula al menos un tutor antes de generar XML de inicio', 'warning'); return; }
             var grNum = accion.codigoGrupo ? accion.codigoGrupo.split('-')[1].replace(/^0/, '') : '1';
             var defaults = loadXmlGroupDefaults(accion.empresaPagadora || '') || {};
             var grupoData = {
@@ -11557,7 +11624,12 @@
         record.plataformaPassword = val('plataformaPassword');
         record.proveedorVinculado = val('proveedorVinculado');
         record.centroVinculado = val('centroVinculado');
-        record.tutorVinculado = val('tutorVinculado');
+        // tutoresVinculados managed by add/remove buttons, preserve from existing
+        var existingAccionForTutors = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
+        if (existingAccionForTutors) {
+          record.tutoresVinculados = existingAccionForTutors.tutoresVinculados || [];
+          record.tutorVinculado = existingAccionForTutors.tutorVinculado || '';
+        }
 
         // Preserve participantes, notas, asistencia, and confirmaciones from existing record (managed by their own UI, not form inputs)
         var existingAccion = getCatalog('acciones').find(function(r) { return r.codigo === record.codigo; });
@@ -16320,7 +16392,7 @@
 
       var warnings = [];
       if (!accion.centroVinculado) warnings.push('Sin centro de impartición vinculado');
-      if (!accion.tutorVinculado) warnings.push('Sin tutor vinculado');
+      if (getRecordTutores(accion).length === 0) warnings.push('Sin tutor vinculado');
 
       var participantes = accion.participantes || [];
       if (participantes.length === 0) {
@@ -18163,7 +18235,8 @@
 
       // Pre-select linked centro/tutor
       if (accion.centroVinculado) document.getElementById('xmlCentroSelect').value = accion.centroVinculado;
-      if (accion.tutorVinculado) document.getElementById('xmlTutorSelect').value = accion.tutorVinculado;
+      var tutorDocsXml = getRecordTutores(accion);
+      if (tutorDocsXml.length > 0) document.getElementById('xmlTutorSelect').value = tutorDocsXml[0];
 
       // Pre-fill dates from acción
       if (accion.fechaInicio) document.getElementById('xmlFechaInicio').value = accion.fechaInicio;
@@ -18691,7 +18764,11 @@
       const isPresencial = mod === 'Presencial' || mod === 'Mixta';
       const isTele = mod === 'Teleformación' || mod === 'Mixta';
       const centro = grupoData.centro;
-      const tutor = grupoData.tutor;
+      // Support multiple tutors
+      var tutorDocs = getRecordTutores(accion);
+      var allTutors = getCatalog('tutores');
+      var tutors = tutorDocs.map(function(doc) { return allTutors.find(function(t) { return t.documento === doc; }); }).filter(Boolean);
+      if (tutors.length === 0 && grupoData.tutor) tutors = [grupoData.tutor]; // fallback to single
       const fechaInicio = grupoData.fechaInicio;
       const fechaFin = grupoData.fechaFin;
       const horaInicio = grupoData.horaInicio;
@@ -18700,7 +18777,6 @@
       // Mappings for document types → XSD codes
       const centroTipoDocMap = { 'CIF': '90', 'NIF': '10', 'NIE': '60', 'Pasaporte': '20' };
       const tutorTipoDocMap = { 'NIF': '10', 'DNI': '10', 'NIE': '60', 'Pasaporte': '20' };
-      const tutorTipoCode = tutorTipoDocMap[tutor.tipoDocumento] || '10';
 
       // Compute dias (LMXJVSD) from date range
       const diasMap = ['D','L','M','X','J','V','S'];
@@ -18713,16 +18789,34 @@
       }
       const dias = 'LMXJVSD'.split('').filter(c => daySet.has(c)).join('') || 'LMXJV';
 
-      // Build tutor XML helper
-      function buildTutorXml(numHoras) {
+      // Build tutor XML helper (per tutor)
+      function buildTutorXml(t, numHoras) {
+        var tipoCode = tutorTipoDocMap[t.tipoDocumento] || '10';
         return '        <numeroHoras>' + e(numHoras) + '</numeroHoras>\n' +
-          '        <tipoDocumento>' + e(tutorTipoCode) + '</tipoDocumento>\n' +
-          '        <documento>' + e(tutor.documento) + '</documento>\n' +
-          '        <nombre>' + e(tutor.nombre) + '</nombre>\n' +
-          '        <apellido1>' + e(tutor.apellido1) + '</apellido1>\n' +
-          (tutor.apellido2 ? '        <apellido2>' + e(tutor.apellido2) + '</apellido2>\n' : '') +
-          '        <telefono>' + e(tutor.telefono) + '</telefono>\n' +
-          '        <correoElectronico>' + e(tutor.email) + '</correoElectronico>\n';
+          '        <tipoDocumento>' + e(tipoCode) + '</tipoDocumento>\n' +
+          '        <documento>' + e(t.documento) + '</documento>\n' +
+          '        <nombre>' + e(t.nombre) + '</nombre>\n' +
+          '        <apellido1>' + e(t.apellido1) + '</apellido1>\n' +
+          (t.apellido2 ? '        <apellido2>' + e(t.apellido2) + '</apellido2>\n' : '') +
+          '        <telefono>' + e(t.telefono) + '</telefono>\n' +
+          '        <correoElectronico>' + e(t.email) + '</correoElectronico>\n';
+      }
+
+      // Build all <Tutor> elements for a modality
+      function buildAllTutorsXml(totalHoras, isTeleformacion) {
+        if (tutors.length === 0) return '';
+        var horasPerTutor = Math.round((Number(totalHoras) || 1) / tutors.length);
+        return tutors.map(function(t) {
+          var xml = '      <Tutor>\n' + buildTutorXml(t, t.horasDedicacion || horasPerTutor);
+          if (isTeleformacion) {
+            xml += '        <tutoria>\n' +
+              '          <tipoTutoria><tutorias>1</tutorias></tipoTutoria>\n' +
+              '          <descripcion>Correo electr\u00F3nico</descripcion>\n' +
+              '        </tutoria>\n';
+          }
+          xml += '      </Tutor>\n';
+          return xml;
+        }).join('');
       }
 
       // Jornada presencial (XSD: centro + lugarImparticion + horario + calendario + Tutor)
@@ -18730,7 +18824,6 @@
       if (isPresencial && centro) {
         const centroTipoCode = centroTipoDocMap[centro.tipoDocumento] || '90';
         const horasPr = String(Number(accion.horasPresenciales || 0));
-        const horasTutorPr = tutor.horasDedicacion || horasPr || '1';
 
         jornadaXml = '    <jornadaPresencial>\n' +
           '      <centro>\n' +
@@ -18758,9 +18851,7 @@
           (horaInicio ? '        <horario_inicio_tramo1>' + e(horaInicio) + '</horario_inicio_tramo1>\n' : '') +
           (horaFin ? '        <horario_fin_tramo1>' + e(horaFin) + '</horario_fin_tramo1>\n' : '') +
           '      </calendario>\n' +
-          '      <Tutor>\n' +
-          buildTutorXml(horasTutorPr) +
-          '      </Tutor>\n' +
+          buildAllTutorsXml(horasPr, false) +
           '    </jornadaPresencial>\n';
       }
 
@@ -18768,20 +18859,13 @@
       let teleXml = '';
       if (isTele) {
         const horasTe = String(Number(accion.horasTeleformacion || 0));
-        const horasTutorTe = tutor.horasDedicacion || horasTe || '1';
 
         teleXml = '    <distanciaTeleformacion>\n' +
           '      <horario>\n' +
           '        <horaTotales>' + e(horasTe) + '</horaTotales>\n' +
           '        <dias>' + e(dias) + '</dias>\n' +
           '      </horario>\n' +
-          '      <Tutor>\n' +
-          buildTutorXml(horasTutorTe) +
-          '        <tutoria>\n' +
-          '          <tipoTutoria><tutorias>1</tutorias></tipoTutoria>\n' +
-          '          <descripcion>Correo electrónico</descripcion>\n' +
-          '        </tutoria>\n' +
-          '      </Tutor>\n' +
+          buildAllTutorsXml(horasTe, true) +
           '    </distanciaTeleformacion>\n';
       }
 
