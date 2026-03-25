@@ -5842,6 +5842,7 @@
             <span id="xmlParticipantCount" class="u-text-12 u-text-muted">0</span>
             <div class="u-flex-1"></div>
             <button class="btn btn-secondary u-text-12" id="btnXmlAddParticipant"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Añadir</button>
+            <button class="btn btn-secondary u-text-12" id="btnXmlExportAttendees" title="Exportar DNIs y curso a XLS"><span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>
             <button class="btn btn-secondary u-text-12" id="btnXmlRestoreAll" title="Restaurar todos los datos del organigrama">Restaurar todos</button>
             <div class="u-flex u-items-center u-gap-4">
               <label class="u-text-11 u-text-muted">Diploma masivo:</label>
@@ -9377,6 +9378,7 @@
           '<button class="btn btn-secondary u-text-12" id="btnAssignParticipants">Asignar participantes</button>' +
           ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnCopyParticipants">Copiar de otra acci\u00F3n</button>' +
           ' <button class="link-btn link-add u-text-11 u-ml-8" id="btnAutoDistribute">Auto-distribuir por ubicaci\u00F3n</button>' +
+          ' <button class="link-btn u-text-11 u-ml-8" id="btnExportAttendees" style="color:var(--success);"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Exportar XLS</button>' +
           '</div></details>' +
 
         // 3. Asistencia (collapsed)
@@ -11455,6 +11457,16 @@
         autoDistBtn.parentNode.replaceChild(newAutoDistBtn, autoDistBtn);
         newAutoDistBtn.addEventListener('click', function() {
           autoDistributeByLocation(record);
+        });
+      }
+
+      // Bind export attendees XLS button
+      var exportAttendeesBtn = document.getElementById('btnExportAttendees');
+      if (exportAttendeesBtn) {
+        var newExportBtn = exportAttendeesBtn.cloneNode(true);
+        exportAttendeesBtn.parentNode.replaceChild(newExportBtn, exportAttendeesBtn);
+        newExportBtn.addEventListener('click', function() {
+          exportAttendeesList(record);
         });
       }
     }
@@ -18816,6 +18828,20 @@
       showToast('Datos de ' + xmlState.participantes.length + ' participantes restaurados del organigrama', 'success');
     });
 
+    // Export attendees XLS from XML tab
+    document.getElementById('btnXmlExportAttendees').addEventListener('click', function() {
+      if (xmlState.participantes.length === 0) {
+        showToast('No hay participantes para exportar', 'warning');
+        return;
+      }
+      var accion = getXmlAccion();
+      if (!accion) {
+        showToast('Selecciona una acción formativa', 'warning');
+        return;
+      }
+      exportAttendeesList(accion);
+    });
+
     // Add participant button
     document.getElementById('btnXmlAddParticipant').addEventListener('click', function() {
       if (!state.employees || state.employees.length === 0) {
@@ -19804,6 +19830,30 @@
       XLSX.writeFile(wb, 'FUNDAE_' + (accion.codigo || 'sin_codigo') + '_participantes.xlsx');
       showToast('Datos FUNDAE exportados', 'success');
     });
+
+    // ── Export attendees list (DNI + CURSO) from any view ──
+    function exportAttendeesList(record) {
+      var participantes = record.participantes || [];
+      if (participantes.length === 0) {
+        showToast('No hay participantes para exportar', 'warning');
+        return;
+      }
+      var codigoDisplay = (record.codigo || '').replace(/^AF/, '');
+      var grp = record.codigoGrupo ? record.codigoGrupo.split('-')[1] : null;
+      var curso = grp
+        ? (codigoDisplay + '/' + grp + ' ' + (record.nombre || ''))
+        : (codigoDisplay + ' ' + (record.nombre || ''));
+      curso = curso.trim();
+
+      var rows = [['DNI', 'CURSO']];
+      participantes.forEach(function(nif) { rows.push([nif, curso]); });
+
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Asistentes');
+      XLSX.writeFile(wb, 'Asistentes_' + codigoDisplay + '.xlsx');
+      showToast('Exportado ' + participantes.length + ' participante' + (participantes.length !== 1 ? 's' : ''), 'success');
+    }
 
     // ═══════════════════════════════════
     // SESSION PROTECTION
@@ -25518,6 +25568,7 @@
           '<button class="btn btn-primary" id="calDetailConvocar" style="font-size:var(--font-size-sm); padding:5px 12px;">Convocar</button>' +
           '<button class="btn btn-secondary" id="calDetailImportFirmas" style="font-size:var(--font-size-sm); padding:5px 12px;">' + Icons.upload(12) + ' Importar firmas</button>' +
           '<input type="file" id="calFirmasInput" accept=".pdf" style="display:none;">' +
+          '<button class="btn btn-secondary" id="calDetailExportXLS" style="font-size:var(--font-size-sm); padding:5px 12px;" title="Exportar DNIs y curso a XLS"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> XLS</button>' +
           '<a href="#" id="calDetailOpenCatalog" class="u-text-11 u-text-accent" style="text-decoration:none; margin-left:auto;">Ver en cat\u00e1logo \u2192</a>' +
         '</div>' +
       '</div>' +
@@ -25684,6 +25735,15 @@
             }
             this.value = '';
           }
+        });
+      }
+
+      // Export XLS button handler
+      var calExportXLSBtn = document.getElementById('calDetailExportXLS');
+      if (calExportXLSBtn) {
+        calExportXLSBtn.addEventListener('click', function() {
+          var record = getCatalog('acciones').find(function(a) { return a.codigo === item.codigo; });
+          if (record) exportAttendeesList(record);
         });
       }
 
