@@ -9527,12 +9527,14 @@
             '</div></details>';
         })() +
 
-        // 4. Vinculaciones (default: collapsed)
-        sectionHeader('vinculaciones', 'Vinculaciones', countFilled(secVinculacionFields), secVinculacionFields.length, false) +
-          select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
-          select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
-          select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
-          sectionEnd +
+        // 4. Vinculaciones (only for standalone — parent shows them in Datos básicos, groups inherit)
+        (!(showAsGroup || !!record.parentAccion || showAsParent) ?
+          sectionHeader('vinculaciones', 'Vinculaciones', countFilled(secVinculacionFields), secVinculacionFields.length, false) +
+            select('Proveedor vinculado', 'proveedorVinculado', record.proveedorVinculado || '', proveedorOpts) +
+            select('Centro vinculado', 'centroVinculado', record.centroVinculado || '', centroOpts) +
+            select('Tutor vinculado', 'tutorVinculado', record.tutorVinculado || '', tutorOpts) +
+            sectionEnd
+          : '') +
 
         // 5. Checklist FUNDAE informativo (P5)
         (function() {
@@ -12281,11 +12283,32 @@
       }
 
       upsertCatalogRecord(key, cfg.pk, record);
+
+      // Propagate action-level fields to child groups
+      if (key === 'acciones' && !record.parentAccion) {
+        var children = getChildGroups(record.codigo);
+        if (children.length > 0) {
+          var propagateFields = [
+            'proveedorVinculado', 'centroVinculado', 'tutoresVinculados', 'tutorVinculado',
+            'modalidad', 'horasPresenciales', 'horasTeleformacion',
+            'departamento', 'empresaPagadora', 'bonificable',
+            'areaProfesional', 'nivelFormacion', 'objetivos', 'contenidos',
+            'plataformaCif', 'plataformaRazonSocial', 'plataformaUri', 'plataformaUsuario', 'plataformaPassword'
+          ];
+          children.forEach(function(child) {
+            propagateFields.forEach(function(f) {
+              if (record[f] !== undefined) child[f] = record[f];
+            });
+            upsertCatalogRecord('acciones', 'codigo', child);
+          });
+        }
+      }
+
       catalogState.selectedPK = record[cfg.pk];
       clearCatalogDirty();
       renderCatalogList();
       renderCatalogForm();
-      showToast('Registro guardado', 'success');
+      showToast('Registro guardado' + (key === 'acciones' && !record.parentAccion && getChildGroups(record.codigo).length > 0 ? ' (propagado a ' + getChildGroups(record.codigo).length + ' grupos)' : ''), 'success');
     }
 
     function showCatalogConfirm(title, message, onConfirm) {
