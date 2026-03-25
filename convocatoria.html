@@ -1431,6 +1431,137 @@
       color: var(--accent);
     }
 
+    /* --- Column filter buttons (Excel-style) --- */
+    .col-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      margin-left: 2px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      opacity: 0.5;
+      transition: opacity var(--transition), color var(--transition), background-color var(--transition);
+      vertical-align: middle;
+      position: relative;
+    }
+    .col-filter-btn:hover {
+      opacity: 1;
+      color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    .col-filter-btn.active {
+      opacity: 1;
+      color: var(--accent);
+    }
+    .col-filter-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      background: var(--accent);
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      padding: 0 3px;
+      pointer-events: none;
+    }
+    .col-filter-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .col-filter-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 220px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: var(--z-sticky);
+      animation: dropdownIn 0.15s ease-out;
+    }
+    .col-filter-dropdown.open { display: block; }
+    .col-filter-dropdown .cf-actions {
+      display: flex;
+      gap: 8px;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .col-filter-dropdown .cf-actions a {
+      font-size: var(--font-size-xs);
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .col-filter-dropdown .cf-actions a:hover {
+      text-decoration: underline;
+    }
+    .col-filter-dropdown .cf-search {
+      position: sticky;
+      top: 30px;
+      background: var(--bg-panel);
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      z-index: 1;
+    }
+    .col-filter-dropdown .cf-search input {
+      width: 100%;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-body);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .col-filter-dropdown .cf-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+    .col-filter-dropdown label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .col-filter-dropdown label:hover { background: var(--accent-subtle); }
+    .col-filter-dropdown label:last-child { margin-bottom: 4px; }
+    .col-filter-dropdown input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+    }
+    .col-filter-dropdown .cf-count {
+      color: var(--text-muted);
+      font-size: var(--font-size-xs);
+      margin-left: auto;
+    }
+    .attendee-table th {
+      position: relative;
+    }
+
     .action-bar {
       padding: 16px 28px;
       border-top: 1px solid var(--border);
@@ -5208,7 +5339,6 @@
           <div id="unifiedTemplateChips" class="u-flex u-flex-wrap u-gap-4"></div>
           <button class="link-btn link-add u-text-11" id="btnSaveUnifiedTemplate"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Guardar plantilla</button>
         </div>
-        <div id="filterContainer"></div>
         <details class="form-section u-mt-10" id="nifListSection">
           <summary class="u-text-13 u-font-600 u-cursor-pointer">Selección por lista</summary>
           <textarea class="input-field u-text-12 u-resize-vertical u-mt-8" id="nifListInput" rows="4"
@@ -5221,8 +5351,6 @@
         </details>
         <div class="u-mt-12 u-flex u-gap-10 u-items-center">
           <button class="link-btn link-add" id="btnAddExternal"><span class="icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Añadir lista externa</button>
-          <span class="u-text-11" style="color:var(--border-strong);">|</span>
-          <button class="link-btn link-clear" id="btnClearFilters">Limpiar filtros</button>
           <button class="link-btn link-add u-text-11 u-ml-8" id="btnLoadFromAccion">Cargar desde Acción Formativa</button>
         </div>
         <input type="file" id="externalFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
@@ -5360,23 +5488,24 @@
       <div class="attendee-table-wrap" id="tableWrap">
         <div class="empty-state" id="emptyState"></div>
         <div class="table-skeleton" id="tableSkeleton" style="display:none;">
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:19%;"></div><div class="table-skeleton-cell" style="width:31%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:26%;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:21%;"></div><div class="table-skeleton-cell" style="width:29%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:27%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:28%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
-          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:14%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:32%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:24%;"></div><div class="table-skeleton-cell" style="width:15%;"></div><div class="table-skeleton-cell" style="width:15%;"></div><div class="table-skeleton-cell" style="width:19%;"></div><div class="table-skeleton-cell" style="width:27%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:21%;"></div><div class="table-skeleton-cell" style="width:17%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:17%;"></div><div class="table-skeleton-cell" style="width:29%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:23%;"></div><div class="table-skeleton-cell" style="width:14%;"></div><div class="table-skeleton-cell" style="width:17%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:19%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:15%;"></div><div class="table-skeleton-cell" style="width:20%;"></div><div class="table-skeleton-cell" style="width:30%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:25%;"></div><div class="table-skeleton-cell" style="width:13%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
+          <div class="table-skeleton-row"><div class="table-skeleton-cell" style="width:30px;"></div><div class="table-skeleton-cell" style="width:22%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:16%;"></div><div class="table-skeleton-cell" style="width:18%;"></div><div class="table-skeleton-cell" style="width:28%;"></div></div>
         </div>
         <table class="table-base attendee-table" id="attendeeTable" role="table" style="display:none;">
           <thead>
             <tr role="row">
               <th scope="col" style="width:40px;"><input type="checkbox" id="selectAll" checked aria-label="Seleccionar todos"></th>
-              <th scope="col" style="width:25%;" class="sortable" data-sort="Empleado" aria-sort="ascending">Persona trabajadora <span class="sort-arrow icon active" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:25%;" class="sortable" data-sort="Puesto" aria-sort="none">Puesto <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:20%;" class="sortable" data-sort="Ubicación" aria-sort="none">Ubicación <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
-              <th scope="col" style="width:30%;" class="sortable" data-sort="Email trabajo" aria-sort="none">Email <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:22%;" class="sortable" data-sort="Empleado" aria-sort="ascending"><span class="th-label">Persona trabajadora</span> <span class="sort-arrow icon active" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th scope="col" style="width:16%;" class="sortable" data-sort="Empresa" aria-sort="none"><span class="th-label">Empresa</span> <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span> <span class="col-filter-wrap" data-filter-col="Empresa"><button type="button" class="col-filter-btn" aria-label="Filtrar por Empresa" aria-expanded="false" aria-haspopup="listbox"></button></span></th>
+              <th scope="col" style="width:16%;" class="sortable" data-sort="Departamento" aria-sort="none"><span class="th-label">Departamento</span> <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span> <span class="col-filter-wrap" data-filter-col="Departamento"><button type="button" class="col-filter-btn" aria-label="Filtrar por Departamento" aria-expanded="false" aria-haspopup="listbox"></button></span></th>
+              <th scope="col" style="width:18%;" class="sortable" data-sort="Puesto" aria-sort="none"><span class="th-label">Puesto</span> <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span> <span class="col-filter-wrap" data-filter-col="Puesto"><button type="button" class="col-filter-btn" aria-label="Filtrar por Puesto" aria-expanded="false" aria-haspopup="listbox"></button></span></th>
+              <th scope="col" style="width:28%;" class="sortable" data-sort="Email trabajo" aria-sort="none"><span class="th-label">Email</span> <span class="sort-arrow icon" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span></th>
             </tr>
           </thead>
           <tbody id="attendeeBody"></tbody>
@@ -6496,7 +6625,7 @@
           { group: 'Herramientas', label: 'Abrir ajustes', icon: Icons.settings(14), action: () => { closeAllDialogs(); document.getElementById('btnSettings').click(); } },
           { group: 'Herramientas', label: 'Ver historial', icon: Icons.history(14), action: () => { renderHistory(); document.getElementById('historyPanel')?.classList.add('visible'); } },
           { group: 'Herramientas', label: 'Limpiar almacenamiento local', icon: Icons.lock(14), action: () => { closeAllDialogs(); showClearStorageDialog(); } },
-          { group: 'Convocatoria', label: 'Limpiar filtros', icon: Icons.x(14), action: () => { state.activeFilters = {}; renderFilters(); renderTable(); } },
+          { group: 'Convocatoria', label: 'Limpiar filtros', icon: Icons.x(14), action: () => { state.columnFilters = {}; renderFilters(); renderTable(); } },
           { group: 'Convocatoria', label: 'Enviar convocatoria', icon: Icons.mail(14), shortcut: KBD.mod + '+Enter', action: () => document.getElementById('btnOpenOutlook').click() },
         ];
 
@@ -11733,9 +11862,10 @@
     ];
 
     const FILTER_KEYS = [
-      'Empresa', 'Departamento', 'Área',
-      'Categoría Mercer', 'Depende de'
+      'Empresa', 'Departamento', 'Puesto'
     ];
+    // COL_FILTER_KEYS: columns with Excel-style dropdown filters in the table header
+    const COL_FILTER_KEYS = ['Empresa', 'Departamento', 'Puesto'];
 
     const FUNDAE_COLUMNS = [
       'Móvil trabajo (largo)', 'Teléfono personal',
@@ -12099,53 +12229,35 @@
       });
     }
 
-    function filterEmployees(employees, activeFilters) {
-      return employees.filter(emp => {
-        return FILTER_KEYS.every(key => {
-          const selected = activeFilters[key];
+    function filterEmployees(employees, columnFilters) {
+      var keys = Object.keys(columnFilters);
+      if (keys.length === 0) return employees;
+      return employees.filter(function(emp) {
+        return keys.every(function(key) {
+          var selected = columnFilters[key];
           if (!selected || selected.length === 0) return true;
           return selected.includes(emp[key]);
         });
       });
     }
 
-    function getFilterOptions(employees, activeFilters) {
-      const options = {};
-      FILTER_KEYS.forEach(key => {
-        const otherFilters = {};
-        FILTER_KEYS.forEach(k => {
-          if (k !== key && activeFilters[k] && activeFilters[k].length > 0) {
-            otherFilters[k] = activeFilters[k];
-          }
-        });
-        const subset = filterEmployees(employees, otherFilters);
-        const values = [...new Set(subset.map(e => e[key]).filter(v => v !== ''))];
-        values.sort((a, b) => a.localeCompare(b, 'es'));
-        options[key] = values;
+    function getColFilterOptionsWithCounts(employees, columnFilters, colKey) {
+      // Build other-column filters (excluding colKey) to get cross-filtered counts
+      var otherFilters = {};
+      Object.keys(columnFilters).forEach(function(k) {
+        if (k !== colKey && columnFilters[k] && columnFilters[k].length > 0) {
+          otherFilters[k] = columnFilters[k];
+        }
       });
-      return options;
-    }
-
-    function getFilterOptionsWithCounts(employees, activeFilters) {
-      const result = {};
-      FILTER_KEYS.forEach(key => {
-        const otherFilters = {};
-        FILTER_KEYS.forEach(k => {
-          if (k !== key && activeFilters[k] && activeFilters[k].length > 0) {
-            otherFilters[k] = activeFilters[k];
-          }
-        });
-        const subset = filterEmployees(employees, otherFilters);
-        const counts = {};
-        subset.forEach(e => {
-          const v = e[key];
-          if (v !== '') counts[v] = (counts[v] || 0) + 1;
-        });
-        result[key] = Object.entries(counts)
-          .map(([value, count]) => ({ value, count }))
-          .sort((a, b) => a.value.localeCompare(b.value, 'es'));
+      var subset = filterEmployees(employees, otherFilters);
+      var counts = {};
+      subset.forEach(function(e) {
+        var v = e[colKey];
+        if (v !== '' && v != null) counts[v] = (counts[v] || 0) + 1;
       });
-      return result;
+      return Object.entries(counts)
+        .map(function(entry) { return { value: entry[0], count: entry[1] }; })
+        .sort(function(a, b) { return a.value.localeCompare(b.value, 'es'); });
     }
 
     function buildDeepLink(event, attendees) {
@@ -12513,7 +12625,7 @@
     const state = {
       employees: [],
       externalEmployees: [],
-      activeFilters: {},
+      columnFilters: {},
       excludedNIFs: new Set(),
       seriesDates: [],
       currentSessionIndex: 0,
@@ -13735,7 +13847,7 @@
 
       // Apply filters if present
       if (d.filters && Object.keys(d.filters).length > 0) {
-        state.activeFilters = JSON.parse(JSON.stringify(d.filters));
+        state.columnFilters = JSON.parse(JSON.stringify(d.filters));
         renderFilters();
         renderTable();
       }
@@ -13935,9 +14047,9 @@
         var type = typeSelect.value;
 
         var data = {};
-        var activeKeys = Object.keys(state.activeFilters).filter(function(k) { return state.activeFilters[k] && state.activeFilters[k].length > 0; });
+        var activeKeys = Object.keys(state.columnFilters).filter(function(k) { return state.columnFilters[k] && state.columnFilters[k].length > 0; });
         if (type !== 'filter' || activeKeys.length > 0) {
-          data.filters = JSON.parse(JSON.stringify(state.activeFilters));
+          data.filters = JSON.parse(JSON.stringify(state.columnFilters));
         }
 
         if (type !== 'filter') {
@@ -14639,7 +14751,7 @@
         issueCount > 0 ? 'warning' : 'info', 4000);
       renderDataQualityPanel();
 
-      state.activeFilters = {};
+      state.columnFilters = {};
       state.excludedNIFs = new Set();
       state.externalEmployees = [];
       const extBtn = document.getElementById('btnAddExternal');
@@ -14760,7 +14872,7 @@
       saveTimeout = setTimeout(() => {
         try {
           const snapshot = {
-            activeFilters: state.activeFilters,
+            columnFilters: state.columnFilters,
             excludedNIFs: [...state.excludedNIFs],
             eventConfig: {
               title: document.getElementById('eventTitle').value,
@@ -14827,135 +14939,203 @@
     // FILTER RENDERING
     // ═══════════════════════════════════
 
-    function renderFilters() {
-      const container = document.getElementById('filterContainer');
-      const allEmployees = [...state.employees, ...state.externalEmployees];
-      const optionsWithCounts = getFilterOptionsWithCounts(allEmployees, state.activeFilters);
+    // ── Column filter dropdowns (Excel-style) ──
 
-      // Note: innerHTML is used with esc() to safely render filter options.
-      // All user-sourced data from Excel is sanitized through esc() before insertion.
-      container.innerHTML = FILTER_KEYS.map(key => {
-        const selected = state.activeFilters[key] || [];
-        const items = optionsWithCounts[key];
-        const btnText = selected.length > 0
-          ? selected.join(', ')
-          : 'Todos';
-        const btnClass = selected.length > 0 ? 'filter-select-btn active' : 'filter-select-btn';
+    function renderColumnFilterDropdown(colKey, wrapEl) {
+      var allEmployees = [].concat(state.employees, state.externalEmployees);
+      var items = getColFilterOptionsWithCounts(allEmployees, state.columnFilters, colKey);
+      var selected = state.columnFilters[colKey] || [];
 
-        var badgeHtml = selected.length > 0
-          ? '<span class="filter-badge">' + selected.length + '</span>'
-          : '';
+      // Remove existing dropdown if any
+      var existing = wrapEl.querySelector('.col-filter-dropdown');
+      if (existing) existing.remove();
 
-        return '<div class="filter-row">' +
-          '<span class="filter-label">' + esc(key) + badgeHtml + '</span>' +
-          '<div class="filter-select" data-key="' + esc(key) + '">' +
-            '<button class="' + btnClass + '" type="button" aria-expanded="false" aria-haspopup="listbox">' + esc(btnText) + '</button>' +
-            '<div class="filter-dropdown" role="listbox" aria-label="' + esc(key) + '">' +
-              '<div class="filter-search"><input type="text" placeholder="Buscar..." autocomplete="off" aria-label="Buscar en ' + esc(key) + '"></div>' +
-              items.map(({ value: v, count }) =>
-                '<label role="option" aria-selected="' + (selected.includes(v) ? 'true' : 'false') + '">' +
-                  '<input type="checkbox" value="' + esc(v) + '" ' + (selected.includes(v) ? 'checked' : '') + '>' +
-                  esc(v) + ' <span style="color:var(--text-muted);font-size:var(--font-size-xs);">(' + count + ')</span>' +
-                '</label>'
-              ).join('') +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      // Build dropdown DOM
+      var dd = document.createElement('div');
+      dd.className = 'col-filter-dropdown';
+      dd.setAttribute('role', 'listbox');
+      dd.setAttribute('aria-label', colKey);
 
-      container.querySelectorAll('.filter-select').forEach(sel => {
-        const key = sel.dataset.key;
-        const btn = sel.querySelector('.filter-select-btn');
-        const dropdown = sel.querySelector('.filter-dropdown');
+      // Actions row
+      var actionsDiv = document.createElement('div');
+      actionsDiv.className = 'cf-actions';
+      var selectAllLink = document.createElement('a');
+      selectAllLink.textContent = 'Seleccionar todos';
+      selectAllLink.setAttribute('role', 'button');
+      selectAllLink.setAttribute('tabindex', '0');
+      var clearLink = document.createElement('a');
+      clearLink.textContent = 'Limpiar';
+      clearLink.setAttribute('role', 'button');
+      clearLink.setAttribute('tabindex', '0');
+      actionsDiv.appendChild(selectAllLink);
+      actionsDiv.appendChild(clearLink);
+      dd.appendChild(actionsDiv);
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          container.querySelectorAll('.filter-dropdown.open').forEach(d => {
-            if (d !== dropdown) {
-              d.classList.remove('open');
-              d.previousElementSibling.setAttribute('aria-expanded', 'false');
-              const si = d.querySelector('.filter-search input');
-              if (si) { si.value = ''; }
-              d.querySelectorAll('label').forEach(l => l.style.display = '');
-            }
-          });
-          dropdown.classList.toggle('open');
-          btn.setAttribute('aria-expanded', String(dropdown.classList.contains('open')));
-        });
+      // Search
+      var searchDiv = document.createElement('div');
+      searchDiv.className = 'cf-search';
+      var searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.placeholder = 'Buscar...';
+      searchInput.autocomplete = 'off';
+      searchInput.setAttribute('aria-label', 'Buscar en ' + colKey);
+      searchDiv.appendChild(searchInput);
+      dd.appendChild(searchDiv);
 
-        // Prevent clicks inside dropdown from closing it via document handler
-        dropdown.addEventListener('click', e => e.stopPropagation());
-
-        dropdown.addEventListener('change', e => {
-          const checked = [...dropdown.querySelectorAll('input:checked')].map(cb => cb.value);
-          if (checked.length > 0) {
-            state.activeFilters[key] = checked;
-          } else {
-            delete state.activeFilters[key];
-          }
-          // Save which dropdown is open + search query to restore after re-render
-          const searchVal = dropdown.querySelector('.filter-search input')?.value || '';
-          renderFilters();
-          renderTable();
-          // Re-open the same dropdown after re-render
-          const newSel = container.querySelector('.filter-select[data-key="' + key + '"]');
-          if (newSel) {
-            const newDd = newSel.querySelector('.filter-dropdown');
-            if (newDd) {
-              newDd.classList.add('open');
-              var newBtn = newSel.querySelector('.filter-select-btn');
-              if (newBtn) newBtn.setAttribute('aria-expanded', 'true');
-              if (searchVal) {
-                const newSearch = newDd.querySelector('.filter-search input');
-                if (newSearch) {
-                  newSearch.value = searchVal;
-                  newSearch.dispatchEvent(new Event('input'));
-                }
-              }
-            }
-          }
-        });
-
-        const searchInput = dropdown.querySelector('.filter-search input');
-        if (searchInput) {
-          searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            dropdown.querySelectorAll('label').forEach(label => {
-              const text = label.textContent.toLowerCase();
-              label.style.display = text.includes(query) ? '' : 'none';
-            });
-          });
-        }
+      // Options
+      items.forEach(function(item) {
+        var label = document.createElement('label');
+        label.setAttribute('role', 'option');
+        label.setAttribute('aria-selected', String(selected.includes(item.value)));
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = item.value;
+        if (selected.includes(item.value)) cb.checked = true;
+        var textNode = document.createTextNode(item.value);
+        var countSpan = document.createElement('span');
+        countSpan.className = 'cf-count';
+        countSpan.textContent = '(' + item.count + ')';
+        label.appendChild(cb);
+        label.appendChild(textNode);
+        label.appendChild(countSpan);
+        dd.appendChild(label);
       });
 
-      const chipsEl = document.getElementById('filterChips');
-      const activeKeys = Object.keys(state.activeFilters).filter(k => state.activeFilters[k]?.length > 0);
-      chipsEl.innerHTML = activeKeys.map(k => // innerHTML OK: sanitized via esc()
-        state.activeFilters[k].map(v => '<span class="chip">' + esc(v) + '</span>').join(' ')
-      ).join(' ');
+      wrapEl.appendChild(dd);
 
+      // Prevent clicks inside dropdown from closing via document handler
+      dd.addEventListener('click', function(e) { e.stopPropagation(); });
+
+      // Search filter
+      searchInput.addEventListener('input', function() {
+        var query = searchInput.value.toLowerCase();
+        dd.querySelectorAll('label').forEach(function(lbl) {
+          var text = lbl.textContent.toLowerCase();
+          lbl.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+
+      // Checkbox change
+      dd.addEventListener('change', function() {
+        var checked = [];
+        dd.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c) {
+          checked.push(c.value);
+        });
+        if (checked.length > 0) {
+          state.columnFilters[colKey] = checked;
+        } else {
+          delete state.columnFilters[colKey];
+        }
+        renderTable();
+        updateColumnFilterBadges();
+        updateFilterChips();
+      });
+
+      // Select all
+      selectAllLink.addEventListener('click', function() {
+        dd.querySelectorAll('label').forEach(function(lbl) {
+          if (lbl.style.display !== 'none') {
+            var c = lbl.querySelector('input[type="checkbox"]');
+            if (c) c.checked = true;
+          }
+        });
+        dd.dispatchEvent(new Event('change'));
+      });
+
+      // Clear
+      clearLink.addEventListener('click', function() {
+        dd.querySelectorAll('input[type="checkbox"]').forEach(function(c) { c.checked = false; });
+        dd.dispatchEvent(new Event('change'));
+      });
+
+      // Open
+      dd.classList.add('open');
+      wrapEl.querySelector('.col-filter-btn').setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(function() { searchInput.focus(); });
+    }
+
+    function closeAllColumnFilterDropdowns() {
+      document.querySelectorAll('.col-filter-dropdown.open').forEach(function(d) {
+        d.classList.remove('open');
+        var btn = d.parentElement.querySelector('.col-filter-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    function updateColumnFilterBadges() {
+      document.querySelectorAll('.col-filter-wrap[data-filter-col]').forEach(function(wrap) {
+        var colKey = wrap.dataset.filterCol;
+        var btn = wrap.querySelector('.col-filter-btn');
+        var selected = state.columnFilters[colKey] || [];
+        // Remove existing badge
+        var existingBadge = btn.querySelector('.col-filter-badge');
+        if (existingBadge) existingBadge.remove();
+        // Set icon
+        if (selected.length > 0) {
+          btn.classList.add('active');
+          btn.innerHTML = Icons.filter(10);
+          var badge = document.createElement('span');
+          badge.className = 'col-filter-badge';
+          badge.textContent = String(selected.length);
+          btn.appendChild(badge);
+        } else {
+          btn.classList.remove('active');
+          btn.innerHTML = Icons.chevronDown(10);
+        }
+      });
+    }
+
+    function updateFilterChips() {
+      var chipsEl = document.getElementById('filterChips');
+      var activeKeys = Object.keys(state.columnFilters).filter(function(k) {
+        return state.columnFilters[k] && state.columnFilters[k].length > 0;
+      });
+      // innerHTML OK: all values sanitized via esc()
+      chipsEl.innerHTML = activeKeys.map(function(k) {
+        return state.columnFilters[k].map(function(v) {
+          return '<span class="chip">' + esc(v) + '</span>';
+        }).join(' ');
+      }).join(' ');
       saveState();
+    }
+
+    // Initialize column filter buttons with icons
+    (function initColumnFilterBtns() {
+      document.querySelectorAll('.col-filter-wrap[data-filter-col]').forEach(function(wrap) {
+        var btn = wrap.querySelector('.col-filter-btn');
+        btn.innerHTML = Icons.chevronDown(10);
+
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var isOpen = wrap.querySelector('.col-filter-dropdown.open');
+          closeAllColumnFilterDropdowns();
+          if (!isOpen) {
+            renderColumnFilterDropdown(wrap.dataset.filterCol, wrap);
+          }
+        });
+      });
+    })();
+
+    // Close column filter dropdowns on document click
+    document.addEventListener('click', function() {
+      closeAllColumnFilterDropdowns();
+      // Also close any legacy filter dropdowns
+      document.querySelectorAll('.filter-dropdown.open').forEach(function(d) {
+        d.classList.remove('open');
+        var prevBtn = d.previousElementSibling;
+        if (prevBtn) prevBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Legacy renderFilters stub (called from various places)
+    function renderFilters() {
+      updateColumnFilterBadges();
+      updateFilterChips();
       renderUnifiedTemplateChips();
     }
 
     document.getElementById('btnSaveUnifiedTemplate').addEventListener('click', showSaveUnifiedTemplateDialog);
-
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.filter-dropdown.open').forEach(d => {
-        d.classList.remove('open');
-        var prevBtn = d.previousElementSibling;
-        if (prevBtn) prevBtn.setAttribute('aria-expanded', 'false');
-        const si = d.querySelector('.filter-search input');
-        if (si) { si.value = ''; }
-        d.querySelectorAll('label').forEach(l => l.style.display = '');
-      });
-    });
-
-    document.getElementById('btnClearFilters').addEventListener('click', () => {
-      state.activeFilters = {};
-      renderFilters();
-      renderTable();
-    });
 
     // --- NIF/Email list selection (F4.2) ---
     document.getElementById('btnApplyNifList').addEventListener('click', function() {
@@ -15068,7 +15248,7 @@
       }
 
       // Clear all filters
-      state.activeFilters = {};
+      state.columnFilters = {};
 
       // Set excludedNIFs to exclude everyone NOT in the nif list
       var nifSet = new Set(nifs);
@@ -15215,7 +15395,7 @@
       }
 
       var allEmployees = [].concat(state.employees, state.externalEmployees);
-      var filtered = filterEmployees(allEmployees, state.activeFilters);
+      var filtered = filterEmployees(allEmployees, state.columnFilters);
       var result = splitByEmail(filtered);
       var valid = result.valid;
       var selected = valid.filter(function(emp) { return !state.excludedNIFs.has(emp._id); });
@@ -15282,17 +15462,23 @@
       }
       tr.appendChild(tdName);
 
+      // Empresa cell
+      var tdEmpresa = document.createElement('td');
+      tdEmpresa.style.color = 'var(--text-secondary)';
+      tdEmpresa.textContent = emp.Empresa || '';
+      tr.appendChild(tdEmpresa);
+
+      // Departamento cell
+      var tdDepto = document.createElement('td');
+      tdDepto.style.color = 'var(--text-secondary)';
+      tdDepto.textContent = emp.Departamento || '';
+      tr.appendChild(tdDepto);
+
       // Position cell
       var tdPuesto = document.createElement('td');
       tdPuesto.style.color = 'var(--text-secondary)';
       tdPuesto.textContent = emp.Puesto || '';
       tr.appendChild(tdPuesto);
-
-      // Location cell
-      var tdUbi = document.createElement('td');
-      tdUbi.style.color = 'var(--text-secondary)';
-      tdUbi.textContent = emp['Ubicación'] || '';
-      tr.appendChild(tdUbi);
 
       // Email cell
       var tdEmail = document.createElement('td');
@@ -15330,7 +15516,7 @@
 
     function renderTable() {
       const allEmployees = [...state.employees, ...state.externalEmployees];
-      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const filtered = filterEmployees(allEmployees, state.columnFilters);
       const { valid, noEmail } = splitByEmail(filtered);
 
       const sortCol = state.sortColumn;
@@ -15373,7 +15559,7 @@
             desc: 'Ningún registro coincide con los filtros actuales.',
             ctaText: 'Limpiar filtros',
             ctaAction: function() {
-              state.activeFilters = {};
+              state.columnFilters = {};
               renderFilters();
               renderTable();
             }
@@ -15396,8 +15582,8 @@
         valid.filter(e => !state.excludedNIFs.has(e._id)).length === valid.length;
 
       // Update sort arrow indicators and aria-sort attributes
-      document.querySelectorAll('.sort-arrow').forEach(arrow => {
-        const th = arrow.parentElement;
+      document.querySelectorAll('#attendeeTable .sort-arrow').forEach(arrow => {
+        const th = arrow.closest('th');
         if (th.dataset.sort === state.sortColumn) {
           arrow.classList.add('active');
           arrow.innerHTML = state.sortDirection === 'asc' ? Icons.sortAsc() : Icons.sortDesc();
@@ -15410,10 +15596,12 @@
       });
 
       // Attach click handlers to sortable headers
-      document.querySelectorAll('.sortable').forEach(th => {
+      document.querySelectorAll('#attendeeTable .sortable').forEach(th => {
         if (th._boundHandler) return;
         th._boundHandler = true;
-        th.addEventListener('click', () => {
+        th.addEventListener('click', function(e) {
+          // Don't sort when clicking the filter button or dropdown
+          if (e.target.closest('.col-filter-btn') || e.target.closest('.col-filter-dropdown') || e.target.closest('.col-filter-wrap')) return;
           const col = th.dataset.sort;
           if (state.sortColumn === col) {
             state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -15426,12 +15614,14 @@
       });
 
       updateCounts();
+      updateColumnFilterBadges();
+      updateFilterChips();
       saveState();
     }
 
     function getSelectedAttendees() {
       const allEmployees = [...state.employees, ...state.externalEmployees];
-      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const filtered = filterEmployees(allEmployees, state.columnFilters);
       const { valid } = splitByEmail(filtered);
       var selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
       // Exclude waitlisted employees — only confirmed attendees
@@ -15443,7 +15633,7 @@
 
     function updateCounts() {
       const allEmployees = [...state.employees, ...state.externalEmployees];
-      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const filtered = filterEmployees(allEmployees, state.columnFilters);
       const { valid, noEmail } = splitByEmail(filtered);
       const selected = valid.filter(emp => !state.excludedNIFs.has(emp._id));
 
@@ -15492,7 +15682,7 @@
     document.getElementById('selectAll').addEventListener('change', e => {
       const checked = e.target.checked;
       const allEmployees = [...state.employees, ...state.externalEmployees];
-      const filtered = filterEmployees(allEmployees, state.activeFilters);
+      const filtered = filterEmployees(allEmployees, state.columnFilters);
       const { valid } = splitByEmail(filtered);
 
       valid.forEach(emp => {
@@ -15754,7 +15944,7 @@
           const item = state.queue[idx];
 
           // Restore filters and event config
-          state.activeFilters = JSON.parse(JSON.stringify(item.filters));
+          state.columnFilters = JSON.parse(JSON.stringify(item.filters));
           document.getElementById('eventTitle').value = item.event.title;
           document.getElementById('eventDate').value = item.event.date;
           document.getElementById('eventStart').value = item.event.startTime;
@@ -15834,7 +16024,7 @@
           if (queueBtn) queueBtn.click();
           else {
             // Fallback inline edit
-            state.activeFilters = JSON.parse(JSON.stringify(item.filters));
+            state.columnFilters = JSON.parse(JSON.stringify(item.filters));
             if (item.event) {
               document.getElementById('eventTitle').value = item.event.title || '';
               document.getElementById('eventDate').value = item.event.date || '';
@@ -16507,7 +16697,7 @@
         function doSend() {
           if (isSeries) {
             openSeriesSequentially(event, emails);
-            logToHistory(event, selected.length, emails, state.activeFilters);
+            logToHistory(event, selected.length, emails, state.columnFilters);
           } else {
             const result = buildDeepLink(event, emails);
             window.open(result.useFallback ? result.urlWithoutAttendees : result.url, '_blank');
@@ -16516,7 +16706,7 @@
                 showToast('Emails copiados al portapapeles (' + emails.length + ')', 'success');
               });
             }
-            logToHistory(event, selected.length, emails, state.activeFilters);
+            logToHistory(event, selected.length, emails, state.columnFilters);
           }
           if (document.getElementById('surveyCheck').checked) {
             sendSurveyEmail(event, emails);
@@ -16610,7 +16800,7 @@
         event: event,
         attendeeCount: selected.length,
         emails: emails,
-        filters: JSON.parse(JSON.stringify(state.activeFilters)),
+        filters: JSON.parse(JSON.stringify(state.columnFilters)),
         seriesDates: state.seriesDates.length > 1 ? [...state.seriesDates] : null
       });
 
@@ -16747,7 +16937,7 @@
           }),
           attendeeCount: emails.length,
           emails: emails,
-          filters: JSON.parse(JSON.stringify(state.activeFilters)),
+          filters: JSON.parse(JSON.stringify(state.columnFilters)),
           seriesDates: state.seriesDates.length > 1 ? [...state.seriesDates] : null
         });
         added++;
@@ -17210,7 +17400,7 @@
           if (savedState) {
             try {
               const snapshot = JSON.parse(savedState);
-              state.activeFilters = snapshot.activeFilters || {};
+              state.columnFilters = snapshot.columnFilters || snapshot.activeFilters || {};
               state.excludedNIFs = new Set(snapshot.excludedNIFs || []);
 
               if (snapshot.eventConfig) {
@@ -17685,7 +17875,7 @@
           const h = history[idx];
 
           // Restore filters
-          state.activeFilters = JSON.parse(JSON.stringify(h.filters || {}));
+          state.columnFilters = JSON.parse(JSON.stringify(h.filters || {}));
 
           // Restore event config (except date)
           document.getElementById('eventTitle').value = h.title || '';
