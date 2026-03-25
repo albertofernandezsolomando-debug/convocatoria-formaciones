@@ -5622,7 +5622,7 @@
   <div class="tab-content" id="tabPersonas" role="tabpanel" aria-labelledby="tab-tabPersonas">
     <div class="personas-container u-flex-col u-flex-1 u-min-h-0 u-overflow-hidden">
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
-        <button class="link-btn u-text-12" id="personasBackBtn" style="display:none; color:var(--accent); margin-right:4px;">&larr; Volver</button>
+        <button class="link-btn u-text-12" id="personasBackBtn" style="display:none; color:var(--accent); margin-right:4px;" aria-label="Volver al cuadro de mando">&larr; Volver</button>
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
         <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento, responsable..." aria-label="Buscar persona">
         <select class="input-field u-text-12" id="personasGroupBy" aria-label="Agrupar por" style="max-width:170px; padding:4px 8px;">
@@ -5635,7 +5635,7 @@
         <span id="personasCount" class="u-text-11 u-text-muted" aria-live="polite"></span>
       </div>
       <div class="u-flex u-flex-1 u-min-h-0">
-        <div class="personas-list u-overflow-y-auto u-bg-panel u-border-right" id="personasList" style="width:380px; min-width:380px;"></div>
+        <div class="personas-list u-overflow-y-auto u-bg-panel u-border-right" id="personasList" role="listbox" aria-label="Lista de personas" style="width:380px; min-width:380px;"></div>
         <div class="personas-profile u-flex-1 u-overflow-y-auto u-p-24 u-bg-primary" id="personasProfile">
           <div class="u-empty-state">Selecciona una persona para ver su ficha formativa</div>
         </div>
@@ -25602,8 +25602,8 @@
         var initials = name.split(' ').slice(0, 2).map(function(w) { return w.charAt(0); }).join('').toUpperCase();
         var isActive = (emp.NIF || emp._id) === personasState.selectedNIF;
         var meta = [emp.Departamento, emp.Puesto, emp.Empresa].filter(Boolean).join(' · ');
-        return '<div class="persona-list-item' + (isActive ? ' active' : '') + '" data-nif="' + esc(emp.NIF || emp._id || '') + '">' +
-          '<div class="persona-avatar">' + esc(initials) + '</div>' +
+        return '<div class="persona-list-item' + (isActive ? ' active' : '') + '" data-nif="' + esc(emp.NIF || emp._id || '') + '" role="option" tabindex="0" aria-selected="' + isActive + '">' +
+          '<div class="persona-avatar" aria-hidden="true">' + esc(initials) + '</div>' +
           '<div class="persona-info">' +
           '<div class="persona-name">' + esc(name) + '</div>' +
           '<div class="persona-meta">' + esc(meta || emp.NIF || '') + '</div>' +
@@ -25652,16 +25652,42 @@
       }
       container.innerHTML = html; // innerHTML OK: sanitized via esc()
 
-      // Bind click
+      // Bind click + keyboard
+      function selectPersona(item) {
+        var nif = item.dataset.nif;
+        personasState.selectedNIF = nif;
+        container.querySelectorAll('.persona-list-item').forEach(function(i) {
+          i.classList.remove('active');
+          i.setAttribute('aria-selected', 'false');
+        });
+        item.classList.add('active');
+        item.setAttribute('aria-selected', 'true');
+        var emp = (state.employees || []).find(function(e) { return (e.NIF || e._id) === nif; });
+        if (emp) {
+          renderPersonaProfile(emp);
+          // Move focus to profile heading
+          var profileHeading = document.getElementById('personasProfile').querySelector('h2');
+          if (profileHeading) profileHeading.focus();
+        }
+      }
+
       container.querySelectorAll('.persona-list-item').forEach(function(item) {
-        item.addEventListener('click', function() {
-          var nif = item.dataset.nif;
-          personasState.selectedNIF = nif;
-          // Update active state
-          container.querySelectorAll('.persona-list-item').forEach(function(i) { i.classList.remove('active'); });
-          item.classList.add('active');
-          var emp = (state.employees || []).find(function(e) { return (e.NIF || e._id) === nif; });
-          if (emp) renderPersonaProfile(emp);
+        item.addEventListener('click', function() { selectPersona(item); });
+        item.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectPersona(item);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            var next = item.nextElementSibling;
+            while (next && !next.classList.contains('persona-list-item')) next = next.nextElementSibling;
+            if (next) next.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            var prev = item.previousElementSibling;
+            while (prev && !prev.classList.contains('persona-list-item')) prev = prev.previousElementSibling;
+            if (prev) prev.focus();
+          }
         });
       });
     }
@@ -25685,8 +25711,9 @@
       // Header
       var header = document.createElement('div');
       header.style.cssText = 'margin-bottom:20px;';
-      var name = document.createElement('div');
-      name.style.cssText = 'font-size:var(--font-size-lg); font-weight:700; color:var(--text-primary); margin-bottom:4px;';
+      var name = document.createElement('h2');
+      name.style.cssText = 'font-size:var(--font-size-lg); font-weight:700; color:var(--text-primary); margin:0 0 4px 0;';
+      name.setAttribute('tabindex', '-1');
       name.textContent = emp.Empleado || '';
       header.appendChild(name);
       var meta = document.createElement('div');
