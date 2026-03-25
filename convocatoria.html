@@ -3365,11 +3365,9 @@
     }
     .dash-card-body {
       overflow: hidden;
-      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity var(--transition);
     }
     .dash-card.collapsed .dash-card-body {
-      max-height: 0 !important;
-      opacity: 0;
+      display: none;
     }
 
     /* ═══ Calendar Tab ═══ */
@@ -24054,44 +24052,22 @@
           card.classList.remove('collapsed');
         }
 
-        // Set initial max-height for expanded cards
-        var cardBody = card.querySelector('.dash-card-body');
-        if (cardBody && !card.classList.contains('collapsed')) {
-          cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
-        }
-
         var title = card.querySelector('.dash-card-title');
         if (title) {
-          // Set initial aria-expanded based on collapsed state
           title.setAttribute('aria-expanded', String(!card.classList.contains('collapsed')));
         }
         if (title && !title._boundHandler) {
           title._boundHandler = true;
           function handleCardToggle() {
-            var cardBody = card.querySelector('.dash-card-body');
+            card.classList.toggle('collapsed');
+            title.setAttribute('aria-expanded', String(!card.classList.contains('collapsed')));
             var collapsed = getDashCollapsedState();
             var mod = card.dataset.module;
             if (card.classList.contains('collapsed')) {
-              // Expand
-              card.classList.remove('collapsed');
-              collapsed = collapsed.filter(function(m) { return m !== mod; });
-              if (cardBody) {
-                cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
-                cardBody.style.opacity = '1';
-              }
-            } else {
-              // Collapse
               if (collapsed.indexOf(mod) < 0) collapsed.push(mod);
-              if (cardBody) {
-                cardBody.style.maxHeight = cardBody.scrollHeight + 'px';
-                // Force reflow then set to 0
-                cardBody.offsetHeight;
-                cardBody.style.maxHeight = '0';
-                cardBody.style.opacity = '0';
-              }
-              card.classList.add('collapsed');
+            } else {
+              collapsed = collapsed.filter(function(m) { return m !== mod; });
             }
-            title.setAttribute('aria-expanded', String(!card.classList.contains('collapsed')));
             saveDashCollapsedState(collapsed);
           }
           title.addEventListener('click', handleCardToggle);
