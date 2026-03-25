@@ -238,8 +238,8 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 ## Dark mode
 
 - Tres modos: `light`, `dark`, `system` — almacenado en settings como `theme`
-- CSS: variables re-declaradas en `[data-theme="dark"]` y media query para `[data-theme="system"]`
-- JS: `applyTheme(theme)` pone el atributo en `<html>`, `initTheme()` lo restaura al cargar
+- CSS: variables re-declaradas en `[data-theme="dark"]` (no hay bloque CSS para `[data-theme="system"]` — se resuelve en JS)
+- JS: `applyTheme(theme)` resuelve 'system' a 'dark'/'light' via `matchMedia`, pone el atributo en `<html>`, invalida dashboard cache. Listener de `prefers-color-scheme` change para reacción automática. `initTheme()` restaura al cargar
 - Selector en settings dialog (`#themeSelect`)
 - NUNCA hardcodear colores fuera de las variables — dark mode los invierte automáticamente
 

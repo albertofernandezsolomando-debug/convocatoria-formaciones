@@ -63,6 +63,8 @@
       --space-md: 12px;
       --space-lg: 16px;
       --space-xl: 24px;
+      --space-2xl: 32px;
+      --space-3xl: 48px;
       --chart-1: #4F46E5;
       --chart-2: #0EA5E9;
       --chart-3: #14B8A6;
@@ -86,7 +88,7 @@
       --accent-light: #312E81;
       --accent-subtle: #1E1B4B;
       --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
+      --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
       --bg-primary: #0f172a;
       --bg-panel: #1e293b;
@@ -117,47 +119,7 @@
       --chart-neutral: #64748B;
     }
 
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] {
-        --accent: #818CF8;
-        --accent-hover: #6366F1;
-        --accent-light: #312E81;
-        --accent-subtle: #1E1B4B;
-        --text-primary: #f1f5f9;
-        --text-secondary: #94a3b8;
-        --text-muted: #94a3b8;
-        --bg-primary: #0f172a;
-        --bg-panel: #1e293b;
-        --bg-input: #334155;
-        --bg-warm: #1e293b;
-        --border: #334155;
-        --border-strong: #475569;
-        --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-        --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-        --shadow-accent: 0 1px 3px rgba(129,140,248,0.2);
-        --shadow-accent-hover: 0 4px 12px rgba(129,140,248,0.25);
-        --danger: #ef4444;
-        --danger-light: #450a0a;
-        --warning: #f59e0b;
-        --warning-light: #451a03;
-        --success: #22c55e;
-        --success-light: #052e16;
-        --chart-1: #818CF8;
-        --chart-2: #38BDF8;
-        --chart-3: #2DD4BF;
-        --chart-4: #FBBF24;
-        --chart-5: #A78BFA;
-        --chart-6: #F472B6;
-        --chart-7: #22D3EE;
-        --chart-8: #E879F9;
-        --chart-positive: #2DD4BF;
-        --chart-negative: #FBBF24;
-        --chart-neutral: #64748B;
-      }
-    }
-
     [data-theme="dark"] { color-scheme: dark; }
-    @media (prefers-color-scheme: dark) { [data-theme="system"] { color-scheme: dark; } }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     .tabnum,
     .dash-container td,
@@ -3004,21 +2966,10 @@
     [data-theme="dark"] .dash-container {
       background: var(--bg-primary);
     }
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] .dash-container {
-        background: var(--bg-primary);
-      }
-    }
     /* Dark mode: gauge bars with more contrast */
     [data-theme="dark"] .dash-gauge-bar-bg,
     [data-theme="dark"] .dash-completeness-track {
       background: rgba(255, 255, 255, 0.08);
-    }
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] .dash-gauge-bar-bg,
-      [data-theme="system"] .dash-completeness-track {
-        background: rgba(255, 255, 255, 0.08);
-      }
     }
 
     .dash-header {
@@ -3045,7 +2996,7 @@
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: var(--space-lg);
-      margin-bottom: 28px;
+      margin-bottom: var(--space-2xl);
     }
 
     .dash-kpi {
@@ -3189,6 +3140,135 @@
       line-height: 1.4;
     }
 
+    /* Dashboard utility classes (d- namespace) */
+    .d-label { font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .d-value-lg { font-size: var(--font-size-2xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .d-value-xl { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .d-card { background: var(--bg-panel); border-radius: var(--radius); padding: var(--space-lg); }
+    .d-card-flush { background: var(--bg-panel); border-radius: var(--radius); padding: var(--space-lg) 0; }
+    .d-section-title { font-size: var(--font-size-sm); font-weight: 600; color: var(--text-secondary); margin-bottom: var(--space-md); }
+    .d-flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .d-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+    .d-mb-16 { margin-bottom: var(--space-lg); }
+    .d-mb-24 { margin-bottom: var(--space-xl); }
+    .d-mb-32 { margin-bottom: var(--space-2xl); }
+    .d-p-16 { padding: var(--space-lg); }
+    .d-p-24 { padding: var(--space-xl); }
+    .d-border-left-accent { border-left: 4px solid var(--accent); }
+    .d-border-left-danger { border-left: 4px solid var(--danger); }
+    .d-bg-subtle { background: var(--accent-subtle); }
+    .d-gauge-bar { height: var(--space-sm); border-radius: var(--radius-sm); background: var(--bg-input); overflow: hidden; }
+
+    /* Hero KPI (Credito FUNDAE) — full-width, editorial prominence */
+    .dash-kpi-hero {
+      grid-column: 1 / -1;
+      background: var(--accent-subtle);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: var(--space-xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .dash-kpi-hero .dash-kpi-value {
+      font-size: 40px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .dash-kpi-hero .dash-kpi-progress {
+      height: 16px;
+      border-radius: var(--space-sm);
+      position: relative;
+    }
+    .dash-kpi-hero .dash-kpi-progress-bar {
+      border-radius: var(--space-sm);
+    }
+    .dash-kpi-hero .dash-kpi-progress-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--text-primary);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .dash-kpi-hero--success { border-left-color: var(--success); }
+    .dash-kpi-hero--success .dash-kpi-progress-bar { background: var(--success); }
+    .dash-kpi-hero--warning { border-left-color: var(--warning); }
+    .dash-kpi-hero--warning .dash-kpi-progress-bar { background: var(--warning); }
+    .dash-kpi-hero--danger { border-left-color: var(--danger); }
+    .dash-kpi-hero--danger .dash-kpi-progress-bar { background: var(--danger); }
+
+    /* Primary KPIs (Participantes, Presupuesto) — 2 column grid */
+    .dash-kpi-primary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+    .dash-kpi-primary {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-lg) var(--space-xl);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: box-shadow var(--transition);
+    }
+    .dash-kpi-primary:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    .dash-kpi-primary .dash-kpi-value {
+      font-size: var(--font-size-2xl);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: var(--space-xs);
+    }
+    .dash-kpi-primary .d-label {
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .dash-kpi-primary--warning { border-top: 3px solid var(--warning); background: var(--warning-light); }
+    .dash-kpi-primary--danger { border-top: 3px solid var(--danger); background: var(--danger-light); }
+
+    /* Contextual KPIs (Total acciones, Total horas) — inline row */
+    .dash-kpi-context {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xl);
+      background: var(--bg-input);
+      padding: var(--space-sm) var(--space-lg);
+      border-radius: var(--radius);
+      margin-bottom: var(--space-lg);
+    }
+    .dash-kpi-context-item {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-xs);
+      font-size: var(--font-size-base);
+      color: var(--text-secondary);
+    }
+    .dash-kpi-context-item strong {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 600px) {
+      .dash-kpi-primary-row { grid-template-columns: 1fr; }
+      .dash-kpi-context { flex-direction: column; gap: var(--space-sm); }
+      .dash-kpi-hero .dash-kpi-value { font-size: var(--font-size-2xl); }
+    }
+    @media (max-width: 900px) {
+      .dash-kpi-primary-row { gap: var(--space-sm); }
+    }
+
     /* Zero/empty state for KPIs */
     .dash-kpi--zero .dash-kpi-value {
       color: var(--text-muted);
@@ -3221,7 +3301,7 @@
       background: var(--bg-panel);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: var(--space-xl);
       box-shadow: var(--shadow-sm);
       transition: box-shadow var(--transition);
       min-width: 0;
@@ -3872,8 +3952,8 @@
     .dash-gauge-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
       font-size: var(--font-size-sm);
       cursor: pointer;
       transition: opacity var(--transition);
@@ -4154,11 +4234,6 @@
     }
     [data-theme="dark"] .dash-toolbar {
       background: var(--bg-primary);
-    }
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] .dash-toolbar {
-        background: var(--bg-primary);
-      }
     }
     .dash-toolbar-row {
       display: flex;
@@ -4529,14 +4604,6 @@
     }
     [data-theme="dark"] .dash-section-heading::after {
       background: var(--border-strong);
-    }
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] .dash-section-heading {
-        color: var(--text-secondary);
-      }
-      [data-theme="system"] .dash-section-heading::after {
-        background: var(--border-strong);
-      }
     }
 
     @media (max-width: 1200px) {
@@ -5862,8 +5929,8 @@
         <h2>Cuadro de Mando</h2>
         <div class="u-flex u-items-center u-gap-12">
           <div class="dash-mode-toggle" id="dashModeToggle">
-            <button class="dash-mode-btn active" data-mode="completo">Completo</button>
-            <button class="dash-mode-btn" data-mode="resumen">Resumen</button>
+            <button class="dash-mode-btn" data-mode="completo">Completo</button>
+            <button class="dash-mode-btn active" data-mode="resumen">Resumen</button>
           </div>
           <span class="dash-header-time" id="dashLastUpdate"></span>
         </div>
@@ -13763,15 +13830,31 @@
     }
 
     function applyTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
+      // For 'system', resolve to light/dark based on OS preference
+      var resolved = theme;
+      if (theme === 'system') {
+        resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', resolved);
       try { var s = loadSettings(); s.theme = theme; saveSettings(s); } catch(e) {}
       // Synchronously re-read CSS variables so DS colors are correct before any re-render
       requestAnimationFrame(function() {
         updateDSColors();
-        // Re-render dashboard if it is the active tab so SVG fills update
+        // Invalidate dashboard cache and re-render if visible
+        _dashCache.hash = null;
         var activeTab = document.querySelector('.tab-btn.active');
         if (activeTab && activeTab.dataset.tab === 'tabDashboard' && typeof renderDashboard === 'function') {
           renderDashboard();
+        }
+      });
+    }
+
+    // Listen for OS color scheme changes when theme is 'system'
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+        var s = loadSettings();
+        if (s.theme === 'system') {
+          applyTheme('system');
         }
       });
     }
@@ -19543,12 +19626,12 @@
     }
 
     /**
-     * Render an HTML gauge-row bar chart.
+     * Render an HTML gauge-row bar chart with gridlines.
      * @param {string} containerId
      * @param {Array} items - [{label, value, color?, secondaryValue?, secondaryColor?}]
      * @param {Object} opts - {maxValue, valueFormatter, labelWidth, footnote}
      */
-    function renderSvgBarChart(containerId, items, opts) {
+    function renderGaugeRows(containerId, items, opts) {
       opts = opts || {};
       var container = document.getElementById(containerId);
       if (!container) return;
@@ -19593,11 +19676,19 @@
 
         var barBg = document.createElement('div');
         barBg.className = 'dash-gauge-bar-bg';
+        barBg.style.position = 'relative';
+
+        // Gridlines at 25%, 50%, 75%, 100%
+        [25, 50, 75, 100].forEach(function(pct) {
+          var gridline = document.createElement('div');
+          gridline.style.cssText = 'position:absolute;top:0;bottom:0;width:1px;background:var(--border);opacity:0.5;z-index:1;pointer-events:none;left:' + pct + '%;';
+          barBg.appendChild(gridline);
+        });
 
         if (item.secondaryValue !== undefined && item.secondaryValue > 0) {
           // Stacked bar: primary (consumed) + secondary (available) side by side
           var stackWrap = document.createElement('div');
-          stackWrap.style.cssText = 'display:flex; height:100%; border-radius:var(--radius-sm); overflow:hidden;';
+          stackWrap.style.cssText = 'display:flex; height:100%; border-radius:var(--radius-sm); overflow:hidden; position:relative; z-index:2;';
 
           var priFill = document.createElement('div');
           priFill.className = 'dash-gauge-bar-fill';
@@ -19624,6 +19715,8 @@
           fill.className = 'dash-gauge-bar-fill';
           fill.style.width = pctTotal + '%';
           fill.style.background = itemColor;
+          fill.style.position = 'relative';
+          fill.style.zIndex = '2';
           barBg.appendChild(fill);
         }
         row.appendChild(barBg);
@@ -19658,6 +19751,8 @@
         container.appendChild(fn);
       }
     }
+    // Backward compatibility alias
+    var renderSvgBarChart = renderGaugeRows;
 
     /**
      * Render an SVG donut chart.
@@ -20342,10 +20437,11 @@
         return;
       }
 
+      var monthLabels = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
       var monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       var monthData = [];
       for (var m = 0; m < 12; m++) {
-        monthData.push({ month: m, label: monthNames[m], count: 0, hours: 0 });
+        monthData.push({ month: m, label: monthLabels[m], fullLabel: monthNames[m], count: 0, hours: 0 });
       }
 
       var hasData = false;
@@ -20369,119 +20465,77 @@
       var totalCount = monthData.reduce(function(s, d) { return s + d.count; }, 0);
       var totalHours = monthData.reduce(function(s, d) { return s + d.hours; }, 0);
 
-      // Find peak and valley months
+      var seasonAriaLabel = 'Estacionalidad formativa heatmap. ' +
+        monthData.map(function(d) { return d.fullLabel + ': ' + d.count + ' acciones, ' + Math.round(d.hours) + 'h'; }).join(', ') + '.';
+      container.setAttribute('role', 'img');
+      container.setAttribute('aria-label', seasonAriaLabel);
+
+      // Heatmap helper
+      function buildHeatRow(rowLabel, getData, getMax) {
+        var rowWrap = document.createElement('div');
+        rowWrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:4px;';
+        var lblEl = document.createElement('span');
+        lblEl.style.cssText = 'width:60px;font-size:var(--font-size-xs);color:var(--text-muted);text-align:right;flex-shrink:0;';
+        lblEl.textContent = rowLabel;
+        rowWrap.appendChild(lblEl);
+        var cells = document.createElement('div');
+        cells.style.cssText = 'display:grid;grid-template-columns:repeat(12,1fr);gap:3px;flex:1;';
+        monthData.forEach(function(d, i) {
+          var val = getData(d);
+          var mx = getMax;
+          var intensity = mx > 0 ? Math.round((val / mx) * 100) : 0;
+          var cell = document.createElement('div');
+          cell.style.cssText = 'height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);font-weight:600;cursor:default;transition:opacity var(--transition);';
+          // Use color-mix for intensity, with opacity fallback
+          if (intensity > 0) {
+            cell.style.background = 'color-mix(in srgb, var(--accent) ' + Math.max(intensity, 10) + '%, var(--bg-input))';
+            cell.style.color = intensity > 50 ? 'white' : 'var(--text-primary)';
+          } else {
+            cell.style.background = 'var(--bg-input)';
+            cell.style.color = 'var(--text-muted)';
+          }
+          cell.textContent = val > 0 ? (typeof val === 'number' && val % 1 !== 0 ? Math.round(val) : val) : '';
+          // Tooltip
+          (function(fullLabel, value, pct) {
+            cell.addEventListener('mouseenter', function(e) {
+              showDashTooltip(e, '<div class="dash-tooltip-label">' + esc(fullLabel) + '</div><div class="dash-tooltip-value">' + esc(String(value)) + ' (' + pct + '%)</div>');
+            });
+            cell.addEventListener('mouseleave', hideDashTooltip);
+          })(d.fullLabel, val, intensity);
+          cells.appendChild(cell);
+        });
+        rowWrap.appendChild(cells);
+        return rowWrap;
+      }
+
+      // Build: Acciones row
+      container.appendChild(buildHeatRow('Acciones', function(d) { return d.count; }, maxCount));
+
+      // Build: Horas row
+      container.appendChild(buildHeatRow('Horas', function(d) { return d.hours; }, maxHours));
+
+      // Month labels below
+      var labelsRow = document.createElement('div');
+      labelsRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+      var spacer = document.createElement('span');
+      spacer.style.cssText = 'width:60px;flex-shrink:0;';
+      labelsRow.appendChild(spacer);
+      var labelGrid = document.createElement('div');
+      labelGrid.style.cssText = 'display:grid;grid-template-columns:repeat(12,1fr);gap:3px;flex:1;text-align:center;font-size:9px;color:var(--text-muted);';
+      monthLabels.forEach(function(l) {
+        var lbl = document.createElement('span');
+        lbl.textContent = l;
+        labelGrid.appendChild(lbl);
+      });
+      labelsRow.appendChild(labelGrid);
+      container.appendChild(labelsRow);
+
+      // Summary footer
       var peakMonth = monthData.reduce(function(best, d) { return d.count > best.count ? d : best; }, monthData[0]);
-      var valleyMonths = monthData.filter(function(d) { return d.count === 0; });
-
-      // Concentration index (Herfindahl-like)
-      var hhi = 0;
-      monthData.forEach(function(d) {
-        var share = totalCount > 0 ? d.count / totalCount : 0;
-        hhi += share * share;
-      });
-      var concentrationPct = Math.round(hhi * 100);
-
-      // SVG grouped bar chart
-      var svgW = 340, svgH = 160;
-      var padL = 36, padR = 10, padT = 16, padB = 28;
-      var chartW = svgW - padL - padR;
-      var chartH = svgH - padT - padB;
-      var barGroupW = chartW / 12;
-      var barW = barGroupW * 0.35;
-
-      var seasonAriaLabel = 'Estacionalidad formativa. Total: ' + totalCount + ' acciones, ' + Math.round(totalHours) + ' horas. ' +
-        monthData.map(function(d) { return d.label + ': ' + d.count + ' acciones'; }).join(', ') + '.';
-      var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet', 'role': 'img', 'aria-label': seasonAriaLabel });
-      svg.style.cssText = 'width:100%; display:block;';
-
-      // Grid lines
-      for (var g = 0; g <= 4; g++) {
-        var yGrid = padT + (g / 4) * chartH;
-        svg.appendChild(svgEl('line', { x1: padL, y1: yGrid, x2: svgW - padR, y2: yGrid, stroke: DS.border, 'stroke-width': '0.5' }));
-      }
-
-      monthData.forEach(function(d, i) {
-        var x = padL + i * barGroupW;
-
-        // Count bar (left, accent color)
-        var hCount = maxCount > 0 ? (d.count / maxCount) * chartH : 0;
-        var yCount = padT + chartH - hCount;
-        var isPeak = d === peakMonth && d.count > 0;
-
-        var countBar = svgEl('rect', {
-          x: x + barGroupW * 0.1,
-          y: yCount,
-          width: barW,
-          height: hCount,
-          rx: '2',
-          fill: isPeak ? DS.accent : DS.chart6
-        });
-        svg.appendChild(countBar);
-
-        // Hours bar (right, teal color)
-        var hHours = maxHours > 0 ? (d.hours / maxHours) * chartH : 0;
-        var yHours = padT + chartH - hHours;
-        var hoursBar = svgEl('rect', {
-          x: x + barGroupW * 0.1 + barW + 2,
-          y: yHours,
-          width: barW,
-          height: hHours,
-          rx: '2',
-          fill: DS.chart2
-        });
-        svg.appendChild(hoursBar);
-
-        // Count label on top if > 0
-        if (d.count > 0) {
-          var countTxt = svgEl('text', { x: x + barGroupW * 0.1 + barW / 2, y: yCount - 3, 'text-anchor': 'middle', fill: DS.textSecondary, 'font-size': '9', 'font-weight': '600' });
-          countTxt.textContent = d.count;
-          svg.appendChild(countTxt);
-        }
-
-        // X label
-        var xLabel = svgEl('text', { x: x + barGroupW / 2, y: svgH - 4, 'text-anchor': 'middle', fill: DS.textMuted, 'font-size': '9' });
-        xLabel.textContent = d.label;
-        svg.appendChild(xLabel);
-      });
-
-      // Legend
-      var legendY = 6;
-      svg.appendChild(svgEl('rect', { x: svgW - 100, y: legendY, width: 8, height: 8, rx: '1', fill: DS.chart6 }));
-      var leg1 = svgEl('text', { x: svgW - 88, y: legendY + 7, fill: DS.textMuted, 'font-size': '9' });
-      leg1.textContent = 'Acciones';
-      svg.appendChild(leg1);
-      svg.appendChild(svgEl('rect', { x: svgW - 50, y: legendY, width: 8, height: 8, rx: '1', fill: DS.chart2 }));
-      var leg2 = svgEl('text', { x: svgW - 38, y: legendY + 7, fill: DS.textMuted, 'font-size': '9' });
-      leg2.textContent = 'Horas';
-      svg.appendChild(leg2);
-
-      container.appendChild(svg);
-
-      // Summary row
-      var summary = document.createElement('div');
-      summary.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
-
-      var chips = [
-        { label: 'Pico', value: peakMonth.label + ' (' + peakMonth.count + ')', color: 'var(--accent)' },
-        { label: 'Concentración', value: concentrationPct + '%', color: concentrationPct > 30 ? 'var(--warning)' : 'var(--success)' }
-      ];
-      if (valleyMonths.length > 0) {
-        chips.push({ label: 'Sin actividad', value: valleyMonths.map(function(v) { return v.label; }).join(', '), color: 'var(--text-muted)' });
-      }
-
-      chips.forEach(function(chip) {
-        var el = document.createElement('span');
-        el.style.cssText = 'font-size:var(--font-size-xs); padding:3px 8px; border-radius:var(--radius-lg); background:var(--bg-input); color:var(--text-secondary);';
-        el.innerHTML = '<span style="font-weight:600; color:' + chip.color + ';">' + esc(chip.label) + ':</span> ' + esc(chip.value);
-        summary.appendChild(el);
-      });
-      container.appendChild(summary);
-
-      // Totals footer
       var avgHoursPerAction = totalCount > 0 ? (totalHours / totalCount).toFixed(1) : '0';
       var footerRow = document.createElement('div');
       footerRow.style.cssText = 'display:flex; gap:16px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); font-size:var(--font-size-xs); color:var(--text-muted);';
-      footerRow.innerHTML = '<span>' + totalCount + ' acciones en total</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
+      footerRow.innerHTML = '<span>Pico: <strong style="color:var(--accent);">' + esc(peakMonth.fullLabel) + '</strong> (' + peakMonth.count + ')</span><span>' + totalCount + ' acciones</span><span>' + Math.round(totalHours) + 'h totales</span><span>Media: ' + avgHoursPerAction + 'h/acción</span>';
       container.appendChild(footerRow);
     }
 
@@ -22551,243 +22605,127 @@
       var totalCredito = metrics.totalCredito;
       var consumido = metrics.consumido;
       var totalConsumido = metrics.totalConsumido;
-      var sparkAcciones = metrics.sparkAcciones;
-      var sparkHoras = metrics.sparkHoras;
-      var sparkParticipantes = metrics.sparkParticipantes;
-      var sparkPresupuesto = metrics.sparkPresupuesto;
+      // Spark data computed but no longer used (sparklines removed in dashboard redesign)
 
-      // --- Sparkline helper (safe: only uses numeric values, no user data) ---
-      function buildSparklineSvg(values, width, height, color) {
-        if (!values || values.length < 2) return null;
-        var max = Math.max.apply(null, values);
-        var min = Math.min.apply(null, values);
-        var range = max - min || 1;
-        var pad = 3;
-
-        var pointsArr = values.map(function(v, i) {
-          var x = pad + (i / (values.length - 1)) * (width - pad * 2);
-          var y = pad + (height - pad * 2) - ((v - min) / range) * (height - pad * 2);
-          return { x: x, y: y };
-        });
-
-        var pointsStr = pointsArr.map(function(p) { return p.x + ',' + p.y; }).join(' ');
-        var ns = 'http://www.w3.org/2000/svg';
-        var svg = document.createElementNS(ns, 'svg');
-        svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
-        svg.setAttribute('role', 'img');
-        svg.setAttribute('aria-label', 'Tendencia: ' + values.join(', '));
-        svg.style.cssText = 'margin-top:6px;display:block;';
-
-        // Area fill gradient
-        var defs = document.createElementNS(ns, 'defs');
-        var gradId = 'sparkGrad_' + Math.random().toString(36).substr(2, 5);
-        var gradient = document.createElementNS(ns, 'linearGradient');
-        gradient.setAttribute('id', gradId);
-        gradient.setAttribute('x1', '0'); gradient.setAttribute('y1', '0');
-        gradient.setAttribute('x2', '0'); gradient.setAttribute('y2', '1');
-        var stop1 = document.createElementNS(ns, 'stop');
-        stop1.setAttribute('offset', '0%');
-        stop1.setAttribute('stop-color', color || DS.accent);
-        stop1.setAttribute('stop-opacity', '0.15');
-        var stop2 = document.createElementNS(ns, 'stop');
-        stop2.setAttribute('offset', '100%');
-        stop2.setAttribute('stop-color', color || DS.accent);
-        stop2.setAttribute('stop-opacity', '0');
-        gradient.appendChild(stop1);
-        gradient.appendChild(stop2);
-        defs.appendChild(gradient);
-        svg.appendChild(defs);
-
-        // Area path
-        var areaPath = 'M' + pointsArr[0].x + ',' + pointsArr[0].y + ' ';
-        for (var i = 1; i < pointsArr.length; i++) {
-          areaPath += 'L' + pointsArr[i].x + ',' + pointsArr[i].y + ' ';
-        }
-        areaPath += 'L' + pointsArr[pointsArr.length - 1].x + ',' + height + ' ';
-        areaPath += 'L' + pointsArr[0].x + ',' + height + ' Z';
-        var area = document.createElementNS(ns, 'path');
-        area.setAttribute('d', areaPath);
-        area.setAttribute('fill', 'url(#' + gradId + ')');
-        svg.appendChild(area);
-
-        // Line
-        var polyline = document.createElementNS(ns, 'polyline');
-        polyline.setAttribute('points', pointsStr);
-        polyline.setAttribute('fill', 'none');
-        polyline.setAttribute('stroke', color || DS.accent);
-        polyline.setAttribute('stroke-width', '2');
-        polyline.setAttribute('stroke-linecap', 'round');
-        polyline.setAttribute('stroke-linejoin', 'round');
-        svg.appendChild(polyline);
-
-        // Endpoint dot
-        var last = pointsArr[pointsArr.length - 1];
-        var dot = document.createElementNS(ns, 'circle');
-        dot.setAttribute('cx', last.x);
-        dot.setAttribute('cy', last.y);
-        dot.setAttribute('r', '2.5');
-        dot.setAttribute('fill', color || DS.accent);
-        svg.appendChild(dot);
-
-        return svg;
-      }
-
-      function computeTrend(values) {
-        if (!values || values.length < 2) return { pct: 0, dir: 'flat' };
-        var prev = values[values.length - 2];
-        var curr = values[values.length - 1];
-        if (prev === 0) return curr > 0 ? { pct: 100, dir: 'up' } : { pct: 0, dir: 'flat' };
-        var pct = Math.round(((curr - prev) / prev) * 100);
-        return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat') };
-      }
-
-      // --- KPI Cards ---
+      // --- KPI Cards (3-tier hierarchy: hero, primary, contextual) ---
       var kpisEl = document.getElementById('dashKpis');
       kpisEl.textContent = '';
+      kpisEl.className = ''; // Reset grid class from old layout
 
-      var kpiColorHex = [DS.chart1, DS.chart2, DS.chart3, DS.chart4, DS.chart5];
-      var kpiIdx = 0;
-
-      function addKpi(label, value, sub, sparkData, thresholdStatus, navOpts, opts) {
-        opts = opts || {};
-        var card = document.createElement('div');
-        card.className = 'dash-kpi';
-        if (thresholdStatus === 'success') card.classList.add('dash-kpi--success');
-        else if (thresholdStatus === 'warning') card.classList.add('dash-kpi--warning');
-        else if (thresholdStatus === 'danger') card.classList.add('dash-kpi--danger');
-        if (opts.featured) card.classList.add('dash-kpi--featured');
-
-        // Zero/empty state
-        if (typeof value === 'number' && value === 0) {
-          card.classList.add('dash-kpi--zero');
-        }
-
-        // KPI click drilldown (P2)
-        if (navOpts && navOpts.scrollTo) {
-          card.setAttribute('data-action', 'drilldown');
-          card.title = 'Clic para ver detalle';
-          card.addEventListener('click', function() {
-            var target = document.getElementById(navOpts.scrollTo);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          });
-        } else if (navOpts && navOpts.tab) {
-          card.setAttribute('data-action', 'navigate');
-          card.title = 'Clic para ver detalle';
-          card.addEventListener('click', function() {
-            dashNavigateTo(navOpts.tab, navOpts.scrollTo ? { scrollTo: navOpts.scrollTo } : null);
-          });
-        }
-
-        // Header: label + trend badge
-        var header = document.createElement('div');
-        header.className = 'dash-kpi-header';
-        var lblEl = document.createElement('span');
-        lblEl.className = 'dash-kpi-label';
-        lblEl.textContent = label;
-        header.appendChild(lblEl);
-
-        // Trend badge (pill)
-        if (sparkData && sparkData.length >= 2) {
-          var trend = computeTrend(sparkData);
-          if (trend.dir !== 'flat' || trend.pct > 0) {
-            var badge = document.createElement('span');
-            badge.className = 'dash-kpi-badge';
-            if (trend.dir === 'down') badge.classList.add('dash-kpi-badge--down');
-            else if (trend.dir === 'flat') badge.classList.add('dash-kpi-badge--neutral');
-            badge.textContent = (trend.dir === 'up' ? '+' : '-') + trend.pct + '%';
-            header.appendChild(badge);
-          }
-        }
-
-        card.appendChild(header);
-
-        // Value
-        var valEl = document.createElement('div');
-        valEl.className = 'dash-kpi-value';
-        if (typeof value === 'number' && !isNaN(value)) {
-          if (value === 0) {
-            valEl.textContent = '0';
-          } else {
-            valEl.textContent = '0';
-            setTimeout(function() { animateValue(valEl, value, 800, '', ''); }, kpiIdx * 80);
-          }
-        } else {
-          valEl.textContent = value;
-        }
-        card.appendChild(valEl);
-
-        // Progress bar (for credit KPI)
-        if (opts.progressPct !== undefined) {
-          var progressWrap = document.createElement('div');
-          progressWrap.className = 'dash-kpi-progress';
-          var progressBar = document.createElement('div');
-          progressBar.className = 'dash-kpi-progress-bar';
-          progressBar.style.width = '0%';
-          setTimeout(function() { progressBar.style.width = Math.min(opts.progressPct, 100) + '%'; }, 100);
-          progressWrap.appendChild(progressBar);
-          card.appendChild(progressWrap);
-        }
-
-        // Structured detail items
-        if (opts.detailItems && opts.detailItems.length > 0) {
-          var detail = document.createElement('div');
-          detail.className = 'dash-kpi-detail';
-          opts.detailItems.forEach(function(item, i) {
-            if (i > 0) {
-              var sep = document.createElement('span');
-              sep.className = 'dash-kpi-detail-sep';
-              sep.textContent = '/';
-              detail.appendChild(sep);
-            }
-            var itemEl = document.createElement('span');
-            itemEl.className = 'dash-kpi-detail-item';
-            itemEl.textContent = item;
-            detail.appendChild(itemEl);
-          });
-          card.appendChild(detail);
-        } else {
-          var subEl = document.createElement('div');
-          subEl.className = 'dash-kpi-sub';
-          subEl.textContent = sub;
-          card.appendChild(subEl);
-        }
-
-        // Sparkline (enhanced: taller, area gradient, endpoint dot)
-        if (sparkData && sparkData.length >= 2) {
-          var sparkColor = kpiColorHex[kpiIdx % kpiColorHex.length];
-          var sparkSvg = buildSparklineSvg(sparkData, 120, 36, sparkColor);
-          if (sparkSvg) card.appendChild(sparkSvg);
-        }
-
-        kpisEl.appendChild(card);
-        kpiIdx++;
-      }
-
-      addKpi('Total acciones', acciones.length, bonificables.length + ' bonificables', sparkAcciones, null, { tab: 'tabCatalogos' }, {
-        detailItems: [bonificables.length + ' bonificables']
-      });
-      addKpi('Total horas', totalHoras, '', sparkHoras, null, { tab: 'tabCatalogos' }, {
-        detailItems: [totalHorasP + 'h presencial', totalHorasT + 'h teleformación']
-      });
-      // Conditional status for participants KPI
-      var partStatus = totalParticipantes === 0 ? 'danger' : (accionesConParticipantes < acciones.length * 0.5 ? 'warning' : null);
-      addKpi('Participantes vinculados', totalParticipantes, '', sparkParticipantes, partStatus, { tab: 'tabCatalogos' }, {
-        detailItems: [accionesConParticipantes + ' acciones con participantes']
-      });
+      // --- Tier 1: Hero KPI (Crédito FUNDAE) ---
       var creditoDisponible = totalCredito - totalConsumido;
       var creditoPct = totalCredito > 0 ? Math.round((totalConsumido / totalCredito) * 100) : 0;
-      // Conditional status for FUNDAE credit KPI
       var creditStatus = creditoPct > 95 ? 'danger' : (creditoPct > 80 ? 'warning' : (totalCredito > 0 ? 'success' : null));
-      // Featured KPI: Crédito FUNDAE with progress bar (spans 2 columns)
-      addKpi('Crédito FUNDAE', creditoPct + '%', '', null, creditStatus, { tab: 'tabDashboard', scrollTo: 'dashCreditChart' }, {
-        featured: true,
-        progressPct: creditoPct,
-        detailItems: [formatCurrency(totalConsumido) + ' consumido', formatCurrency(totalCredito) + ' total']
+
+      var heroCard = document.createElement('div');
+      heroCard.className = 'dash-kpi-hero';
+      if (creditStatus) heroCard.classList.add('dash-kpi-hero--' + creditStatus);
+      heroCard.style.cursor = 'pointer';
+      heroCard.title = 'Clic para ver detalle';
+      heroCard.addEventListener('click', function() {
+        var target = document.getElementById('dashCreditChart');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
-      addKpi('Presupuesto total', formatCurrency(totalPresupuesto), '', sparkPresupuesto, null, { tab: 'tabCatalogos' }, {
-        detailItems: [bonificables.length + ' acciones bonificables']
+
+      var heroLabel = document.createElement('div');
+      heroLabel.className = 'd-label';
+      heroLabel.textContent = 'Crédito FUNDAE';
+      heroCard.appendChild(heroLabel);
+
+      var heroValueRow = document.createElement('div');
+      heroValueRow.className = 'd-flex-between';
+      var heroVal = document.createElement('div');
+      heroVal.className = 'dash-kpi-value';
+      heroVal.textContent = esc(formatCurrency(totalConsumido));
+      heroValueRow.appendChild(heroVal);
+      var heroSub = document.createElement('span');
+      heroSub.style.cssText = 'font-size:var(--font-size-md);color:var(--text-muted);';
+      heroSub.textContent = 'de ' + esc(formatCurrency(totalCredito));
+      heroValueRow.appendChild(heroSub);
+      heroCard.appendChild(heroValueRow);
+
+      // Progress bar with label
+      var heroProgress = document.createElement('div');
+      heroProgress.className = 'dash-kpi-progress';
+      heroProgress.style.position = 'relative';
+      var heroBar = document.createElement('div');
+      heroBar.className = 'dash-kpi-progress-bar';
+      heroBar.style.width = Math.min(creditoPct, 100) + '%';
+      heroProgress.appendChild(heroBar);
+      var heroBarLabel = document.createElement('span');
+      heroBarLabel.className = 'dash-kpi-progress-label';
+      heroBarLabel.textContent = creditoPct + '% consumido';
+      heroProgress.appendChild(heroBarLabel);
+      heroCard.appendChild(heroProgress);
+
+      kpisEl.appendChild(heroCard);
+
+      // --- Tier 2: Primary KPIs (Participantes, Presupuesto) ---
+      var partStatus = totalParticipantes === 0 ? 'danger' : (accionesConParticipantes < acciones.length * 0.5 ? 'warning' : null);
+
+      var primaryRow = document.createElement('div');
+      primaryRow.className = 'dash-kpi-primary-row';
+
+      // Participantes
+      var partCard = document.createElement('div');
+      partCard.className = 'dash-kpi-primary';
+      if (partStatus) partCard.classList.add('dash-kpi-primary--' + partStatus);
+      partCard.title = 'Clic para ver detalle';
+      partCard.addEventListener('click', function() {
+        dashNavigateTo('tabCatalogos');
       });
+      var partVal = document.createElement('div');
+      partVal.className = 'dash-kpi-value';
+      partVal.textContent = typeof totalParticipantes === 'number' ? totalParticipantes.toLocaleString('es-ES') : totalParticipantes;
+      partCard.appendChild(partVal);
+      var partLabel = document.createElement('div');
+      partLabel.className = 'd-label';
+      partLabel.textContent = 'Participantes vinculados';
+      partCard.appendChild(partLabel);
+      var partDetail = document.createElement('div');
+      partDetail.className = 'dash-kpi-sub';
+      partDetail.textContent = accionesConParticipantes + ' acciones con participantes';
+      partCard.appendChild(partDetail);
+      primaryRow.appendChild(partCard);
+
+      // Presupuesto
+      var presCard = document.createElement('div');
+      presCard.className = 'dash-kpi-primary';
+      presCard.title = 'Clic para ver detalle';
+      presCard.addEventListener('click', function() {
+        dashNavigateTo('tabCatalogos');
+      });
+      var presVal = document.createElement('div');
+      presVal.className = 'dash-kpi-value';
+      presVal.textContent = esc(formatCurrency(totalPresupuesto));
+      presCard.appendChild(presVal);
+      var presLabel = document.createElement('div');
+      presLabel.className = 'd-label';
+      presLabel.textContent = 'Presupuesto total';
+      presCard.appendChild(presLabel);
+      var presDetail = document.createElement('div');
+      presDetail.className = 'dash-kpi-sub';
+      presDetail.textContent = bonificables.length + ' acciones bonificables';
+      presCard.appendChild(presDetail);
+      primaryRow.appendChild(presCard);
+
+      kpisEl.appendChild(primaryRow);
+
+      // --- Tier 3: Contextual KPIs (Total acciones, Total horas) ---
+      var contextRow = document.createElement('div');
+      contextRow.className = 'dash-kpi-context';
+
+      var ctxAcciones = document.createElement('div');
+      ctxAcciones.className = 'dash-kpi-context-item';
+      ctxAcciones.innerHTML = '<strong>' + esc(String(acciones.length)) + '</strong> acciones formativas (' + esc(String(bonificables.length)) + ' bonificables)';
+      contextRow.appendChild(ctxAcciones);
+
+      var ctxHoras = document.createElement('div');
+      ctxHoras.className = 'dash-kpi-context-item';
+      ctxHoras.innerHTML = '<strong>' + esc(String(totalHoras)) + '</strong> horas totales (' + esc(String(totalHorasP)) + 'h presencial / ' + esc(String(totalHorasT)) + 'h teleformación)';
+      contextRow.appendChild(ctxHoras);
+
+      kpisEl.appendChild(contextRow);
 
       // --- Alerts (collapsible, dismissible) ---
       var alertsWidget = document.getElementById('dashAlertsWidget');
@@ -23071,7 +23009,7 @@
         };
       });
       var creditMax = empresasVisible.length > 0 ? empresasVisible[0].credito : 1;
-      renderSvgBarChart('dashCreditChart', creditItems, {
+      renderGaugeRows('dashCreditChart', creditItems, {
         maxValue: creditMax,
         labelWidth: 200,
         valueFormatter: function(v) { return formatCurrency(v); },
@@ -23158,46 +23096,127 @@
           value: gastoProveedor[cif]
         };
       }).sort(function(a, b) { return b.value - a.value; });
-      renderSvgBarChart('dashProveedorChart', proveedorItems, {
+      renderGaugeRows('dashProveedorChart', proveedorItems, {
         valueFormatter: function(v) { return formatCurrency(v); }
       });
 
-      // --- Estado chart (donut, uses cached estadoCounts from metrics) ---
+      // --- Estado chart (stacked horizontal bar) ---
       var estadoCounts = metrics.estadoCounts;
-      var estadoColorMap = {
-        'Planificada': DS.textMuted,
-        'En marcha': DS.accent,
-        'Convocada': DS.success,
-        'Terminada': DS.chart3,
-        'Anulada': DS.chart5,
-        'Retrasada': DS.chart5,
-        'Pendiente': DS.textMuted,
-        'Buscando': DS.chart4,
-        'En preparación': DS.chart2,
-        '(Sin estado)': DS.textMuted
+      var estadoSemanticColors = {
+        'En marcha': 'var(--accent)',
+        'Terminada': 'var(--success)',
+        'Anulada': 'var(--text-muted)',
+        'Planificada': 'var(--border-strong)',
+        'Convocada': 'var(--chart-3)',
+        'En preparación': 'var(--chart-2)',
+        'Buscando': 'var(--chart-4)',
+        'Retrasada': 'var(--chart-5)',
+        'Pendiente': 'var(--border-strong)',
+        '(Sin estado)': 'var(--border)'
       };
       var estadoItems = Object.keys(estadoCounts).map(function(k) {
-        return { label: k, value: estadoCounts[k], color: estadoColorMap[k] || DS.textMuted };
+        return { label: k, value: estadoCounts[k], color: estadoSemanticColors[k] || 'var(--text-muted)' };
       }).sort(function(a, b) { return b.value - a.value; });
-      renderSvgDonut('dashEstadoChart', estadoItems, {
-        centerLabel: 'Acciones',
-        centerValue: acciones.length
-      });
 
-      // --- Modalidad chart (uses cached modalidadHoras from metrics) ---
+      (function renderEstadoBar() {
+        var container = document.getElementById('dashEstadoChart');
+        if (!container) return;
+        container.textContent = '';
+        var totalEstado = estadoItems.reduce(function(s, i) { return s + i.value; }, 0);
+        if (totalEstado === 0) {
+          renderEmptyState(container, 'Sin acciones con estado');
+          return;
+        }
+        container.setAttribute('role', 'img');
+        container.setAttribute('aria-label', 'Acciones por estado: ' + estadoItems.map(function(i) { return i.label + ' ' + i.value; }).join(', '));
+
+        // SVG stacked bar
+        var svgW = 400, svgH = 40;
+        var svg = svgEl('svg', { 'viewBox': '0 0 ' + svgW + ' ' + svgH, 'preserveAspectRatio': 'xMidYMid meet' });
+        svg.style.cssText = 'width:100%;display:block;border-radius:var(--radius-sm);overflow:hidden;';
+
+        var x = 0;
+        estadoItems.forEach(function(item) {
+          var w = (item.value / totalEstado) * svgW;
+          if (w < 0.5) return;
+          var rect = svgEl('rect', { x: x, y: 0, width: w, height: svgH, fill: item.color });
+          svg.appendChild(rect);
+          // Label on segments >15%
+          var pct = (item.value / totalEstado) * 100;
+          if (pct > 15) {
+            var txt = svgEl('text', { x: x + w / 2, y: svgH / 2 + 1, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: 'white', 'font-size': '11', 'font-weight': '600' });
+            txt.textContent = item.label + ' (' + item.value + ')';
+            svg.appendChild(txt);
+          }
+          // Tooltip
+          var overlay = svgEl('rect', { x: x, y: 0, width: w, height: svgH, fill: 'transparent' });
+          (function(lbl, val, pctVal) {
+            overlay.addEventListener('mouseenter', function(e) {
+              showDashTooltip(e, '<div class="dash-tooltip-label">' + esc(lbl) + '</div><div class="dash-tooltip-value">' + esc(String(val)) + ' (' + Math.round(pctVal) + '%)</div>');
+            });
+            overlay.addEventListener('mouseleave', hideDashTooltip);
+          })(item.label, item.value, pct);
+          svg.appendChild(overlay);
+          x += w;
+        });
+        container.appendChild(svg);
+
+        // Legend row below
+        var legend = document.createElement('div');
+        legend.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;';
+        estadoItems.forEach(function(item) {
+          var chip = document.createElement('span');
+          chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);color:var(--text-secondary);';
+          chip.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + item.color + ';display:inline-block;"></span>' + esc(item.label) + ' <strong>' + esc(String(item.value)) + '</strong>';
+          legend.appendChild(chip);
+        });
+        container.appendChild(legend);
+      })();
+
+      // --- Modalidad chart (3 big numbers, no donut) ---
       var modalidadHoras = metrics.modalidadHoras;
-      var modalidadColorMap = {
-        'Presencial': DS.accent,
-        'Teleformación': DS.chart2,
-        'Mixta': DS.chart3
-      };
-      var modalidadItems = Object.keys(modalidadHoras).map(function(k) {
-        return { label: k, value: modalidadHoras[k], color: modalidadColorMap[k] || DS.textMuted };
-      }).sort(function(a, b) { return b.value - a.value; });
-      renderSvgDonut('dashModalidadChart', modalidadItems, {
-        centerLabel: 'Horas',
-        centerValue: totalHoras
-      });
+      (function renderModalidadNumbers() {
+        var container = document.getElementById('dashModalidadChart');
+        if (!container) return;
+        container.textContent = '';
+        var modalidades = [
+          { key: 'Presencial', icon: Icons.users(24), label: 'presenciales' },
+          { key: 'Teleformación', icon: Icons.fileText(24), label: 'teleformación' },
+          { key: 'Mixta', icon: Icons.list(24), label: 'mixta' }
+        ];
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;';
+        wrap.setAttribute('role', 'img');
+        wrap.setAttribute('aria-label', 'Horas por modalidad: ' + modalidades.map(function(m) { return (modalidadHoras[m.key] || 0) + 'h ' + m.label; }).join(', '));
+        var hasAny = false;
+        modalidades.forEach(function(mod) {
+          var h = modalidadHoras[mod.key] || 0;
+          if (h === 0) return;
+          hasAny = true;
+          var block = document.createElement('div');
+          block.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;';
+          var iconEl = document.createElement('span');
+          iconEl.className = 'icon';
+          iconEl.style.color = 'var(--accent)';
+          iconEl.innerHTML = mod.icon;
+          block.appendChild(iconEl);
+          var numEl = document.createElement('div');
+          numEl.className = 'd-value-lg';
+          numEl.style.color = 'var(--text-primary)';
+          numEl.textContent = Math.round(h);
+          block.appendChild(numEl);
+          var lblEl = document.createElement('div');
+          lblEl.style.cssText = 'font-size:var(--font-size-xs);color:var(--text-muted);text-align:center;';
+          lblEl.textContent = 'horas ' + mod.label;
+          block.appendChild(lblEl);
+          wrap.appendChild(block);
+        });
+        if (!hasAny) {
+          renderEmptyState(container, 'Sin horas registradas por modalidad');
+          return;
+        }
+        container.appendChild(wrap);
+      })();
 
       // --- Area chart (uses cached areaCounts from metrics) — single accent color ---
       var areaCounts = metrics.areaCounts;
@@ -23210,7 +23229,7 @@
         visibleArea.push({ label: 'Otros (' + (areaItems.length - 8) + ')', value: otrosAreaVal });
         areaItems = visibleArea;
       }
-      renderSvgBarChart('dashAreaChart', areaItems, {
+      renderGaugeRows('dashAreaChart', areaItems, {
         valueFormatter: function(v) { return v; }
       });
 
@@ -23225,7 +23244,7 @@
         visibleDept.push({ label: 'Otros (' + (deptItems.length - 8) + ')', value: otrosDeptVal });
         deptItems = visibleDept;
       }
-      renderSvgBarChart('dashDeptChart', deptItems, {
+      renderGaugeRows('dashDeptChart', deptItems, {
         valueFormatter: function(v) { return v; }
       });
 
@@ -23939,9 +23958,11 @@
       });
 
       // --- Executive mode toggle ---
-      var dashMode = localStorage.getItem('convocatoria_dash_mode') || 'completo';
+      var dashMode = localStorage.getItem('convocatoria_dash_mode') || 'resumen';
       var modeToggle = document.getElementById('dashModeToggle');
       var dashNavEl2 = document.getElementById('dashNav');
+      var dashToolbarEl = document.getElementById('dashToolbar');
+      var dashAlertsEl = document.getElementById('dashAlertsWidget');
 
       function applyDashMode(mode) {
         dashMode = mode;
@@ -23949,31 +23970,31 @@
         modeToggle.querySelectorAll('.dash-mode-btn').forEach(function(b) {
           b.classList.toggle('active', b.getAttribute('data-mode') === mode);
         });
-        // In resumen mode, only show KPIs, alerts, plazos, credito, estado, completitud
-        var resumenCards = { plazos: true, credito: true, estado: true, completitud: true };
-        var sectionGroups = ['dash-group-analytics', 'dash-group-operativo', 'dash-group-personas', 'dash-group-calidad', 'dash-group-gestor'];
+        var sectionGroups = ['dash-group-general', 'dash-group-analytics', 'dash-group-operativo', 'dash-group-personas', 'dash-group-calidad', 'dash-group-gestor'];
 
         if (mode === 'resumen') {
-          // Hide section groups that are not in resumen
+          // Resumen: show ONLY KPIs (hero + primary + contextual). Hide everything else.
           sectionGroups.forEach(function(gid) {
             var el = document.getElementById(gid);
             if (el) el.style.display = 'none';
           });
-          // In general group, only show credito and estado (completitud is in operativo)
-          // Actually completitud is in operativo group. Let me show general group fully.
-          var generalGroup = document.getElementById('dash-group-general');
-          if (generalGroup) generalGroup.style.display = '';
-          // Hide nav in resumen
           if (dashNavEl2) dashNavEl2.style.display = 'none';
+          if (dashToolbarEl) dashToolbarEl.style.display = 'none';
+          if (dashAlertsEl) dashAlertsEl.style.display = 'none';
+          var plazosEl = document.getElementById('dashPlazosFundae');
+          if (plazosEl) plazosEl.style.display = 'none';
         } else {
-          // Show everything
+          // Completo: show everything
           sectionGroups.forEach(function(gid) {
             var el = document.getElementById(gid);
             if (el) el.style.display = '';
           });
-          var generalGroup = document.getElementById('dash-group-general');
-          if (generalGroup) generalGroup.style.display = '';
           if (dashNavEl2) dashNavEl2.style.display = '';
+          if (dashToolbarEl) dashToolbarEl.style.display = '';
+          // Alerts visibility is controlled by renderDashboard, just remove forced hide
+          if (dashAlertsEl) dashAlertsEl.style.removeProperty('display');
+          var plazosEl = document.getElementById('dashPlazosFundae');
+          if (plazosEl) plazosEl.style.removeProperty('display');
         }
       }
 
