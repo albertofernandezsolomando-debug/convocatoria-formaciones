@@ -8267,8 +8267,13 @@
         container.innerHTML = filtered.map(r => { // innerHTML OK: sanitized via esc()
           const pk = r[cfg.pk];
           const isActive = pk === catalogState.selectedPK;
-          return '<div class="catalog-list-item' + (isActive ? ' active' : '') + '" data-pk="' + esc(pk) + '">' +
-            '<div class="item-title">' + esc(cfg.title(r)) + '</div>' +
+          var isChild = key === 'acciones' && r.parentAccion;
+          var hasChildren = key === 'acciones' && !isChild && getChildGroups(r.codigo).length > 0;
+          var indentStyle = isChild ? ' style="padding-left:24px;"' : '';
+          var badge = hasChildren ? ' <span style="display:inline-block; padding:0 5px; border-radius:var(--radius-lg); background:var(--accent-light); color:var(--accent); font-size:9px; font-weight:700; vertical-align:middle; margin-left:4px;">' + getChildGroups(r.codigo).length + '</span>' : '';
+          var titleClass = isChild ? 'item-title u-text-12' : 'item-title';
+          return '<div class="catalog-list-item' + (isActive ? ' active' : '') + '" data-pk="' + esc(pk) + '"' + indentStyle + '>' +
+            '<div class="' + titleClass + '">' + esc(cfg.title(r)) + badge + '</div>' +
             '<div class="item-subtitle">' + esc(cfg.subtitle(r)) + '</div>' +
           '</div>';
         }).join('');
@@ -9322,26 +9327,23 @@
           '</div>';
         }
 
-        // Context banner: parent indicator or group indicator
-        var contextBanner = '';
+        // Title chip + breadcrumb for parent/group context
+        var titleChip = '';
+        var titleBreadcrumb = '';
         if (isParentWithGroups) {
-          contextBanner = '<div style="padding:8px 12px; margin-bottom:12px; background:var(--accent-subtle); border-left:4px solid var(--accent); border-radius:var(--radius-sm); font-size:var(--font-size-sm); color:var(--text-primary);">' +
-            '<span class="u-font-600" style="color:var(--accent);">Acci\u00F3n formativa</span> \u00B7 ' + childGroups.length + ' grupo' + (childGroups.length !== 1 ? 's' : '') +
-          '</div>';
+          titleChip = ' <span style="display:inline-block; padding:2px 10px; border-radius:var(--radius-lg); background:var(--accent-light); color:var(--accent); font-size:var(--font-size-xs); font-weight:600; vertical-align:middle; margin-left:8px;">Acci\u00F3n \u00B7 ' + childGroups.length + ' grupo' + (childGroups.length !== 1 ? 's' : '') + '</span>';
         } else if (record.parentAccion) {
           var allAcc = getCatalog('acciones');
           var parentRec = allAcc.find(function(a) { return a.codigo === record.parentAccion; });
           var parentName = parentRec ? (parentRec.nombre || '').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '') : record.parentAccion;
           var siblings = allAcc.filter(function(a) { return a.parentAccion === record.parentAccion; });
           var grNum = record.codigoGrupo ? record.codigoGrupo.split('-')[1].replace(/^0/, '') : '?';
-          contextBanner = '<div style="padding:8px 12px; margin-bottom:12px; background:color-mix(in srgb, var(--success) 8%, transparent); border-left:4px solid var(--success); border-radius:var(--radius-sm); font-size:var(--font-size-sm); color:var(--text-primary);">' +
-            '<span class="u-font-600" style="color:var(--success);">Grupo ' + esc(grNum) + '</span> de ' + (siblings.length + 1) + ' \u00B7 Acci\u00F3n: ' + esc(parentName) +
-            ' <a href="#" class="u-text-accent u-text-12" id="cfGoToParent" style="margin-left:8px;">\u2192 Ver acci\u00F3n padre</a>' +
-          '</div>';
+          titleChip = ' <span style="display:inline-block; padding:2px 10px; border-radius:var(--radius-lg); background:color-mix(in srgb, var(--success) 12%, transparent); color:var(--success); font-size:var(--font-size-xs); font-weight:600; vertical-align:middle; margin-left:8px;">Grupo ' + esc(grNum) + ' de ' + (siblings.length + 1) + '</span>';
+          titleBreadcrumb = '<div class="u-text-12 u-text-muted" style="margin-top:2px;"><a href="#" id="cfGoToParent" class="u-text-accent" style="text-decoration:none;">\u2190 ' + esc(parentName) + '</a></div>';
         }
 
         // 1. Datos básicos (open by default)
-        body = postCommBanner + contextBanner + '<details class="catalog-details" open>' +
+        body = postCommBanner + '<details class="catalog-details" open>' +
           '<summary>Datos básicos ' + pendingBasicoHtml + '</summary>' +
           '<div class="catalog-details-body">' +
           field('Código acción', 'codigo', v('codigo'), { disabled: pkDisabled, placeholder: 'AF2026001' }) +
@@ -9401,11 +9403,13 @@
             childGroups.map(function(g) {
               var grNum = g.codigoGrupo ? g.codigoGrupo.split('-')[1] : '?';
               var nPart = (g.participantes || []).length;
-              return '<div class="u-flex u-items-center u-gap-8 u-border-bottom" style="padding:6px 0; cursor:pointer;" data-nav-grupo="' + esc(g.codigo) + '">' +
-                '<span class="u-text-12 u-font-600" style="color:var(--accent);">Gr. ' + esc(grNum) + '</span>' +
-                '<span class="u-text-12 u-text-primary u-flex-1 u-truncate">' + esc(g.nombre || '') + '</span>' +
+              var estadoColor = {'En marcha':'var(--accent)','Terminada':'var(--success)','Finalizada':'var(--success)','En preparación':'var(--warning)','Buscando':'var(--warning)','Anulada':'var(--text-muted)','Retrasada':'var(--danger)'}[g.estado] || 'var(--text-muted)';
+              return '<div class="u-flex u-items-center u-gap-8 u-border-bottom" style="padding:8px 0; cursor:pointer;" data-nav-grupo="' + esc(g.codigo) + '">' +
+                '<span style="width:8px; height:8px; border-radius:50%; background:' + estadoColor + '; flex-shrink:0;"></span>' +
+                '<span class="u-text-12 u-font-600" style="color:var(--accent); min-width:36px;">Gr. ' + esc(grNum) + '</span>' +
+                '<span class="u-text-12 u-text-primary u-flex-1 u-truncate">' + esc((g.nombre || '').replace(/\s*\(Gr\.\s*\d+\)\s*$/, '')) + '</span>' +
                 '<span class="u-text-xs u-text-muted">' + nPart + ' part.</span>' +
-                '<span class="u-text-xs u-text-muted">' + esc(g.estado || '') + '</span>' +
+                '<span class="u-text-xs" style="color:' + estadoColor + ';">' + esc(g.estado || '') + '</span>' +
               '</div>';
             }).join('') +
             '<button class="btn btn-secondary u-text-12 u-mt-8" id="btnCreateGroupFromParent">' + (getChildGroups(record.codigo).length > 0 ? 'Nuevo grupo' : 'Crear grupo') + '</button>' +
@@ -9580,8 +9584,9 @@
       return '<div class="u-flex-col-full">' +
         '<div class="u-overflow-y-auto u-flex-1" style="padding:20px;">' +
         (catalogState.cameFromList ? '<button class="catalog-back-to-list" id="btnBackToList"><span class="icon" aria-hidden="true">' + Icons.chevronLeft(14) + '</span> Volver a lista</button>' : '') +
-        '<div class="u-flex-between u-mb-16">' +
-          '<h3 class="u-m-0 u-text-15 u-font-600 u-text-primary">' + title + '</h3>' +
+        '<div class="u-mb-16">' +
+          '<h3 class="u-m-0 u-text-15 u-font-600 u-text-primary">' + title + (key === 'acciones' ? titleChip : '') + '</h3>' +
+          (key === 'acciones' ? titleBreadcrumb : '') +
         '</div>' +
         body +
         '</div>' +
