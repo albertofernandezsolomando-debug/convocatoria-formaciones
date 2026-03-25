@@ -3293,8 +3293,14 @@
     .dash-chart-row {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+    .dash-chart-row.dash-row-pair {
+      grid-template-columns: 1fr 1fr;
+    }
+    .dash-chart-row.dash-row-trio {
+      grid-template-columns: 1fr 1fr 1fr;
     }
 
     .dash-card {
@@ -4615,7 +4621,9 @@
       }
     }
     @media (max-width: 900px) {
-      .dash-chart-row { grid-template-columns: 1fr; }
+      .dash-chart-row,
+      .dash-chart-row.dash-row-pair,
+      .dash-chart-row.dash-row-trio { grid-template-columns: 1fr; }
       .dash-kpi-row { grid-template-columns: repeat(2, 1fr); }
       .dash-kpi--featured { grid-column: span 2; }
       .dash-container { padding: 20px 16px; }
@@ -6005,7 +6013,7 @@
       <div id="dash-group-general">
       <div class="dash-section-heading">Visión general</div>
 
-      <!-- Charts row 1: Credit + Estado donut -->
+      <!-- Credit FUNDAE: full-width (content-heavy) -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="credito" data-module="dash-credito">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Crédito FUNDAE por empresa</div>
@@ -6013,16 +6021,22 @@
           <div id="dashCreditProjection" class="u-mt-12"></div>
           <div id="dashCreditSimulator"></div></div>
         </div>
-        <div class="dash-card" data-card-id="estado" data-module="dash-estado">
+      </div>
+
+      <!-- Compact trio: Estado + Modalidad + Completitud -->
+      <div class="dash-chart-row dash-row-trio">
+        <div class="dash-card" data-card-id="estado" data-module="dash-estado" style="padding:var(--space-lg);">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Acciones por estado</div>
           <div class="dash-card-body"><div id="dashEstadoChart"></div></div>
         </div>
-      </div>
-
-      <!-- Completeness (now inside Vision general) -->
-      <div class="dash-card u-mb-16" data-card-id="completitud" data-module="dash-completitud">
-        <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Completitud del catálogo</div>
-        <div class="dash-card-body"><div id="dashCompletenessChart"></div></div>
+        <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad" style="padding:var(--space-lg);">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Horas por modalidad</div>
+          <div class="dash-card-body"><div id="dashModalidadChart"></div></div>
+        </div>
+        <div class="dash-card" data-card-id="completitud" data-module="dash-completitud" style="padding:var(--space-lg);">
+          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Completitud del catálogo</div>
+          <div class="dash-card-body"><div id="dashCompletenessChart"></div></div>
+        </div>
       </div>
       </div>
 
@@ -6030,20 +6044,16 @@
       <div id="dash-group-operativo">
       <div class="dash-section-heading">Distribución operativa</div>
 
-      <!-- Charts row 2: Gasto por proveedor + Modalidad -->
+      <!-- Proveedor: full-width (content-heavy) -->
       <div class="dash-chart-row">
         <div class="dash-card" data-card-id="proveedor" data-module="dash-proveedor">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Gasto por proveedor</div>
           <div class="dash-card-body"><div id="dashProveedorChart"></div></div>
         </div>
-        <div class="dash-card" data-card-id="modalidad" data-module="dash-modalidad">
-          <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Horas por modalidad</div>
-          <div class="dash-card-body"><div id="dashModalidadChart"></div></div>
-        </div>
       </div>
 
-      <!-- Charts row 3: Area + Department -->
-      <div class="dash-chart-row">
+      <!-- Pair: Area + Department (similar height gauge rows) -->
+      <div class="dash-chart-row dash-row-pair">
         <div class="dash-card" data-card-id="area" data-module="dash-area">
           <div class="dash-card-title" role="button" tabindex="0" aria-expanded="true">Acciones por área profesional</div>
           <div class="dash-card-body"><div id="dashAreaChart"></div></div>
