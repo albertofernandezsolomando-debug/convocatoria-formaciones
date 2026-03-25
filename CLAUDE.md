@@ -159,6 +159,23 @@ Cualquier cambio visual DEBE usar las variables CSS definidas en `:root`. NUNCA 
 - `generateActionCodes()` genera formato `AF2026NNN`. Validación acepta ambos formatos
 - `codigoGrupo` se auto-genera: `NNN-MM` (ej: `108-01` para AF2026108, grupo 1). Letra NIF: `"TRWAGMYFPDXBNJZSQVHLCKE"[parseInt(digits8, 10) % 23]`
 
+## Tutores múltiples
+
+- `tutoresVinculados` (array de documentos) reemplaza `tutorVinculado` (string). Backward-compatible: `getRecordTutores(record)` lee ambos formatos, `setRecordTutores(record, docs)` escribe ambos
+- XML genera múltiples `<Tutor>` elements con horas equitativas (`totalHoras / nTutors`)
+- Ficha del catálogo: lista de tutores + dropdown + "Añadir" (selección del catálogo existente, no creación inline)
+- FUNDAE XSD permite `maxOccurs="unbounded"` para tutores por grupo
+
+## Features eliminadas
+
+- **Confirmaciones**: sección "Estado de confirmación" eliminada de la ficha — redundante con Outlook
+- **Filtros laterales**: reemplazados por filtros tipo Excel en headers de tabla. `state.activeFilters` → `state.columnFilters`
+- **Columna Ubicación**: eliminada de tabla de empleados. Añadidas Empresa y Departamento como columnas filtrables
+
+## Deploy
+
+- Copiar `convocatoria.html` a OneDrive: `cp convocatoria.html "/Users/afs/Library/CloudStorage/OneDrive-AGORA/Carpetas compartidas/Convocatoria formaciones/"`
+
 ## PDF Import y OCR (asistencia desde hojas de firmas)
 
 - **pdf.js worker**: cargado como `<script>` inline (no como Web Worker) porque `file://` no soporta Workers
