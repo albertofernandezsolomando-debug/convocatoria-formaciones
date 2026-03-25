@@ -5615,8 +5615,9 @@
   <div class="tab-content" id="tabPersonas" role="tabpanel" aria-labelledby="tab-tabPersonas">
     <div class="personas-container u-flex-col u-flex-1 u-min-h-0 u-overflow-hidden">
       <div class="personas-header u-flex u-items-center u-gap-12 u-flex-shrink-0 u-border-bottom u-bg-panel" style="padding:16px 24px;">
+        <button class="link-btn u-text-12" id="personasBackBtn" style="display:none; color:var(--accent); margin-right:4px;">&larr; Volver</button>
         <span class="u-text-15 u-font-600 u-text-primary">Personas</span>
-        <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento..." aria-label="Buscar persona">
+        <input class="input-field u-flex-1 u-text-13 u-max-w-400" type="text" id="personasSearchInput" placeholder="Buscar por nombre, NIF, departamento, responsable..." aria-label="Buscar persona">
         <select class="input-field u-text-12" id="personasGroupBy" aria-label="Agrupar por" style="max-width:170px; padding:4px 8px;">
           <option value="">Orden alfabético</option>
           <option value="Departamento">Departamento</option>
@@ -23795,7 +23796,12 @@
             tr.addEventListener('mouseleave', function() { this.style.background = ''; });
             tr.addEventListener('click', function() {
               var personasInput = document.getElementById('personasSearchInput');
-              if (personasInput) personasInput.value = m.manager;
+              if (personasInput) {
+                personasInput.value = m.manager;
+                personasInput.dispatchEvent(new Event('input'));
+              }
+              // Store origin for "back" button
+              window._personasOrigin = 'tabDashboard';
               applyTabChange('tabPersonas');
             });
 
@@ -25508,7 +25514,8 @@
             (emp.NIF || '').toLowerCase().indexOf(q) !== -1 ||
             (emp.Departamento || '').toLowerCase().indexOf(q) !== -1 ||
             (emp.Empresa || '').toLowerCase().indexOf(q) !== -1 ||
-            (emp.Puesto || '').toLowerCase().indexOf(q) !== -1;
+            (emp.Puesto || '').toLowerCase().indexOf(q) !== -1 ||
+            (emp['Depende de'] || '').toLowerCase().indexOf(q) !== -1;
         });
       }
 
@@ -25774,6 +25781,30 @@
         groupBySelect.addEventListener('change', function() {
           renderPersonasList(input.value);
         });
+      }
+
+      // Back button: show when navigating from another tab, hide after use
+      var backBtn = document.getElementById('personasBackBtn');
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          var origin = window._personasOrigin || 'tabDashboard';
+          window._personasOrigin = null;
+          backBtn.style.display = 'none';
+          input.value = '';
+          applyTabChange(origin);
+        });
+      }
+
+      // Show back button when origin is set (called from applyTabChange)
+      var origApplyTab = window._origApplyTabForPersonas;
+      if (!origApplyTab) {
+        // Hook into tab change to show/hide back button
+        var observer = new MutationObserver(function() {
+          if (backBtn && document.getElementById('tabPersonas').classList.contains('active')) {
+            backBtn.style.display = window._personasOrigin ? '' : 'none';
+          }
+        });
+        observer.observe(document.getElementById('tabPersonas'), { attributes: true, attributeFilter: ['class'] });
       }
     })();
 
