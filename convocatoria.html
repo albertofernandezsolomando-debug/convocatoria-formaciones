@@ -23728,7 +23728,7 @@
         });
       })();
 
-      // --- Inversion por Manager ---
+      // --- Inversion por Manager (interactive: sortable, expandable, clickable) ---
       (function() {
         var container = document.getElementById('dashByManager');
         if (!container || !state.employees || !state.employees.length) return;
@@ -23742,51 +23742,97 @@
           return;
         }
 
-        // Top 15 managers
-        var top = mgrs.slice(0, 15);
-        var table = document.createElement('table');
-        table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;';
-        var thead = document.createElement('thead');
-        var headerRow = document.createElement('tr');
-        ['Responsable','Equipo','Formados','%','h/persona','Presup.','Acciones'].forEach(function(h) {
-          var th = document.createElement('th');
-          th.style.cssText = 'text-align:left;padding:4px 6px;border-bottom:2px solid var(--border);color:var(--text-muted);font-weight:500;';
-          th.textContent = h;
-          headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
+        var mgrSortCol = 'horasPerCapita';
+        var mgrSortDir = -1;
+        var mgrExpanded = false;
+        var LIMIT = 15;
 
-        var tbody = document.createElement('tbody');
-        top.forEach(function(m) {
-          var tr = document.createElement('tr');
-          var pctColor = m.pctFormados >= 80 ? 'var(--success)' : m.pctFormados >= 50 ? 'var(--warning)' : 'var(--danger)';
-          var cells = [
-            { text: m.manager.substring(0, 25), style: 'font-weight:500;' },
-            { text: m.equipo, style: '' },
-            { text: m.formados + '/' + m.equipo, style: '' },
-            { text: m.pctFormados + '%', style: 'color:' + pctColor + ';font-weight:600;' },
-            { text: m.horasPerCapita + ' h', style: 'font-weight:600;' },
-            { text: m.presupuesto.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' EUR', style: '' },
-            { text: m.acciones, style: '' }
-          ];
-          cells.forEach(function(c) {
-            var td = document.createElement('td');
-            td.style.cssText = 'padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text-primary);' + c.style;
-            td.textContent = c.text;
-            tr.appendChild(td);
+        function renderMgrTable() {
+          container.textContent = '';
+          var sorted = mgrs.slice().sort(function(a, b) {
+            var va = a[mgrSortCol], vb = b[mgrSortCol];
+            if (typeof va === 'string') return mgrSortDir * va.localeCompare(vb, 'es');
+            return mgrSortDir * (va - vb);
           });
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        container.appendChild(table);
+          var visible = mgrExpanded ? sorted : sorted.slice(0, LIMIT);
 
-        if (mgrs.length > 15) {
-          var more = document.createElement('div');
-          more.style.cssText = 'text-align:center;padding:8px;font-size:var(--font-size-xs);color:var(--text-muted);';
-          more.textContent = '... y ' + (mgrs.length - 15) + ' responsables mas';
-          container.appendChild(more);
+          var table = document.createElement('table');
+          table.style.cssText = 'width:100%;font-size:var(--font-size-xs);border-collapse:collapse;';
+
+          var thead = document.createElement('thead');
+          var headerRow = document.createElement('tr');
+          var columns = [
+            { key: 'manager', label: 'Responsable' },
+            { key: 'equipo', label: 'Equipo' },
+            { key: 'formados', label: 'Formados' },
+            { key: 'pctFormados', label: '%' },
+            { key: 'horasPerCapita', label: 'h/persona' },
+            { key: 'presupuesto', label: 'Presup.' },
+            { key: 'acciones', label: 'Acciones' }
+          ];
+
+          columns.forEach(function(col) {
+            var th = document.createElement('th');
+            var isActive = mgrSortCol === col.key;
+            var arrow = isActive ? (mgrSortDir > 0 ? ' \u2191' : ' \u2193') : '';
+            th.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);font-weight:500;cursor:pointer;user-select:none;transition:color var(--transition);color:' + (isActive ? 'var(--accent)' : 'var(--text-muted)') + ';';
+            th.textContent = col.label + arrow;
+            th.addEventListener('click', function() {
+              if (mgrSortCol === col.key) { mgrSortDir *= -1; }
+              else { mgrSortCol = col.key; mgrSortDir = col.key === 'manager' ? 1 : -1; }
+              renderMgrTable();
+            });
+            headerRow.appendChild(th);
+          });
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+
+          var tbody = document.createElement('tbody');
+          visible.forEach(function(m) {
+            var tr = document.createElement('tr');
+            tr.style.cssText = 'cursor:pointer;transition:background-color var(--transition);';
+            tr.addEventListener('mouseenter', function() { this.style.background = 'var(--accent-subtle)'; });
+            tr.addEventListener('mouseleave', function() { this.style.background = ''; });
+            tr.addEventListener('click', function() {
+              var personasInput = document.getElementById('personasSearchInput');
+              if (personasInput) personasInput.value = m.manager;
+              applyTabChange('tabPersonas');
+            });
+
+            var pctColor = m.pctFormados >= 80 ? 'var(--success)' : m.pctFormados >= 50 ? 'var(--warning)' : 'var(--danger)';
+            var cells = [
+              { text: m.manager, style: 'font-weight:500;white-space:normal;' },
+              { text: m.equipo, style: '' },
+              { text: m.formados + '/' + m.equipo, style: '' },
+              { text: m.pctFormados + '%', style: 'color:' + pctColor + ';font-weight:600;' },
+              { text: m.horasPerCapita + ' h', style: 'font-weight:600;' },
+              { text: m.presupuesto.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' \u20AC', style: '' },
+              { text: m.acciones, style: '' }
+            ];
+            cells.forEach(function(c) {
+              var td = document.createElement('td');
+              td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-primary);' + c.style;
+              td.textContent = c.text;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+
+          if (mgrs.length > LIMIT) {
+            var toggle = document.createElement('button');
+            toggle.className = 'link-btn u-text-xs';
+            toggle.style.cssText = 'display:block;margin:8px auto;color:var(--accent);';
+            toggle.textContent = mgrExpanded ? 'Ver menos' : 'Ver todos (' + mgrs.length + ' responsables)';
+            toggle.addEventListener('click', function() {
+              mgrExpanded = !mgrExpanded;
+              renderMgrTable();
+            });
+            container.appendChild(toggle);
+          }
         }
+        renderMgrTable();
       })();
 
       // --- Cross-Company Training ---
