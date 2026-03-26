@@ -1055,6 +1055,9 @@
     .catalog-list-table tbody tr:hover {
       background: var(--accent-subtle);
     }
+    .catalog-list-table tbody tr:hover [data-add-group] {
+      opacity: 1 !important;
+    }
 
     .catalog-list-table tbody tr.selected {
       background: var(--accent-light);
@@ -7617,10 +7620,19 @@
               h += '</td></tr>';
             }
           } else if (!record.parentAccion) {
-            // Regular row (no children, not a child)
+            // Regular standalone row (no children, not a child)
             h += '<tr class="data-row' + (sel ? ' selected' : '') + '" data-pk="' + esc(pk) + '"' + (sel ? ' aria-selected="true"' : '') + '>';
             h += '<td class="col-checkbox"><input type="checkbox" class="row-checkbox" data-pk="' + esc(pk) + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar fila"></td>';
-            config.columns.forEach(function(col) { h += renderListViewCell(col, record, config); });
+            config.columns.forEach(function(col, ci) {
+              if (ci === 0) {
+                var cellVal = record[col.key] != null ? String(record[col.key]) : '';
+                h += '<td class="cell-data" data-col-key="' + esc(col.key) + '">' + esc(cellVal) +
+                  ' <button class="link-btn u-text-11" data-add-group="' + esc(pk) + '" title="Crear grupo" style="color:var(--text-muted); opacity:0; transition:opacity var(--transition); vertical-align:middle; margin-left:4px;">+ gr</button>' +
+                  '</td>';
+              } else {
+                h += renderListViewCell(col, record, config);
+              }
+            });
             h += '</tr>';
           } else {
             // Orphaned child (parent not in filtered data) — render as regular row
