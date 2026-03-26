@@ -7516,10 +7516,7 @@
           opts.forEach(function(o) { h += '<option value="' + esc(o) + '"' + (fv === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
           h += '</select>';
         } else if (col.type === 'date') {
-          h += '<div class="filter-date-range">';
-          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="from" value="' + esc((fv && fv.from) || '') + '" title="Desde" aria-label="' + esc(col.label) + ' desde">';
-          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="to" value="' + esc((fv && fv.to) || '') + '" title="Hasta" aria-label="' + esc(col.label) + ' hasta">';
-          h += '</div>';
+          h += '<input type="date" data-filter-key="' + esc(col.key) + '" data-filter-part="from" value="' + esc((fv && fv.from) || '') + '" title="A partir de" aria-label="' + esc(col.label) + ' a partir de">';
         } else if (col.type === 'number') {
           h += '<div class="filter-number-range">';
           h += '<input type="number" data-filter-key="' + esc(col.key) + '" data-filter-part="min" value="' + ((fv && fv.min != null) ? esc(String(fv.min)) : '') + '" placeholder="Min" step="any" aria-label="' + esc(col.label) + ' mínimo">';
