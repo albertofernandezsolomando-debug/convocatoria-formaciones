@@ -7609,6 +7609,12 @@
                 h += renderGroupChildRow(config, child, pk, grNum, false);
                 renderedChildren.add(child.codigo);
               });
+              // "+ Nuevo grupo" row at the end of children
+              h += '<tr class="child-row" data-parent-group="' + esc(pk) + '" style="background:var(--bg-primary);">';
+              h += '<td class="col-checkbox"></td>';
+              h += '<td colspan="' + config.columns.length + '" style="padding-left:28px;">';
+              h += '<button class="link-btn link-add u-text-11" data-add-group="' + esc(pk) + '">+ Nuevo grupo</button>';
+              h += '</td></tr>';
             }
           } else if (!record.parentAccion) {
             // Regular row (no children, not a child)
@@ -7868,6 +7874,16 @@
           var parentPk = toggle.dataset.parent;
           catalogState.expandedGroups[parentPk] = !catalogState.expandedGroups[parentPk];
           renderCatalogListView(catalogKey);
+        });
+      });
+      // Add group from list view
+      document.querySelectorAll('[data-add-group]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var parentCodigo = btn.dataset.addGroup;
+          duplicateAction(parentCodigo);
+          // Stay in list view after creating
+          setTimeout(function() { renderCatalogListView(catalogKey); }, 50);
         });
       });
       // Inline edit on click
@@ -12283,6 +12299,23 @@
       }
 
       upsertCatalogRecord(key, cfg.pk, record);
+
+      // Auto-calculate parent dates from children (min fechaInicio, max fechaFin)
+      if (key === 'acciones' && record.parentAccion) {
+        var parentRec = getCatalog('acciones').find(function(a) { return a.codigo === record.parentAccion; });
+        if (parentRec) {
+          var allGroups = [parentRec].concat(getChildGroups(parentRec.codigo));
+          var dates = allGroups.map(function(g) { return g.fechaInicio; }).filter(Boolean).sort();
+          var endDates = allGroups.map(function(g) { return g.fechaFin; }).filter(Boolean).sort();
+          var newStart = dates.length > 0 ? dates[0] : '';
+          var newEnd = endDates.length > 0 ? endDates[endDates.length - 1] : '';
+          if (parentRec.fechaInicio !== newStart || parentRec.fechaFin !== newEnd) {
+            parentRec.fechaInicio = newStart;
+            parentRec.fechaFin = newEnd;
+            upsertCatalogRecord('acciones', 'codigo', parentRec);
+          }
+        }
+      }
 
       // Propagate action-level fields to child groups
       if (key === 'acciones' && !record.parentAccion) {
