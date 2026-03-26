@@ -1,0 +1,340 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- TIPOS SIMPLES -->
+  <xs:annotation>
+    <xs:documentation>Esquema XML para la carga masiva de grupos.</xs:documentation>
+  </xs:annotation>
+  <xs:simpleType name="t_pais">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_idAccion">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{1,5}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_documento">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="9"/>
+      <xs:maxLength value="15"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_nif">
+    <xs:restriction base="xs:string">
+      <xs:length value="9"/>
+      <xs:pattern value="([XxYyZzKkLlMm]|[0-9])[0-9]{7}([a-z]|[A-Z])"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cif">
+    <xs:restriction base="xs:string">
+      <xs:length value="9"/>
+      <xs:pattern value="[AaBbCcDdEeFfGgHhKkLlMmNnPpQqSsJjUuVvWwRr][0-9]{7}[AaBbCcDdEeFfGgHhIiJj0123456789]"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cif_nif">
+    <xs:union memberTypes="t_cif t_nif"/>
+  </xs:simpleType>
+  <xs:simpleType name="t_niss">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{12}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_sexo">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="M"/>
+      <xs:enumeration value="F"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_fecha">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((0[1-9]|[12][0-9]|3[01])(/)(0[13578]|10|12)(/)(\d{4}))|(([0][1-9]|[12][0-9]|30)(/)(0[469]|11)(/)(\d{4}))|((0[1-9]|1[0-9]|2[0-8])(/)(02)(/)(\d{4}))|((29)(/)(02)(/)([02468][048]00))|((29)(/)(02)(/)([13579][26]00))|((29)(/)(02)(/)([0-9][0-9][0][48]))|((29)(/)(02)(/)([0-9][0-9][2468][048]))|((29)(/)(02)(/)([0-9][0-9][13579][26])))"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena100">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="100"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena4000">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="4000"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_NumeroParticipantes">
+    <xs:restriction base="xs:nonNegativeInteger">
+      <xs:totalDigits value="4"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena75">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="75"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena50">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_codigoPostal">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{5}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_ctaCotiz">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{1,20}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_hora">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([0-9]|[0-1][0-9]|[2][0-3])(:)[0-5][0-9]"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_dias">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([L]+M?X?J?V?S?D?)|(L?[M]+X?J?V?S?D?)|(L?M?[X]+J?V?S?D?)|(L?M?X?[J]+V?S?D?)|(L?M?X?J?[V]+S?D?)|(L?M?X?J?V?[S]+D?)|(L?M?X?J?V?S?[D]+)"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_telefono">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{9,12}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_telefono_aula_virtual">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{9}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_email">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z0-9_]+([-+.'][A-Za-z0-9_]+)*@[A-Za-z0-9_]+([-.][A-Za-z0-9_]+)*\.[A-Za-z0-9_]+([-.][A-Za-z0-9_]+)*"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_decimal">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0"/>
+      <xs:pattern value="[0-9]{0,4}([.][0-9]{0,2}){0,1}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_horasTutor">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="1"/>
+      <xs:pattern value="[0-9]{0,4}([.][0-9]{0,2}){0,1}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Tipos Complejos -->
+  <xs:complexType name="t_centro">
+    <xs:sequence>
+      <xs:element name="tipoDocumentoCentro" type="tipoDocumentoCentro"/>
+      <xs:element name="documentoCentro" type="t_documento"/>
+      <xs:element name="nombreCentro" type="t_cadena100"/>
+      <xs:element name="direccionDetallada" type="t_cadena100"/>
+      <xs:element name="codPostal" type="t_codigoPostal"/>
+      <xs:element name="localidad" type="t_cadena75"/>
+      <xs:element name="pais" type="t_pais" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_centro_presencial">
+    <xs:sequence>
+      <xs:element name="tipoDocumentoCentro" type="tipoDocumentoCentro"/>
+      <xs:element name="documentoCentro" type="t_documento"/>
+      <xs:element name="nombreCentro" type="t_cadena100"/>
+      <xs:element name="direccionDetallada" type="t_cadena100"/>
+      <xs:element name="codPostal" type="t_codigoPostal"/>
+      <xs:element name="localidad" type="t_cadena75"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_lugarImparticion">
+    <xs:sequence>
+      <xs:element name="cif" type="t_cif_nif" minOccurs="0"/>
+      <xs:element name="nombreCentro" type="t_cadena100"/>
+      <xs:element name="direccionDetallada" type="t_cadena100"/>
+      <xs:element name="codPostal" type="t_codigoPostal"/>
+      <xs:element name="localidad" type="t_cadena75"/>
+      <xs:element name="pais" type="t_pais" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_horario">
+    <xs:sequence>
+      <xs:element name="horaTotales" type="t_decimal"/>
+      <xs:element name="horaInicioTramo1" type="t_hora" minOccurs="0"/>
+      <xs:element name="horaFinTramo1" type="t_hora" minOccurs="0"/>
+      <xs:element name="horaInicioTramo2" type="t_hora" minOccurs="0"/>
+      <xs:element name="horaFinTramo2" type="t_hora" minOccurs="0"/>
+      <xs:element name="dias" type="t_dias"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_calendario">
+    <xs:sequence>
+      <xs:element name="fecha_imparticion" type="t_fecha" />
+      <xs:element name="horario_inicio_tramo1" type="t_hora" minOccurs="0" />
+      <xs:element name="horario_fin_tramo1" type="t_hora" minOccurs="0" />
+      <xs:element name="horario_inicio_tramo2" type="t_hora" minOccurs="0" />
+      <xs:element name="horario_fin_tramo2" type="t_hora" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_asistenciaTeleformacion">
+    <xs:sequence>
+      <xs:element name="centro" type="t_centro"/>
+      <xs:element name="telefono" type="t_telefono"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="modalidad">
+    <xs:sequence>
+      <xs:element name="centro" type="t_centro_presencial"/>
+      <xs:element name="lugarImparticion" type="t_lugarImparticion"/>
+      <xs:element name="horario" type="t_horario"/>
+      <xs:element name="calendario" type="t_calendario" maxOccurs="unbounded" />
+      <xs:element name="Tutor" type="t_Tutor" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="modalidad3">
+    <xs:sequence>
+      <xs:element name="asistenciaTeleformacion" type="t_asistenciaTeleformacion" minOccurs="0"/>
+      <xs:element name="horario" type="t_horario"/>
+      <xs:element name="Tutor" type="t_Tutor_Teleformacion" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="t_idGrupo">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{1,5}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_TipoTutor">
+    <xs:restriction base="xs:int">
+      <xs:totalDigits value="1"/>
+      <xs:pattern value="[1-2]"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena30">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="30"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_cadena30_requerido">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="30"/>
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Enumeración para los tipos de documentos enum TipoDocCentro-->
+  <!--NIF = 10 NIE = 60 Pasaporte = 20 CIF = 90-->
+  <xs:annotation>
+    <xs:documentation>Las opciones de Tipo de Documento del centro proveedor:</xs:documentation>
+    <xs:documentation>NIF (10), Pasaporte (20), NIE (60), CIF (90)</xs:documentation>
+    <xs:documentation>En los centros proveedores, cuando el documento indicado sea un pasaporte se pone 99999 para código postal fuera de territorio nacional</xs:documentation>
+  </xs:annotation>
+  <xs:simpleType name="tipoDocumentoCentro" final="restriction" >
+    <xs:restriction base="xs:int">
+      <xs:enumeration value="10" />
+      <xs:enumeration value="20" />
+      <xs:enumeration value="60" />
+      <xs:enumeration value="90" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Enumeración para los tipos de documentos enum TipoDocIdentificacion-->
+  <!--NIF = 10 NIE = 60 Pasaporte = 20-->
+  <xs:annotation>
+    <xs:documentation>Las opciones de Tipo de Documento son:</xs:documentation>
+    <xs:documentation>NIF (10), NIE (60), Pasaporte (20)</xs:documentation>
+    <xs:documentation>En los centros proveedores, cuando el documento indicado sea un pasaporte se pone 99999 para código postal fuera de territorio nacional</xs:documentation>
+  </xs:annotation>
+  <xs:simpleType name="tipoDocumento" final="restriction" >
+    <xs:restriction base="xs:int">
+      <xs:enumeration value="10" />
+      <xs:enumeration value="20" />
+      <xs:enumeration value="60" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:annotation>
+    <xs:documentation>Las opciones de Tipo de Tutoría son:</xs:documentation>
+    <xs:documentation>Correo electrónico (1), Videoconferencia (2), Foro (3) o Otras (4) (se pueden indicar varias. Si se selecciona Otras se debe especificar descripción)</xs:documentation>
+    <xs:documentation>El tipo de tutoría solamente se aplica para tutor con impartición: Tutoría de teleformación (distanciaTeleformacion).</xs:documentation>
+  </xs:annotation>
+  <!-- Enumeración para los tipos de tutoría -->
+  <xs:simpleType name="tipoTutoria" final="restriction" >
+    <xs:restriction base="xs:int">
+      <xs:enumeration value="1" />
+      <xs:enumeration value="2" />
+      <xs:enumeration value="3" />
+      <xs:enumeration value="4" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="t_tipoTutoria">
+    <xs:sequence>
+      <xs:element name="tutorias" type="tipoTutoria"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_Tutor">
+    <xs:sequence>
+      <xs:element name="numeroHoras" type="t_horasTutor"/>
+      <xs:element name="tipoDocumento" type="tipoDocumento"/>
+      <xs:element name="documento" type="t_documento"/>
+      <xs:element name="nombre" type="t_cadena30_requerido"/>
+      <xs:element name="apellido1" type="t_cadena30_requerido"/>
+      <xs:element name="apellido2" type="t_cadena30" minOccurs="0" maxOccurs="1" />
+      <xs:element name="telefono" type="t_telefono"/>
+      <xs:element name="correoElectronico" type="t_email"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_Tutor_Teleformacion">
+    <xs:sequence>
+      <xs:element name="numeroHoras" type="t_horasTutor"/>
+      <xs:element name="tipoDocumento" type="tipoDocumento"/>
+      <xs:element name="documento" type="t_documento"/>
+      <xs:element name="nombre" type="t_cadena30_requerido"/>
+      <xs:element name="apellido1" type="t_cadena30_requerido"/>
+      <xs:element name="apellido2" type="t_cadena30" minOccurs="0" maxOccurs="1" />
+      <xs:element name="telefono" type="t_telefono"/>
+      <xs:element name="correoElectronico" type="t_email"/>
+      <xs:element name="tutoria" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="tipoTutoria" type="t_tipoTutoria"/>
+            <xs:element name="descripcion" type="t_cadena50"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="t_aula_virtual">
+    <xs:sequence>
+      <xs:element name="medio" type="t_cadena100" minOccurs="0" maxOccurs="1" />
+      <xs:element name="conexion" type="t_cadena100" minOccurs="0" maxOccurs="1" />
+      <xs:element name="contacto" type="t_cadena100" minOccurs="0" maxOccurs="1" />
+      <xs:element name="telefono" type="t_telefono_aula_virtual" minOccurs="0" maxOccurs="1" />
+      <xs:element name="bimodal" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+	    <xs:element name="sinParticipantesEnCentro" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+	    <xs:element name="sinDocentesEnCentro" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="grupos">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="grupo" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="idAccion" type="t_idAccion"/>
+              <xs:element name="idGrupo" type="t_idGrupo"/>
+              <xs:element name="descripcion" type="t_cadena100"/>
+              <xs:element name="NumeroParticipante" type="t_NumeroParticipantes"/>
+              <xs:element name="fechaInicio" type="t_fecha"/>
+              <xs:element name="fechaFin" type="t_fecha"/>
+              <xs:element name="responsable" type="t_cadena100"/>
+              <xs:element name="telefonoContacto" type="t_telefono"/>
+              <xs:element name="jornadaPresencial" type="modalidad" minOccurs="0" maxOccurs="1"/>
+              <xs:element name="distanciaTeleformacion" type="modalidad3" minOccurs="0" maxOccurs="1"/>
+              <xs:element name="aulaVirtual" type="t_aula_virtual" minOccurs="0" maxOccurs="1" />
+              <xs:element name="observaciones" type="t_cadena4000" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
