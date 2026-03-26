@@ -7556,6 +7556,24 @@
           }
         });
 
+        // Auto-recalculate parent dates from children
+        var needsSave = false;
+        Object.keys(parentMap).forEach(function(parentCodigo) {
+          var parent = allRecords.find(function(a) { return a.codigo === parentCodigo; });
+          if (!parent) return;
+          var allGroups = [parent].concat(parentMap[parentCodigo]);
+          var starts = allGroups.map(function(g) { return g.fechaInicio; }).filter(Boolean).sort();
+          var ends = allGroups.map(function(g) { return g.fechaFin; }).filter(Boolean).sort();
+          var newStart = starts.length > 0 ? starts[0] : '';
+          var newEnd = ends.length > 0 ? ends[ends.length - 1] : '';
+          if (parent.fechaInicio !== newStart || parent.fechaFin !== newEnd) {
+            parent.fechaInicio = newStart;
+            parent.fechaFin = newEnd;
+            needsSave = true;
+          }
+        });
+        if (needsSave) saveCatalog('acciones', allRecords);
+
         // Render: iterate filtered data, skip children (they're rendered under parent)
         var renderedChildren = new Set();
         data.forEach(function(record) {
@@ -7627,7 +7645,14 @@
               if (ci === 0) {
                 var cellVal = record[col.key] != null ? String(record[col.key]) : '';
                 h += '<td class="cell-data" data-col-key="' + esc(col.key) + '">' + esc(cellVal) +
-                  ' <button class="link-btn u-text-11" data-add-group="' + esc(pk) + '" title="Crear grupo" style="color:var(--text-muted); opacity:0; transition:opacity var(--transition); vertical-align:middle; margin-left:4px;">+ gr</button>' +
+                  ' <button class="link-btn u-text-11" data-add-group="' + esc(pk) + '" title="Crear grupo" style="color:var(--accent); opacity:0.35; transition:opacity var(--transition); vertical-align:middle; margin-left:4px;">+ gr</button>' +
+                  '</td>';
+              } else if (ci === 1) {
+                // Name column: show standalone indicator
+                var nameVal = record[col.key] != null ? String(record[col.key]) : '';
+                h += '<td class="cell-data' + (col.editable ? ' cell-editable' : '') + '" data-col-key="' + esc(col.key) + '" data-pk="' + esc(pk) + '">' +
+                  esc(nameVal) +
+                  ' <span class="u-text-xs" style="color:var(--text-muted); opacity:0.6;">individual</span>' +
                   '</td>';
               } else {
                 h += renderListViewCell(col, record, config);
